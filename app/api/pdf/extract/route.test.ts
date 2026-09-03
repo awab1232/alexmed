@@ -11,7 +11,9 @@ function jsonRequest(body: unknown) {
 
 describe("POST /api/pdf/extract", () => {
   it("rejects an extraction request with no storage key", async () => {
-    const response = await POST(jsonRequest({ fileName: "notes.pdf", fileSize: 100 }));
+    const response = await POST(
+      jsonRequest({ fileName: "notes.pdf", fileSize: 100 })
+    );
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -20,7 +22,11 @@ describe("POST /api/pdf/extract", () => {
 
   it("rejects a fileName that isn't a .pdf", async () => {
     const response = await POST(
-      jsonRequest({ key: "study-pdfs/abc-notes.txt", fileName: "notes.txt", fileSize: 100 })
+      jsonRequest({
+        key: "study-pdfs/abc-notes.txt",
+        fileName: "notes.txt",
+        fileSize: 100,
+      })
     );
     const body = await response.json();
 

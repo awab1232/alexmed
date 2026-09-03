@@ -106,7 +106,11 @@ export async function storageGetUploadUrl(
 
   return getSignedUrl(
     client,
-    new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: contentType,
+    }),
     { expiresIn: 900 }
   );
 }

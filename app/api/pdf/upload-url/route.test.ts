@@ -11,7 +11,9 @@ function jsonRequest(body: unknown) {
 
 describe("POST /api/pdf/upload-url", () => {
   it("rejects a fileName that isn't a .pdf", async () => {
-    const response = await POST(jsonRequest({ fileName: "notes.txt", fileSize: 1000 }));
+    const response = await POST(
+      jsonRequest({ fileName: "notes.txt", fileSize: 1000 })
+    );
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -19,8 +21,11 @@ describe("POST /api/pdf/upload-url", () => {
   });
 
   it("rejects a file larger than the configured max", async () => {
-    const oversized = (Number(process.env.UPLOAD_MAX_MB) || 250) * 1024 * 1024 + 1;
-    const response = await POST(jsonRequest({ fileName: "book.pdf", fileSize: oversized }));
+    const oversized =
+      (Number(process.env.UPLOAD_MAX_MB) || 250) * 1024 * 1024 + 1;
+    const response = await POST(
+      jsonRequest({ fileName: "book.pdf", fileSize: oversized })
+    );
     const body = await response.json();
 
     expect(response.status).toBe(413);

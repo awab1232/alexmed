@@ -7,7 +7,8 @@ const DEFAULT_MAX_MB = 250;
 
 function getMaxUploadBytes() {
   const configured = Number(process.env.UPLOAD_MAX_MB);
-  const maxMb = Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_MB;
+  const maxMb =
+    Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_MB;
   return { maxMb, maxBytes: maxMb * 1024 * 1024 };
 }
 
@@ -16,7 +17,11 @@ function getMaxUploadBytes() {
 // bypassing our server (and Vercel's ~4.5MB request-body limit) entirely.
 // See lib/storage.ts's storageGetUploadUrl for why the key is decided here.
 export async function POST(request: Request) {
-  const allowed = await checkRateLimit(`pdf-upload:${getClientIp(request)}`, 30, 60 * 60);
+  const allowed = await checkRateLimit(
+    `pdf-upload:${getClientIp(request)}`,
+    30,
+    60 * 60
+  );
   if (!allowed) {
     return NextResponse.json(
       { error: "تجاوزت الحد المسموح من الطلبات. حاول لاحقًا." },
@@ -34,7 +39,10 @@ export async function POST(request: Request) {
   const fileSize = typeof body.fileSize === "number" ? body.fileSize : NaN;
 
   if (!fileName || !fileName.toLowerCase().endsWith(".pdf")) {
-    return NextResponse.json({ error: "الملف يجب أن يكون بصيغة PDF." }, { status: 400 });
+    return NextResponse.json(
+      { error: "الملف يجب أن يكون بصيغة PDF." },
+      { status: 400 }
+    );
   }
 
   const { maxMb, maxBytes } = getMaxUploadBytes();

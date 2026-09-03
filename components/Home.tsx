@@ -265,7 +265,9 @@ export default function Home() {
         body: file,
       });
       if (!putResponse.ok)
-        throw new Error("تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى.");
+        throw new Error(
+          "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
+        );
 
       // Step 3: tell our server where the file landed so it can extract text.
       const extractResponse = await fetch("/api/pdf/extract", {
@@ -602,8 +604,8 @@ export default function Home() {
                   </span>
                   {!file && (
                     <small>
-                      حد أقصى {UPLOAD_MAX_MB}MB · يدعم الملفات الكبيرة والدفعات المتعددة وPDF
-                      المصوّر عبر OCR
+                      حد أقصى {UPLOAD_MAX_MB}MB · يدعم الملفات الكبيرة والدفعات
+                      المتعددة وPDF المصوّر عبر OCR
                     </small>
                   )}
                 </div>
