@@ -1,23 +1,53 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".next",
+    "**/*.test.ts"
+  ],
   "compilerOptions": {
+    "target": "ES2017",
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/typescript/tsbuildinfo",
     "noEmit": true,
-    "module": "ESNext",
+    "module": "esnext",
     "strict": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable"
+    ],
     "jsx": "preserve",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "moduleResolution": "bundler",
     "baseUrl": ".",
-    "types": ["node", "vite/client"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@/*": ["./client/src/*"],
-      "@shared/*": ["./shared/*"]
-    }
+      "@/*": [
+        "./*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "allowJs": true
   }
 }
