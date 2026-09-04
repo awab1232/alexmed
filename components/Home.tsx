@@ -104,7 +104,8 @@ function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise<void>(resolve => setTimeout(resolve, ms));
 
 // Small fixed pause between consecutive batch requests, on top of the
 // rate-limit-aware retry below — spreads requests out so we don't burst

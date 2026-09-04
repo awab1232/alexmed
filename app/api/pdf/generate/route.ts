@@ -91,7 +91,8 @@ export async function POST(request: Request) {
     if (error instanceof AiRateLimitError) {
       return NextResponse.json(
         {
-          error: "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي. سيُعاد المحاولة تلقائيًا بعد قليل.",
+          error:
+            "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي. سيُعاد المحاولة تلقائيًا بعد قليل.",
           retryAfterMs: error.retryAfterMs,
         },
         { status: 429 }

@@ -16,9 +16,9 @@ services:
       timeout: 5s
       retries: 10
 
-  # One-shot: creates the STORAGE_BUCKET (medstudy-books) on first run, since
-  # MinIO doesn't auto-create buckets. Exits once done; `docker compose up -d`
-  # leaves it stopped/exited, which is expected.
+  # One-shot: creates the STORAGE_BUCKET (must match .env's STORAGE_BUCKET) on
+  # first run, since MinIO doesn't auto-create buckets. Exits once done;
+  # `docker compose up -d` leaves it stopped/exited, which is expected.
   minio-init:
     image: minio/mc:latest
     depends_on:
@@ -27,7 +27,7 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set local http://minio:9000 minioadmin minioadmin &&
-      mc mb --ignore-existing local/medstudy-books
+      mc mb --ignore-existing local/alexmed
       "
 
   redis:
