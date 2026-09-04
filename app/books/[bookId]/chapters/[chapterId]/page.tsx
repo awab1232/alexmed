@@ -65,8 +65,10 @@ export default function ChapterDetailPage() {
       <div className="cards-toolbar" style={{ gap: 8, marginBottom: 20 }}>
         {TABS.map(t => (
           <button
+            type="button"
             key={t.id}
             className={tab === t.id ? "filter-button active" : "filter-button"}
+            aria-pressed={tab === t.id}
             onClick={() => setTab(t.id)}
           >
             {t.label}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Loader2, Plus } from "lucide-react";
+import { BookOpen, CircleAlert, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
 // كتبي home/index — doubles as the "فهرس كتبي" the sidebar links to as well,
@@ -29,7 +29,21 @@ export default function BooksHomePage() {
         </div>
       </div>
 
-      {booksQuery.isLoading ? (
+      {booksQuery.isError ? (
+        <div className="empty-state">
+          <CircleAlert size={28} />
+          <h3>تعذر تحميل كتبك</h3>
+          <p>تحقق من اتصالك وحاول مرة أخرى.</p>
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ marginTop: 14 }}
+            onClick={() => booksQuery.refetch()}
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      ) : booksQuery.isLoading ? (
         <div className="empty-state">
           <Loader2 size={28} className="spin" />
           <h3>جاري تحميل كتبك...</h3>

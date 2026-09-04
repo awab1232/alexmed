@@ -552,7 +552,8 @@ export default function Home() {
         }
         onMiratNavigate={(nextView, options) => {
           setView(nextView);
-          if (options?.onlyReview) setOnlyReview(true);
+          setOnlyReview(options?.onlyReview ?? false);
+          setActiveCard(0);
         }}
       />
 
@@ -673,6 +674,7 @@ export default function Home() {
                       <span>{formatBytes(file.size)} · PDF</span>
                     </div>
                     <button
+                      type="button"
                       aria-label="إزالة الملف"
                       onClick={event => {
                         event.stopPropagation();
@@ -755,6 +757,7 @@ export default function Home() {
                 <div className="depth-options">
                   {depthOptions.map(option => (
                     <button
+                      type="button"
                       key={option.value}
                       className={
                         depth === option.value
@@ -782,6 +785,7 @@ export default function Home() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   className="primary-button"
                   disabled={
                     !file || stage === "extracting" || stage === "processing"
@@ -824,13 +828,14 @@ export default function Home() {
               </div>
               <div className="header-actions">
                 <button
+                  type="button"
                   className="secondary-button"
                   onClick={downloadCsv}
                   disabled={!cards.length}
                 >
                   <Download size={16} /> تصدير CSV
                 </button>
-                <button className="ghost-button" onClick={reset}>
+                <button type="button" className="ghost-button" onClick={reset}>
                   <RotateCcw size={16} /> ملف جديد
                 </button>
               </div>
@@ -883,6 +888,7 @@ export default function Home() {
                 />
               </div>
               <button
+                type="button"
                 className={
                   onlyReview ? "filter-button active" : "filter-button"
                 }
@@ -926,6 +932,7 @@ export default function Home() {
                           ? "list-card selected"
                           : "list-card"
                       }
+                      type="button"
                       onClick={() => {
                         setActiveCard(index);
                         setShowAnswer(false);
@@ -1029,6 +1036,7 @@ export default function Home() {
                       ) : (
                         <button
                           className="reveal-button"
+                          type="button"
                           onClick={() => setShowAnswer(true)}
                         >
                           <span className="reveal-icon">?</span>
@@ -1039,10 +1047,14 @@ export default function Home() {
                     </div>
                   </article>
                   <div className="card-navigation">
-                    <button onClick={() => goToCard(-1)}>
+                    <button type="button" onClick={() => goToCard(-1)}>
                       <ChevronRight size={17} /> السابقة
                     </button>
-                    <button className="next" onClick={() => goToCard(1)}>
+                    <button
+                      type="button"
+                      className="next"
+                      onClick={() => goToCard(1)}
+                    >
                       التالية <ChevronLeft size={17} />
                     </button>
                   </div>
@@ -1071,7 +1083,21 @@ export default function Home() {
                 {libraryError}
               </div>
             )}
-            {decksQuery.isLoading ? (
+            {decksQuery.isError ? (
+              <div className="empty-state">
+                <CircleAlert size={28} />
+                <h3>تعذر تحميل مكتبتك</h3>
+                <p>تحقق من اتصالك وحاول مرة أخرى.</p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  style={{ marginTop: 14 }}
+                  onClick={() => decksQuery.refetch()}
+                >
+                  إعادة المحاولة
+                </button>
+              </div>
+            ) : decksQuery.isLoading ? (
               <div className="empty-state">
                 <Loader2 size={28} className="spin" />
                 <h3>جاري تحميل مكتبتك...</h3>
@@ -1098,12 +1124,14 @@ export default function Home() {
                     </div>
                     <div className="library-item-actions">
                       <button
+                        type="button"
                         className="secondary-button"
                         onClick={() => openDeck(deck.id)}
                       >
                         فتح
                       </button>
                       <button
+                        type="button"
                         className="ghost-button"
                         aria-label="حذف"
                         onClick={() => removeDeck(deck.id)}

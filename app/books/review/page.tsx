@@ -34,6 +34,26 @@ export default function ReviewPage() {
     );
   }
 
+  if (dueQuery.isError) {
+    return (
+      <section className="upload-view">
+        <div className="empty-state">
+          <Layers3 size={28} />
+          <h3>تعذر تحميل المراجعة</h3>
+          <p>تحقق من اتصالك وحاول مرة أخرى.</p>
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ marginTop: 14 }}
+            onClick={() => dueQuery.refetch()}
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   if (!cards.length) {
     return (
       <section className="upload-view">
@@ -90,6 +110,7 @@ export default function ReviewPage() {
             </>
           ) : (
             <button
+              type="button"
               className="reveal-button"
               onClick={() => setShowAnswer(true)}
             >
@@ -111,18 +132,27 @@ export default function ReviewPage() {
           }}
         >
           <button
+            type="button"
             className="secondary-button"
             style={{ background: "#faeddc", color: "#936239", border: "none" }}
+            disabled={rateCard.isPending}
             onClick={() => rate("hard")}
           >
             صعبة
           </button>
-          <button className="secondary-button" onClick={() => rate("good")}>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={rateCard.isPending}
+            onClick={() => rate("good")}
+          >
             جيدة
           </button>
           <button
+            type="button"
             className="secondary-button"
             style={{ background: "#e3f0e8", color: "#528c6d", border: "none" }}
+            disabled={rateCard.isPending}
             onClick={() => rate("easy")}
           >
             سهلة

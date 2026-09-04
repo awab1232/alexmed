@@ -255,6 +255,7 @@ export default function BookUploadPage() {
                 <span>{formatBytes(file.size)} · PDF</span>
               </div>
               <button
+                type="button"
                 aria-label="إزالة الملف"
                 onClick={event => {
                   event.stopPropagation();
@@ -364,6 +365,7 @@ export default function BookUploadPage() {
 
           {stage === "done" && bookId && (
             <button
+              type="button"
               className="primary-button"
               style={{ marginTop: 18 }}
               onClick={() => router.push(`/books/${bookId}`)}
@@ -374,6 +376,7 @@ export default function BookUploadPage() {
 
           {stage === "idle" && (
             <button
+              type="button"
               className="primary-button"
               style={{ marginTop: 18 }}
               disabled={!file}

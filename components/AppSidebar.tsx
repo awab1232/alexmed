@@ -50,7 +50,12 @@ function MiratNavLink({
   const className = active ? "nav-item active" : "nav-item";
   if (onClick) {
     return (
-      <button className={className} onClick={onClick} disabled={disabled}>
+      <button
+        type="button"
+        className={className}
+        onClick={onClick}
+        disabled={disabled}
+      >
         {children}
       </button>
     );
@@ -209,6 +214,69 @@ export default function AppSidebar({
         </div>
         <div className="side-footer">PDF → فهم → تذكّر</div>
       </div>
+
+      <nav className="mobile-nav" aria-label="التنقل السريع">
+        {onMiratNavigate ? (
+          <>
+            <button
+              type="button"
+              className={activeMiratView === "upload" ? "active" : ""}
+              onClick={() => onMiratNavigate("upload")}
+            >
+              <Upload size={18} />
+              <span>رفع</span>
+            </button>
+            <button
+              type="button"
+              className={activeMiratView === "cards" ? "active" : ""}
+              disabled={!miratCardsCount}
+              onClick={() => onMiratNavigate("cards")}
+            >
+              <Layers3 size={18} />
+              <span>بطاقاتي</span>
+            </button>
+            <button
+              type="button"
+              className={activeMiratView === "library" ? "active" : ""}
+              onClick={() => onMiratNavigate("library")}
+            >
+              <Library size={18} />
+              <span>مكتبتي</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/books"
+              className={pathname === "/books" ? "active" : ""}
+            >
+              <Home size={18} />
+              <span>الرئيسية</span>
+            </Link>
+            <Link
+              href="/books/review"
+              className={pathname === "/books/review" ? "active" : ""}
+            >
+              <RotateCcw size={18} />
+              <span>المراجعة</span>
+            </Link>
+            <Link
+              href="/books/quizzes"
+              className={pathname === "/books/quizzes" ? "active" : ""}
+            >
+              <ClipboardList size={18} />
+              <span>الاختبارات</span>
+            </Link>
+            <Link
+              href="/books/stats"
+              className={pathname === "/books/stats" ? "active" : ""}
+            >
+              <BarChart3 size={18} />
+              <span>إحصائياتي</span>
+            </Link>
+          </>
+        )}
+      </nav>
     </aside>
   );
 }

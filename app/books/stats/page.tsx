@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Clock, Flame } from "lucide-react";
+import { BarChart3, CircleAlert, Clock, Flame } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
 export default function StatsPage() {
@@ -21,7 +21,21 @@ export default function StatsPage() {
         </div>
       </div>
 
-      {statsQuery.isLoading || !stats ? (
+      {statsQuery.isError ? (
+        <div className="empty-state">
+          <CircleAlert size={28} />
+          <h3>تعذر تحميل الإحصائيات</h3>
+          <p>تحقق من اتصالك وحاول مرة أخرى.</p>
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ marginTop: 14 }}
+            onClick={() => statsQuery.refetch()}
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      ) : statsQuery.isLoading || !stats ? (
         <div className="empty-state">
           <BarChart3 size={28} />
           <h3>جاري تحميل إحصائياتك...</h3>

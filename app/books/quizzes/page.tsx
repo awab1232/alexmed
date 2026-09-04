@@ -9,15 +9,30 @@ export default function QuizzesPage() {
   const submitAttempt = trpc.books.submitMcqAttempt.useMutation();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [results, setResults] = useState<Record<string, boolean>>({});
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [attemptError, setAttemptError] = useState("");
 
   function answer(mcqId: string, index: number) {
     if (mcqId in answers) return; // one attempt per MCQ per visit
+    setAttemptError("");
+    setPendingId(mcqId);
     setAnswers(prev => ({ ...prev, [mcqId]: index }));
     submitAttempt.mutate(
       { mcqId, selectedIndex: index },
       {
-        onSuccess: result =>
-          setResults(prev => ({ ...prev, [mcqId]: result.isCorrect })),
+        onSuccess: result => {
+          setResults(prev => ({ ...prev, [mcqId]: result.isCorrect }));
+          setPendingId(null);
+        },
+        onError: () => {
+          setAnswers(prev => {
+            const next = { ...prev };
+            delete next[mcqId];
+            return next;
+          });
+          setPendingId(null);
+          setAttemptError("تعذر حفظ إجابتك. اختر الإجابة مرة أخرى.");
+        },
       }
     );
   }
@@ -38,7 +53,28 @@ export default function QuizzesPage() {
         </div>
       </div>
 
-      {mcqsQuery.isLoading ? (
+      {attemptError && (
+        <div className="inline-alert error wide">
+          <CircleAlert size={16} />
+          {attemptError}
+        </div>
+      )}
+
+      {mcqsQuery.isError ? (
+        <div className="empty-state">
+          <CircleAlert size={28} />
+          <h3>تعذر تحميل الاختبارات</h3>
+          <p>تحقق من اتصالك وحاول مرة أخرى.</p>
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ marginTop: 14 }}
+            onClick={() => mcqsQuery.refetch()}
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      ) : mcqsQuery.isLoading ? (
         <div className="empty-state">
           <ClipboardList size={28} />
           <h3>جاري تحميل الأسئلة...</h3>
@@ -79,9 +115,10 @@ export default function QuizzesPage() {
                     const isRightAnswer = answered && i === mcq.correctIndex;
                     return (
                       <button
+                        type="button"
                         key={i}
                         className="en"
-                        disabled={answered}
+                        disabled={answered || pendingId === mcq.id}
                         onClick={() => answer(mcq.id, i)}
                         style={{
                           textAlign: "left",
