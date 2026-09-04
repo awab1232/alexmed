@@ -95,7 +95,13 @@ async function fetchWithTimeout(
       await sleep(RETRY_DELAY_MS);
     } catch (error) {
       lastError = error;
-      if (attempt === RETRY_MAX_RETRIES) throw error;
+      // A timeout (AbortSignal firing) is NOT the same as a fast network
+      // failure: OmniRoute may still be mid-flight on the request we just
+      // gave up on. Retrying here would fire a second, duplicate job at an
+      // already-slow/overloaded upstream instead of giving it room to
+      // recover — fail fast instead of piling on.
+      const isTimeout = error instanceof Error && error.name === "TimeoutError";
+      if (isTimeout || attempt === RETRY_MAX_RETRIES) throw error;
       console.warn("[AI][omniroute] retrying after network error");
       await sleep(RETRY_DELAY_MS);
     }
