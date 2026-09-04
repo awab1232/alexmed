@@ -104,6 +104,14 @@ function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+// Small fixed pause between consecutive batch requests, on top of the
+// rate-limit-aware retry below — spreads requests out so we don't burst
+// against the AI gateway's per-minute limits in the first place.
+const BATCH_PACING_MS = 1200;
+const RATE_LIMIT_MAX_RETRIES = 3;
+
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -339,25 +347,53 @@ export default function Home() {
       }
 
       let completed = 0;
-      for (const batch of batches) {
+      for (const [batchIndex, batch] of batches.entries()) {
         const usable = batch.filter(page => page.hasText);
         if (usable.length) {
-          try {
-            const response = await fetch("/api/pdf/generate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                pages: usable,
-                depth,
-                model: selectedModel,
-              }),
-            });
-            const generated = await response.json();
-            if (!response.ok)
-              throw new Error(generated.error || "تعذر توليد هذه الدفعة.");
-            setCards(previous => [...previous, ...(generated.cards as Card[])]);
-          } catch {
-            setFailedBatches(previous => previous + 1);
+          // Small pause between batches (skip before the very first one) so
+          // we don't burst requests against the AI gateway's rate limits.
+          if (batchIndex > 0) await sleep(BATCH_PACING_MS);
+
+          let sawRateLimit = false;
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const response = await fetch("/api/pdf/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  pages: usable,
+                  depth,
+                  model: selectedModel,
+                }),
+              });
+              const generated = await response.json();
+
+              if (response.status === 429 && attempt < RATE_LIMIT_MAX_RETRIES) {
+                sawRateLimit = true;
+                const waitMs =
+                  typeof generated.retryAfterMs === "number"
+                    ? generated.retryAfterMs
+                    : 20_000;
+                setWarning(
+                  `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة (${attempt + 1}/${RATE_LIMIT_MAX_RETRIES})...`
+                );
+                await sleep(waitMs);
+                continue;
+              }
+
+              if (!response.ok)
+                throw new Error(generated.error || "تعذر توليد هذه الدفعة.");
+
+              setCards(previous => [
+                ...previous,
+                ...(generated.cards as Card[]),
+              ]);
+              if (sawRateLimit) setWarning("");
+              break;
+            } catch {
+              setFailedBatches(previous => previous + 1);
+              break;
+            }
           }
         }
         completed += batch.length;

@@ -57,6 +57,19 @@ export type ModelInfo = {
 export type EmbedParams = { input: string | string[]; model?: string };
 export type EmbedResult = { embeddings: number[][]; model: string };
 
+// Thrown by a provider when the upstream gateway/model returns 429, so route
+// handlers can tell "genuinely rate-limited, worth waiting and retrying" apart
+// from other failures (bad request, provider outage, ...) instead of treating
+// every invokeLLM() failure the same way.
+export class AiRateLimitError extends Error {
+  readonly retryAfterMs: number;
+  constructor(message: string, retryAfterMs = 20_000) {
+    super(message);
+    this.name = "AiRateLimitError";
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
 export interface AiProvider {
   generateText(params: GenerateParams): Promise<GenerateResult>;
   streamText(params: GenerateParams): AsyncGenerator<StreamChunk, void, void>;

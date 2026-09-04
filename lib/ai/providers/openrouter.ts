@@ -6,15 +6,23 @@
 // gateway was introduced.
 import { openRouterConfig } from "../config";
 import { parseOpenAiSseStream } from "../sse";
-import type {
-  AiProvider,
-  GenerateParams,
-  GenerateResult,
-  Message,
-  ModelInfo,
-  ResponseFormat,
-  StreamChunk,
+import {
+  AiRateLimitError,
+  type AiProvider,
+  type GenerateParams,
+  type GenerateResult,
+  type Message,
+  type ModelInfo,
+  type ResponseFormat,
+  type StreamChunk,
 } from "../types";
+
+function parseRetryAfterMs(response: Response): number | undefined {
+  const header = response.headers.get("retry-after");
+  if (!header) return undefined;
+  const seconds = Number(header);
+  return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : undefined;
+}
 
 // "openrouter/free" is OpenRouter's own maintained meta-router: it randomly
 // selects among currently-available free models (text+vision capable, 200k
@@ -162,6 +170,12 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
       }
 
       if (attempt === RETRY_MAX_RETRIES) {
+        if (response.status === 429) {
+          throw new AiRateLimitError(
+            `LLM invoke failed: ${response.status} ${response.statusText}`,
+            parseRetryAfterMs(response)
+          );
+        }
         const errorText = await response.text().catch(() => "");
         throw new Error(
           `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`

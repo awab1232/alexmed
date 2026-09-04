@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { AiRateLimitError } from "@/lib/ai/types";
 import { invokeLLM } from "@/lib/llm";
 import {
   buildGenerateMessages,
@@ -87,6 +88,15 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[PDF] Card generation failed", error);
+    if (error instanceof AiRateLimitError) {
+      return NextResponse.json(
+        {
+          error: "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي. سيُعاد المحاولة تلقائيًا بعد قليل.",
+          retryAfterMs: error.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
     return NextResponse.json(
       {
         error:

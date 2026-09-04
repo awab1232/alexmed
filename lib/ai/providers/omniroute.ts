@@ -7,16 +7,24 @@
 // limit routing itself would just duplicate requests for no benefit).
 import { omniRouteConfig } from "../config";
 import { parseOpenAiSseStream } from "../sse";
-import type {
-  AiProvider,
-  EmbedParams,
-  EmbedResult,
-  GenerateParams,
-  GenerateResult,
-  Message,
-  ModelInfo,
-  StreamChunk,
+import {
+  AiRateLimitError,
+  type AiProvider,
+  type EmbedParams,
+  type EmbedResult,
+  type GenerateParams,
+  type GenerateResult,
+  type Message,
+  type ModelInfo,
+  type StreamChunk,
 } from "../types";
+
+function parseRetryAfterMs(response: Response): number | undefined {
+  const header = response.headers.get("retry-after");
+  if (!header) return undefined;
+  const seconds = Number(header);
+  return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : undefined;
+}
 
 const REQUEST_TIMEOUT_MS = 30_000;
 const RETRY_MAX_RETRIES = 1; // conservative — see file header.
@@ -241,6 +249,12 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
   );
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw new AiRateLimitError(
+        `OmniRoute chat completion failed: ${describeStatus(response.status)}`,
+        parseRetryAfterMs(response)
+      );
+    }
     throw new Error(
       `OmniRoute chat completion failed: ${describeStatus(response.status)}`
     );
