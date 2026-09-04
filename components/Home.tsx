@@ -152,7 +152,12 @@ const sleep = (ms: number) =>
 // rate-limit-aware retry below — spreads requests out so we don't burst
 // against the AI gateway's per-minute limits in the first place.
 const BATCH_PACING_MS = 1200;
-const GENERATION_CONCURRENCY = 2;
+// Kept at 1 (sequential) for now — OmniRoute's Railway container is currently
+// tripping its own resource-pressure guard under a SINGLE request, so firing
+// requests concurrently would add load exactly where it's already failing.
+// Safe to raise back to 2 once that container's memory has been confirmed
+// increased (see the "resourcePressure ... cgroup_ratio" incident).
+const GENERATION_CONCURRENCY = 1;
 const RATE_LIMIT_MAX_RETRIES = 3;
 // Separate, shorter retry budget for a non-rate-limit failure (network
 // hiccup, upstream timeout/5xx) — a single bad request shouldn't
