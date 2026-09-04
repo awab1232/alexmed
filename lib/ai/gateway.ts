@@ -3,9 +3,10 @@
 // any page/route talking to a provider directly — resolveProvider() picks
 // OmniRoute or OpenRouter per lib/ai/config.ts, so callers never know which
 // one actually served the request.
-import { resolveProvider } from "./config";
+import { openRouterConfig, resolveProvider } from "./config";
 import { omnirouteProvider } from "./providers/omniroute";
 import { openrouterProvider } from "./providers/openrouter";
+import { AiRateLimitError } from "./types";
 import type {
   AiProvider,
   EmbedParams,
@@ -22,10 +23,39 @@ function getProvider(): AiProvider {
     : openrouterProvider;
 }
 
+// When OmniRoute is the active provider and a single request to it fails for
+// any reason other than a 429 (rate limiting already has its own
+// retry-with-backoff UX client-side — see components/Home.tsx), fail over to
+// OpenRouter for that one call instead of surfacing the error, as long as an
+// OpenRouter key is actually configured. This keeps card/chapter generation
+// working even during an OmniRoute outage (e.g. its Railway container
+// hitting a resource-pressure guard and returning 503s).
+async function generateTextWithFallback(
+  params: GenerateParams
+): Promise<GenerateResult> {
+  const provider = getProvider();
+  try {
+    return await provider.generateText(params);
+  } catch (error) {
+    if (
+      provider === omnirouteProvider &&
+      !(error instanceof AiRateLimitError) &&
+      openRouterConfig.apiKey
+    ) {
+      console.warn(
+        "[AI] OmniRoute request failed, failing over to OpenRouter:",
+        error instanceof Error ? error.message : error
+      );
+      return openrouterProvider.generateText(params);
+    }
+    throw error;
+  }
+}
+
 export async function generateText(
   params: GenerateParams
 ): Promise<GenerateResult> {
-  return getProvider().generateText(params);
+  return generateTextWithFallback(params);
 }
 
 /** Same call shape as generateText — named separately so call sites that
@@ -34,7 +64,7 @@ export async function generateText(
 export async function generateJSON(
   params: GenerateParams
 ): Promise<GenerateResult> {
-  return getProvider().generateText(params);
+  return generateTextWithFallback(params);
 }
 
 export async function* streamText(
