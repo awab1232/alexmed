@@ -8,7 +8,6 @@ import {
   OCR_MODEL,
   parseJsonResponse,
 } from "@/lib/pdf-cards";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
@@ -21,18 +20,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "الرجاء تسجيل الدخول أولاً." },
       { status: 401 }
-    );
-  }
-
-  const allowed = await checkRateLimit(
-    `pdf:${getClientIp(request)}`,
-    30,
-    60 * 60
-  );
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "تجاوزت الحد المسموح من الطلبات. حاول لاحقًا." },
-      { status: 429 }
     );
   }
 

@@ -1,5 +1,4 @@
 import { auth } from "@/lib/auth";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePageText } from "@/lib/pdf-cards";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
@@ -21,18 +20,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "الرجاء تسجيل الدخول أولاً." },
       { status: 401 }
-    );
-  }
-
-  const allowed = await checkRateLimit(
-    `pdf:${getClientIp(request)}`,
-    30,
-    60 * 60
-  );
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "تجاوزت الحد المسموح من الطلبات. حاول لاحقًا." },
-      { status: 429 }
     );
   }
 

@@ -1,5 +1,4 @@
 import { auth } from "@/lib/auth";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { storageGetUploadUrl } from "@/lib/storage";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
@@ -23,18 +22,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "الرجاء تسجيل الدخول أولاً." },
       { status: 401 }
-    );
-  }
-
-  const allowed = await checkRateLimit(
-    `pdf-upload:${getClientIp(request)}`,
-    30,
-    60 * 60
-  );
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "تجاوزت الحد المسموح من الطلبات. حاول لاحقًا." },
-      { status: 429 }
     );
   }
 
