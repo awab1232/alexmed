@@ -15,6 +15,16 @@ export function getDb() {
   return _db;
 }
 
+// @auth/drizzle-adapter needs the raw drizzle instance (it runs its own
+// queries against the tables we hand it in lib/auth.ts) — getDb() already
+// throws/returns null when DATABASE_URL is unset, which is fine since Auth.js
+// itself would have nothing to authenticate against in that case either.
+export function requireDb() {
+  const db = getDb();
+  if (!db) throw new Error("DATABASE_URL is not configured");
+  return db;
+}
+
 export async function getUserByEmail(email: string) {
   const db = getDb();
   if (!db) {

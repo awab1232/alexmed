@@ -1,5 +1,7 @@
+import { auth } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePageText } from "@/lib/pdf-cards";
+import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — pdf-parse's own troubleshooting docs
 // require this for serverless platforms (Vercel/Lambda/...), where DOMMatrix
@@ -14,6 +16,14 @@ import { PDFParse } from "pdf-parse";
 // support large PDFs on Vercel). This route just needs the storage key back,
 // same JSON-only request/response shape /api/pdf/ocr already uses.
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "الرجاء تسجيل الدخول أولاً." },
+      { status: 401 }
+    );
+  }
+
   const allowed = await checkRateLimit(
     `pdf:${getClientIp(request)}`,
     30,
@@ -49,8 +59,12 @@ export async function POST(request: Request) {
   let parser: PDFParse | undefined;
   try {
     const fileUrl = `/api/files/${key}`;
-    const absoluteFileUrl = new URL(fileUrl, request.url).toString();
-    parser = new PDFParse({ url: absoluteFileUrl, CanvasFactory });
+    // Fetch straight from storage via a signed URL rather than looping back
+    // through our own /api/files/[...key] — that route now requires a signed-
+    // in session (browser-navigable), but this is a server-to-server fetch
+    // with no browser cookies to send, so it would 401 against itself.
+    const signedGetUrl = await storageGetSignedUrl(key);
+    parser = new PDFParse({ url: signedGetUrl, CanvasFactory });
     const result = await parser.getText();
     const pages = result.pages.map(page => ({
       page: page.num,

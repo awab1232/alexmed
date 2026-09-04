@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/auth", () => ({ auth: vi.fn() }));
+
+import { auth } from "@/lib/auth";
 import { POST } from "./route";
+
+const mockAuth = auth as unknown as ReturnType<typeof vi.fn>;
 
 function jsonRequest(body: unknown) {
   return new Request("http://localhost/api/pdf/upload-url", {
@@ -10,6 +16,17 @@ function jsonRequest(body: unknown) {
 }
 
 describe("POST /api/pdf/upload-url", () => {
+  beforeEach(() => {
+    mockAuth.mockReset();
+    mockAuth.mockResolvedValue({ user: { id: "u1", email: "a@example.com" } });
+  });
+
+  it("rejects an unauthenticated request", async () => {
+    mockAuth.mockResolvedValue(null);
+    const response = await POST(jsonRequest({ fileName: "book.pdf", fileSize: 1000 }));
+    expect(response.status).toBe(401);
+  });
+
   it("rejects a fileName that isn't a .pdf", async () => {
     const response = await POST(
       jsonRequest({ fileName: "notes.txt", fileSize: 1000 })
@@ -34,8 +51,6 @@ describe("POST /api/pdf/upload-url", () => {
 
   it("rejects a missing/invalid fileSize", async () => {
     const response = await POST(jsonRequest({ fileName: "book.pdf" }));
-    const body = await response.json();
-
     expect(response.status).toBe(400);
   });
 });

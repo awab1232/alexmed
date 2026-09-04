@@ -26,7 +26,10 @@ function getClient(): Redis | null {
           console.warn("[RateLimit] Redis error:", error.message)
         );
       } catch (error) {
-        console.warn("[RateLimit] Invalid REDIS_URL, disabling rate limiting:", error);
+        console.warn(
+          "[RateLimit] Invalid REDIS_URL, disabling rate limiting:",
+          error
+        );
         client = null;
       }
     }

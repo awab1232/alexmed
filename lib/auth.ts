@@ -1,9 +1,28 @@
+import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { getUserByEmail, touchLastSignedIn } from "./db";
+import Google from "next-auth/providers/google";
+import { accounts, sessions, users, verificationTokens } from "../drizzle/schema";
+import { getUserByEmail, requireDb, touchLastSignedIn } from "./db";
+
+// Google only appears once real credentials are supplied — keeps this app
+// fully functional on Credentials alone until then, no code change needed
+// later beyond dropping the two env vars in.
+const googleEnabled = Boolean(
+  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Adapter persists users/accounts (so a Google sign-in creates/links a real
+  // `users` row) even though sessions themselves stay JWT-based below — the
+  // adapter's own session/verificationToken tables just go unused at runtime.
+  adapter: DrizzleAdapter(requireDb(), {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
   pages: {
@@ -27,6 +46,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await getUserByEmail(email);
         if (!user) return null;
+        // Google-only accounts have no password to compare against.
+        if (!user.passwordHash) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
@@ -41,12 +62,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
+    ...(googleEnabled
+      ? [
+          Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as { id: string }).id;
         token.role = (user as { role?: string }).role ?? "user";
+      } else if (token.id && !token.role) {
+        // Returning session for a user created via the adapter (e.g. first
+        // Google sign-in) won't have `role` on the initial `user` object from
+        // some provider flows — default it the same way the schema does.
+        token.role = "user";
       }
       return token;
     },
@@ -60,3 +94,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export { googleEnabled };

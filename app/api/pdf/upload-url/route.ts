@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { storageGetUploadUrl } from "@/lib/storage";
 import { randomUUID } from "node:crypto";
@@ -17,6 +18,14 @@ function getMaxUploadBytes() {
 // bypassing our server (and Vercel's ~4.5MB request-body limit) entirely.
 // See lib/storage.ts's storageGetUploadUrl for why the key is decided here.
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "الرجاء تسجيل الدخول أولاً." },
+      { status: 401 }
+    );
+  }
+
   const allowed = await checkRateLimit(
     `pdf-upload:${getClientIp(request)}`,
     30,

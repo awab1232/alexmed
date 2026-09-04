@@ -8,14 +8,14 @@ import { POST } from "./route";
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>;
 
 function jsonRequest(body: unknown) {
-  return new Request("http://localhost/api/pdf/ocr", {
+  return new Request("http://localhost/api/pdf/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
 
-describe("POST /api/pdf/ocr", () => {
+describe("POST /api/pdf/generate", () => {
   beforeEach(() => {
     mockAuth.mockReset();
     mockAuth.mockResolvedValue({ user: { id: "u1", email: "a@example.com" } });
@@ -27,11 +27,11 @@ describe("POST /api/pdf/ocr", () => {
     expect(response.status).toBe(401);
   });
 
-  it("rejects OCR requests without a stored PDF and page list", async () => {
-    const response = await POST(jsonRequest({}));
+  it("rejects a request with no usable pages", async () => {
+    const response = await POST(jsonRequest({ pages: [] }));
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body.error).toContain("مصوّرة");
+    expect(body.error).toBeTruthy();
   });
 });

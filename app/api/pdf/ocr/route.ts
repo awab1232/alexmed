@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { invokeLLM } from "@/lib/llm";
 import {
   buildOcrMessages,
@@ -8,12 +9,21 @@ import {
   parseJsonResponse,
 } from "@/lib/pdf-cards";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "الرجاء تسجيل الدخول أولاً." },
+      { status: 401 }
+    );
+  }
+
   const allowed = await checkRateLimit(
     `pdf:${getClientIp(request)}`,
     30,
@@ -44,8 +54,13 @@ export async function POST(request: Request) {
 
   let parser: PDFParse | undefined;
   try {
-    const absoluteFileUrl = new URL(fileUrl, request.url).toString();
-    parser = new PDFParse({ url: absoluteFileUrl, CanvasFactory });
+    // fileUrl is "/api/files/{key}" (from /api/pdf/extract's response) — that
+    // route now requires a session, but this is a server-to-server fetch with
+    // no browser cookies, so resolve the signed storage URL directly instead
+    // of looping back through our own now-gated redirect endpoint.
+    const key = fileUrl.replace(/^\/api\/files\//, "");
+    const signedGetUrl = await storageGetSignedUrl(key);
+    parser = new PDFParse({ url: signedGetUrl, CanvasFactory });
     const pages: Array<{
       page: number;
       text: string;

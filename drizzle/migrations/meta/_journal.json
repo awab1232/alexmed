@@ -8,6 +8,13 @@
       "when": 1788468860621,
       "tag": "0000_flashy_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788488860647,
+      "tag": "0001_redundant_starjammers",
+      "breakpoints": true
     }
   ]
 }

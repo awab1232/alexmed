@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { invokeLLM } from "@/lib/llm";
 import {
   buildGenerateMessages,
@@ -12,6 +13,14 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "الرجاء تسجيل الدخول أولاً." },
+      { status: 401 }
+    );
+  }
+
   const allowed = await checkRateLimit(
     `pdf:${getClientIp(request)}`,
     30,

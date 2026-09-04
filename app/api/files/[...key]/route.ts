@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
@@ -5,6 +6,11 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ key: string[] }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { key } = await params;
   const relKey = key.join("/");
 
