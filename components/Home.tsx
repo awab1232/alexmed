@@ -80,6 +80,33 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+const PAGE_CACHE_PREFIX = "mirat:pdf-pages:";
+type PageCache = { pageCount: number; pages: PageText[] };
+
+function getPageCacheKey(file: File) {
+  return `${PAGE_CACHE_PREFIX}${file.name}:${file.size}:${file.lastModified}`;
+}
+
+function readPageCache(file: File): PageCache | null {
+  try {
+    const raw = window.localStorage.getItem(getPageCacheKey(file));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PageCache;
+    if (!parsed.pageCount || !Array.isArray(parsed.pages)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePageCache(file: File, cache: PageCache) {
+  try {
+    window.localStorage.setItem(getPageCacheKey(file), JSON.stringify(cache));
+  } catch {
+    // Large PDFs can exceed browser storage quotas; generation still works.
+  }
+}
+
 function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
@@ -91,6 +118,7 @@ const sleep = (ms: number) =>
 // rate-limit-aware retry below — spreads requests out so we don't burst
 // against the AI gateway's per-minute limits in the first place.
 const BATCH_PACING_MS = 1200;
+const GENERATION_CONCURRENCY = 2;
 const RATE_LIMIT_MAX_RETRIES = 3;
 // Separate, shorter retry budget for a non-rate-limit failure (network
 // hiccup, upstream timeout/5xx) — a single bad request shouldn't
@@ -217,54 +245,65 @@ export default function Home() {
     setStage("extracting");
 
     try {
-      // Step 1: ask our server for a presigned upload URL (tiny JSON request).
-      const uploadUrlResponse = await fetch("/api/pdf/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileSize: file.size,
-          contentType: file.type || "application/pdf",
-        }),
-      });
-      const uploadUrlData = await uploadUrlResponse.json();
-      if (!uploadUrlResponse.ok)
-        throw new Error(uploadUrlData.error || "تعذر تجهيز رابط الرفع.");
+      let uploadUrlData: { key: string } | null = null;
+      let extractedPages: PageText[];
+      let extractedPageCount: number;
+      const cachedPages = readPageCache(file);
 
-      // Step 2: upload the raw file straight to storage — bypasses our
-      // server (and Vercel's request-body size limit) for the large bytes.
-      const putResponse = await fetch(uploadUrlData.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type || "application/pdf" },
-        body: file,
-      });
-      if (!putResponse.ok)
-        throw new Error(
-          "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
-        );
+      if (cachedPages) {
+        extractedPages = cachedPages.pages;
+        extractedPageCount = cachedPages.pageCount;
+        setPageCount(extractedPageCount);
+        setPages(extractedPages);
+        setWarning("استخدمنا النص المحفوظ لهذا الملف لتسريع التوليد.");
+      } else {
+        // Upload and extract only once. The resulting pages are cached locally
+        // so a retry can go directly to AI generation without repeating OCR.
+        const uploadUrlResponse = await fetch("/api/pdf/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileSize: file.size,
+            contentType: file.type || "application/pdf",
+          }),
+        });
+        const uploadData = await uploadUrlResponse.json();
+        if (!uploadUrlResponse.ok)
+          throw new Error(uploadData.error || "تعذر تجهيز رابط الرفع.");
+        uploadUrlData = uploadData as { key: string; uploadUrl: string };
 
-      // Step 3: tell our server where the file landed so it can extract text.
-      const extractResponse = await fetch("/api/pdf/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key: uploadUrlData.key,
-          fileName: file.name,
-          fileSize: file.size,
-        }),
-      });
-      const extracted = await extractResponse.json();
-      if (!extractResponse.ok)
-        throw new Error(extracted.error || "تعذر قراءة الملف.");
+        const putResponse = await fetch(uploadData.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/pdf" },
+          body: file,
+        });
+        if (!putResponse.ok)
+          throw new Error(
+            "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
+          );
 
-      let extractedPages = extracted.pages as PageText[];
-      setFileUrl(extracted.fileUrl || "");
-      setPageCount(extracted.pageCount);
-      if (extracted.pagesWithoutText > 0) {
-        setWarning(
-          `تم اكتشاف ${extracted.pagesWithoutText} صفحة مصوّرة. جاري تشغيل OCR عليها...`
-        );
-        if (extracted.fileUrl) {
+        const extractResponse = await fetch("/api/pdf/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            key: uploadData.key,
+            fileName: file.name,
+            fileSize: file.size,
+          }),
+        });
+        const extracted = await extractResponse.json();
+        if (!extractResponse.ok)
+          throw new Error(extracted.error || "تعذر قراءة الملف.");
+
+        extractedPages = extracted.pages as PageText[];
+        extractedPageCount = extracted.pageCount;
+        setFileUrl(extracted.fileUrl || "");
+        setPageCount(extractedPageCount);
+        if (extracted.pagesWithoutText > 0 && extracted.fileUrl) {
+          setWarning(
+            `تم اكتشاف ${extracted.pagesWithoutText} صفحة مصوّرة. جاري تشغيل OCR عليها...`
+          );
           const missingPages = extractedPages
             .filter(page => !page.hasText)
             .map(page => page.page);
@@ -303,8 +342,12 @@ export default function Home() {
               : "تم تشغيل OCR للصفحات المصوّرة بنجاح."
           );
         }
+        writePageCache(file, {
+          pageCount: extractedPageCount,
+          pages: extractedPages,
+        });
+        setPages(extractedPages);
       }
-      setPages(extractedPages);
 
       setStage("processing");
       const batches: PageText[][] = [];
@@ -312,20 +355,21 @@ export default function Home() {
         batches.push(extractedPages.slice(index, index + 4));
       }
 
-      // Mirrors the setCards() state updates below so we have the full set
-      // synchronously once the loop ends, to persist as a deck — setCards's
-      // functional update isn't readable back from this closure.
-      const collectedCards: Card[] = [];
+      // Keep each batch independently retryable while allowing two requests
+      // at once. Results are stored by batch index so the final deck stays in
+      // page order even when a later batch finishes first.
+      const batchResults: (Card[] | null)[] = Array(batches.length).fill(null);
       let failedBatchCount = 0;
       let completed = 0;
-      for (const [batchIndex, batch] of batches.entries()) {
+      let nextBatchIndex = 0;
+
+      async function processBatch(batchIndex: number, batch: PageText[]) {
         const usable = batch.filter(page => page.hasText);
         if (usable.length) {
-          // Small pause between batches (skip before the very first one) so
-          // we don't burst requests against the AI gateway's rate limits.
-          if (batchIndex > 0) await sleep(BATCH_PACING_MS);
+          if (batchIndex >= GENERATION_CONCURRENCY) {
+            await sleep(BATCH_PACING_MS);
+          }
 
-          let sawRateLimit = false;
           for (let attempt = 0; ; attempt++) {
             let response: Response | null = null;
             let generated: {
@@ -337,37 +381,23 @@ export default function Home() {
               response = await fetch("/api/pdf/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  pages: usable,
-                  depth,
-                }),
+                body: JSON.stringify({ pages: usable, depth }),
               });
               generated = await response.json();
             } catch {
-              // Network error or bad JSON — falls through to the retry
-              // policy below exactly like a non-ok HTTP response would.
+              // Network error or bad JSON follows the normal retry policy.
             }
 
             if (response?.ok && generated) {
-              collectedCards.push(...(generated.cards as Card[]));
-              setCards(previous => [
-                ...previous,
-                ...(generated!.cards as Card[]),
-              ]);
-              if (sawRateLimit) setWarning("");
-              break;
+              batchResults[batchIndex] = (generated.cards as Card[]) || [];
+              return;
             }
 
             const isRateLimited = response?.status === 429;
-            // A non-rate-limit failure (network hiccup, upstream 5xx or
-            // timeout) gets its own, shorter retry budget — a single bad
-            // request shouldn't permanently drop a whole batch of questions.
             const canRetry = isRateLimited
               ? attempt < RATE_LIMIT_MAX_RETRIES
               : attempt < BATCH_RETRY_MAX_RETRIES;
-
             if (canRetry) {
-              sawRateLimit = sawRateLimit || isRateLimited;
               const waitMs = isRateLimited
                 ? typeof generated?.retryAfterMs === "number"
                   ? generated.retryAfterMs
@@ -375,8 +405,8 @@ export default function Home() {
                 : BATCH_RETRY_DELAY_MS;
               setWarning(
                 isRateLimited
-                  ? `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة (${attempt + 1}/${RATE_LIMIT_MAX_RETRIES})...`
-                  : `تعذر توليد هذه الدفعة، جارٍ إعادة المحاولة (${attempt + 1}/${BATCH_RETRY_MAX_RETRIES})...`
+                  ? `تجاوزنا الحد المؤقت — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة...`
+                  : `تعذر توليد دفعة، جارٍ إعادة المحاولة (${attempt + 1}/${BATCH_RETRY_MAX_RETRIES})...`
               );
               await sleep(waitMs);
               continue;
@@ -384,12 +414,32 @@ export default function Home() {
 
             failedBatchCount += 1;
             setFailedBatches(previous => previous + 1);
-            break;
+            return;
           }
         }
-        completed += batch.length;
-        setProcessedPages(completed);
+        batchResults[batchIndex] = [];
       }
+
+      async function worker() {
+        while (true) {
+          const batchIndex = nextBatchIndex++;
+          if (batchIndex >= batches.length) return;
+          await processBatch(batchIndex, batches[batchIndex]);
+          completed += batches[batchIndex].length;
+          setProcessedPages(completed);
+        }
+      }
+
+      await Promise.all(
+        Array.from(
+          { length: Math.min(GENERATION_CONCURRENCY, batches.length) },
+          () => worker()
+        )
+      );
+
+      const collectedCards = batchResults.flatMap(result => result ?? []);
+      setCards(collectedCards);
+      if (!failedBatchCount) setWarning("");
 
       if (!collectedCards.length && failedBatchCount > 0) {
         setStage("idle");
@@ -406,8 +456,8 @@ export default function Home() {
         createDeck.mutate(
           {
             fileName: file.name,
-            fileKey: uploadUrlData.key,
-            pageCount: extracted.pageCount,
+            fileKey: uploadUrlData?.key,
+            pageCount: extractedPageCount,
             depth,
             cards: collectedCards.map(({ id: _id, ...card }) => card),
           },
