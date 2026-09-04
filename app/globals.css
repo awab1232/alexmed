@@ -196,7 +196,8 @@ input:focus-visible {
 .sidebar-bottom {
   margin-top: auto;
 }
-.mobile-nav {
+.mobile-nav,
+.mobile-sections {
   display: none;
 }
 .sidebar-account {
@@ -1547,6 +1548,36 @@ h1 em {
   .explanation-pair {
     grid-template-columns: 1fr;
     gap: 9px;
+  }
+  .mobile-sections {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    margin: 10px 0 0;
+    padding: 4px;
+    border: 1px solid #dcd4c9;
+    border-radius: 12px;
+    background: #ebe5dc;
+  }
+  .mobile-sections a {
+    display: flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 9px;
+    color: #7c8785;
+    font-size: 11px;
+    text-decoration: none;
+    transition:
+      background 0.18s,
+      color 0.18s;
+  }
+  .mobile-sections a.active {
+    background: #fffdf9;
+    color: #203b43;
+    box-shadow: 0 2px 7px rgba(32, 59, 67, 0.08);
+    font-weight: 700;
   }
   .mobile-nav {
     position: fixed;

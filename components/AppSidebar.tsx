@@ -77,6 +77,7 @@ export default function AppSidebar({
   const { data: session } = useSession();
   const accountName = session?.user?.name || session?.user?.email || "";
   const accountInitial = accountName.trim().charAt(0).toUpperCase() || "؟";
+  const inBooksArea = pathname.startsWith("/books");
 
   return (
     <aside className="sidebar">
@@ -215,6 +216,17 @@ export default function AppSidebar({
         <div className="side-footer">PDF → فهم → تذكّر</div>
       </div>
 
+      <nav className="mobile-sections" aria-label="أقسام التطبيق">
+        <Link href="/" className={!inBooksArea ? "active" : ""}>
+          <BookOpen size={16} />
+          <span>مِرآة</span>
+        </Link>
+        <Link href="/books" className={inBooksArea ? "active" : ""}>
+          <Library size={16} />
+          <span>كتبي</span>
+        </Link>
+      </nav>
+
       <nav className="mobile-nav" aria-label="التنقل السريع">
         {onMiratNavigate ? (
           <>
@@ -235,10 +247,6 @@ export default function AppSidebar({
               <Layers3 size={18} />
               <span>بطاقاتي</span>
             </button>
-            <Link href="/books" className="mobile-nav-books">
-              <BookOpen size={18} />
-              <span>كتبي</span>
-            </Link>
             <button
               type="button"
               className={activeMiratView === "library" ? "active" : ""}
