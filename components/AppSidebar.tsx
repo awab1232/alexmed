@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import {
   ArrowUp,
   BarChart3,
@@ -11,6 +12,7 @@ import {
   Home,
   Layers3,
   Library,
+  LogOut,
   RotateCcw,
   ShieldCheck,
   Upload,
@@ -67,6 +69,9 @@ export default function AppSidebar({
   onMiratNavigate,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const accountName = session?.user?.name || session?.user?.email || "";
+  const accountInitial = accountName.trim().charAt(0).toUpperCase() || "؟";
 
   return (
     <aside className="sidebar">
@@ -177,6 +182,23 @@ export default function AppSidebar({
       </nav>
 
       <div className="sidebar-bottom">
+        {session?.user && (
+          <div className="sidebar-account">
+            <div className="sidebar-account-avatar">{accountInitial}</div>
+            <div className="sidebar-account-info">
+              <strong>{session.user.name || "حسابي"}</strong>
+              <span>{session.user.email}</span>
+            </div>
+            <button
+              type="button"
+              className="sidebar-account-logout"
+              title="تسجيل الخروج"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
+        )}
         <div className="mini-privacy">
           <ShieldCheck size={16} />
           <span>
