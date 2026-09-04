@@ -1,6 +1,10 @@
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizePageText } from "@/lib/pdf-cards";
 import { NextResponse } from "next/server";
+// Must be imported before "pdf-parse" — pdf-parse's own troubleshooting docs
+// require this for serverless platforms (Vercel/Lambda/...), where DOMMatrix
+// isn't a native global: https://github.com/mehmet-kozan/pdf-parse/blob/main/docs/troubleshooting.md
+import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 // The browser already PUT the raw file straight to storage via a presigned
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
   try {
     const fileUrl = `/api/files/${key}`;
     const absoluteFileUrl = new URL(fileUrl, request.url).toString();
-    parser = new PDFParse({ url: absoluteFileUrl });
+    parser = new PDFParse({ url: absoluteFileUrl, CanvasFactory });
     const result = await parser.getText();
     const pages = result.pages.map(page => ({
       page: page.num,

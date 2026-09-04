@@ -9,6 +9,8 @@ import {
 } from "@/lib/pdf-cards";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+// Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
+import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 export async function POST(request: Request) {
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
   let parser: PDFParse | undefined;
   try {
     const absoluteFileUrl = new URL(fileUrl, request.url).toString();
-    parser = new PDFParse({ url: absoluteFileUrl });
+    parser = new PDFParse({ url: absoluteFileUrl, CanvasFactory });
     const pages: Array<{
       page: number;
       text: string;
