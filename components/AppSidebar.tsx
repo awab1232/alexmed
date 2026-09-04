@@ -235,6 +235,10 @@ export default function AppSidebar({
               <Layers3 size={18} />
               <span>بطاقاتي</span>
             </button>
+            <Link href="/books" className="mobile-nav-books">
+              <BookOpen size={18} />
+              <span>كتبي</span>
+            </Link>
             <button
               type="button"
               className={activeMiratView === "library" ? "active" : ""}
