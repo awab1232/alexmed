@@ -3,7 +3,12 @@ import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { accounts, sessions, users, verificationTokens } from "../drizzle/schema";
+import {
+  accounts,
+  sessions,
+  users,
+  verificationTokens,
+} from "../drizzle/schema";
 import { getUserByEmail, requireDb, touchLastSignedIn } from "./db";
 
 // Google only appears once real credentials are supplied — keeps this app

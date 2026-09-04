@@ -23,7 +23,9 @@ describe("POST /api/pdf/upload-url", () => {
 
   it("rejects an unauthenticated request", async () => {
     mockAuth.mockResolvedValue(null);
-    const response = await POST(jsonRequest({ fileName: "book.pdf", fileSize: 1000 }));
+    const response = await POST(
+      jsonRequest({ fileName: "book.pdf", fileSize: 1000 })
+    );
     expect(response.status).toBe(401);
   });
 

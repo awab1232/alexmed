@@ -7,7 +7,11 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
+export default function RegisterForm({
+  googleEnabled,
+}: {
+  googleEnabled: boolean;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

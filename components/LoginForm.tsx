@@ -7,7 +7,11 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
+export default function LoginForm({
+  googleEnabled,
+}: {
+  googleEnabled: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -24,7 +24,11 @@ describe("POST /api/pdf/extract", () => {
   it("rejects an unauthenticated request", async () => {
     mockAuth.mockResolvedValue(null);
     const response = await POST(
-      jsonRequest({ key: "study-pdfs/abc-notes.pdf", fileName: "notes.pdf", fileSize: 100 })
+      jsonRequest({
+        key: "study-pdfs/abc-notes.pdf",
+        fileName: "notes.pdf",
+        fileSize: 100,
+      })
     );
     expect(response.status).toBe(401);
   });

@@ -15,9 +15,12 @@ describe("GET /api/files/[...key]", () => {
 
   it("rejects an unauthenticated request", async () => {
     mockAuth.mockResolvedValue(null);
-    const response = await GET(new Request("http://localhost/api/files/study-pdfs/a.pdf"), {
-      params: Promise.resolve({ key: ["study-pdfs", "a.pdf"] }),
-    });
+    const response = await GET(
+      new Request("http://localhost/api/files/study-pdfs/a.pdf"),
+      {
+        params: Promise.resolve({ key: ["study-pdfs", "a.pdf"] }),
+      }
+    );
     expect(response.status).toBe(401);
   });
 });
