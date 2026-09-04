@@ -1,4 +1,5 @@
 import { signOut } from "../auth";
+import { decksRouter } from "./decksRouter";
 import { publicProcedure, router } from "./trpc";
 import { systemRouter } from "./systemRouter";
 
@@ -11,8 +12,7 @@ export const appRouter = router({
       return { success: true } as const;
     }),
   }),
-
-  // TODO: add feature routers here (decks, cards) in a later wave.
+  decks: decksRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -15,6 +15,13 @@
       "when": 1788488860647,
       "tag": "0001_redundant_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788532071527,
+      "tag": "0002_melodic_blackheart",
+      "breakpoints": true
     }
   ]
 }

@@ -88,4 +88,61 @@ export const verificationTokens = pgTable(
   })
 );
 
-// TODO: Add your tables here (e.g. decks, cards, uploads) in a later wave.
+export const cardStatusEnum = pgEnum("card_status", [
+  "complete",
+  "needs_review",
+]);
+export const cardConfidenceEnum = pgEnum("card_confidence", [
+  "high",
+  "medium",
+  "low",
+]);
+
+// A saved study session: one uploaded PDF's generated cards, so a user can
+// come back to them later without re-uploading the file.
+export const decks = pgTable("decks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fileName: text("fileName").notNull(),
+  // Storage key (see lib/storage.ts) — nullable since the underlying object
+  // may expire/be removed independently of the deck's saved cards.
+  fileKey: text("fileKey"),
+  pageCount: integer("pageCount").default(0).notNull(),
+  depth: text("depth").default("balanced").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const cards = pgTable("cards", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  deckId: uuid("deckId")
+    .notNull()
+    .references(() => decks.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  questionArabic: text("questionArabic").notNull(),
+  answer: text("answer").notNull(),
+  answerArabic: text("answerArabic").notNull(),
+  explanation: text("explanation").notNull(),
+  explanationArabic: text("explanationArabic").notNull(),
+  keyIdea: text("keyIdea").notNull(),
+  keyIdeaArabic: text("keyIdeaArabic").notNull(),
+  keyword: text("keyword").notNull(),
+  keywordArabic: text("keywordArabic").notNull(),
+  sourcePage: integer("sourcePage").notNull(),
+  status: cardStatusEnum("status").notNull(),
+  confidence: cardConfidenceEnum("confidence").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export type Deck = typeof decks.$inferSelect;
+export type InsertDeck = typeof decks.$inferInsert;
+export type CardRow = typeof cards.$inferSelect;
+export type InsertCardRow = typeof cards.$inferInsert;

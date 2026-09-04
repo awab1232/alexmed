@@ -15,16 +15,19 @@ import {
   KeyRound,
   Languages,
   Layers3,
+  Library,
   Lightbulb,
   Loader2,
   RotateCcw,
   ScanText,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Upload,
   X,
   Volume2,
 } from "lucide-react";
+import { trpc } from "@/lib/trpc-client";
 import { Badge } from "@/components/ui/badge";
 import {
   Command,
@@ -58,7 +61,7 @@ type Card = {
   confidence: "high" | "medium" | "low";
 };
 
-type View = "upload" | "cards";
+type View = "upload" | "cards" | "library";
 type Stage = "idle" | "extracting" | "processing" | "ready";
 const UPLOAD_MAX_MB = Number(process.env.NEXT_PUBLIC_UPLOAD_MAX_MB) || 250;
 type ModelOption = {
@@ -116,10 +119,13 @@ const RATE_LIMIT_MAX_RETRIES = 3;
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [currentFileName, setCurrentFileName] = useState("");
   const [pages, setPages] = useState<PageText[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [pageCount, setPageCount] = useState(0);
   const [fileUrl, setFileUrl] = useState("");
+  const [openDeckId, setOpenDeckId] = useState<string | null>(null);
+  const [libraryError, setLibraryError] = useState("");
   const [ocrProcessed, setOcrProcessed] = useState(0);
   const [ocrTotal, setOcrTotal] = useState(0);
   const [processedPages, setProcessedPages] = useState(0);
@@ -139,6 +145,21 @@ export default function Home() {
   const [modelsLoading, setModelsLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
+
+  const utils = trpc.useUtils();
+  const decksQuery = trpc.decks.list.useQuery(undefined, {
+    enabled: view === "library",
+  });
+  const createDeck = trpc.decks.create.useMutation({
+    onSuccess: () => {
+      utils.decks.list.invalidate();
+    },
+  });
+  const deleteDeckMutation = trpc.decks.delete.useMutation({
+    onSuccess: () => {
+      utils.decks.list.invalidate();
+    },
+  });
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
@@ -230,6 +251,8 @@ export default function Home() {
       return;
     }
     setFile(nextFile);
+    setCurrentFileName(nextFile.name);
+    setOpenDeckId(null);
     setStage("idle");
     setCards([]);
     setPages([]);
@@ -245,6 +268,7 @@ export default function Home() {
     setError("");
     setWarning("");
     setCards([]);
+    setOpenDeckId(null);
     setProcessedPages(0);
     setFailedBatches(0);
     setOcrProcessed(0);
@@ -347,6 +371,10 @@ export default function Home() {
         batches.push(extractedPages.slice(index, index + 4));
       }
 
+      // Mirrors the setCards() state updates below so we have the full set
+      // synchronously once the loop ends, to persist as a deck — setCards's
+      // functional update isn't readable back from this closure.
+      const collectedCards: Card[] = [];
       let completed = 0;
       for (const [batchIndex, batch] of batches.entries()) {
         const usable = batch.filter(page => page.hasText);
@@ -385,6 +413,7 @@ export default function Home() {
               if (!response.ok)
                 throw new Error(generated.error || "تعذر توليد هذه الدفعة.");
 
+              collectedCards.push(...(generated.cards as Card[]));
               setCards(previous => [
                 ...previous,
                 ...(generated.cards as Card[]),
@@ -400,6 +429,31 @@ export default function Home() {
         completed += batch.length;
         setProcessedPages(completed);
       }
+
+      // Save the generated deck to the account's library so it can be
+      // reopened later without re-uploading the file. Best-effort: a save
+      // failure shouldn't block the study session that already succeeded.
+      if (collectedCards.length) {
+        createDeck.mutate(
+          {
+            fileName: file.name,
+            fileKey: uploadUrlData.key,
+            pageCount: extracted.pageCount,
+            depth,
+            cards: collectedCards.map(({ id: _id, ...card }) => card),
+          },
+          {
+            onSuccess: data => setOpenDeckId(data.id),
+            onError: () =>
+              setWarning(
+                previous =>
+                  previous ||
+                  "تعذر حفظ هذه الدفعة في مكتبتك، لكن بطاقاتك جاهزة أدناه."
+              ),
+          }
+        );
+      }
+
       setStage("ready");
       setView("cards");
       setActiveCard(0);
@@ -416,6 +470,8 @@ export default function Home() {
 
   function reset() {
     setFile(null);
+    setCurrentFileName("");
+    setOpenDeckId(null);
     setPages([]);
     setCards([]);
     setPageCount(0);
@@ -432,6 +488,41 @@ export default function Home() {
     setOnlyReview(false);
     setActiveCard(0);
     setShowAnswer(false);
+  }
+
+  async function openDeck(deckId: string) {
+    setLibraryError("");
+    try {
+      const result = await utils.decks.get.fetch({ id: deckId });
+      setFile(null);
+      setCurrentFileName(result.deck.fileName);
+      setOpenDeckId(result.deck.id);
+      setPageCount(result.deck.pageCount);
+      setPages([]);
+      setFileUrl("");
+      setCards(result.cards);
+      setDepth(result.deck.depth);
+      setProcessedPages(result.deck.pageCount);
+      setFailedBatches(0);
+      setStage("ready");
+      setView("cards");
+      setQuery("");
+      setOnlyReview(false);
+      setActiveCard(0);
+      setShowAnswer(false);
+    } catch {
+      setLibraryError("تعذر فتح هذا الملف. حاول مرة أخرى.");
+    }
+  }
+
+  async function removeDeck(deckId: string) {
+    setLibraryError("");
+    try {
+      await deleteDeckMutation.mutateAsync({ id: deckId });
+      if (openDeckId === deckId) reset();
+    } catch {
+      setLibraryError("تعذر حذف هذا الملف. حاول مرة أخرى.");
+    }
   }
 
   function downloadCsv() {
@@ -467,7 +558,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${file?.name.replace(/\.pdf$/i, "") || "study-cards"}.csv`;
+    link.download = `${currentFileName.replace(/\.pdf$/i, "") || "study-cards"}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -529,6 +620,13 @@ export default function Home() {
                 "—"}
             </b>
           </button>
+          <button
+            className={view === "library" ? "nav-item active" : "nav-item"}
+            onClick={() => setView("library")}
+          >
+            <Library size={17} />
+            <span>مكتبتي</span>
+          </button>
         </nav>
         <div className="sidebar-bottom">
           <div className="mini-privacy">
@@ -549,7 +647,11 @@ export default function Home() {
             <span>مِرآة</span>
             <span className="slash">/</span>
             <strong>
-              {view === "upload" ? "ملف جديد" : "بطاقات المذاكرة"}
+              {view === "upload"
+                ? "ملف جديد"
+                : view === "library"
+                  ? "مكتبتي"
+                  : "بطاقات المذاكرة"}
             </strong>
           </div>
           <div className="topbar-note">
@@ -873,7 +975,7 @@ export default function Home() {
                   بطاقاتك <em>تتكلم.</em>
                 </h1>
                 <p>
-                  {file?.name || "ملف الأسئلة"} · {pageCount} صفحة ·{" "}
+                  {currentFileName || "ملف الأسئلة"} · {pageCount} صفحة ·{" "}
                   {cards.length} بطاقة مولّدة
                 </p>
               </div>
@@ -1102,6 +1204,73 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {view === "library" && (
+          <section className="upload-view">
+            <div className="cards-header">
+              <div>
+                <div className="eyebrow">
+                  <span className="eyebrow-dot" /> ملفاتك المحفوظة
+                </div>
+                <h1>
+                  مكتبتك <em>دائمًا هنا.</em>
+                </h1>
+                <p>افتح أي ملف سابق وشاهد بطاقاته من غير ما تعيد الرفع.</p>
+              </div>
+            </div>
+            {libraryError && (
+              <div className="inline-alert error wide">
+                <CircleAlert size={16} />
+                {libraryError}
+              </div>
+            )}
+            {decksQuery.isLoading ? (
+              <div className="empty-state">
+                <Loader2 size={28} className="spin" />
+                <h3>جاري تحميل مكتبتك...</h3>
+              </div>
+            ) : !decksQuery.data?.length ? (
+              <div className="empty-state">
+                <Library size={28} />
+                <h3>مكتبتك فارغة</h3>
+                <p>ارفع ملفك الأول وسيظهر هنا تلقائيًا بعد التوليد.</p>
+              </div>
+            ) : (
+              <div className="library-grid">
+                {decksQuery.data.map(deck => (
+                  <div className="library-item" key={deck.id}>
+                    <div className="library-item-icon">
+                      <FileText size={18} />
+                    </div>
+                    <div className="library-item-meta">
+                      <strong>{deck.fileName}</strong>
+                      <span>
+                        {deck.pageCount} صفحة · {deck.cardCount} بطاقة ·{" "}
+                        {new Date(deck.createdAt).toLocaleDateString("ar")}
+                      </span>
+                    </div>
+                    <div className="library-item-actions">
+                      <button
+                        className="secondary-button"
+                        onClick={() => openDeck(deck.id)}
+                      >
+                        فتح
+                      </button>
+                      <button
+                        className="ghost-button"
+                        aria-label="حذف"
+                        onClick={() => removeDeck(deck.id)}
+                        disabled={deleteDeckMutation.isPending}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>

@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { InsertUser, users } from "../drizzle/schema";
+import { cards, decks, InsertUser, users } from "../drizzle/schema";
+import type { GeneratedCard } from "./pdf-cards";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -78,4 +79,101 @@ export async function touchLastSignedIn(id: string) {
     .where(eq(users.id, id));
 }
 
-// TODO: add feature queries here as your schema grows (decks, cards, uploads).
+export async function createDeckWithCards(
+  userId: string,
+  input: {
+    fileName: string;
+    fileKey?: string | null;
+    pageCount: number;
+    depth: string;
+    cards: GeneratedCard[];
+  }
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [deck] = await db
+    .insert(decks)
+    .values({
+      userId,
+      fileName: input.fileName,
+      fileKey: input.fileKey ?? null,
+      pageCount: input.pageCount,
+      depth: input.depth,
+    })
+    .returning();
+
+  if (input.cards.length) {
+    await db.insert(cards).values(
+      input.cards.map(card => ({
+        deckId: deck.id,
+        question: card.question,
+        questionArabic: card.questionArabic,
+        answer: card.answer,
+        answerArabic: card.answerArabic,
+        explanation: card.explanation,
+        explanationArabic: card.explanationArabic,
+        keyIdea: card.keyIdea,
+        keyIdeaArabic: card.keyIdeaArabic,
+        keyword: card.keyword,
+        keywordArabic: card.keywordArabic,
+        sourcePage: card.sourcePage,
+        status: card.status,
+        confidence: card.confidence,
+      }))
+    );
+  }
+
+  return deck;
+}
+
+export async function listDecksForUser(userId: string) {
+  const db = getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: decks.id,
+      fileName: decks.fileName,
+      pageCount: decks.pageCount,
+      depth: decks.depth,
+      createdAt: decks.createdAt,
+      cardCount: count(cards.id),
+    })
+    .from(decks)
+    .leftJoin(cards, eq(cards.deckId, decks.id))
+    .where(eq(decks.userId, userId))
+    .groupBy(decks.id)
+    .orderBy(desc(decks.createdAt));
+}
+
+export async function getDeckWithCards(userId: string, deckId: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const [deck] = await db
+    .select()
+    .from(decks)
+    .where(and(eq(decks.id, deckId), eq(decks.userId, userId)))
+    .limit(1);
+  if (!deck) return null;
+
+  const deckCards = await db
+    .select()
+    .from(cards)
+    .where(eq(cards.deckId, deckId))
+    .orderBy(cards.sourcePage);
+
+  return { deck, cards: deckCards };
+}
+
+export async function deleteDeck(userId: string, deckId: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  const deleted = await db
+    .delete(decks)
+    .where(and(eq(decks.id, deckId), eq(decks.userId, userId)))
+    .returning({ id: decks.id });
+  return deleted.length > 0;
+}
