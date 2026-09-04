@@ -37,7 +37,6 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     pages?: PageInput[];
     depth?: string;
-    model?: string;
   };
   const pages = Array.isArray(body.pages) ? body.pages : [];
   const usablePages = pages
@@ -64,8 +63,9 @@ export async function POST(request: Request) {
         : "balanced";
 
   try {
+    // No model is passed here — the active provider (OmniRoute) owns model
+    // selection entirely; see lib/ai/providers/omniroute.ts's resolveModel().
     const response = await invokeLLM({
-      model: typeof body.model === "string" ? body.model : undefined,
       max_tokens: GENERATE_MAX_TOKENS,
       messages: buildGenerateMessages(usablePages, depth),
       response_format: responseSchema,

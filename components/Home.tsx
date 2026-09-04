@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleAlert,
-  Cpu,
   Download,
   FileText,
   KeyRound,
@@ -28,20 +27,6 @@ import {
   Volume2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
-import { Badge } from "@/components/ui/badge";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
 type Card = {
@@ -64,15 +49,6 @@ type Card = {
 type View = "upload" | "cards" | "library";
 type Stage = "idle" | "extracting" | "processing" | "ready";
 const UPLOAD_MAX_MB = Number(process.env.NEXT_PUBLIC_UPLOAD_MAX_MB) || 250;
-type ModelOption = {
-  id: string;
-  name: string;
-  isFree: boolean;
-  supportsImages: boolean;
-  contextLength: number;
-};
-
-const SELECTED_MODEL_STORAGE_KEY = "mira-selected-model";
 
 const depthOptions = [
   { value: "quick", label: "سريع", caption: "مراجعة خاطفة" },
@@ -141,10 +117,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [speakingTarget, setSpeakingTarget] = useState<string | null>(null);
-  const [models, setModels] = useState<ModelOption[]>([]);
-  const [modelsLoading, setModelsLoading] = useState(true);
-  const [selectedModel, setSelectedModel] = useState("");
-  const [modelPickerOpen, setModelPickerOpen] = useState(false);
 
   const utils = trpc.useUtils();
   const decksQuery = trpc.decks.list.useQuery(undefined, {
@@ -162,43 +134,6 @@ export default function Home() {
   });
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/models")
-      .then(response => response.json())
-      .then((data: { models?: ModelOption[] }) => {
-        if (cancelled) return;
-        const list = Array.isArray(data.models) ? data.models : [];
-        setModels(list);
-        let stored = "";
-        try {
-          stored = localStorage.getItem(SELECTED_MODEL_STORAGE_KEY) || "";
-        } catch {}
-        const validStored = list.some(model => model.id === stored)
-          ? stored
-          : "";
-        const fallback =
-          list.find(model => model.isFree)?.id ?? list[0]?.id ?? "";
-        setSelectedModel(validStored || fallback);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setModelsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selectedModel) return;
-    try {
-      localStorage.setItem(SELECTED_MODEL_STORAGE_KEY, selectedModel);
-    } catch {}
-  }, [selectedModel]);
-
-  const selectedModelInfo = models.find(model => model.id === selectedModel);
 
   function speakEnglish(text: string, target: string) {
     if (!text.trim()) return;
@@ -392,7 +327,6 @@ export default function Home() {
                 body: JSON.stringify({
                   pages: usable,
                   depth,
-                  model: selectedModel,
                 }),
               });
               const generated = await response.json();
@@ -858,78 +792,6 @@ export default function Home() {
                       )}
                     </button>
                   ))}
-                </div>
-                <div className="model-picker">
-                  <span className="model-picker-label">
-                    نموذج توليد البطاقات
-                  </span>
-                  <Popover
-                    open={modelPickerOpen}
-                    onOpenChange={setModelPickerOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <button type="button" className="model-picker-trigger">
-                        <span className="model-picker-trigger-text">
-                          <strong>
-                            {selectedModelInfo?.name ??
-                              (modelsLoading
-                                ? "جاري تحميل النماذج..."
-                                : "اختر نموذجًا")}
-                          </strong>
-                          {selectedModelInfo && (
-                            <small>
-                              {selectedModelInfo.isFree ? "مجاني" : "مدفوع"}
-                              {selectedModelInfo.contextLength
-                                ? ` · ${selectedModelInfo.contextLength.toLocaleString()} tokens`
-                                : ""}
-                            </small>
-                          )}
-                        </span>
-                        <Cpu size={16} />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-80 p-0">
-                      <Command>
-                        <CommandInput placeholder="ابحث عن نموذج..." />
-                        <CommandList>
-                          <CommandEmpty>لا توجد نتائج.</CommandEmpty>
-                          <CommandGroup>
-                            {models.map(model => (
-                              <CommandItem
-                                key={model.id}
-                                value={`${model.id} ${model.name}`}
-                                onSelect={() => {
-                                  setSelectedModel(model.id);
-                                  setModelPickerOpen(false);
-                                }}
-                              >
-                                {selectedModel === model.id && (
-                                  <Check size={14} />
-                                )}
-                                <span className="model-picker-item-meta">
-                                  <span>{model.name}</span>
-                                  {model.contextLength > 0 && (
-                                    <small>
-                                      {model.contextLength.toLocaleString()}{" "}
-                                      tokens
-                                    </small>
-                                  )}
-                                </span>
-                                {model.isFree && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="ms-auto"
-                                  >
-                                    مجاني
-                                  </Badge>
-                                )}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
                 </div>
                 <div className="language-note">
                   <Languages size={17} />
