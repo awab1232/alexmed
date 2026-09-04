@@ -26,7 +26,7 @@ function parseRetryAfterMs(response: Response): number | undefined {
   return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : undefined;
 }
 
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 const RETRY_MAX_RETRIES = 1; // conservative — see file header.
 const RETRY_DELAY_MS = 500;
 

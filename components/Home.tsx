@@ -91,6 +91,11 @@ const sleep = (ms: number) =>
 // against the AI gateway's per-minute limits in the first place.
 const BATCH_PACING_MS = 1200;
 const RATE_LIMIT_MAX_RETRIES = 3;
+// Separate, shorter retry budget for a non-rate-limit failure (network
+// hiccup, upstream timeout/5xx) — a single bad request shouldn't
+// permanently drop a whole batch of questions.
+const BATCH_RETRY_MAX_RETRIES = 2;
+const BATCH_RETRY_DELAY_MS = 4000;
 
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -310,6 +315,7 @@ export default function Home() {
       // synchronously once the loop ends, to persist as a deck — setCards's
       // functional update isn't readable back from this closure.
       const collectedCards: Card[] = [];
+      let failedBatchCount = 0;
       let completed = 0;
       for (const [batchIndex, batch] of batches.entries()) {
         const usable = batch.filter(page => page.hasText);
@@ -320,8 +326,14 @@ export default function Home() {
 
           let sawRateLimit = false;
           for (let attempt = 0; ; attempt++) {
+            let response: Response | null = null;
+            let generated: {
+              cards?: Card[];
+              error?: string;
+              retryAfterMs?: number;
+            } | null = null;
             try {
-              const response = await fetch("/api/pdf/generate", {
+              response = await fetch("/api/pdf/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -329,39 +341,61 @@ export default function Home() {
                   depth,
                 }),
               });
-              const generated = await response.json();
+              generated = await response.json();
+            } catch {
+              // Network error or bad JSON — falls through to the retry
+              // policy below exactly like a non-ok HTTP response would.
+            }
 
-              if (response.status === 429 && attempt < RATE_LIMIT_MAX_RETRIES) {
-                sawRateLimit = true;
-                const waitMs =
-                  typeof generated.retryAfterMs === "number"
-                    ? generated.retryAfterMs
-                    : 20_000;
-                setWarning(
-                  `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة (${attempt + 1}/${RATE_LIMIT_MAX_RETRIES})...`
-                );
-                await sleep(waitMs);
-                continue;
-              }
-
-              if (!response.ok)
-                throw new Error(generated.error || "تعذر توليد هذه الدفعة.");
-
+            if (response?.ok && generated) {
               collectedCards.push(...(generated.cards as Card[]));
               setCards(previous => [
                 ...previous,
-                ...(generated.cards as Card[]),
+                ...(generated!.cards as Card[]),
               ]);
               if (sawRateLimit) setWarning("");
               break;
-            } catch {
-              setFailedBatches(previous => previous + 1);
-              break;
             }
+
+            const isRateLimited = response?.status === 429;
+            // A non-rate-limit failure (network hiccup, upstream 5xx or
+            // timeout) gets its own, shorter retry budget — a single bad
+            // request shouldn't permanently drop a whole batch of questions.
+            const canRetry = isRateLimited
+              ? attempt < RATE_LIMIT_MAX_RETRIES
+              : attempt < BATCH_RETRY_MAX_RETRIES;
+
+            if (canRetry) {
+              sawRateLimit = sawRateLimit || isRateLimited;
+              const waitMs = isRateLimited
+                ? typeof generated?.retryAfterMs === "number"
+                  ? generated.retryAfterMs
+                  : 20_000
+                : BATCH_RETRY_DELAY_MS;
+              setWarning(
+                isRateLimited
+                  ? `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة (${attempt + 1}/${RATE_LIMIT_MAX_RETRIES})...`
+                  : `تعذر توليد هذه الدفعة، جارٍ إعادة المحاولة (${attempt + 1}/${BATCH_RETRY_MAX_RETRIES})...`
+              );
+              await sleep(waitMs);
+              continue;
+            }
+
+            failedBatchCount += 1;
+            setFailedBatches(previous => previous + 1);
+            break;
           }
         }
         completed += batch.length;
         setProcessedPages(completed);
+      }
+
+      if (!collectedCards.length && failedBatchCount > 0) {
+        setStage("idle");
+        setError(
+          "تعذر توليد أي بطاقات من هذا الملف. تحقق من الاتصال وحاول رفع الملف مرة أخرى."
+        );
+        return;
       }
 
       // Save the generated deck to the account's library so it can be
