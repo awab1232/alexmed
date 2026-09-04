@@ -1,4 +1,5 @@
 import { signOut } from "../auth";
+import { booksRouter } from "./booksRouter";
 import { decksRouter } from "./decksRouter";
 import { publicProcedure, router } from "./trpc";
 import { systemRouter } from "./systemRouter";
@@ -13,6 +14,7 @@ export const appRouter = router({
     }),
   }),
   decks: decksRouter,
+  books: booksRouter,
 });
 
 export type AppRouter = typeof appRouter;

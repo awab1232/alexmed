@@ -1,8 +1,11 @@
 import {
+  boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
   uuid,
@@ -146,3 +149,167 @@ export type Deck = typeof decks.$inferSelect;
 export type InsertDeck = typeof decks.$inferInsert;
 export type CardRow = typeof cards.$inferSelect;
 export type InsertCardRow = typeof cards.$inferInsert;
+
+// ── كتبي (Book Study) — separate feature/data layer from decks/cards above.
+// A book is uploaded once, split into chapters (heading-detected or fixed
+// page windows — see lib/book-chapters.ts), and each chapter is analyzed by
+// its own bounded AI call (never the whole book at once) whose result is
+// persisted the instant that one chapter's request completes — this is what
+// makes the whole pipeline resumable without any job queue: "pending" chapter
+// rows are themselves the resume marker (see lib/book-analysis.ts).
+
+export const books = pgTable("books", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fileName: text("fileName").notNull(),
+  fileKey: text("fileKey"),
+  pageCount: integer("pageCount").default(0).notNull(),
+  // How chapters were determined — "headings" (regex-detected) or
+  // "fixed_windows" (fallback fixed-size page chunks) — see detectChapters().
+  chapterDetectionMethod: text("chapterDetectionMethod").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const bookChapterStatusEnum = pgEnum("book_chapter_status", [
+  "pending",
+  "analyzing",
+  "complete",
+  "failed",
+]);
+
+export const bookChapters = pgTable("book_chapters", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bookId: uuid("bookId")
+    .notNull()
+    .references(() => books.id, { onDelete: "cascade" }),
+  orderIndex: integer("orderIndex").notNull(),
+  title: text("title").notNull(),
+  startPage: integer("startPage").notNull(),
+  endPage: integer("endPage").notNull(),
+  status: bookChapterStatusEnum("status").default("pending").notNull(),
+  // This chapter's own slice of extracted page text, stored at plan time so
+  // the analyze route never has to re-fetch/re-parse the whole book PDF.
+  pageTexts: jsonb("pageTexts").$type<{ page: number; text: string }[]>(),
+  explanationAr: text("explanationAr"),
+  explanationEn: text("explanationEn"),
+  keyPoints: jsonb("keyPoints").$type<string[]>(),
+  chapterSummary: text("chapterSummary"),
+  // Last failure reason, when status is "failed" — surfaced with a retry
+  // button rather than leaving the chapter stuck silently.
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const bookTerms = pgTable("book_terms", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chapterId: uuid("chapterId")
+    .notNull()
+    .references(() => bookChapters.id, { onDelete: "cascade" }),
+  ar: text("ar").notNull(),
+  en: text("en").notNull(),
+  pronunciation: text("pronunciation").notNull(),
+});
+
+export const bookCardRatingEnum = pgEnum("book_card_rating", [
+  "hard",
+  "good",
+  "easy",
+]);
+
+export const bookCards = pgTable("book_cards", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chapterId: uuid("chapterId")
+    .notNull()
+    .references(() => bookChapters.id, { onDelete: "cascade" }),
+  // Denormalized from chapter->book->userId so "cards due across the whole
+  // library" can query this table directly without joining through books.
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  questionAr: text("questionAr").notNull(),
+  questionEn: text("questionEn").notNull(),
+  answerAr: text("answerAr").notNull(),
+  answerEn: text("answerEn").notNull(),
+  relatedTermEn: text("relatedTermEn"),
+  sourcePage: integer("sourcePage").notNull(),
+  // SRS (SM-2-style) scheduling fields — see lib/srs.ts's applySrsRating().
+  easeFactor: real("easeFactor").default(2.5).notNull(),
+  intervalDays: integer("intervalDays").default(0).notNull(),
+  dueAt: timestamp("dueAt", { withTimezone: true }).defaultNow().notNull(),
+  reviewCount: integer("reviewCount").default(0).notNull(),
+  lastRating: bookCardRatingEnum("lastRating"),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const bookMcqs = pgTable("book_mcqs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  chapterId: uuid("chapterId")
+    .notNull()
+    .references(() => bookChapters.id, { onDelete: "cascade" }),
+  questionEn: text("questionEn").notNull(),
+  choices: jsonb("choices").$type<string[]>().notNull(),
+  correctIndex: integer("correctIndex").notNull(),
+  explanationEn: text("explanationEn").notNull(),
+  sourcePage: integer("sourcePage").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const bookMcqAttempts = pgTable("book_mcq_attempts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  mcqId: uuid("mcqId")
+    .notNull()
+    .references(() => bookMcqs.id, { onDelete: "cascade" }),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  selectedIndex: integer("selectedIndex").notNull(),
+  isCorrect: boolean("isCorrect").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// Append-only SRS rating log — separate from book_cards' own (mutable,
+// current-state) SRS fields, because stats (accuracy history, streaks) need
+// to query "how many reviews happened on day X", which a field that gets
+// overwritten on every rating can never answer.
+export const bookReviewEvents = pgTable("book_review_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  cardId: uuid("cardId")
+    .notNull()
+    .references(() => bookCards.id, { onDelete: "cascade" }),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  rating: bookCardRatingEnum("rating").notNull(),
+  reviewedAt: timestamp("reviewedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export type Book = typeof books.$inferSelect;
+export type InsertBook = typeof books.$inferInsert;
+export type BookChapter = typeof bookChapters.$inferSelect;
+export type InsertBookChapter = typeof bookChapters.$inferInsert;
+export type BookTerm = typeof bookTerms.$inferSelect;
+export type BookCard = typeof bookCards.$inferSelect;
+export type InsertBookCard = typeof bookCards.$inferInsert;
+export type BookMcq = typeof bookMcqs.$inferSelect;
+export type BookMcqAttempt = typeof bookMcqAttempts.$inferSelect;
+export type BookReviewEvent = typeof bookReviewEvents.$inferSelect;

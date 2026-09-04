@@ -27,6 +27,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import AppSidebar from "@/components/AppSidebar";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
 type Card = {
@@ -543,71 +544,17 @@ export default function Home() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-lockup">
-          <div className="brand-mark">
-            <BookOpen size={20} strokeWidth={2.4} />
-          </div>
-          <div>
-            <strong>مِرآة</strong>
-            <span>study cards</span>
-          </div>
-        </div>
-        <div className="side-rule" />
-        <p className="side-label">مساحة المذاكرة</p>
-        <nav className="side-nav">
-          <button
-            className={view === "upload" ? "nav-item active" : "nav-item"}
-            onClick={() => setView("upload")}
-          >
-            <Upload size={17} />
-            <span>رفع ملف جديد</span>
-            <ArrowUp size={14} className="nav-arrow" />
-          </button>
-          <button
-            className={view === "cards" ? "nav-item active" : "nav-item"}
-            onClick={() => setView("cards")}
-            disabled={!cards.length}
-          >
-            <Layers3 size={17} />
-            <span>بطاقاتي</span>
-            <b>{cards.length || "—"}</b>
-          </button>
-          <button
-            className="nav-item"
-            onClick={() => {
-              setView("cards");
-              setOnlyReview(true);
-            }}
-            disabled={!cards.length}
-          >
-            <CircleAlert size={17} />
-            <span>تحتاج مراجعة</span>
-            <b className="review-count">
-              {cards.filter(card => card.status === "needs_review").length ||
-                "—"}
-            </b>
-          </button>
-          <button
-            className={view === "library" ? "nav-item active" : "nav-item"}
-            onClick={() => setView("library")}
-          >
-            <Library size={17} />
-            <span>مكتبتي</span>
-          </button>
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="mini-privacy">
-            <ShieldCheck size={16} />
-            <span>
-              ملفاتك للدراسة فقط
-              <br />
-              <small>وتُحلّل أثناء الجلسة</small>
-            </span>
-          </div>
-          <div className="side-footer">PDF → فهم → تذكّر</div>
-        </div>
-      </aside>
+      <AppSidebar
+        activeMiratView={view}
+        miratCardsCount={cards.length}
+        miratReviewCount={
+          cards.filter(card => card.status === "needs_review").length
+        }
+        onMiratNavigate={(nextView, options) => {
+          setView(nextView);
+          if (options?.onlyReview) setOnlyReview(true);
+        }}
+      />
 
       <main className="main-content">
         <header className="topbar">
