@@ -22,6 +22,13 @@ import {
 import { invokeLLM } from "@/lib/llm";
 import { NextResponse } from "next/server";
 
+// Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
+// this value — set explicitly so the platform doesn't fall back to a lower
+// default (10s). Note this route can still exceed 60s for chapters split
+// into multiple sub-chunks (each sub-chunk is its own sequential AI call) —
+// a known limitation on Hobby, not fully solvable without a background queue.
+export const maxDuration = 60;
+
 // The core of the resumable book pipeline: analyzes exactly ONE chapter
 // (internally sub-chunked if it's long) and persists the full result before
 // returning. The client calls this once per pending chapter, sequentially —

@@ -14,6 +14,11 @@ import { NextResponse } from "next/server";
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
+// Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
+// this value — set explicitly so the platform doesn't fall back to a lower
+// default (10s) before our own AI-gateway timeout/retry budget can complete.
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user) {

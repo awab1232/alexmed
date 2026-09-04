@@ -26,7 +26,10 @@ function parseRetryAfterMs(response: Response): number | undefined {
   return Number.isFinite(seconds) ? Math.max(0, seconds * 1000) : undefined;
 }
 
-const REQUEST_TIMEOUT_MS = 45_000;
+// Vercel Hobby caps a single serverless invocation at 60s total, no matter
+// what maxDuration is set to — this budget (one attempt + one retry) must
+// fit comfortably under that ceiling, not just under an assumed one.
+const REQUEST_TIMEOUT_MS = 27_000;
 const RETRY_MAX_RETRIES = 1; // conservative — see file header.
 const RETRY_DELAY_MS = 500;
 
