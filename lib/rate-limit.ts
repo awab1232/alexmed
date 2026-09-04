@@ -12,14 +12,23 @@ function getClient(): Redis | null {
     attemptedConnect = true;
     const url = process.env.REDIS_URL;
     if (url) {
-      client = new Redis(url, {
-        maxRetriesPerRequest: 1,
-        lazyConnect: true,
-        retryStrategy: () => null,
-      });
-      client.on("error", error =>
-        console.warn("[RateLimit] Redis error:", error.message)
-      );
+      // new Redis(url) throws SYNCHRONOUSLY (e.g. TypeError: Invalid URL) for
+      // a malformed REDIS_URL — that's outside checkRateLimit()'s try/catch
+      // below, so a bad env var was crashing the whole request with a 500
+      // instead of failing open like every other Redis error here does.
+      try {
+        client = new Redis(url, {
+          maxRetriesPerRequest: 1,
+          lazyConnect: true,
+          retryStrategy: () => null,
+        });
+        client.on("error", error =>
+          console.warn("[RateLimit] Redis error:", error.message)
+        );
+      } catch (error) {
+        console.warn("[RateLimit] Invalid REDIS_URL, disabling rate limiting:", error);
+        client = null;
+      }
     }
   }
   return client;
