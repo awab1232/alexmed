@@ -82,6 +82,7 @@ function formatBytes(bytes: number) {
 
 const PAGE_CACHE_PREFIX = "mirat:pdf-pages:";
 type PageCache = { pageCount: number; pages: PageText[] };
+type GenerationCache = { batchResults: (Card[] | null)[] };
 
 function getPageCacheKey(file: File) {
   return `${PAGE_CACHE_PREFIX}${file.name}:${file.size}:${file.lastModified}`;
@@ -104,6 +105,39 @@ function writePageCache(file: File, cache: PageCache) {
     window.localStorage.setItem(getPageCacheKey(file), JSON.stringify(cache));
   } catch {
     // Large PDFs can exceed browser storage quotas; generation still works.
+  }
+}
+
+function getGenerationCacheKey(file: File, depth: string) {
+  return `${PAGE_CACHE_PREFIX}cards:${file.name}:${file.size}:${file.lastModified}:${depth}`;
+}
+
+function readGenerationCache(
+  file: File,
+  depth: string
+): GenerationCache | null {
+  try {
+    const raw = window.localStorage.getItem(getGenerationCacheKey(file, depth));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as GenerationCache;
+    return Array.isArray(parsed.batchResults) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeGenerationCache(
+  file: File,
+  depth: string,
+  cache: GenerationCache
+) {
+  try {
+    window.localStorage.setItem(
+      getGenerationCacheKey(file, depth),
+      JSON.stringify(cache)
+    );
+  } catch {
+    // Generated cards can exceed browser storage quotas; the live session continues.
   }
 }
 
@@ -357,10 +391,24 @@ export default function Home() {
 
       // Keep each batch independently retryable while allowing two requests
       // at once. Results are stored by batch index so the final deck stays in
-      // page order even when a later batch finishes first.
-      const batchResults: (Card[] | null)[] = Array(batches.length).fill(null);
+      // page order even when a later batch finishes first. Completed batches
+      // are persisted so a retry resumes from the first missing batch.
+      const savedGeneration = readGenerationCache(file, depth);
+      const batchResults: (Card[] | null)[] = Array.from(
+        { length: batches.length },
+        (_, index) => savedGeneration?.batchResults[index] ?? null
+      );
+      const cachedCards = batchResults.flatMap(result => result ?? []);
+      if (cachedCards.length) {
+        setCards(cachedCards);
+        setWarning("وجدنا دفعات جاهزة لهذا الملف — سنكمل الناقص فقط.");
+      }
       let failedBatchCount = 0;
-      let completed = 0;
+      let completed = batchResults.reduce(
+        (total, result, index) =>
+          result !== null ? total + batches[index].length : total,
+        0
+      );
       let nextBatchIndex = 0;
 
       async function processBatch(batchIndex: number, batch: PageText[]) {
@@ -424,12 +472,15 @@ export default function Home() {
         while (true) {
           const batchIndex = nextBatchIndex++;
           if (batchIndex >= batches.length) return;
+          if (batchResults[batchIndex] !== null) continue;
           await processBatch(batchIndex, batches[batchIndex]);
           completed += batches[batchIndex].length;
           setProcessedPages(completed);
+          writeGenerationCache(file!, depth, { batchResults });
         }
       }
 
+      setProcessedPages(completed);
       await Promise.all(
         Array.from(
           { length: Math.min(GENERATION_CONCURRENCY, batches.length) },
@@ -438,6 +489,7 @@ export default function Home() {
       );
 
       const collectedCards = batchResults.flatMap(result => result ?? []);
+      writeGenerationCache(file!, depth, { batchResults });
       setCards(collectedCards);
       if (!failedBatchCount) setWarning("");
 
