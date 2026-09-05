@@ -27,9 +27,14 @@ function parseRetryAfterMs(response: Response): number | undefined {
 }
 
 // Vercel Hobby caps a single serverless invocation at 60s total, no matter
-// what maxDuration is set to — this budget (one attempt + one retry) must
-// fit comfortably under that ceiling, not just under an assumed one.
-const REQUEST_TIMEOUT_MS = 27_000;
+// what maxDuration is set to. Observed live: OmniRoute's "auto/best-free"
+// routing regularly lands on models that genuinely need ~27-30s to respond
+// (confirmed via Railway logs showing a combo trace ending status:200 right
+// after our own abort fired) — so a timeout at or near that mark guarantees
+// failure on requests that were about to succeed. Give a single attempt real
+// headroom instead, while a timeout still never gets retried (see below),
+// keeping the worst case comfortably under the 60s ceiling.
+const REQUEST_TIMEOUT_MS = 50_000;
 const RETRY_MAX_RETRIES = 1; // conservative — see file header.
 const RETRY_DELAY_MS = 500;
 
