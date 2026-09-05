@@ -157,19 +157,59 @@ export const BOOK_CHAPTER_MAX_TOKENS = 16000;
 export const SUMMARY_MERGE_MAX_TOKENS = 1500;
 
 const SUB_CHUNK_MAX_PAGES = 8;
+const SUB_CHUNK_MAX_CHARS = 12_000;
 
-// Any chapter longer than SUB_CHUNK_MAX_PAGES is split into consecutive
-// sub-chunks, each analyzed with its own AI call — invisibly to the client,
-// which only ever sees "chapter pending -> chapter complete".
+// Any chapter longer than the page or character budget is split into
+// consecutive sub-chunks. Dense pages are split only at line boundaries, so
+// every extracted character remains in exactly one AI request.
 export function chunkChapterPages(
   pages: BookPageInput[],
-  maxPagesPerChunk = SUB_CHUNK_MAX_PAGES
+  maxPagesPerChunk = SUB_CHUNK_MAX_PAGES,
+  maxCharsPerChunk = SUB_CHUNK_MAX_CHARS
 ): BookPageInput[][] {
   if (!pages.length) return [];
-  const chunks: BookPageInput[][] = [];
-  for (let index = 0; index < pages.length; index += maxPagesPerChunk) {
-    chunks.push(pages.slice(index, index + maxPagesPerChunk));
+  if (maxPagesPerChunk <= 0 || maxCharsPerChunk <= 0) {
+    throw new Error("Chunk limits must be positive");
   }
+
+  const chunks: BookPageInput[][] = [];
+  let chunk: BookPageInput[] = [];
+  let chunkChars = 0;
+  const flush = () => {
+    if (chunk.length) chunks.push(chunk);
+    chunk = [];
+    chunkChars = 0;
+  };
+
+  for (const page of pages) {
+    const lines = page.text.split("\n");
+    let segment = "";
+    const segments: string[] = [];
+    for (const line of lines) {
+      const pieces =
+        line.length > maxCharsPerChunk
+          ? (line.match(new RegExp(`.{1,${maxCharsPerChunk}}`, "g")) ?? [line])
+          : [line];
+      for (const piece of pieces) {
+        if (segment && segment.length + piece.length + 1 > maxCharsPerChunk) {
+          segments.push(segment);
+          segment = "";
+        }
+        segment += `${segment ? "\n" : ""}${piece}`;
+      }
+    }
+    if (segment) segments.push(segment);
+
+    for (const text of segments) {
+      const wouldExceedPages = chunk.length >= maxPagesPerChunk;
+      const wouldExceedChars =
+        chunk.length > 0 && chunkChars + text.length > maxCharsPerChunk;
+      if (wouldExceedPages || wouldExceedChars) flush();
+      chunk.push({ page: page.page, text });
+      chunkChars += text.length;
+    }
+  }
+  flush();
   return chunks;
 }
 

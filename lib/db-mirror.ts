@@ -16,7 +16,55 @@ import type { GeneratedCard } from "./pdf-cards";
 
 export type MirrorPageText = { page: number; text: string; hasText: boolean };
 
-const BATCH_SIZE = 4;
+// One page per generation batch is intentional for مِرآة: exam PDFs can contain
+// many questions on one page, so isolating pages prevents a dense page from
+// being crowded out by neighboring pages and makes coverage auditable.
+const BATCH_SIZE = 1;
+const BATCH_MAX_CHARS = 10_000;
+
+type MirrorPageGroup = MirrorPageText[];
+
+function splitMirrorPages(pages: MirrorPageText[]): MirrorPageGroup[] {
+  const groups: MirrorPageGroup[] = [];
+  let group: MirrorPageGroup = [];
+  let groupChars = 0;
+  const flush = () => {
+    if (group.length) groups.push(group);
+    group = [];
+    groupChars = 0;
+  };
+
+  for (const page of pages) {
+    const lines = page.text.split("\n");
+    let segment = "";
+    const segments: string[] = [];
+    for (const line of lines) {
+      const pieces =
+        line.length > BATCH_MAX_CHARS
+          ? (line.match(new RegExp(`.{1,${BATCH_MAX_CHARS}}`, "g")) ?? [line])
+          : [line];
+      for (const piece of pieces) {
+        if (segment && segment.length + piece.length + 1 > BATCH_MAX_CHARS) {
+          segments.push(segment);
+          segment = "";
+        }
+        segment += `${segment ? "\n" : ""}${piece}`;
+      }
+    }
+    if (segment) segments.push(segment);
+
+    for (const text of segments.length ? segments : [""]) {
+      const exceedsPages = group.length >= BATCH_SIZE;
+      const exceedsChars =
+        group.length > 0 && groupChars + text.length > BATCH_MAX_CHARS;
+      if (exceedsPages || exceedsChars) flush();
+      group.push({ ...page, text });
+      groupChars += text.length;
+    }
+  }
+  flush();
+  return groups;
+}
 
 export async function createMirrorJobWithBatches(
   userId: string,
@@ -42,10 +90,7 @@ export async function createMirrorJobWithBatches(
     })
     .returning();
 
-  const batchPageGroups: MirrorPageText[][] = [];
-  for (let index = 0; index < input.pages.length; index += BATCH_SIZE) {
-    batchPageGroups.push(input.pages.slice(index, index + BATCH_SIZE));
-  }
+  const batchPageGroups = splitMirrorPages(input.pages);
 
   let batches: {
     id: string;

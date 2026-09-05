@@ -76,6 +76,20 @@ export async function POST(request: Request) {
         }))
       : [];
 
+    if (!cards.length) {
+      await setBatchFailed(
+        batchId,
+        "لم يتم العثور على أسئلة قابلة للتحويل إلى بطاقات في هذه الصفحة."
+      );
+      return NextResponse.json(
+        {
+          error:
+            "لم يتم توليد أي بطاقة لهذه الصفحة. أعد المحاولة للتأكد من عدم فقدان الأسئلة.",
+        },
+        { status: 422 }
+      );
+    }
+
     await completeBatchGeneration(batchId, batch.jobId, session.user.id, cards);
 
     return NextResponse.json({

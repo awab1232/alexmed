@@ -128,7 +128,7 @@ export function splitPageInputsIntoBatches(
     for (const line of text.split("\n")) {
       const pieces =
         line.length > maxChars
-          ? line.match(new RegExp(`.{1,${maxChars}}`, "g")) ?? [line]
+          ? (line.match(new RegExp(`.{1,${maxChars}}`, "g")) ?? [line])
           : [line];
       for (const piece of pieces) {
         if (segment && segment.length + piece.length + 1 > maxChars) {
@@ -212,6 +212,16 @@ export function normalizePageText(text: string) {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+export function findMissingPageNumbers(
+  pages: { page: number }[],
+  totalPages: number
+) {
+  const present = new Set(pages.map(page => page.page));
+  return Array.from({ length: totalPages }, (_, index) => index + 1).filter(
+    page => !present.has(page)
+  );
 }
 
 // OCR always needs a vision-capable model; not user-selectable in the UI.

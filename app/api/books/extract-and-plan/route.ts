@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { detectChapters } from "@/lib/book-chapters";
 import { createBookWithChapters } from "@/lib/db-books";
-import { normalizePageText } from "@/lib/pdf-cards";
+import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
@@ -84,13 +84,15 @@ export async function POST(request: Request) {
       .filter(page => !page.hasText)
       .map(page => page.page);
 
+    const failedOcrPages: number[] = [];
     for (
       let index = 0;
       index < pagesNeedingOcr.length;
       index += OCR_BATCH_SIZE
     ) {
       const batch = pagesNeedingOcr.slice(index, index + OCR_BATCH_SIZE);
-      const { pages: ocrResults } = await ocrPages(parser, batch);
+      const { pages: ocrResults, failedPages } = await ocrPages(parser, batch);
+      failedOcrPages.push(...failedPages);
       const ocrByPage = new Map(ocrResults.map(page => [page.page, page]));
       pages = pages.map(page => {
         const ocrResult = ocrByPage.get(page.page);
@@ -102,6 +104,27 @@ export async function POST(request: Request) {
             }
           : page;
       });
+    }
+
+    const missingPages = findMissingPageNumbers(pages, result.total);
+    const unreadablePages = pages
+      .filter(page => !page.hasText)
+      .map(page => page.page);
+    if (
+      missingPages.length ||
+      unreadablePages.length ||
+      failedOcrPages.length
+    ) {
+      const pagesToRetry = Array.from(
+        new Set([...missingPages, ...unreadablePages, ...failedOcrPages])
+      ).sort((a, b) => a - b);
+      return NextResponse.json(
+        {
+          error: `لم نتمكن من قراءة كل صفحات الكتاب. الصفحات التي تحتاج إعادة معالجة: ${pagesToRetry.join(", ")}`,
+          pages: pagesToRetry,
+        },
+        { status: 422 }
+      );
     }
 
     const pageTexts = pages.map(({ page, text }) => ({ page, text }));

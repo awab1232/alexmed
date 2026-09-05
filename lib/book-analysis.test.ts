@@ -64,6 +64,18 @@ describe("chunkChapterPages", () => {
   it("returns an empty array for no pages", () => {
     expect(chunkChapterPages([])).toEqual([]);
   });
+
+  it("keeps dense page text across character-bounded chunks", () => {
+    const denseText = "first line\n" + "x".repeat(30) + "\nlast line";
+    const chunks = chunkChapterPages([{ page: 1, text: denseText }], 8, 12);
+    const joined = chunks
+      .flat()
+      .map(page => page.text)
+      .join("\n");
+    expect(joined).toContain("first line");
+    expect(joined).toContain("last line");
+    expect(joined.replace(/\n/g, "")).toContain("x".repeat(30));
+  });
 });
 
 describe("mergeSubChunkResults", () => {
