@@ -159,12 +159,20 @@ const BATCH_PACING_MS = 1200;
 // Safe to raise back to 2 once that container's memory has been confirmed
 // increased (see the "resourcePressure ... cgroup_ratio" incident).
 const GENERATION_CONCURRENCY = 1;
-const RATE_LIMIT_MAX_RETRIES = 3;
+const RATE_LIMIT_MAX_RETRIES = 6;
 // Separate, shorter retry budget for a non-rate-limit failure (network
 // hiccup, upstream timeout/5xx) — a single bad request shouldn't
 // permanently drop a whole batch of questions.
-const BATCH_RETRY_MAX_RETRIES = 2;
-const BATCH_RETRY_DELAY_MS = 4000;
+const BATCH_RETRY_MAX_RETRIES = 6;
+const BATCH_RETRY_INITIAL_DELAY_MS = 4000;
+const BATCH_RETRY_MAX_DELAY_MS = 30_000;
+
+function getBatchRetryDelayMs(attempt: number) {
+  return Math.min(
+    BATCH_RETRY_MAX_DELAY_MS,
+    BATCH_RETRY_INITIAL_DELAY_MS * 2 ** attempt
+  );
+}
 
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -456,7 +464,7 @@ export default function Home() {
                 ? typeof generated?.retryAfterMs === "number"
                   ? generated.retryAfterMs
                   : 20_000
-                : BATCH_RETRY_DELAY_MS;
+                : getBatchRetryDelayMs(attempt);
               setWarning(
                 isRateLimited
                   ? `تجاوزنا الحد المؤقت — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة...`
