@@ -3,7 +3,7 @@
 // ownership-scoped queries via joins, safe-empty-default reads, throw-on-write
 // when the DB isn't configured), kept separate from lib/db.ts for the same
 // reason lib/db-books.ts is: a distinct pipeline with its own lifecycle.
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import {
   cards,
   decks,
@@ -19,7 +19,7 @@ export type MirrorPageText = { page: number; text: string; hasText: boolean };
 // One page per generation batch is intentional for مِرآة: exam PDFs can contain
 // many questions on one page, so isolating pages prevents a dense page from
 // being crowded out by neighboring pages and makes coverage auditable.
-const BATCH_SIZE = 1;
+const BATCH_SIZE = 2;
 // Keep one AI request comfortably small enough for Vercel/OmniRoute. If a
 // page is denser than this, it becomes multiple ordered batches; no text is
 // dropped just to fit the request.
@@ -210,10 +210,17 @@ export async function getMirrorBatchForUser(
 export async function setBatchGenerating(batchId: string) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
-  await db
+  const claimed = await db
     .update(mirrorBatches)
     .set({ status: "generating", errorMessage: null, updatedAt: new Date() })
-    .where(eq(mirrorBatches.id, batchId));
+    .where(
+      and(
+        eq(mirrorBatches.id, batchId),
+        inArray(mirrorBatches.status, ["pending", "failed"])
+      )
+    )
+    .returning({ id: mirrorBatches.id });
+  return claimed.length > 0;
 }
 
 export async function setBatchFailed(batchId: string, errorMessage: string) {

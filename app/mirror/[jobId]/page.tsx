@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc-client";
 const RATE_LIMIT_MAX_RETRIES = 3;
 const BATCH_RETRY_MAX_RETRIES = 2;
 const BATCH_RETRY_DELAY_MS = 4000;
+const GENERATION_CONCURRENCY = 2;
 const sleep = (ms: number) =>
   new Promise<void>(resolve => setTimeout(resolve, ms));
 
@@ -74,12 +75,24 @@ export default function MirrorJobPage() {
 
     (async () => {
       let failedCount = 0;
-      for (const batch of pending) {
-        if (cancelled) break;
-        const completed = await generateBatch(batch.id);
-        if (!completed) failedCount += 1;
-        if (!cancelled) await utils.mirror.get.invalidate({ id: jobId });
-      }
+      let nextIndex = 0;
+      const runWorker = async () => {
+        while (!cancelled) {
+          const index = nextIndex++;
+          const batch = pending[index];
+          if (!batch) return;
+          const completed = await generateBatch(batch.id);
+          if (!completed) failedCount += 1;
+          if (!cancelled) await utils.mirror.get.invalidate({ id: jobId });
+        }
+      };
+
+      await Promise.all(
+        Array.from(
+          { length: Math.min(GENERATION_CONCURRENCY, pending.length) },
+          () => runWorker()
+        )
+      );
       if (!cancelled) {
         setWarning(
           failedCount

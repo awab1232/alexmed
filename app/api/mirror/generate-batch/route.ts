@@ -57,7 +57,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ batchId, status: "complete", cards: [] });
   }
 
-  await setBatchGenerating(batchId);
+  const claimed = await setBatchGenerating(batchId);
+  if (!claimed) {
+    return NextResponse.json({ batchId, status: "already_processing" });
+  }
 
   try {
     const response = await invokeLLM({
