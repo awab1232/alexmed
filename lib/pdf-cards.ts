@@ -102,6 +102,54 @@ export const ocrResponseSchema = {
 
 export type PageInput = { page: number; text: string };
 
+// Keep requests comfortably below model context/output limits. Dense pages
+// are split at line boundaries, while retaining the original PDF page number.
+export const GENERATION_BATCH_MAX_CHARS = 10_000;
+
+export function splitPageInputsIntoBatches(
+  pages: PageInput[],
+  maxChars = GENERATION_BATCH_MAX_CHARS
+): PageInput[][] {
+  if (maxChars <= 0) throw new Error("maxChars must be positive");
+  const batches: PageInput[][] = [];
+  let batch: PageInput[] = [];
+  let batchChars = 0;
+  const flush = () => {
+    if (batch.length) batches.push(batch);
+    batch = [];
+    batchChars = 0;
+  };
+
+  for (const page of pages) {
+    const text = page.text.trim();
+    if (!text) continue;
+    const segments: string[] = [];
+    let segment = "";
+    for (const line of text.split("\n")) {
+      const pieces =
+        line.length > maxChars
+          ? line.match(new RegExp(`.{1,${maxChars}}`, "g")) ?? [line]
+          : [line];
+      for (const piece of pieces) {
+        if (segment && segment.length + piece.length + 1 > maxChars) {
+          segments.push(segment);
+          segment = "";
+        }
+        segment += `${segment ? "\n" : ""}${piece}`;
+      }
+    }
+    if (segment) segments.push(segment);
+
+    for (const segmentText of segments) {
+      if (batch.length && batchChars + segmentText.length > maxChars) flush();
+      batch.push({ page: page.page, text: segmentText });
+      batchChars += segmentText.length;
+    }
+  }
+  flush();
+  return batches;
+}
+
 export type GeneratedCard = {
   question: string;
   questionArabic: string;

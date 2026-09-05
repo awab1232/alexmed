@@ -27,6 +27,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import { splitPageInputsIntoBatches } from "@/lib/pdf-cards";
 import AppSidebar from "@/components/AppSidebar";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
@@ -109,7 +110,7 @@ function writePageCache(file: File, cache: PageCache) {
 }
 
 function getGenerationCacheKey(file: File, depth: string) {
-  return `${PAGE_CACHE_PREFIX}cards:${file.name}:${file.size}:${file.lastModified}:${depth}`;
+  return `${PAGE_CACHE_PREFIX}cards:v2:${file.name}:${file.size}:${file.lastModified}:${depth}`;
 }
 
 function readGenerationCache(
@@ -389,10 +390,7 @@ export default function Home() {
       }
 
       setStage("processing");
-      const batches: PageText[][] = [];
-      for (let index = 0; index < extractedPages.length; index += 4) {
-        batches.push(extractedPages.slice(index, index + 4));
-      }
+      const batches = splitPageInputsIntoBatches(extractedPages);
 
       // Keep each batch independently retryable while allowing two requests
       // at once. Results are stored by batch index so the final deck stays in
@@ -416,8 +414,11 @@ export default function Home() {
       );
       let nextBatchIndex = 0;
 
-      async function processBatch(batchIndex: number, batch: PageText[]) {
-        const usable = batch.filter(page => page.hasText);
+      async function processBatch(
+        batchIndex: number,
+        batch: { page: number; text: string }[]
+      ) {
+        const usable = batch;
         if (usable.length) {
           if (batchIndex >= GENERATION_CONCURRENCY) {
             await sleep(BATCH_PACING_MS);
@@ -496,15 +497,14 @@ export default function Home() {
       const collectedCards = batchResults.flatMap(result => result ?? []);
       writeGenerationCache(file!, depth, { batchResults });
       setCards(collectedCards);
-      if (!failedBatchCount) setWarning("");
-
-      if (!collectedCards.length && failedBatchCount > 0) {
+      if (failedBatchCount > 0) {
         setStage("idle");
         setError(
-          "تعذر توليد أي بطاقات من هذا الملف. تحقق من الاتصال وحاول رفع الملف مرة أخرى."
+          `لم تكتمل المعالجة: تعذرت معالجة ${failedBatchCount} دفعة. لم نعتبر الملف مكتملًا، ويمكنك إعادة المحاولة لإكمال الصفحات المتبقية.`
         );
         return;
       }
+      setWarning("");
 
       // Save the generated deck to the account's library so it can be
       // reopened later without re-uploading the file. Best-effort: a save

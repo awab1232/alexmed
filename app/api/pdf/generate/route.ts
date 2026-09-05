@@ -37,8 +37,7 @@ export async function POST(request: Request) {
         Number.isInteger(page.page) &&
         typeof page.text === "string" &&
         page.text.trim()
-    )
-    .slice(0, 4);
+    );
 
   if (!usablePages.length) {
     return NextResponse.json(
