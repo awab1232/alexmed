@@ -159,10 +159,8 @@ export default function AppSidebar({
           <span>رفع كتاب جديد</span>
         </Link>
         <Link
-          href="/books/review"
-          className={
-            pathname === "/books/review" ? "nav-item active" : "nav-item"
-          }
+          href="/review"
+          className={pathname === "/review" ? "nav-item active" : "nav-item"}
         >
           <RotateCcw size={17} />
           <span>المراجعة اليومية</span>
@@ -266,8 +264,8 @@ export default function AppSidebar({
               <span>الرئيسية</span>
             </Link>
             <Link
-              href="/books/review"
-              className={pathname === "/books/review" ? "active" : ""}
+              href="/review"
+              className={pathname === "/review" ? "active" : ""}
             >
               <RotateCcw size={18} />
               <span>المراجعة</span>

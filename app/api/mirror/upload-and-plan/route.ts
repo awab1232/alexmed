@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { detectChapters } from "@/lib/book-chapters";
-import { createBookWithChapters } from "@/lib/db-books";
+import { createMirrorJobWithBatches } from "@/lib/db-mirror";
 import { normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
 import { storageGetSignedUrl } from "@/lib/storage";
@@ -10,33 +9,20 @@ import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
 // Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
-// this value — set explicitly since this route now runs OCR calls (see
-// below) in addition to plain text extraction.
+// this value — this route runs OCR calls in addition to plain text
+// extraction, same as كتبي's extract-and-plan route.
 export const maxDuration = 60;
 
-// How many scanned pages get OCR'd per sequential ocrPages() call — mirrors
-// مِرآة's own client-side batching (components/Home.tsx) and the hard cap
-// ocrPages() itself enforces.
 const OCR_BATCH_SIZE = 4;
 
-// Step 2 of the book pipeline: the browser already PUT the raw file straight
-// to storage via /api/books/upload-url. This route extracts all page text,
-// OCRs any page pdf-parse couldn't extract text from (scanned/image-only
-// pages — same signal مِرآة uses, see app/api/pdf/extract/route.ts), detects
-// chapter boundaries (lib/book-chapters.ts) against the now-complete text,
-// and persists the whole book + its full chapter row set up front (all
-// "pending") — this is what makes the pipeline resumable without a job
-// queue: chapter analysis (/api/books/analyze-chapter) is driven by the
-// client one chapter at a time afterward, and "pending" rows are themselves
-// the resume marker.
-//
-// Known limitation, deliberately out of scope here: a scanned book with many
-// pages needing OCR runs those calls sequentially (same OmniRoute
-// concurrency=1 constraint as مِرآة's card generation — see components/
-// Home.tsx) inside this route's own 60s budget, so a large scanned book can
-// still time out. Fixing that needs a resumable step (like Item D's
-// pattern), not attempted here — the goal of this fix is making scanned
-// books work at all, not every size of scanned book.
+// Step 2 of the مِرآة pipeline (Item D of the reliability plan): the browser
+// already PUT the raw file straight to storage via /api/pdf/upload-url. This
+// route extracts all page text, OCRs any page pdf-parse couldn't extract
+// text from, and persists the whole job + its full batch row set up front
+// (all "pending") — this is what makes generation resumable across devices
+// without a job queue, mirroring كتبي's /api/books/extract-and-plan exactly:
+// /api/mirror/generate-batch is driven by the client one batch at a time
+// afterward, and "pending" rows are themselves the resume marker.
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -49,9 +35,16 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     key?: string;
     fileName?: string;
+    depth?: string;
   };
   const key = typeof body.key === "string" ? body.key : "";
   const fileName = typeof body.fileName === "string" ? body.fileName : "";
+  const depth =
+    body.depth === "detailed"
+      ? "detailed"
+      : body.depth === "quick"
+        ? "quick"
+        : "balanced";
 
   if (!key) {
     return NextResponse.json({ error: "ارفع ملف PDF أولًا." }, { status: 400 });
@@ -104,38 +97,24 @@ export async function POST(request: Request) {
       });
     }
 
-    const pageTexts = pages.map(({ page, text }) => ({ page, text }));
-    const { chapters, method } = detectChapters(pageTexts);
-    const pagesByChapter = chapters.map(chapter =>
-      pages.filter(
-        page => page.page >= chapter.startPage && page.page <= chapter.endPage
-      )
-    );
-
-    const created = await createBookWithChapters(session.user.id, {
+    const { job, batches } = await createMirrorJobWithBatches(session.user.id, {
       fileName,
       fileKey: key,
       pageCount: result.total,
-      method,
-      chapters,
-      pagesByChapter,
+      depth,
+      pages,
     });
 
     return NextResponse.json({
-      bookId: created.book.id,
-      chapters: created.chapters.map(chapter => ({
-        id: chapter.id,
-        title: chapter.title,
-        startPage: chapter.startPage,
-        endPage: chapter.endPage,
-      })),
+      jobId: job.id,
+      batchCount: batches.length,
     });
   } catch (error) {
-    console.error("[Books] Extraction/planning failed", error);
+    console.error("[Mirror] Upload/planning failed", error);
     return NextResponse.json(
       {
         error:
-          "تعذر قراءة الملف أو تقسيمه إلى فصول. جرّب نسخة PDF قابلة لتحديد النص.",
+          "تعذر قراءة الملف أو تجهيزه للتوليد. جرّب نسخة PDF قابلة لتحديد النص.",
       },
       { status: 422 }
     );

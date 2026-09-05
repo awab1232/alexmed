@@ -211,57 +211,72 @@ export async function completeChapterAnalysis(
   const db = getDb();
   if (!db) throw new Error("Database not available");
 
-  await db
-    .update(bookChapters)
-    .set({
-      status: "complete",
-      explanationAr: result.explanationAr,
-      explanationEn: result.explanationEn,
-      keyPoints: result.keyPoints,
-      chapterSummary: result.chapterSummary,
-      errorMessage: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(bookChapters.id, chapterId));
+  // Wrapped in one transaction, with an unconditional delete-before-insert
+  // for this chapter's children: this makes the whole function
+  // idempotent-by-replacement, so a retry (whether it's this transaction
+  // rolling back mid-way, or a chapter left with orphaned rows from before
+  // this fix existed) can never leave duplicate terms/cards/mcqs behind.
+  // Safe to wipe existing bookCards here because a chapter is only ever
+  // re-analyzed from "pending"/"failed" (see app/books/[bookId]/page.tsx's
+  // resume filter) — a "complete" chapter, whose cards a user could already
+  // be reviewing via SRS, is never re-run through this function.
+  await db.transaction(async tx => {
+    await tx
+      .update(bookChapters)
+      .set({
+        status: "complete",
+        explanationAr: result.explanationAr,
+        explanationEn: result.explanationEn,
+        keyPoints: result.keyPoints,
+        chapterSummary: result.chapterSummary,
+        errorMessage: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookChapters.id, chapterId));
 
-  if (result.terms.length) {
-    await db.insert(bookTerms).values(
-      result.terms.map(term => ({
-        chapterId,
-        ar: term.ar,
-        en: term.en,
-        pronunciation: term.pronunciation,
-      }))
-    );
-  }
+    await tx.delete(bookTerms).where(eq(bookTerms.chapterId, chapterId));
+    await tx.delete(bookCards).where(eq(bookCards.chapterId, chapterId));
+    await tx.delete(bookMcqs).where(eq(bookMcqs.chapterId, chapterId));
 
-  if (result.cards.length) {
-    await db.insert(bookCards).values(
-      result.cards.map(card => ({
-        chapterId,
-        userId,
-        questionAr: card.questionAr,
-        questionEn: card.questionEn,
-        answerAr: card.answerAr,
-        answerEn: card.answerEn,
-        relatedTermEn: card.relatedTermEn,
-        sourcePage: card.sourcePage,
-      }))
-    );
-  }
+    if (result.terms.length) {
+      await tx.insert(bookTerms).values(
+        result.terms.map(term => ({
+          chapterId,
+          ar: term.ar,
+          en: term.en,
+          pronunciation: term.pronunciation,
+        }))
+      );
+    }
 
-  if (result.mcqs.length) {
-    await db.insert(bookMcqs).values(
-      result.mcqs.map(mcq => ({
-        chapterId,
-        questionEn: mcq.questionEn,
-        choices: mcq.choices,
-        correctIndex: mcq.correctIndex,
-        explanationEn: mcq.explanationEn,
-        sourcePage: mcq.sourcePage,
-      }))
-    );
-  }
+    if (result.cards.length) {
+      await tx.insert(bookCards).values(
+        result.cards.map(card => ({
+          chapterId,
+          userId,
+          questionAr: card.questionAr,
+          questionEn: card.questionEn,
+          answerAr: card.answerAr,
+          answerEn: card.answerEn,
+          relatedTermEn: card.relatedTermEn,
+          sourcePage: card.sourcePage,
+        }))
+      );
+    }
+
+    if (result.mcqs.length) {
+      await tx.insert(bookMcqs).values(
+        result.mcqs.map(mcq => ({
+          chapterId,
+          questionEn: mcq.questionEn,
+          choices: mcq.choices,
+          correctIndex: mcq.correctIndex,
+          explanationEn: mcq.explanationEn,
+          sourcePage: mcq.sourcePage,
+        }))
+      );
+    }
+  });
 }
 
 export async function getChapterContentForUser(

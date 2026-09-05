@@ -29,6 +29,20 @@
       "when": 1788541414174,
       "tag": "0003_military_paibok",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788629671409,
+      "tag": "0004_stormy_meggan",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788630114356,
+      "tag": "0005_loud_bruce_banner",
+      "breakpoints": true
     }
   ]
 }

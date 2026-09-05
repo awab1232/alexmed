@@ -6,6 +6,7 @@ import {
   getDeckWithCards,
   listDecksForUser,
 } from "../db";
+import { getDueCardsForUser, rateCard } from "../db-decks-srs";
 import { protectedProcedure, router } from "./trpc";
 
 const cardInput = z.object({
@@ -62,5 +63,24 @@ export const decksRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Deck not found" });
       }
       return { success: true } as const;
+    }),
+
+  dueCards: protectedProcedure.query(async ({ ctx }) => {
+    return getDueCardsForUser(ctx.user.id);
+  }),
+
+  rateCard: protectedProcedure
+    .input(
+      z.object({
+        cardId: z.string(),
+        rating: z.enum(["hard", "good", "easy"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await rateCard(ctx.user.id, input.cardId, input.rating);
+      if (!result) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+      }
+      return result;
     }),
 });

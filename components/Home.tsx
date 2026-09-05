@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUp,
   BookOpen,
@@ -27,7 +28,6 @@ import {
   Volume2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
-import { splitPageInputsIntoBatches } from "@/lib/pdf-cards";
 import AppSidebar from "@/components/AppSidebar";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
@@ -81,101 +81,14 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-const PAGE_CACHE_PREFIX = "mirat:pdf-pages:";
-type PageCache = { pageCount: number; pages: PageText[] };
-type GenerationCache = { batchResults: (Card[] | null)[] };
-
-function getPageCacheKey(file: File) {
-  return `${PAGE_CACHE_PREFIX}${file.name}:${file.size}:${file.lastModified}`;
-}
-
-function readPageCache(file: File): PageCache | null {
-  try {
-    const raw = window.localStorage.getItem(getPageCacheKey(file));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PageCache;
-    if (!parsed.pageCount || !Array.isArray(parsed.pages)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writePageCache(file: File, cache: PageCache) {
-  try {
-    window.localStorage.setItem(getPageCacheKey(file), JSON.stringify(cache));
-  } catch {
-    // Large PDFs can exceed browser storage quotas; generation still works.
-  }
-}
-
-function getGenerationCacheKey(file: File, depth: string) {
-  return `${PAGE_CACHE_PREFIX}cards:v2:${file.name}:${file.size}:${file.lastModified}:${depth}`;
-}
-
-function readGenerationCache(
-  file: File,
-  depth: string
-): GenerationCache | null {
-  try {
-    const raw = window.localStorage.getItem(getGenerationCacheKey(file, depth));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as GenerationCache;
-    return Array.isArray(parsed.batchResults) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeGenerationCache(
-  file: File,
-  depth: string,
-  cache: GenerationCache
-) {
-  try {
-    window.localStorage.setItem(
-      getGenerationCacheKey(file, depth),
-      JSON.stringify(cache)
-    );
-  } catch {
-    // Generated cards can exceed browser storage quotas; the live session continues.
-  }
-}
-
 function escapeCsv(value: string) {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-const sleep = (ms: number) =>
-  new Promise<void>(resolve => setTimeout(resolve, ms));
-
-// Small fixed pause between consecutive batch requests, on top of the
-// rate-limit-aware retry below — spreads requests out so we don't burst
-// against the AI gateway's per-minute limits in the first place.
-const BATCH_PACING_MS = 1200;
-// Kept at 1 (sequential) for now — OmniRoute's Railway container is currently
-// tripping its own resource-pressure guard under a SINGLE request, so firing
-// requests concurrently would add load exactly where it's already failing.
-// Safe to raise back to 2 once that container's memory has been confirmed
-// increased (see the "resourcePressure ... cgroup_ratio" incident).
-const GENERATION_CONCURRENCY = 1;
-const RATE_LIMIT_MAX_RETRIES = 6;
-// Separate, shorter retry budget for a non-rate-limit failure (network
-// hiccup, upstream timeout/5xx) — a single bad request shouldn't
-// permanently drop a whole batch of questions.
-const BATCH_RETRY_MAX_RETRIES = 6;
-const BATCH_RETRY_INITIAL_DELAY_MS = 4000;
-const BATCH_RETRY_MAX_DELAY_MS = 30_000;
-
-function getBatchRetryDelayMs(attempt: number) {
-  return Math.min(
-    BATCH_RETRY_MAX_DELAY_MS,
-    BATCH_RETRY_INITIAL_DELAY_MS * 2 ** attempt
-  );
-}
-
 export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [file, setFile] = useState<File | null>(null);
   const [currentFileName, setCurrentFileName] = useState("");
   const [pages, setPages] = useState<PageText[]>([]);
@@ -184,10 +97,7 @@ export default function Home() {
   const [fileUrl, setFileUrl] = useState("");
   const [openDeckId, setOpenDeckId] = useState<string | null>(null);
   const [libraryError, setLibraryError] = useState("");
-  const [ocrProcessed, setOcrProcessed] = useState(0);
-  const [ocrTotal, setOcrTotal] = useState(0);
   const [processedPages, setProcessedPages] = useState(0);
-  const [failedBatches, setFailedBatches] = useState(0);
   const [stage, setStage] = useState<Stage>("idle");
   const [view, setView] = useState<View>("upload");
   const [depth, setDepth] = useState("balanced");
@@ -204,11 +114,6 @@ export default function Home() {
   const decksQuery = trpc.decks.list.useQuery(undefined, {
     enabled: view === "library",
   });
-  const createDeck = trpc.decks.create.useMutation({
-    onSuccess: () => {
-      utils.decks.list.invalidate();
-    },
-  });
   const deleteDeckMutation = trpc.decks.delete.useMutation({
     onSuccess: () => {
       utils.decks.list.invalidate();
@@ -216,6 +121,18 @@ export default function Home() {
   });
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
+
+  // A مِرآة generation job (see app/mirror/[jobId]/page.tsx) redirects here
+  // with ?openDeck=<id> once it graduates into a real deck, so the user
+  // lands on the same "cards" browsing view they used to see immediately
+  // after generation finished, instead of an empty upload screen.
+  useEffect(() => {
+    const deckId = searchParams.get("openDeck");
+    if (!deckId) return;
+    router.replace("/");
+    openDeck(deckId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function speakEnglish(text: string, target: string) {
     if (!text.trim()) return;
@@ -276,272 +193,58 @@ export default function Home() {
     setProcessedPages(0);
     setPageCount(0);
     setFileUrl("");
-    setOcrProcessed(0);
-    setOcrTotal(0);
   }
 
+  // Upload + extract + OCR + generation all now live on the server (Item D
+  // of the reliability plan) so progress survives a closed tab or a
+  // different device — this function's only job is to hand the file to
+  // /api/mirror/upload-and-plan and send the user to the resumable
+  // /mirror/[jobId] page, which drives batch generation the same way
+  // app/books/[bookId]/page.tsx drives chapter analysis.
   async function startProcessing() {
     if (!file) return;
     setError("");
     setWarning("");
-    setCards([]);
-    setOpenDeckId(null);
-    setProcessedPages(0);
-    setFailedBatches(0);
-    setOcrProcessed(0);
-    setOcrTotal(0);
     setStage("extracting");
 
     try {
-      let uploadUrlData: { key: string } | null = null;
-      let extractedPages: PageText[];
-      let extractedPageCount: number;
-      const cachedPages = readPageCache(file);
+      const uploadUrlResponse = await fetch("/api/pdf/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileSize: file.size,
+          contentType: file.type || "application/pdf",
+        }),
+      });
+      const uploadData = await uploadUrlResponse.json();
+      if (!uploadUrlResponse.ok)
+        throw new Error(uploadData.error || "تعذر تجهيز رابط الرفع.");
 
-      if (cachedPages) {
-        extractedPages = cachedPages.pages;
-        extractedPageCount = cachedPages.pageCount;
-        setPageCount(extractedPageCount);
-        setPages(extractedPages);
-        setWarning("استخدمنا النص المحفوظ لهذا الملف لتسريع التوليد.");
-      } else {
-        // Upload and extract only once. The resulting pages are cached locally
-        // so a retry can go directly to AI generation without repeating OCR.
-        const uploadUrlResponse = await fetch("/api/pdf/upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileSize: file.size,
-            contentType: file.type || "application/pdf",
-          }),
-        });
-        const uploadData = await uploadUrlResponse.json();
-        if (!uploadUrlResponse.ok)
-          throw new Error(uploadData.error || "تعذر تجهيز رابط الرفع.");
-        uploadUrlData = uploadData as { key: string; uploadUrl: string };
-
-        const putResponse = await fetch(uploadData.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/pdf" },
-          body: file,
-        });
-        if (!putResponse.ok)
-          throw new Error(
-            "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
-          );
-
-        const extractResponse = await fetch("/api/pdf/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key: uploadData.key,
-            fileName: file.name,
-            fileSize: file.size,
-          }),
-        });
-        const extracted = await extractResponse.json();
-        if (!extractResponse.ok)
-          throw new Error(extracted.error || "تعذر قراءة الملف.");
-
-        extractedPages = extracted.pages as PageText[];
-        extractedPageCount = extracted.pageCount;
-        setFileUrl(extracted.fileUrl || "");
-        setPageCount(extractedPageCount);
-        if (extracted.pagesWithoutText > 0 && extracted.fileUrl) {
-          setWarning(
-            `تم اكتشاف ${extracted.pagesWithoutText} صفحة مصوّرة. جاري تشغيل OCR عليها...`
-          );
-          const missingPages = extractedPages
-            .filter(page => !page.hasText)
-            .map(page => page.page);
-          const ocrPages: PageText[] = [];
-          let failedCount = 0;
-          setOcrTotal(missingPages.length);
-          for (let index = 0; index < missingPages.length; index += 4) {
-            const ocrResponse = await fetch("/api/pdf/ocr", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                fileUrl: extracted.fileUrl,
-                pages: missingPages.slice(index, index + 4),
-              }),
-            });
-            const ocrResult = await ocrResponse.json();
-            if (ocrResponse.ok && Array.isArray(ocrResult.pages)) {
-              ocrPages.push(...(ocrResult.pages as PageText[]));
-              failedCount += Array.isArray(ocrResult.failedPages)
-                ? ocrResult.failedPages.length
-                : 0;
-            } else {
-              failedCount += Math.min(4, missingPages.length - index);
-            }
-            setOcrProcessed(Math.min(missingPages.length, index + 4));
-          }
-          const ocrByPage = new Map<number, PageText>(
-            ocrPages.map(page => [page.page, page])
-          );
-          extractedPages = extractedPages.map(
-            page => ocrByPage.get(page.page) ?? page
-          );
-          setWarning(
-            failedCount
-              ? `تم تشغيل OCR، لكن تعذرت قراءة ${failedCount} صفحة. ستظهر للمراجعة.`
-              : "تم تشغيل OCR للصفحات المصوّرة بنجاح."
-          );
-        }
-        writePageCache(file, {
-          pageCount: extractedPageCount,
-          pages: extractedPages,
-        });
-        setPages(extractedPages);
-      }
-
-      setStage("processing");
-      const batches = splitPageInputsIntoBatches(extractedPages);
-
-      // Keep each batch independently retryable while allowing two requests
-      // at once. Results are stored by batch index so the final deck stays in
-      // page order even when a later batch finishes first. Completed batches
-      // are persisted so a retry resumes from the first missing batch.
-      const savedGeneration = readGenerationCache(file, depth);
-      const batchResults: (Card[] | null)[] = Array.from(
-        { length: batches.length },
-        (_, index) => savedGeneration?.batchResults[index] ?? null
-      );
-      const cachedCards = batchResults.flatMap(result => result ?? []);
-      if (cachedCards.length) {
-        setCards(cachedCards);
-        setWarning("وجدنا دفعات جاهزة لهذا الملف — سنكمل الناقص فقط.");
-      }
-      let failedBatchCount = 0;
-      let completed = batchResults.reduce(
-        (total, result, index) =>
-          result !== null ? total + batches[index].length : total,
-        0
-      );
-      let nextBatchIndex = 0;
-
-      async function processBatch(
-        batchIndex: number,
-        batch: { page: number; text: string }[]
-      ) {
-        const usable = batch;
-        if (usable.length) {
-          if (batchIndex >= GENERATION_CONCURRENCY) {
-            await sleep(BATCH_PACING_MS);
-          }
-
-          for (let attempt = 0; ; attempt++) {
-            let response: Response | null = null;
-            let generated: {
-              cards?: Card[];
-              error?: string;
-              retryAfterMs?: number;
-            } | null = null;
-            try {
-              response = await fetch("/api/pdf/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pages: usable, depth }),
-              });
-              generated = await response.json();
-            } catch {
-              // Network error or bad JSON follows the normal retry policy.
-            }
-
-            if (response?.ok && generated) {
-              batchResults[batchIndex] = (generated.cards as Card[]) || [];
-              return;
-            }
-
-            const isRateLimited = response?.status === 429;
-            const canRetry = isRateLimited
-              ? attempt < RATE_LIMIT_MAX_RETRIES
-              : attempt < BATCH_RETRY_MAX_RETRIES;
-            if (canRetry) {
-              const waitMs = isRateLimited
-                ? typeof generated?.retryAfterMs === "number"
-                  ? generated.retryAfterMs
-                  : 20_000
-                : getBatchRetryDelayMs(attempt);
-              setWarning(
-                isRateLimited
-                  ? `تجاوزنا الحد المؤقت — ننتظر ${Math.ceil(waitMs / 1000)} ثانية قبل إعادة المحاولة...`
-                  : `تعذر توليد دفعة، جارٍ إعادة المحاولة (${attempt + 1}/${BATCH_RETRY_MAX_RETRIES})...`
-              );
-              await sleep(waitMs);
-              continue;
-            }
-
-            failedBatchCount += 1;
-            setFailedBatches(previous => previous + 1);
-            return;
-          }
-        }
-        batchResults[batchIndex] = [];
-      }
-
-      async function worker() {
-        while (true) {
-          const batchIndex = nextBatchIndex++;
-          if (batchIndex >= batches.length) return;
-          if (batchResults[batchIndex] !== null) continue;
-          await processBatch(batchIndex, batches[batchIndex]);
-          completed += batches[batchIndex].length;
-          setProcessedPages(completed);
-          writeGenerationCache(file!, depth, { batchResults });
-        }
-      }
-
-      setProcessedPages(completed);
-      await Promise.all(
-        Array.from(
-          { length: Math.min(GENERATION_CONCURRENCY, batches.length) },
-          () => worker()
-        )
-      );
-
-      const collectedCards = batchResults.flatMap(result => result ?? []);
-      writeGenerationCache(file!, depth, { batchResults });
-      setCards(collectedCards);
-      if (failedBatchCount > 0) {
-        setStage("idle");
-        setError(
-          `لم تكتمل المعالجة: تعذرت معالجة ${failedBatchCount} دفعة. لم نعتبر الملف مكتملًا، ويمكنك إعادة المحاولة لإكمال الصفحات المتبقية.`
+      const putResponse = await fetch(uploadData.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/pdf" },
+        body: file,
+      });
+      if (!putResponse.ok)
+        throw new Error(
+          "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
         );
-        return;
-      }
-      setWarning("");
 
-      // Save the generated deck to the account's library so it can be
-      // reopened later without re-uploading the file. Best-effort: a save
-      // failure shouldn't block the study session that already succeeded.
-      if (collectedCards.length) {
-        createDeck.mutate(
-          {
-            fileName: file.name,
-            fileKey: uploadUrlData?.key,
-            pageCount: extractedPageCount,
-            depth,
-            cards: collectedCards.map(({ id: _id, ...card }) => card),
-          },
-          {
-            onSuccess: data => setOpenDeckId(data.id),
-            onError: () =>
-              setWarning(
-                previous =>
-                  previous ||
-                  "تعذر حفظ هذه الدفعة في مكتبتك، لكن بطاقاتك جاهزة أدناه."
-              ),
-          }
-        );
-      }
+      const planResponse = await fetch("/api/mirror/upload-and-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: uploadData.key,
+          fileName: file.name,
+          depth,
+        }),
+      });
+      const planned = await planResponse.json();
+      if (!planResponse.ok)
+        throw new Error(planned.error || "تعذر تجهيز الملف للتوليد.");
 
-      setStage("ready");
-      setView("cards");
-      setActiveCard(0);
-      setShowAnswer(false);
+      router.push(`/mirror/${planned.jobId}`);
     } catch (processingError) {
       setStage("idle");
       setError(
@@ -560,10 +263,7 @@ export default function Home() {
     setCards([]);
     setPageCount(0);
     setFileUrl("");
-    setOcrProcessed(0);
-    setOcrTotal(0);
     setProcessedPages(0);
-    setFailedBatches(0);
     setStage("idle");
     setView("upload");
     setError("");
@@ -587,7 +287,6 @@ export default function Home() {
       setCards(result.cards);
       setDepth(result.deck.depth);
       setProcessedPages(result.deck.pageCount);
-      setFailedBatches(0);
       setStage("ready");
       setView("cards");
       setQuery("");
@@ -812,7 +511,7 @@ export default function Home() {
                     {warning}
                   </div>
                 )}
-                {(stage === "extracting" || stage === "processing") && (
+                {stage === "extracting" && (
                   <div
                     className="live-progress"
                     role="status"
@@ -823,33 +522,12 @@ export default function Home() {
                         <ScanText size={17} />
                       </div>
                       <div>
-                        <strong>
-                          {stage === "extracting"
-                            ? ocrTotal
-                              ? "نقرأ الصفحات المصوّرة بـ OCR"
-                              : "نفحص صفحات الملف"
-                            : "نحوّل الأسئلة إلى بطاقات"}
-                        </strong>
+                        <strong>نرفع الملف ونجهّزه للتوليد</strong>
                         <span>
-                          {stage === "extracting" && ocrTotal
-                            ? `اكتمل OCR لـ ${ocrProcessed} من ${ocrTotal} صفحة`
-                            : stage === "processing"
-                              ? `اكتملت معالجة ${processedPages} من ${pageCount} صفحة`
-                              : "نجهّز الملف للمعالجة..."}
+                          هتنقل تلقائيًا لصفحة التقدّم فور اكتمال الرفع — تقدر
+                          تسكّر الصفحة وترجع بعدين من أي جهاز.
                         </span>
                       </div>
-                      <b>
-                        {stage === "extracting" && ocrTotal
-                          ? `${Math.round((ocrProcessed / ocrTotal) * 100)}%`
-                          : `${progress}%`}
-                      </b>
-                    </div>
-                    <div className="progress-track">
-                      <i
-                        style={{
-                          width: `${stage === "extracting" && ocrTotal ? Math.round((ocrProcessed / ocrTotal) * 100) : progress}%`,
-                        }}
-                      />
                     </div>
                     <div className="progress-dots">
                       <span /> <span /> <span />
@@ -902,14 +580,12 @@ export default function Home() {
                 <button
                   type="button"
                   className="primary-button"
-                  disabled={
-                    !file || stage === "extracting" || stage === "processing"
-                  }
+                  disabled={!file || stage === "extracting"}
                   onClick={startProcessing}
                 >
-                  {stage === "extracting" || stage === "processing" ? (
+                  {stage === "extracting" ? (
                     <>
-                      <Loader2 size={18} className="spin" /> جاري التحليل...
+                      <Loader2 size={18} className="spin" /> جاري الرفع...
                     </>
                   ) : (
                     <>
@@ -959,12 +635,6 @@ export default function Home() {
               <div className="inline-alert warning wide">
                 <CircleAlert size={16} />
                 {warning}
-              </div>
-            )}
-            {failedBatches > 0 && (
-              <div className="inline-alert warning wide">
-                <CircleAlert size={16} /> تعذر توليد {failedBatches} دفعة.
-                الصفحات بقيت محسوبة، ويمكنك إعادة رفع الملف للمحاولة مرة أخرى.
               </div>
             )}
             <div className="stats-row">

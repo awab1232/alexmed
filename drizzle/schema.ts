@@ -11,6 +11,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { GeneratedCard } from "../lib/pdf-cards";
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 
@@ -101,6 +102,17 @@ export const cardConfidenceEnum = pgEnum("card_confidence", [
   "low",
 ]);
 
+// Shared SRS rating domain — used by both مِرآة's `cards` (below) and كتبي's
+// `bookCards` (see the كتبي section further down). Declared up here (rather
+// than only where `bookCards` is defined) since `cards` now needs it too and
+// a pgEnum() const must be initialized before any pgTable() that references
+// it.
+export const bookCardRatingEnum = pgEnum("book_card_rating", [
+  "hard",
+  "good",
+  "easy",
+]);
+
 // A saved study session: one uploaded PDF's generated cards, so a user can
 // come back to them later without re-uploading the file.
 export const decks = pgTable("decks", {
@@ -140,7 +152,34 @@ export const cards = pgTable("cards", {
   sourcePage: integer("sourcePage").notNull(),
   status: cardStatusEnum("status").notNull(),
   confidence: cardConfidenceEnum("confidence").notNull(),
+  // SRS (SM-2-style) scheduling fields — same shape/defaults as كتبي's
+  // bookCards below, so lib/srs.ts's applySrsRating() works unmodified for
+  // either table. dueAt defaults to now() so a freshly generated card is
+  // immediately due, matching bookCards' behavior for a freshly-analyzed
+  // chapter's cards.
+  easeFactor: real("easeFactor").default(2.5).notNull(),
+  intervalDays: integer("intervalDays").default(0).notNull(),
+  dueAt: timestamp("dueAt", { withTimezone: true }).defaultNow().notNull(),
+  reviewCount: integer("reviewCount").default(0).notNull(),
+  lastRating: bookCardRatingEnum("lastRating"),
   createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// Append-only SRS rating log for مِرآة cards — mirrors bookReviewEvents
+// further down for the same reason documented there (stats/streak queries
+// need per-review history, which a mutable current-state column can't give).
+export const cardReviewEvents = pgTable("card_review_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  cardId: uuid("cardId")
+    .notNull()
+    .references(() => cards.id, { onDelete: "cascade" }),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  rating: bookCardRatingEnum("rating").notNull(),
+  reviewedAt: timestamp("reviewedAt", { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
@@ -149,6 +188,86 @@ export type Deck = typeof decks.$inferSelect;
 export type InsertDeck = typeof decks.$inferInsert;
 export type CardRow = typeof cards.$inferSelect;
 export type InsertCardRow = typeof cards.$inferInsert;
+export type CardReviewEvent = typeof cardReviewEvents.$inferSelect;
+
+// ── مِرآة generation jobs — a server-side, resumable staging area for the
+// upload→extract→OCR→generate pipeline, replacing browser localStorage as
+// the source of truth (Item D of the reliability plan). Mirrors كتبي's
+// books/bookChapters pattern directly below: a job is planned once (all
+// batches "pending"), each batch is driven through its own bounded AI call
+// by /api/mirror/generate-batch, and once every batch reaches "complete" the
+// job "graduates" — its cards are copied into a real decks/cards row via the
+// existing createDeckWithCards() (lib/db.ts), so the established
+// library/browse/SRS-review UI needs no changes. mirror_jobs/mirror_batches
+// are transient (read once during generation, then not read again after
+// graduation) — unlike decks/cards, which stay the durable, permanently
+// queried library.
+
+export const mirrorJobStatusEnum = pgEnum("mirror_job_status", [
+  "pending",
+  "complete",
+]);
+export const mirrorBatchStatusEnum = pgEnum("mirror_batch_status", [
+  "pending",
+  "generating",
+  "complete",
+  "failed",
+]);
+
+export const mirrorJobs = pgTable("mirror_jobs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  fileName: text("fileName").notNull(),
+  fileKey: text("fileKey").notNull(),
+  pageCount: integer("pageCount").default(0).notNull(),
+  depth: text("depth").default("balanced").notNull(),
+  status: mirrorJobStatusEnum("status").default("pending").notNull(),
+  // Set once graduateMirrorJob() creates the real deck — null while the job
+  // is still generating.
+  deckId: uuid("deckId").references(() => decks.id),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const mirrorBatches = pgTable("mirror_batches", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  jobId: uuid("jobId")
+    .notNull()
+    .references(() => mirrorJobs.id, { onDelete: "cascade" }),
+  orderIndex: integer("orderIndex").notNull(),
+  startPage: integer("startPage").notNull(),
+  endPage: integer("endPage").notNull(),
+  status: mirrorBatchStatusEnum("status").default("pending").notNull(),
+  // This batch's own slice of extracted (+ OCR'd) page text, stored at
+  // plan time — same rationale as bookChapters.pageTexts below: the
+  // generate-batch route never has to re-fetch/re-parse the whole PDF.
+  pageTexts:
+    jsonb("pageTexts").$type<
+      { page: number; text: string; hasText: boolean }[]
+    >(),
+  // Generated cards, stored as a transient blob (not a normalized child
+  // table): this data is written once and read at most twice — once for
+  // progress display, once to graduate into real `cards` rows — never
+  // queried/joined afterward, same one-shot-content pattern as
+  // bookChapters.explanationAr/keyPoints below.
+  cards: jsonb("cards").$type<GeneratedCard[]>(),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export type MirrorJob = typeof mirrorJobs.$inferSelect;
+export type MirrorBatch = typeof mirrorBatches.$inferSelect;
 
 // ── كتبي (Book Study) — separate feature/data layer from decks/cards above.
 // A book is uploaded once, split into chapters (heading-detected or fixed
@@ -221,12 +340,6 @@ export const bookTerms = pgTable("book_terms", {
   en: text("en").notNull(),
   pronunciation: text("pronunciation").notNull(),
 });
-
-export const bookCardRatingEnum = pgEnum("book_card_rating", [
-  "hard",
-  "good",
-  "easy",
-]);
 
 export const bookCards = pgTable("book_cards", {
   id: uuid("id").defaultRandom().primaryKey(),
