@@ -20,7 +20,10 @@ export type MirrorPageText = { page: number; text: string; hasText: boolean };
 // many questions on one page, so isolating pages prevents a dense page from
 // being crowded out by neighboring pages and makes coverage auditable.
 const BATCH_SIZE = 1;
-const BATCH_MAX_CHARS = 10_000;
+// Keep one AI request comfortably small enough for Vercel/OmniRoute. If a
+// page is denser than this, it becomes multiple ordered batches; no text is
+// dropped just to fit the request.
+const BATCH_MAX_CHARS = 6_000;
 
 type MirrorPageGroup = MirrorPageText[];
 

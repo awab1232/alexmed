@@ -12,10 +12,7 @@ const BATCH_RETRY_DELAY_MS = 4000;
 const sleep = (ms: number) =>
   new Promise<void>(resolve => setTimeout(resolve, ms));
 
-async function generateBatch(
-  batchId: string,
-  onWarning: (message: string) => void
-): Promise<boolean> {
+async function generateBatch(batchId: string): Promise<boolean> {
   for (let attempt = 0; ; attempt++) {
     let response: Response | null = null;
     let data: { error?: string; retryAfterMs?: number } | null = null;
@@ -43,11 +40,6 @@ async function generateBatch(
           ? data.retryAfterMs
           : 20_000
         : BATCH_RETRY_DELAY_MS;
-      onWarning(
-        isRateLimited
-          ? `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية...`
-          : "تعذر توليد هذه الدفعة، جارٍ إعادة المحاولة..."
-      );
       await sleep(waitMs);
       continue;
     }
@@ -81,11 +73,19 @@ export default function MirrorJobPage() {
     let cancelled = false;
 
     (async () => {
+      let failedCount = 0;
       for (const batch of pending) {
         if (cancelled) break;
-        await generateBatch(batch.id, setWarning);
-        setWarning("");
+        const completed = await generateBatch(batch.id);
+        if (!completed) failedCount += 1;
         if (!cancelled) await utils.mirror.get.invalidate({ id: jobId });
+      }
+      if (!cancelled) {
+        setWarning(
+          failedCount
+            ? `تعذر إكمال ${failedCount} جزءًا من الملف. يمكنك إعادة المحاولة لاحقًا.`
+            : ""
+        );
       }
       resumingRef.current = false;
     })();
@@ -150,17 +150,28 @@ export default function MirrorJobPage() {
         </div>
       </div>
 
-      {warning && (
-        <div className="inline-alert warning wide">
-          <CircleAlert size={16} />
-          {warning}
-        </div>
-      )}
       {isProcessing && !warning && (
-        <div className="inline-alert warning wide">
-          <Loader2 size={16} className="spin" />
-          جاري توليد البطاقات — تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش
-          هنفقد أي تقدم.
+        <div className="live-progress">
+          <div className="progress-heading">
+            <div>
+              <Loader2 size={16} className="spin" />
+              <strong>جاري تجهيز ملفك بالكامل</strong>
+            </div>
+            <span>
+              تم تجهيز {completeCount} من {batches.length} جزءًا
+            </span>
+          </div>
+          <div className="progress-track" aria-label="تقدم تجهيز الملف">
+            <i
+              style={{
+                width: `${batches.length ? (completeCount / batches.length) * 100 : 0}%`,
+              }}
+            />
+          </div>
+          <p className="progress-caption">
+            لا يتم اعتماد الملف حتى تكتمل جميع أجزائه. يمكنك العودة لاحقًا
+            لاستكمال ما تبقى.
+          </p>
         </div>
       )}
       {job.status === "complete" && (
@@ -170,34 +181,35 @@ export default function MirrorJobPage() {
         </div>
       )}
 
-      <div className="library-grid">
-        {batches.map(batch => (
-          <div className="library-item" key={batch.id}>
-            <div className="library-item-icon">
-              {batch.status === "complete" && <CheckCircle2 size={18} />}
-              {batch.status === "failed" && <CircleAlert size={18} />}
-              {(batch.status === "pending" ||
-                batch.status === "generating") && (
-                <Loader2 size={18} className="spin" />
-              )}
-            </div>
-            <div className="library-item-meta">
-              <strong>
-                صفحة {batch.startPage}–{batch.endPage}
-              </strong>
-              <span>
-                {batch.status === "complete"
-                  ? "مكتملة"
-                  : batch.status === "failed"
-                    ? "تعذر التوليد"
-                    : batch.status === "generating"
-                      ? "جارٍ التوليد..."
-                      : "بالانتظار"}
-              </span>
-            </div>
+      {warning && (
+        <div className="inline-alert warning wide">
+          <CircleAlert size={16} />
+          {warning}
+        </div>
+      )}
+
+      {batches.some(batch => batch.status === "failed") && (
+        <details className="processing-details">
+          <summary>عرض تفاصيل الأجزاء التي تحتاج إعادة محاولة</summary>
+          <div className="library-grid">
+            {batches
+              .filter(batch => batch.status === "failed")
+              .map(batch => (
+                <div className="library-item" key={batch.id}>
+                  <div className="library-item-icon">
+                    <CircleAlert size={18} />
+                  </div>
+                  <div className="library-item-meta">
+                    <strong>
+                      صفحة {batch.startPage}–{batch.endPage}
+                    </strong>
+                    <span>{batch.errorMessage || "تحتاج إعادة محاولة"}</span>
+                  </div>
+                </div>
+              ))}
           </div>
-        ))}
-      </div>
+        </details>
+      )}
     </section>
   );
 }
