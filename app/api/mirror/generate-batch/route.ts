@@ -1,10 +1,10 @@
-import { auth } from "@/lib/auth";
 import { AiRateLimitError } from "@/lib/ai/types";
 import {
   completeBatchGeneration,
-  getMirrorBatchForUser,
-  setBatchFailed,
-  setBatchGenerating,
+  finalizeMirrorJobIfDone,
+  getMirrorBatchById,
+  markMirrorBatchFailedTerminal,
+  markMirrorBatchRetrying,
 } from "@/lib/db-mirror";
 import { invokeLLM } from "@/lib/llm";
 import {
@@ -14,52 +14,74 @@ import {
   parseJsonResponse,
   responseSchema,
 } from "@/lib/pdf-cards";
-import { randomUUID } from "node:crypto";
+import { claimMirrorBatch } from "@/lib/queue/claim";
+import { getQueueMaxAttempts } from "@/lib/queue/types";
+import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
 
 // Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
-// this value — mirrors /api/books/analyze-chapter's own setting.
+// this value.
 export const maxDuration = 60;
 
-// The core of the resumable مِرآة pipeline (Item D): generates cards for
-// exactly ONE batch and persists the full result before returning. The
-// client calls this once per pending/failed batch, sequentially — see
-// app/mirror/[jobId]/page.tsx, mirroring app/books/[bookId]/page.tsx's
-// analyze-chapter loop exactly.
+// The مِرآة worker (QStash queue migration): generates cards for exactly ONE
+// batch and persists the full result before returning. This route is no
+// longer callable by the browser — it's invoked only by QStash, verified via
+// signature below — see app/mirror/[jobId]/page.tsx, which now just polls
+// job/batch status instead of driving generation itself.
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "الرجاء تسجيل الدخول أولاً." },
-      { status: 401 }
-    );
+  const rawBody = await request.text();
+  const signature = request.headers.get("upstash-signature");
+  const verified = await verifyQStashRequest(rawBody, signature, request.url);
+  if (!verified) {
+    return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
-    batchId?: string;
-  };
+  const body = JSON.parse(rawBody) as { batchId?: string };
   const batchId = typeof body.batchId === "string" ? body.batchId : "";
   if (!batchId) {
-    return NextResponse.json({ error: "معرف الدفعة مفقود." }, { status: 400 });
+    // Malformed message — retrying won't help, ack so QStash doesn't retry.
+    return NextResponse.json({ error: "معرف الدفعة مفقود." }, { status: 200 });
   }
 
-  const batch = await getMirrorBatchForUser(session.user.id, batchId);
+  const batch = await getMirrorBatchById(batchId);
   if (!batch) {
-    return NextResponse.json({ error: "الدفعة غير موجودة." }, { status: 404 });
+    // Batch no longer exists (e.g. its job was deleted) — nothing to do.
+    return NextResponse.json({ batchId, status: "skipped" });
+  }
+
+  const claimed = await claimMirrorBatch(batchId);
+  if (!claimed) {
+    // Already processing (a concurrent/duplicate delivery) or already
+    // complete — QStash is at-least-once, so this is expected occasionally,
+    // not an error. Ack without doing any AI work.
+    return NextResponse.json({ batchId, status: "already_processing" });
   }
 
   const pages = (batch.pageTexts ?? []).filter(page => page.hasText);
   if (!pages.length) {
     // No usable text in this batch (e.g. every page failed OCR) — complete
-    // it with zero cards rather than failing, same as the client-side
-    // processBatch()'s "no usable pages" branch used to do.
-    await completeBatchGeneration(batchId, batch.jobId, session.user.id, []);
+    // it with zero cards rather than failing; there's nothing to retry.
+    await completeBatchGeneration(batchId, batch.jobId, batch.userId, []);
+    await finalizeMirrorJobIfDone(batch.jobId);
     return NextResponse.json({ batchId, status: "complete", cards: [] });
   }
 
-  const claimed = await setBatchGenerating(batchId);
-  if (!claimed) {
-    return NextResponse.json({ batchId, status: "already_processing" });
+  const maxAttempts = getQueueMaxAttempts();
+
+  async function retryOrFail(errorMessage: string, httpStatus: number) {
+    if (claimed!.attemptCount >= maxAttempts) {
+      await markMirrorBatchFailedTerminal(batchId, errorMessage);
+      await finalizeMirrorJobIfDone(batch!.jobId);
+      // Ack — attempts exhausted, no more QStash retries wanted.
+      return NextResponse.json({
+        batchId,
+        status: "failed",
+        error: errorMessage,
+      });
+    }
+    await markMirrorBatchRetrying(batchId, errorMessage);
+    // Non-2xx — QStash redelivers per its own retry/backoff schedule.
+    return NextResponse.json({ error: errorMessage }, { status: httpStatus });
   }
 
   try {
@@ -70,56 +92,46 @@ export async function POST(request: Request) {
     });
 
     const parsed = parseJsonResponse(response.choices[0]?.message.content);
+    // Reject (not coerce) any card whose sourcePage falls outside this
+    // batch's own pages — a model hallucinating a page number outside the
+    // batch is a data-integrity issue, not something to silently paper over.
     const cards: GeneratedCard[] = Array.isArray(parsed.cards)
-      ? parsed.cards.map((card: GeneratedCard) => ({
-          ...card,
-          sourcePage: pages.some(page => page.page === card.sourcePage)
-            ? card.sourcePage
-            : pages[0].page,
-        }))
+      ? parsed.cards.filter((card: GeneratedCard) =>
+          pages.some(page => page.page === card.sourcePage)
+        )
       : [];
 
     if (!cards.length) {
-      await setBatchFailed(
-        batchId,
-        "لم يتم العثور على أسئلة قابلة للتحويل إلى بطاقات في هذه الصفحة."
-      );
-      return NextResponse.json(
-        {
-          error:
-            "لم يتم توليد أي بطاقة لهذه الصفحة. أعد المحاولة للتأكد من عدم فقدان الأسئلة.",
-        },
-        { status: 422 }
+      return await retryOrFail(
+        "لم يتم العثور على أسئلة قابلة للتحويل إلى بطاقات في هذه الدفعة.",
+        422
       );
     }
 
-    await completeBatchGeneration(batchId, batch.jobId, session.user.id, cards);
+    await completeBatchGeneration(batchId, batch.jobId, batch.userId, cards);
+    await finalizeMirrorJobIfDone(batch.jobId);
 
-    return NextResponse.json({
-      batchId,
-      status: "complete",
-      cards: cards.map(card => ({ id: randomUUID(), ...card })),
-    });
+    return NextResponse.json({ batchId, status: "complete", cards });
   } catch (error) {
     console.error("[Mirror] Batch generation failed", error);
     if (error instanceof AiRateLimitError) {
-      await setBatchFailed(
+      if (claimed.attemptCount >= maxAttempts) {
+        await markMirrorBatchFailedTerminal(
+          batchId,
+          "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
+        );
+        await finalizeMirrorJobIfDone(batch.jobId);
+        return NextResponse.json({ batchId, status: "failed" });
+      }
+      await markMirrorBatchRetrying(
         batchId,
         "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
       );
       return NextResponse.json(
-        {
-          error:
-            "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي. سيُعاد المحاولة تلقائيًا بعد قليل.",
-          retryAfterMs: error.retryAfterMs,
-        },
+        { error: "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي." },
         { status: 429 }
       );
     }
-    await setBatchFailed(batchId, "تعذر توليد بطاقات لهذه الدفعة.");
-    return NextResponse.json(
-      { error: "تعذر توليد بطاقات لهذه الدفعة. حاول مرة أخرى." },
-      { status: 502 }
-    );
+    return await retryOrFail("تعذر توليد بطاقات لهذه الدفعة.", 502);
   }
 }

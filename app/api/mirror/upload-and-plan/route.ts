@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { createMirrorJobWithBatches } from "@/lib/db-mirror";
 import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
+import { publishMessage } from "@/lib/queue/client";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
@@ -127,6 +128,33 @@ export async function POST(request: Request) {
       depth,
       pages,
     });
+
+    // Publish one QStash message per batch — this is what starts background
+    // generation; the client only ever polls job/batch status from here on
+    // (see app/mirror/[jobId]/page.tsx), it never calls generate-batch
+    // itself. Publish failures here would strand a batch in "pending"
+    // forever with nothing to wake it, so surface that as a real error
+    // rather than silently returning a job the queue never picks up.
+    try {
+      await Promise.all(
+        batches.map(batch =>
+          publishMessage({
+            type: "generate_mirror_batch",
+            batchId: batch.id,
+            jobId: job.id,
+          })
+        )
+      );
+    } catch (publishError) {
+      console.error("[Mirror] Failed to enqueue batches", publishError);
+      return NextResponse.json(
+        {
+          error:
+            "تم إنشاء الملف لكن تعذر بدء المعالجة. حاول إعادة رفع الملف.",
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({
       jobId: job.id,

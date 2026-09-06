@@ -219,7 +219,11 @@ export async function getMirrorBatchById(
   if (!db) return null;
 
   const [row] = await db
-    .select({ batch: mirrorBatches, depth: mirrorJobs.depth, userId: mirrorJobs.userId })
+    .select({
+      batch: mirrorBatches,
+      depth: mirrorJobs.depth,
+      userId: mirrorJobs.userId,
+    })
     .from(mirrorBatches)
     .innerJoin(mirrorJobs, eq(mirrorJobs.id, mirrorBatches.jobId))
     .where(eq(mirrorBatches.id, batchId))

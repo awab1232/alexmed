@@ -1,112 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
+import { CheckCircle2, CircleAlert, Loader2, RotateCcw } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
-const RATE_LIMIT_MAX_RETRIES = 3;
-const BATCH_RETRY_MAX_RETRIES = 2;
-const BATCH_RETRY_DELAY_MS = 4000;
-const GENERATION_CONCURRENCY = 2;
-const sleep = (ms: number) =>
-  new Promise<void>(resolve => setTimeout(resolve, ms));
-
-async function generateBatch(batchId: string): Promise<boolean> {
-  for (let attempt = 0; ; attempt++) {
-    let response: Response | null = null;
-    let data: { error?: string; retryAfterMs?: number } | null = null;
-    try {
-      response = await fetch("/api/mirror/generate-batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batchId }),
-      });
-      data = await response.json();
-    } catch {
-      // falls through to the retry policy below, same as a non-ok response
-    }
-
-    if (response?.ok) return true;
-
-    const isRateLimited = response?.status === 429;
-    const canRetry = isRateLimited
-      ? attempt < RATE_LIMIT_MAX_RETRIES
-      : attempt < BATCH_RETRY_MAX_RETRIES;
-
-    if (canRetry) {
-      const waitMs = isRateLimited
-        ? typeof data?.retryAfterMs === "number"
-          ? data.retryAfterMs
-          : 20_000
-        : BATCH_RETRY_DELAY_MS;
-      await sleep(waitMs);
-      continue;
-    }
-
-    return false;
-  }
-}
+// Background generation now happens entirely server-side, driven by
+// Upstash QStash workers (see app/api/mirror/generate-batch/route.ts) — this
+// page's only job is to poll job/batch status and show simple aggregate
+// progress. It never calls generate-batch itself, so closing the tab or
+// losing connection never stops generation; reopening this page just
+// resumes showing the same server-side progress.
+const POLL_INTERVAL_MS = 3000;
+const TERMINAL_JOB_STATUSES = new Set(["complete", "partial_failed"]);
 
 export default function MirrorJobPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
   const router = useRouter();
-  const jobQuery = trpc.mirror.get.useQuery({ id: jobId });
   const utils = trpc.useUtils();
-  const [warning, setWarning] = useState("");
-  const resumingRef = useRef(false);
-
-  // Resumability (Item D of the reliability plan, mirroring
-  // app/books/[bookId]/page.tsx exactly): loading this page just re-queries
-  // batch statuses — any "pending" or "failed" batch picks the loop back up
-  // automatically, from any device, whether that's a fresh upload or the
-  // student returning after closing the tab mid-generation.
-  useEffect(() => {
-    if (!jobQuery.data || resumingRef.current) return;
-    const pending = jobQuery.data.batches.filter(
-      batch => batch.status === "pending" || batch.status === "failed"
-    );
-    if (!pending.length) return;
-
-    resumingRef.current = true;
-    let cancelled = false;
-
-    (async () => {
-      let failedCount = 0;
-      let nextIndex = 0;
-      const runWorker = async () => {
-        while (!cancelled) {
-          const index = nextIndex++;
-          const batch = pending[index];
-          if (!batch) return;
-          const completed = await generateBatch(batch.id);
-          if (!completed) failedCount += 1;
-          if (!cancelled) await utils.mirror.get.invalidate({ id: jobId });
-        }
-      };
-
-      await Promise.all(
-        Array.from(
-          { length: Math.min(GENERATION_CONCURRENCY, pending.length) },
-          () => runWorker()
-        )
-      );
-      if (!cancelled) {
-        setWarning(
-          failedCount
-            ? `تعذر إكمال ${failedCount} جزءًا من الملف. يمكنك إعادة المحاولة لاحقًا.`
-            : ""
-        );
-      }
-      resumingRef.current = false;
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [jobQuery.data, jobId, utils]);
+  const jobQuery = trpc.mirror.get.useQuery(
+    { id: jobId },
+    {
+      refetchInterval: query => {
+        const status = query.state.data?.job.status;
+        return status && TERMINAL_JOB_STATUSES.has(status)
+          ? false
+          : POLL_INTERVAL_MS;
+      },
+    }
+  );
+  const retryBatch = trpc.mirror.retryBatch.useMutation({
+    onSuccess: () => utils.mirror.get.invalidate({ id: jobId }),
+  });
 
   // Once the job graduates (all batches complete → a real deck exists),
   // send the user straight to their library instead of leaving them on a
@@ -144,9 +71,9 @@ export default function MirrorJobPage() {
 
   const { job, batches } = jobQuery.data;
   const completeCount = batches.filter(b => b.status === "complete").length;
-  const isProcessing = batches.some(
-    b => b.status === "pending" || b.status === "generating"
-  );
+  const failedBatches = batches.filter(b => b.status === "failed");
+  const isProcessing =
+    job.status !== "complete" && job.status !== "partial_failed";
 
   return (
     <section className="cards-view">
@@ -163,15 +90,15 @@ export default function MirrorJobPage() {
         </div>
       </div>
 
-      {isProcessing && !warning && (
+      {isProcessing && (
         <div className="live-progress">
           <div className="progress-heading">
             <div>
               <Loader2 size={16} className="spin" />
-              <strong>جاري تجهيز ملفك بالكامل</strong>
+              <strong>جاري تجهيز ملفك</strong>
             </div>
             <span>
-              تم تجهيز {completeCount} من {batches.length} جزءًا
+              تم إكمال {completeCount} من {batches.length} جزءًا
             </span>
           </div>
           <div className="progress-track" aria-label="تقدم تجهيز الملف">
@@ -182,11 +109,12 @@ export default function MirrorJobPage() {
             />
           </div>
           <p className="progress-caption">
-            لا يتم اعتماد الملف حتى تكتمل جميع أجزائه. يمكنك العودة لاحقًا
-            لاستكمال ما تبقى.
+            لا يتم اعتماد الملف حتى تكتمل جميع أجزائه. يمكنك إغلاق هذه
+            الصفحة والعودة لاحقًا من أي جهاز دون فقدان التقدم.
           </p>
         </div>
       )}
+
       {job.status === "complete" && (
         <div className="inline-alert success wide">
           <CheckCircle2 size={16} />
@@ -194,34 +122,38 @@ export default function MirrorJobPage() {
         </div>
       )}
 
-      {warning && (
+      {job.status === "partial_failed" && (
         <div className="inline-alert warning wide">
           <CircleAlert size={16} />
-          {warning}
+          اكتمل معظم الملف، لكن {failedBatches.length} جزءًا تعذّر توليده. يمكنك
+          إعادة محاولته أدناه.
         </div>
       )}
 
-      {batches.some(batch => batch.status === "failed") && (
-        <details className="processing-details">
-          <summary>عرض تفاصيل الأجزاء التي تحتاج إعادة محاولة</summary>
-          <div className="library-grid">
-            {batches
-              .filter(batch => batch.status === "failed")
-              .map(batch => (
-                <div className="library-item" key={batch.id}>
-                  <div className="library-item-icon">
-                    <CircleAlert size={18} />
-                  </div>
-                  <div className="library-item-meta">
-                    <strong>
-                      صفحة {batch.startPage}–{batch.endPage}
-                    </strong>
-                    <span>{batch.errorMessage || "تحتاج إعادة محاولة"}</span>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </details>
+      {failedBatches.length > 0 && (
+        <div className="library-grid">
+          {failedBatches.map(batch => (
+            <div className="library-item" key={batch.id}>
+              <div className="library-item-icon">
+                <CircleAlert size={18} />
+              </div>
+              <div className="library-item-meta">
+                <strong>
+                  صفحة {batch.startPage}–{batch.endPage}
+                </strong>
+                <span>{batch.errorMessage || "تعذّر التوليد"}</span>
+              </div>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={retryBatch.isPending}
+                onClick={() => retryBatch.mutate({ batchId: batch.id })}
+              >
+                <RotateCcw size={14} /> إعادة المحاولة
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );
