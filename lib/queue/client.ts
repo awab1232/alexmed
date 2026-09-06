@@ -4,7 +4,7 @@
 // local dev (with a tunnel), preview deployments, and production.
 import { Client, type FlowControl } from "@upstash/qstash";
 import type { QueueMessage } from "./types";
-import { getQueueMaxAttempts } from "./types";
+import { getQueueGlobalConcurrency, getQueueMaxAttempts } from "./types";
 
 let _client: Client | null = null;
 
@@ -47,6 +47,21 @@ function resolveDestination(message: QueueMessage): string {
 // QStash `retryDelay` formula rather than an in-app sleep loop.
 const RETRY_DELAY_FORMULA = "10 * pow(3, retried)";
 
+// QStash Flow Control caps how many deliveries for a given key are ever
+// "in flight" concurrently — a single shared key per pipeline (not per user)
+// is the global concurrency cap; per-user limiting is enforced separately
+// inside each worker (see lib/queue/concurrency.ts's isUserConcurrencyExceeded),
+// since a single publish can only carry one Flow Control key and the global
+// cap is the more important protection against flooding the AI provider.
+function defaultFlowControl(message: QueueMessage): FlowControl {
+  const key =
+    message.type === "generate_mirror_batch" ||
+    message.type === "finalize_mirror_job"
+      ? "mirror-pipeline"
+      : "books-pipeline";
+  return { key, parallelism: getQueueGlobalConcurrency() };
+}
+
 export async function publishMessage(
   message: QueueMessage,
   options?: { retries?: number; flowControl?: FlowControl }
@@ -57,6 +72,6 @@ export async function publishMessage(
     body: message,
     retries: options?.retries ?? getQueueMaxAttempts() - 1,
     retryDelay: RETRY_DELAY_FORMULA,
-    flowControl: options?.flowControl,
+    flowControl: options?.flowControl ?? defaultFlowControl(message),
   });
 }

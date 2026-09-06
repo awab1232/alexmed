@@ -20,6 +20,7 @@ import {
   markBookChapterRetrying,
 } from "@/lib/db-books";
 import { invokeLLM } from "@/lib/llm";
+import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
 import { claimBookChapter } from "@/lib/queue/claim";
 import { getQueueMaxAttempts } from "@/lib/queue/types";
 import { verifyQStashRequest } from "@/lib/queue/verify";
@@ -59,6 +60,16 @@ export async function POST(request: Request) {
     chapter = await getChapterById(chapterId);
     if (!chapter) {
       return NextResponse.json({ chapterId, status: "skipped" });
+    }
+
+    // Per-user concurrency backstop, checked BEFORE claiming — so one
+    // student's book can't monopolize capacity. The row stays claimable
+    // (nothing mutated), QStash redelivers later per its own backoff.
+    if (await isUserConcurrencyExceeded(chapter.userId, "books")) {
+      return NextResponse.json(
+        { chapterId, status: "throttled" },
+        { status: 429 }
+      );
     }
 
     claimed = await claimBookChapter(chapterId);

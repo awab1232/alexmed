@@ -3,6 +3,7 @@ import { createMirrorJobWithBatches } from "@/lib/db-mirror";
 import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
 import { publishMessage } from "@/lib/queue/client";
+import { assertJobCreationAllowed, RateLimitedError } from "@/lib/queue/rateLimit";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
@@ -31,6 +32,15 @@ export async function POST(request: Request) {
       { error: "الرجاء تسجيل الدخول أولاً." },
       { status: 401 }
     );
+  }
+
+  try {
+    await assertJobCreationAllowed(session.user.id, "mirror");
+  } catch (error) {
+    if (error instanceof RateLimitedError) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
+    throw error;
   }
 
   const body = (await request.json().catch(() => ({}))) as {

@@ -14,6 +14,7 @@ import {
   parseJsonResponse,
   responseSchema,
 } from "@/lib/pdf-cards";
+import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
 import { claimMirrorBatch } from "@/lib/queue/claim";
 import { getQueueMaxAttempts } from "@/lib/queue/types";
 import { verifyQStashRequest } from "@/lib/queue/verify";
@@ -44,13 +45,26 @@ export async function POST(request: Request) {
     batchId = typeof body.batchId === "string" ? body.batchId : "";
     if (!batchId) {
       // Malformed message — retrying won't help, ack so QStash doesn't retry.
-      return NextResponse.json({ error: "معرف الدفعة مفقود." }, { status: 200 });
+      return NextResponse.json(
+        { error: "معرف الدفعة مفقود." },
+        { status: 200 }
+      );
     }
 
     batch = await getMirrorBatchById(batchId);
     if (!batch) {
       // Batch no longer exists (e.g. its job was deleted) — nothing to do.
       return NextResponse.json({ batchId, status: "skipped" });
+    }
+
+    // Per-user concurrency backstop, checked BEFORE claiming — so one
+    // student's file can't monopolize capacity. The row stays claimable
+    // (nothing mutated), QStash redelivers later per its own backoff.
+    if (await isUserConcurrencyExceeded(batch.userId, "mirror")) {
+      return NextResponse.json(
+        { batchId, status: "throttled" },
+        { status: 429 }
+      );
     }
 
     claimed = await claimMirrorBatch(batchId);
