@@ -1,4 +1,3 @@
-import { auth } from "@/lib/auth";
 import {
   BOOK_CHAPTER_MAX_TOKENS,
   SUMMARY_MERGE_MAX_TOKENS,
@@ -15,57 +14,76 @@ import {
 import { AiRateLimitError } from "@/lib/ai/types";
 import {
   completeChapterAnalysis,
-  getChapterForUser,
-  setChapterAnalyzing,
-  setChapterFailed,
+  finalizeBookIfDone,
+  getChapterById,
+  markBookChapterFailedTerminal,
+  markBookChapterRetrying,
 } from "@/lib/db-books";
 import { invokeLLM } from "@/lib/llm";
+import { claimBookChapter } from "@/lib/queue/claim";
+import { getQueueMaxAttempts } from "@/lib/queue/types";
+import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
 
 // Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
-// this value — set explicitly so the platform doesn't fall back to a lower
-// default (10s). Note this route can still exceed 60s for chapters split
-// into multiple sub-chunks (each sub-chunk is its own sequential AI call) —
-// a known limitation on Hobby, not fully solvable without a background queue.
+// this value. Note this route can still exceed 60s for chapters split into
+// multiple sub-chunks (each sub-chunk is its own sequential AI call) — a
+// known limitation, unchanged by the queue migration (QStash will simply
+// retry the whole chapter if the function itself times out).
 export const maxDuration = 60;
 
-// The core of the resumable book pipeline: analyzes exactly ONE chapter
+// The كتبي worker (QStash queue migration): analyzes exactly ONE chapter
 // (internally sub-chunked if it's long) and persists the full result before
-// returning. The client calls this once per pending chapter, sequentially —
-// see the plan's "Resumability without a queue" for why this is what makes
-// leaving and returning mid-book safe with no background worker.
+// returning. This route is no longer callable by the browser — it's invoked
+// only by QStash, verified via signature below — see
+// app/books/[bookId]/page.tsx, which now just polls chapter status instead
+// of driving analysis itself.
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: "الرجاء تسجيل الدخول أولاً." },
-      { status: 401 }
-    );
+  const rawBody = await request.text();
+  const signature = request.headers.get("upstash-signature");
+  const verified = await verifyQStashRequest(rawBody, signature, request.url);
+  if (!verified) {
+    return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
-    chapterId?: string;
-  };
+  const body = JSON.parse(rawBody) as { chapterId?: string };
   const chapterId = typeof body.chapterId === "string" ? body.chapterId : "";
   if (!chapterId) {
-    return NextResponse.json({ error: "معرف الفصل مفقود." }, { status: 400 });
+    return NextResponse.json({ error: "معرف الفصل مفقود." }, { status: 200 });
   }
 
-  const chapter = await getChapterForUser(session.user.id, chapterId);
+  const chapter = await getChapterById(chapterId);
   if (!chapter) {
-    return NextResponse.json({ error: "الفصل غير موجود." }, { status: 404 });
+    return NextResponse.json({ chapterId, status: "skipped" });
+  }
+
+  const claimed = await claimBookChapter(chapterId);
+  if (!claimed) {
+    // Already processing/complete — QStash is at-least-once, this is
+    // expected occasionally, not an error.
+    return NextResponse.json({ chapterId, status: "already_processing" });
   }
 
   const pages = (chapter.pageTexts ?? []) as BookPageInput[];
-  if (!pages.length) {
-    await setChapterFailed(chapterId, "لا يوجد نص مستخرج لهذا الفصل.");
-    return NextResponse.json(
-      { error: "لا يوجد نص مستخرج لهذا الفصل." },
-      { status: 422 }
-    );
+  const maxAttempts = getQueueMaxAttempts();
+
+  async function retryOrFail(errorMessage: string, httpStatus: number) {
+    if (claimed!.attemptCount >= maxAttempts) {
+      await markBookChapterFailedTerminal(chapterId, errorMessage);
+      await finalizeBookIfDone(chapter!.bookId);
+      return NextResponse.json({
+        chapterId,
+        status: "failed",
+        error: errorMessage,
+      });
+    }
+    await markBookChapterRetrying(chapterId, errorMessage);
+    return NextResponse.json({ error: errorMessage }, { status: httpStatus });
   }
 
-  await setChapterAnalyzing(chapterId);
+  if (!pages.length) {
+    return await retryOrFail("لا يوجد نص مستخرج لهذا الفصل.", 422);
+  }
 
   try {
     const subChunks = chunkChapterPages(pages);
@@ -95,7 +113,7 @@ export async function POST(request: Request) {
       ).chapterSummary;
     }
 
-    await completeChapterAnalysis(chapterId, session.user.id, {
+    await completeChapterAnalysis(chapterId, chapter.userId, {
       explanationAr: merged.explanationAr,
       explanationEn: merged.explanationEn,
       keyPoints: merged.keyPoints,
@@ -104,28 +122,29 @@ export async function POST(request: Request) {
       cards: merged.flashcards,
       mcqs: merged.mcqs,
     });
+    await finalizeBookIfDone(chapter.bookId);
 
     return NextResponse.json({ chapterId, status: "complete" });
   } catch (error) {
     console.error("[Books] Chapter analysis failed", error);
     if (error instanceof AiRateLimitError) {
-      await setChapterFailed(
+      if (claimed.attemptCount >= maxAttempts) {
+        await markBookChapterFailedTerminal(
+          chapterId,
+          "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
+        );
+        await finalizeBookIfDone(chapter.bookId);
+        return NextResponse.json({ chapterId, status: "failed" });
+      }
+      await markBookChapterRetrying(
         chapterId,
         "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
       );
       return NextResponse.json(
-        {
-          error:
-            "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي. سيُعاد المحاولة تلقائيًا بعد قليل.",
-          retryAfterMs: error.retryAfterMs,
-        },
+        { error: "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي." },
         { status: 429 }
       );
     }
-    await setChapterFailed(chapterId, "تعذر تحليل هذا الفصل.");
-    return NextResponse.json(
-      { error: "تعذر تحليل هذا الفصل. حاول مرة أخرى." },
-      { status: 502 }
-    );
+    return await retryOrFail("تعذر تحليل هذا الفصل.", 502);
   }
 }

@@ -5,12 +5,15 @@ import {
   getBookForUser,
   getBookStatsForUser,
   getChapterContentForUser,
+  getChapterForUser,
   getDueCardsForUser,
   listBooksForUser,
   listMcqsForUser,
   rateBookCard,
+  resetBookChapterForRetry,
   submitMcqAttemptForUser,
 } from "../db-books";
+import { publishMessage } from "../queue/client";
 import { protectedProcedure, router } from "./trpc";
 
 export const booksRouter = router({
@@ -95,4 +98,32 @@ export const booksRouter = router({
   stats: protectedProcedure.query(async ({ ctx }) => {
     return getBookStatsForUser(ctx.user.id);
   }),
+
+  // Student-initiated retry for a chapter that exhausted its automatic
+  // QStash retry budget — resets it to "pending" with a fresh attempt count
+  // and publishes a new message, same as the very first attempt.
+  retryChapter: protectedProcedure
+    .input(z.object({ chapterId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
+      if (!chapter) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Chapter not found",
+        });
+      }
+      if (chapter.status !== "failed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only a failed chapter can be retried",
+        });
+      }
+      await resetBookChapterForRetry(input.chapterId);
+      await publishMessage({
+        type: "analyze_book_chapter",
+        chapterId: input.chapterId,
+        bookId: chapter.bookId,
+      });
+      return { success: true } as const;
+    }),
 });

@@ -3,6 +3,7 @@ import { detectChapters } from "@/lib/book-chapters";
 import { createBookWithChapters } from "@/lib/db-books";
 import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
+import { publishMessage } from "@/lib/queue/client";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
@@ -143,6 +144,30 @@ export async function POST(request: Request) {
       chapters,
       pagesByChapter,
     });
+
+    // Publish one QStash message per chapter — analysis now happens in the
+    // background; the client only ever polls chapter status from here on
+    // (see app/books/[bookId]/page.tsx).
+    try {
+      await Promise.all(
+        created.chapters.map(chapter =>
+          publishMessage({
+            type: "analyze_book_chapter",
+            chapterId: chapter.id,
+            bookId: created.book.id,
+          })
+        )
+      );
+    } catch (publishError) {
+      console.error("[Books] Failed to enqueue chapters", publishError);
+      return NextResponse.json(
+        {
+          error:
+            "تم إنشاء الكتاب لكن تعذر بدء التحليل. حاول إعادة رفع الملف.",
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({
       bookId: created.book.id,

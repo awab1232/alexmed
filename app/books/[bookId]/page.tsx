@@ -1,98 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, CircleAlert, Loader2 } from "lucide-react";
+import { useParams } from "next/navigation";
+import { CheckCircle2, CircleAlert, Loader2, RotateCcw } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
-const RATE_LIMIT_MAX_RETRIES = 3;
-const BATCH_RETRY_MAX_RETRIES = 2;
-const BATCH_RETRY_DELAY_MS = 4000;
-const sleep = (ms: number) =>
-  new Promise<void>(resolve => setTimeout(resolve, ms));
-
-async function analyzeChapter(
-  chapterId: string,
-  onWarning: (message: string) => void
-): Promise<boolean> {
-  for (let attempt = 0; ; attempt++) {
-    let response: Response | null = null;
-    let data: { error?: string; retryAfterMs?: number } | null = null;
-    try {
-      response = await fetch("/api/books/analyze-chapter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chapterId }),
-      });
-      data = await response.json();
-    } catch {
-      // falls through to the retry policy below, same as a non-ok response
-    }
-
-    if (response?.ok) return true;
-
-    const isRateLimited = response?.status === 429;
-    const canRetry = isRateLimited
-      ? attempt < RATE_LIMIT_MAX_RETRIES
-      : attempt < BATCH_RETRY_MAX_RETRIES;
-
-    if (canRetry) {
-      const waitMs = isRateLimited
-        ? typeof data?.retryAfterMs === "number"
-          ? data.retryAfterMs
-          : 20_000
-        : BATCH_RETRY_DELAY_MS;
-      onWarning(
-        isRateLimited
-          ? `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية...`
-          : "تعذر تحليل هذا الفصل، جارٍ إعادة المحاولة..."
-      );
-      await sleep(waitMs);
-      continue;
-    }
-
-    return false;
-  }
-}
+// Background analysis now happens entirely server-side, driven by Upstash
+// QStash workers (see app/api/books/analyze-chapter/route.ts) — this page's
+// only job is to poll chapter status and show simple aggregate progress. It
+// never calls analyze-chapter itself, so closing the tab or losing
+// connection never stops analysis; reopening this page just resumes showing
+// the same server-side progress.
+const POLL_INTERVAL_MS = 3000;
+const TERMINAL_BOOK_STATUSES = new Set(["complete", "partial_failed"]);
 
 export default function BookDetailPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
-  const bookQuery = trpc.books.get.useQuery({ id: bookId });
   const utils = trpc.useUtils();
-  const [warning, setWarning] = useState("");
-  const resumingRef = useRef(false);
-
-  // Resumability (see the approved plan's Decision 1): loading this page
-  // just re-queries chapter statuses — any "pending" or "failed" chapter
-  // picks the loop back up automatically, exactly where it left off,
-  // whether that's a fresh upload or the student returning after closing
-  // the tab mid-book.
-  useEffect(() => {
-    if (!bookQuery.data || resumingRef.current) return;
-    const pending = bookQuery.data.chapters.filter(
-      chapter => chapter.status === "pending" || chapter.status === "failed"
-    );
-    if (!pending.length) return;
-
-    resumingRef.current = true;
-    let cancelled = false;
-
-    (async () => {
-      for (const chapter of pending) {
-        if (cancelled) break;
-        await analyzeChapter(chapter.id, setWarning);
-        setWarning("");
-        if (!cancelled) await utils.books.get.invalidate({ id: bookId });
-      }
-      resumingRef.current = false;
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bookQuery.data, bookId, utils]);
+  const bookQuery = trpc.books.get.useQuery(
+    { id: bookId },
+    {
+      refetchInterval: query => {
+        const status = query.state.data?.book.status;
+        return status && TERMINAL_BOOK_STATUSES.has(status)
+          ? false
+          : POLL_INTERVAL_MS;
+      },
+    }
+  );
+  const retryChapter = trpc.books.retryChapter.useMutation({
+    onSuccess: () => utils.books.get.invalidate({ id: bookId }),
+  });
 
   if (bookQuery.isLoading) {
     return (
@@ -125,9 +64,9 @@ export default function BookDetailPage() {
 
   const { book, chapters } = bookQuery.data;
   const completeCount = chapters.filter(c => c.status === "complete").length;
-  const isProcessing = chapters.some(
-    c => c.status === "pending" || c.status === "analyzing"
-  );
+  const failedChapters = chapters.filter(c => c.status === "failed");
+  const isProcessing =
+    book.status !== "complete" && book.status !== "partial_failed";
 
   return (
     <section className="cards-view">
@@ -144,57 +83,74 @@ export default function BookDetailPage() {
         </div>
       </div>
 
-      {warning && (
-        <div className="inline-alert warning wide">
-          <CircleAlert size={16} />
-          {warning}
-        </div>
-      )}
-      {isProcessing && !warning && (
+      {isProcessing && (
         <div className="inline-alert warning wide">
           <Loader2 size={16} className="spin" />
-          جاري تحليل الفصول — تقدر تسكّر الصفحة وترجع بعدين، مش هنفقد أي تقدم.
+          جاري تحليل الفصول — تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش
+          هنفقد أي تقدم.
+        </div>
+      )}
+
+      {book.status === "partial_failed" && (
+        <div className="inline-alert warning wide">
+          <CircleAlert size={16} />
+          اكتمل معظم الكتاب، لكن {failedChapters.length} فصل تعذّر تحليله.
+          يمكنك إعادة محاولته أدناه.
         </div>
       )}
 
       <div className="library-grid">
         {chapters.map(chapter => (
-          <Link
-            href={
-              chapter.status === "complete"
-                ? `/books/${bookId}/chapters/${chapter.id}`
-                : "#"
-            }
-            className="library-item"
-            key={chapter.id}
-            style={
-              chapter.status !== "complete"
-                ? { pointerEvents: "none", opacity: 0.6 }
-                : undefined
-            }
-          >
-            <div className="library-item-icon">
-              {chapter.status === "complete" && <CheckCircle2 size={18} />}
-              {chapter.status === "failed" && <CircleAlert size={18} />}
-              {(chapter.status === "pending" ||
-                chapter.status === "analyzing") && (
-                <Loader2 size={18} className="spin" />
-              )}
-            </div>
-            <div className="library-item-meta">
-              <strong>{chapter.title}</strong>
-              <span>
-                صفحة {chapter.startPage}–{chapter.endPage} ·{" "}
-                {chapter.status === "complete"
-                  ? "مكتمل"
-                  : chapter.status === "failed"
-                    ? "تعذر التحليل"
-                    : chapter.status === "analyzing"
-                      ? "جارٍ التحليل..."
-                      : "بالانتظار"}
-              </span>
-            </div>
-          </Link>
+          <div className="library-item" key={chapter.id}>
+            {chapter.status === "complete" ? (
+              <Link
+                href={`/books/${bookId}/chapters/${chapter.id}`}
+                className="library-item-icon"
+                style={{ display: "contents" }}
+              >
+                <div className="library-item-icon">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div className="library-item-meta">
+                  <strong>{chapter.title}</strong>
+                  <span>
+                    صفحة {chapter.startPage}–{chapter.endPage} · مكتمل
+                  </span>
+                </div>
+              </Link>
+            ) : (
+              <>
+                <div className="library-item-icon">
+                  {chapter.status === "failed" ? (
+                    <CircleAlert size={18} />
+                  ) : (
+                    <Loader2 size={18} className="spin" />
+                  )}
+                </div>
+                <div className="library-item-meta">
+                  <strong>{chapter.title}</strong>
+                  <span>
+                    صفحة {chapter.startPage}–{chapter.endPage} ·{" "}
+                    {chapter.status === "failed"
+                      ? chapter.errorMessage || "تعذر التحليل"
+                      : "جارٍ التحليل..."}
+                  </span>
+                </div>
+                {chapter.status === "failed" && (
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={retryChapter.isPending}
+                    onClick={() =>
+                      retryChapter.mutate({ chapterId: chapter.id })
+                    }
+                  >
+                    <RotateCcw size={14} /> إعادة المحاولة
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         ))}
       </div>
     </section>
