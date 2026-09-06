@@ -162,8 +162,7 @@ export async function POST(request: Request) {
       console.error("[Books] Failed to enqueue chapters", publishError);
       return NextResponse.json(
         {
-          error:
-            "تم إنشاء الكتاب لكن تعذر بدء التحليل. حاول إعادة رفع الملف.",
+          error: "تم إنشاء الكتاب لكن تعذر بدء التحليل. حاول إعادة رفع الملف.",
         },
         { status: 502 }
       );

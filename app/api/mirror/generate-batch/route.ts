@@ -36,25 +36,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  const body = JSON.parse(rawBody) as { batchId?: string };
-  const batchId = typeof body.batchId === "string" ? body.batchId : "";
-  if (!batchId) {
-    // Malformed message — retrying won't help, ack so QStash doesn't retry.
-    return NextResponse.json({ error: "معرف الدفعة مفقود." }, { status: 200 });
-  }
+  let batchId: string;
+  let batch: Awaited<ReturnType<typeof getMirrorBatchById>>;
+  let claimed: Awaited<ReturnType<typeof claimMirrorBatch>>;
+  try {
+    const body = JSON.parse(rawBody) as { batchId?: string };
+    batchId = typeof body.batchId === "string" ? body.batchId : "";
+    if (!batchId) {
+      // Malformed message — retrying won't help, ack so QStash doesn't retry.
+      return NextResponse.json({ error: "معرف الدفعة مفقود." }, { status: 200 });
+    }
 
-  const batch = await getMirrorBatchById(batchId);
-  if (!batch) {
-    // Batch no longer exists (e.g. its job was deleted) — nothing to do.
-    return NextResponse.json({ batchId, status: "skipped" });
-  }
+    batch = await getMirrorBatchById(batchId);
+    if (!batch) {
+      // Batch no longer exists (e.g. its job was deleted) — nothing to do.
+      return NextResponse.json({ batchId, status: "skipped" });
+    }
 
-  const claimed = await claimMirrorBatch(batchId);
-  if (!claimed) {
-    // Already processing (a concurrent/duplicate delivery) or already
-    // complete — QStash is at-least-once, so this is expected occasionally,
-    // not an error. Ack without doing any AI work.
-    return NextResponse.json({ batchId, status: "already_processing" });
+    claimed = await claimMirrorBatch(batchId);
+    if (!claimed) {
+      // Already processing (a concurrent/duplicate delivery) or already
+      // complete — QStash is at-least-once, so this is expected
+      // occasionally, not an error. Ack without doing any AI work.
+      return NextResponse.json({ batchId, status: "already_processing" });
+    }
+  } catch (error) {
+    // Anything before the claim (malformed body, a transient DB error) is
+    // safe to let QStash retry — nothing has been claimed/mutated yet.
+    console.error("[Mirror] Batch lookup/claim failed", error);
+    return NextResponse.json(
+      { error: "تعذر تجهيز هذه الدفعة." },
+      { status: 502 }
+    );
   }
 
   const pages = (batch.pageTexts ?? []).filter(page => page.hasText);

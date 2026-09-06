@@ -46,22 +46,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  const body = JSON.parse(rawBody) as { chapterId?: string };
-  const chapterId = typeof body.chapterId === "string" ? body.chapterId : "";
-  if (!chapterId) {
-    return NextResponse.json({ error: "معرف الفصل مفقود." }, { status: 200 });
-  }
+  let chapterId: string;
+  let chapter: Awaited<ReturnType<typeof getChapterById>>;
+  let claimed: Awaited<ReturnType<typeof claimBookChapter>>;
+  try {
+    const body = JSON.parse(rawBody) as { chapterId?: string };
+    chapterId = typeof body.chapterId === "string" ? body.chapterId : "";
+    if (!chapterId) {
+      return NextResponse.json({ error: "معرف الفصل مفقود." }, { status: 200 });
+    }
 
-  const chapter = await getChapterById(chapterId);
-  if (!chapter) {
-    return NextResponse.json({ chapterId, status: "skipped" });
-  }
+    chapter = await getChapterById(chapterId);
+    if (!chapter) {
+      return NextResponse.json({ chapterId, status: "skipped" });
+    }
 
-  const claimed = await claimBookChapter(chapterId);
-  if (!claimed) {
-    // Already processing/complete — QStash is at-least-once, this is
-    // expected occasionally, not an error.
-    return NextResponse.json({ chapterId, status: "already_processing" });
+    claimed = await claimBookChapter(chapterId);
+    if (!claimed) {
+      // Already processing/complete — QStash is at-least-once, this is
+      // expected occasionally, not an error.
+      return NextResponse.json({ chapterId, status: "already_processing" });
+    }
+  } catch (error) {
+    // Anything before the claim (malformed body, a transient DB error) is
+    // safe to let QStash retry — nothing has been claimed/mutated yet.
+    console.error("[Books] Chapter lookup/claim failed", error);
+    return NextResponse.json(
+      { error: "تعذر تجهيز هذا الفصل." },
+      { status: 502 }
+    );
   }
 
   const pages = (chapter.pageTexts ?? []) as BookPageInput[];

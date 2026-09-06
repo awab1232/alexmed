@@ -86,16 +86,16 @@ export default function BookDetailPage() {
       {isProcessing && (
         <div className="inline-alert warning wide">
           <Loader2 size={16} className="spin" />
-          جاري تحليل الفصول — تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش
-          هنفقد أي تقدم.
+          جاري تحليل الفصول — تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش هنفقد
+          أي تقدم.
         </div>
       )}
 
       {book.status === "partial_failed" && (
         <div className="inline-alert warning wide">
           <CircleAlert size={16} />
-          اكتمل معظم الكتاب، لكن {failedChapters.length} فصل تعذّر تحليله.
-          يمكنك إعادة محاولته أدناه.
+          اكتمل معظم الكتاب، لكن {failedChapters.length} فصل تعذّر تحليله. يمكنك
+          إعادة محاولته أدناه.
         </div>
       )}
 

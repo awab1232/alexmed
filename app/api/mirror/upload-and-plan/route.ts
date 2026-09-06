@@ -149,8 +149,7 @@ export async function POST(request: Request) {
       console.error("[Mirror] Failed to enqueue batches", publishError);
       return NextResponse.json(
         {
-          error:
-            "تم إنشاء الملف لكن تعذر بدء المعالجة. حاول إعادة رفع الملف.",
+          error: "تم إنشاء الملف لكن تعذر بدء المعالجة. حاول إعادة رفع الملف.",
         },
         { status: 502 }
       );

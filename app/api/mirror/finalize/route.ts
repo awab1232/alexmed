@@ -16,12 +16,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  const body = JSON.parse(rawBody) as { jobId?: string };
-  const jobId = typeof body.jobId === "string" ? body.jobId : "";
-  if (!jobId) {
-    return NextResponse.json({ error: "معرف الملف مفقود." }, { status: 200 });
-  }
+  try {
+    const body = JSON.parse(rawBody) as { jobId?: string };
+    const jobId = typeof body.jobId === "string" ? body.jobId : "";
+    if (!jobId) {
+      return NextResponse.json({ error: "معرف الملف مفقود." }, { status: 200 });
+    }
 
-  await finalizeMirrorJobIfDone(jobId);
-  return NextResponse.json({ jobId, status: "checked" });
+    await finalizeMirrorJobIfDone(jobId);
+    return NextResponse.json({ jobId, status: "checked" });
+  } catch (error) {
+    console.error("[Mirror] Finalize failed", error);
+    return NextResponse.json({ error: "تعذر التحقق من الملف." }, { status: 502 });
+  }
 }

@@ -15,12 +15,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
 
-  const body = JSON.parse(rawBody) as { bookId?: string };
-  const bookId = typeof body.bookId === "string" ? body.bookId : "";
-  if (!bookId) {
-    return NextResponse.json({ error: "معرف الكتاب مفقود." }, { status: 200 });
-  }
+  try {
+    const body = JSON.parse(rawBody) as { bookId?: string };
+    const bookId = typeof body.bookId === "string" ? body.bookId : "";
+    if (!bookId) {
+      return NextResponse.json({ error: "معرف الكتاب مفقود." }, { status: 200 });
+    }
 
-  await finalizeBookIfDone(bookId);
-  return NextResponse.json({ bookId, status: "checked" });
+    await finalizeBookIfDone(bookId);
+    return NextResponse.json({ bookId, status: "checked" });
+  } catch (error) {
+    console.error("[Books] Finalize failed", error);
+    return NextResponse.json({ error: "تعذر التحقق من الكتاب." }, { status: 502 });
+  }
 }
