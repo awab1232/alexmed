@@ -207,6 +207,176 @@ export async function getMirrorBatchForUser(
   return row ? { ...row.batch, depth: row.depth } : null;
 }
 
+// No-ownership-filter lookup for a queue worker, which has no session to
+// scope by userId — the worker verifies the QStash signature instead (see
+// lib/queue/verify.ts), so trusting the batchId from an already-authenticated
+// queue message is the correct trust boundary here, unlike the
+// user-facing getMirrorBatchForUser above.
+export async function getMirrorBatchById(
+  batchId: string
+): Promise<(MirrorBatch & { depth: string; userId: string }) | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  const [row] = await db
+    .select({ batch: mirrorBatches, depth: mirrorJobs.depth, userId: mirrorJobs.userId })
+    .from(mirrorBatches)
+    .innerJoin(mirrorJobs, eq(mirrorJobs.id, mirrorBatches.jobId))
+    .where(eq(mirrorBatches.id, batchId))
+    .limit(1);
+
+  return row ? { ...row.batch, depth: row.depth, userId: row.userId } : null;
+}
+
+// Resets a failed batch back to "pending" for a fresh retry budget — used by
+// the retryBatch tRPC mutation (student-initiated retry after all automatic
+// attempts were exhausted).
+export async function resetMirrorBatchForRetry(batchId: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorBatches)
+    .set({
+      status: "pending",
+      attemptCount: 0,
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorBatches.id, batchId));
+}
+
+// Retryable failure — QStash will redeliver per its own backoff, so this
+// just records the failure without giving up on the batch.
+export async function markMirrorBatchRetrying(
+  batchId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorBatches)
+    .set({
+      status: "retrying",
+      errorMessage,
+      lastErrorAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorBatches.id, batchId));
+}
+
+// Terminal failure — attempts exhausted, no further QStash retries expected
+// for this delivery. The batch stays queryable/retryable via the student's
+// own manual "retry" action (resetMirrorBatchForRetry + a fresh publish).
+export async function markMirrorBatchFailedTerminal(
+  batchId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorBatches)
+    .set({
+      status: "failed",
+      errorMessage,
+      lastErrorAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorBatches.id, batchId));
+}
+
+// Idempotent finalize: safe to call repeatedly (once per batch completion/
+// terminal-failure) — SELECT ... FOR UPDATE on the job row serializes
+// concurrent finalize attempts for the same job, so two batches finishing at
+// nearly the same moment can't both observe "all done" and double-graduate.
+export async function finalizeMirrorJobIfDone(jobId: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.transaction(async tx => {
+    const [job] = await tx
+      .select()
+      .from(mirrorJobs)
+      .where(eq(mirrorJobs.id, jobId))
+      .for("update");
+    if (!job || job.status === "complete" || job.status === "partial_failed") {
+      return;
+    }
+
+    const siblings = await tx
+      .select({ status: mirrorBatches.status })
+      .from(mirrorBatches)
+      .where(eq(mirrorBatches.jobId, jobId));
+    if (!siblings.length) return;
+
+    const stillWorking = siblings.some(
+      sibling =>
+        sibling.status === "pending" ||
+        sibling.status === "processing" ||
+        sibling.status === "generating" ||
+        sibling.status === "retrying"
+    );
+    if (stillWorking) return;
+
+    const anyFailed = siblings.some(sibling => sibling.status === "failed");
+    if (anyFailed) {
+      await tx
+        .update(mirrorJobs)
+        .set({ status: "partial_failed", updatedAt: new Date() })
+        .where(eq(mirrorJobs.id, jobId));
+      return;
+    }
+
+    // Every batch complete — graduate: same deck-creation logic as
+    // graduateMirrorJob, inlined here so it runs inside this same FOR UPDATE
+    // transaction rather than opening a second one.
+    if (job.deckId) return;
+
+    const batches = await tx
+      .select({ cards: mirrorBatches.cards })
+      .from(mirrorBatches)
+      .where(eq(mirrorBatches.jobId, jobId))
+      .orderBy(asc(mirrorBatches.orderIndex));
+    const allCards = batches.flatMap(batch => batch.cards ?? []);
+
+    const [deck] = await tx
+      .insert(decks)
+      .values({
+        userId: job.userId,
+        fileName: job.fileName,
+        fileKey: job.fileKey,
+        pageCount: job.pageCount,
+        depth: job.depth,
+      })
+      .returning();
+
+    if (allCards.length) {
+      await tx.insert(cards).values(
+        allCards.map(card => ({
+          deckId: deck.id,
+          question: card.question,
+          questionArabic: card.questionArabic,
+          answer: card.answer,
+          answerArabic: card.answerArabic,
+          explanation: card.explanation,
+          explanationArabic: card.explanationArabic,
+          keyIdea: card.keyIdea,
+          keyIdeaArabic: card.keyIdeaArabic,
+          keyword: card.keyword,
+          keywordArabic: card.keywordArabic,
+          sourcePage: card.sourcePage,
+          status: card.status,
+          confidence: card.confidence,
+        }))
+      );
+    }
+
+    await tx
+      .update(mirrorJobs)
+      .set({ status: "complete", deckId: deck.id, updatedAt: new Date() })
+      .where(eq(mirrorJobs.id, jobId));
+  });
+}
+
 export async function setBatchGenerating(batchId: string) {
   const db = getDb();
   if (!db) throw new Error("Database not available");

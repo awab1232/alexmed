@@ -161,6 +161,125 @@ export async function getChapterForUser(
   return row?.chapter ?? null;
 }
 
+// No-ownership-filter lookup for a queue worker (no session — the worker
+// verifies the QStash signature instead, see lib/queue/verify.ts), same
+// trust-boundary reasoning as db-mirror.ts's getMirrorBatchById.
+export async function getChapterById(
+  chapterId: string
+): Promise<(BookChapter & { userId: string }) | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  const [row] = await db
+    .select({ chapter: bookChapters, userId: books.userId })
+    .from(bookChapters)
+    .innerJoin(books, eq(books.id, bookChapters.bookId))
+    .where(eq(bookChapters.id, chapterId))
+    .limit(1);
+
+  return row ? { ...row.chapter, userId: row.userId } : null;
+}
+
+// Resets a failed chapter back to "pending" for a fresh retry budget — used
+// by the retryChapter tRPC mutation.
+export async function resetBookChapterForRetry(chapterId: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookChapters)
+    .set({
+      status: "pending",
+      attemptCount: 0,
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookChapters.id, chapterId));
+}
+
+export async function markBookChapterRetrying(
+  chapterId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookChapters)
+    .set({
+      status: "retrying",
+      errorMessage,
+      lastErrorAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(bookChapters.id, chapterId));
+}
+
+export async function markBookChapterFailedTerminal(
+  chapterId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookChapters)
+    .set({
+      status: "failed",
+      errorMessage,
+      lastErrorAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(bookChapters.id, chapterId));
+}
+
+// Idempotent finalize: safe to call repeatedly — SELECT ... FOR UPDATE on
+// the book row serializes concurrent finalize attempts for the same book, so
+// two chapters finishing at nearly the same moment can't race each other.
+// Unlike مِرآة, there's no "graduation" step here — chapters' content
+// (bookTerms/bookCards/bookMcqs) is already the durable content, this just
+// rolls the book's own status up from its chapters' statuses.
+export async function finalizeBookIfDone(bookId: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.transaction(async tx => {
+    const [book] = await tx
+      .select()
+      .from(books)
+      .where(eq(books.id, bookId))
+      .for("update");
+    if (
+      !book ||
+      book.status === "complete" ||
+      book.status === "partial_failed"
+    ) {
+      return;
+    }
+
+    const chapters = await tx
+      .select({ status: bookChapters.status })
+      .from(bookChapters)
+      .where(eq(bookChapters.bookId, bookId));
+    if (!chapters.length) return;
+
+    const stillWorking = chapters.some(
+      chapter =>
+        chapter.status === "pending" ||
+        chapter.status === "processing" ||
+        chapter.status === "analyzing" ||
+        chapter.status === "retrying"
+    );
+    if (stillWorking) return;
+
+    const anyFailed = chapters.some(chapter => chapter.status === "failed");
+    await tx
+      .update(books)
+      .set({
+        status: anyFailed ? "partial_failed" : "complete",
+        updatedAt: new Date(),
+      })
+      .where(eq(books.id, bookId));
+  });
+}
+
 export async function setChapterAnalyzing(chapterId: string) {
   const db = getDb();
   if (!db) throw new Error("Database not available");

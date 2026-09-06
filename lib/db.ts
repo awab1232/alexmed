@@ -8,9 +8,17 @@ import type { GeneratedCard } from "./pdf-cards";
 let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
+// `max`/`connect_timeout` are connection-pool hygiene per serverless
+// instance, not the real concurrency lever — the actual cap on how many
+// batches/chapters process at once is QUEUE_GLOBAL_CONCURRENCY (see
+// lib/queue/types.ts), enforced via QStash Flow Control and a DB backstop.
 export function getDb() {
   if (!_db && process.env.DATABASE_URL) {
-    const client = postgres(process.env.DATABASE_URL, { prepare: false });
+    const client = postgres(process.env.DATABASE_URL, {
+      prepare: false,
+      max: 5,
+      connect_timeout: 10,
+    });
     _db = drizzle(client);
   }
   return _db;
