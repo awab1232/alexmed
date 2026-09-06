@@ -12,25 +12,24 @@ import {
   books,
   bookReviewEvents,
   bookTerms,
+  type Book,
   type BookChapter,
 } from "../drizzle/schema";
 import { getDb } from "./db";
-import type { ChapterBoundary } from "./book-chapters";
+import { detectChapters } from "./book-chapters";
 import { applySrsRating, type SrsRating } from "./srs";
 
 export type PageText = { page: number; text: string };
+export type BookPageText = { page: number; text: string; hasText: boolean };
 
-export async function createBookWithChapters(
+// Step 1 of the كتبي pipeline: a bare book row, status "extracting", with no
+// chapters yet — mirrors createMirrorJobShell in lib/db-mirror.ts exactly,
+// for the exact same reason (extract-and-plan must return {bookId}
+// immediately regardless of file size; see app/api/books/extract/route.ts).
+export async function createBookShell(
   userId: string,
-  input: {
-    fileName: string;
-    fileKey: string;
-    pageCount: number;
-    method: "headings" | "fixed_windows";
-    chapters: ChapterBoundary[];
-    pagesByChapter: PageText[][]; // aligned index-for-index with input.chapters
-  }
-) {
+  input: { fileName: string; fileKey: string }
+): Promise<Book> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
 
@@ -40,10 +39,92 @@ export async function createBookWithChapters(
       userId,
       fileName: input.fileName,
       fileKey: input.fileKey,
-      pageCount: input.pageCount,
-      chapterDetectionMethod: input.method,
+      status: "extracting",
     })
     .returning();
+  return book;
+}
+
+// No-ownership-filter lookup for the extraction queue worker — same
+// trust-boundary reasoning as getChapterById below.
+export async function getBookById(bookId: string): Promise<Book | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  const [book] = await db
+    .select()
+    .from(books)
+    .where(eq(books.id, bookId))
+    .limit(1);
+  return book ?? null;
+}
+
+// Persists one extraction worker invocation's progress — mirrors
+// updateMirrorJobExtractionProgress exactly.
+export async function updateBookExtractionProgress(
+  bookId: string,
+  update: {
+    pageCount?: number;
+    pageTexts: BookPageText[];
+    pagesNeedingOcr: number[];
+    ocrFailedPages: number[];
+  }
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(books)
+    .set({
+      ...(update.pageCount !== undefined
+        ? { pageCount: update.pageCount }
+        : {}),
+      pageTexts: update.pageTexts,
+      pagesNeedingOcr: update.pagesNeedingOcr,
+      ocrFailedPages: update.ocrFailedPages,
+      extractionAttemptCount: sql`${books.extractionAttemptCount} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(books.id, bookId));
+}
+
+// Terminal extraction failure — mirrors markMirrorJobExtractionFailed.
+export async function markBookExtractionFailed(
+  bookId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(books)
+    .set({
+      status: "failed",
+      extractionError: errorMessage,
+      updatedAt: new Date(),
+    })
+    .where(eq(books.id, bookId));
+}
+
+// Step 2: runs detectChapters() against the now-fully-extracted text and
+// creates the chapter rows against the EXISTING book row from
+// createBookShell — mirrors finalizeMirrorJobExtraction. Leaves the book in
+// "pending", which finalizeBookIfDone already understands.
+export async function finalizeBookExtraction(
+  bookId: string,
+  pages: BookPageText[]
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  const pageTexts: PageText[] = pages.map(({ page, text }) => ({
+    page,
+    text,
+  }));
+  const { chapters: boundaries, method } = detectChapters(pageTexts);
+  const pagesByChapter = boundaries.map(chapter =>
+    pages.filter(
+      page => page.page >= chapter.startPage && page.page <= chapter.endPage
+    )
+  );
 
   let chapters: {
     id: string;
@@ -52,17 +133,17 @@ export async function createBookWithChapters(
     startPage: number;
     endPage: number;
   }[] = [];
-  if (input.chapters.length) {
+  if (boundaries.length) {
     const inserted = await db
       .insert(bookChapters)
       .values(
-        input.chapters.map((chapter, index) => ({
-          bookId: book.id,
+        boundaries.map((chapter, index) => ({
+          bookId,
           orderIndex: index,
           title: chapter.title,
           startPage: chapter.startPage,
           endPage: chapter.endPage,
-          pageTexts: input.pagesByChapter[index] ?? [],
+          pageTexts: pagesByChapter[index] ?? [],
         }))
       )
       .returning({
@@ -77,6 +158,20 @@ export async function createBookWithChapters(
     // on it — the client drives its analyze-loop by this order.
     chapters = inserted.sort((a, b) => a.orderIndex - b.orderIndex);
   }
+
+  const [book] = await db
+    .update(books)
+    .set({
+      status: "pending",
+      chapterDetectionMethod: method,
+      pageTexts: null,
+      pagesNeedingOcr: null,
+      ocrFailedPages: null,
+      extractionError: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(books.id, bookId))
+    .returning();
 
   return { book, chapters };
 }

@@ -93,9 +93,7 @@ export default function () {
     }),
     { headers: headers() }
   );
-  if (
-    !check(uploadUrlRes, { "upload-url ok": r => r.status === 200 })
-  ) {
+  if (!check(uploadUrlRes, { "upload-url ok": r => r.status === 200 })) {
     jobErrorRate.add(1);
     return;
   }
@@ -141,8 +139,7 @@ export default function () {
     if (statusRes.status !== 200) continue;
     let status;
     try {
-      status =
-        statusRes.json().result.data.job.status; // tRPC query response shape
+      status = statusRes.json().result.data.job.status; // tRPC query response shape
     } catch {
       continue;
     }

@@ -3,8 +3,10 @@
 // worker route re-fetches whatever content it needs from Postgres using the
 // id(s) in the message.
 export type QueueMessage =
+  | { type: "extract_mirror_job"; jobId: string }
   | { type: "generate_mirror_batch"; batchId: string; jobId: string }
   | { type: "finalize_mirror_job"; jobId: string }
+  | { type: "extract_book_job"; bookId: string }
   | { type: "analyze_book_chapter"; chapterId: string; bookId: string }
   | { type: "finalize_book"; bookId: string };
 

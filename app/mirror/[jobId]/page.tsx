@@ -13,7 +13,7 @@ import { trpc } from "@/lib/trpc-client";
 // losing connection never stops generation; reopening this page just
 // resumes showing the same server-side progress.
 const POLL_INTERVAL_MS = 3000;
-const TERMINAL_JOB_STATUSES = new Set(["complete", "partial_failed"]);
+const TERMINAL_JOB_STATUSES = new Set(["complete", "partial_failed", "failed"]);
 
 export default function MirrorJobPage() {
   const params = useParams<{ jobId: string }>();
@@ -72,8 +72,12 @@ export default function MirrorJobPage() {
   const { job, batches } = jobQuery.data;
   const completeCount = batches.filter(b => b.status === "complete").length;
   const failedBatches = batches.filter(b => b.status === "failed");
-  const isProcessing =
-    job.status !== "complete" && job.status !== "partial_failed";
+  const isExtracting = job.status === "extracting";
+  const isGenerating =
+    !isExtracting &&
+    job.status !== "complete" &&
+    job.status !== "partial_failed" &&
+    job.status !== "failed";
 
   return (
     <section className="cards-view">
@@ -90,7 +94,22 @@ export default function MirrorJobPage() {
         </div>
       </div>
 
-      {isProcessing && (
+      {isExtracting && (
+        <div className="live-progress">
+          <div className="progress-heading">
+            <div>
+              <Loader2 size={16} className="spin" />
+              <strong>نقرأ الملف ونجهّزه...</strong>
+            </div>
+          </div>
+          <p className="progress-caption">
+            قد يستغرق هذا وقتًا أطول قليلًا للملفات الممسوحة ضوئيًا. يمكنك
+            إغلاق هذه الصفحة والعودة لاحقًا من أي جهاز دون فقدان التقدم.
+          </p>
+        </div>
+      )}
+
+      {isGenerating && (
         <div className="live-progress">
           <div className="progress-heading">
             <div>
@@ -112,6 +131,19 @@ export default function MirrorJobPage() {
             لا يتم اعتماد الملف حتى تكتمل جميع أجزائه. يمكنك إغلاق هذه الصفحة
             والعودة لاحقًا من أي جهاز دون فقدان التقدم.
           </p>
+        </div>
+      )}
+
+      {job.status === "failed" && (
+        <div className="inline-alert error wide">
+          <CircleAlert size={16} />
+          <span>
+            {job.extractionError ||
+              "تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه."}
+          </span>
+          <Link href="/" className="secondary-button" style={{ marginRight: 12 }}>
+            ارفع ملفًا جديدًا
+          </Link>
         </div>
       )}
 

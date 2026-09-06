@@ -31,10 +31,14 @@ function getBaseUrl(): string {
 function resolveDestination(message: QueueMessage): string {
   const base = getBaseUrl();
   switch (message.type) {
+    case "extract_mirror_job":
+      return `${base}/api/mirror/extract`;
     case "generate_mirror_batch":
       return `${base}/api/mirror/generate-batch`;
     case "finalize_mirror_job":
       return `${base}/api/mirror/finalize`;
+    case "extract_book_job":
+      return `${base}/api/books/extract`;
     case "analyze_book_chapter":
       return `${base}/api/books/analyze-chapter`;
     case "finalize_book":
@@ -56,7 +60,8 @@ const RETRY_DELAY_FORMULA = "10 * pow(3, retried)";
 function defaultFlowControl(message: QueueMessage): FlowControl {
   const key =
     message.type === "generate_mirror_batch" ||
-    message.type === "finalize_mirror_job"
+    message.type === "finalize_mirror_job" ||
+    message.type === "extract_mirror_job"
       ? "mirror-pipeline"
       : "books-pipeline";
   return { key, parallelism: getQueueGlobalConcurrency() };

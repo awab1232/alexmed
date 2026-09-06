@@ -12,7 +12,11 @@ import { trpc } from "@/lib/trpc-client";
 // connection never stops analysis; reopening this page just resumes showing
 // the same server-side progress.
 const POLL_INTERVAL_MS = 3000;
-const TERMINAL_BOOK_STATUSES = new Set(["complete", "partial_failed"]);
+const TERMINAL_BOOK_STATUSES = new Set([
+  "complete",
+  "partial_failed",
+  "failed",
+]);
 
 export default function BookDetailPage() {
   const params = useParams<{ bookId: string }>();
@@ -65,8 +69,12 @@ export default function BookDetailPage() {
   const { book, chapters } = bookQuery.data;
   const completeCount = chapters.filter(c => c.status === "complete").length;
   const failedChapters = chapters.filter(c => c.status === "failed");
-  const isProcessing =
-    book.status !== "complete" && book.status !== "partial_failed";
+  const isExtracting = book.status === "extracting";
+  const isAnalyzing =
+    !isExtracting &&
+    book.status !== "complete" &&
+    book.status !== "partial_failed" &&
+    book.status !== "failed";
 
   return (
     <section className="cards-view">
@@ -83,11 +91,36 @@ export default function BookDetailPage() {
         </div>
       </div>
 
-      {isProcessing && (
+      {isExtracting && (
+        <div className="inline-alert warning wide">
+          <Loader2 size={16} className="spin" />
+          نقرأ الكتاب ونجهّزه — تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش
+          هنفقد أي تقدم.
+        </div>
+      )}
+
+      {isAnalyzing && (
         <div className="inline-alert warning wide">
           <Loader2 size={16} className="spin" />
           جاري تحليل الفصول — تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش هنفقد
           أي تقدم.
+        </div>
+      )}
+
+      {book.status === "failed" && (
+        <div className="inline-alert error wide">
+          <CircleAlert size={16} />
+          <span>
+            {book.extractionError ||
+              "تعذّرت قراءة هذا الكتاب. جرّب رفع نسخة أخرى منه."}
+          </span>
+          <Link
+            href="/books/upload"
+            className="secondary-button"
+            style={{ marginRight: 12 }}
+          >
+            ارفع كتابًا جديدًا
+          </Link>
         </div>
       )}
 

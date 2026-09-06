@@ -11,7 +11,9 @@ import {
 } from "./types";
 
 export class RateLimitedError extends Error {
-  constructor(message = "لقد تجاوزت الحد المسموح لإنشاء الملفات، حاول لاحقًا.") {
+  constructor(
+    message = "لقد تجاوزت الحد المسموح لإنشاء الملفات، حاول لاحقًا."
+  ) {
     super(message);
     this.name = "RateLimitedError";
   }

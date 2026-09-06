@@ -237,10 +237,18 @@ export type CardReviewEvent = typeof cardReviewEvents.$inferSelect;
 // rename a value already in use), so "generating"/"analyzing" (see
 // bookChapterStatusEnum below) stay as legacy values a row can technically
 // still hold, we just stop ever assigning them going forward.
+// "extracting"/"failed" added when PDF text-extraction + OCR itself moved to
+// a background QStash worker (was previously run synchronously inside
+// upload-and-plan, which could exceed Vercel's 60s function limit on
+// multi-page scanned files). "extracting" = OCR/extraction in progress;
+// "failed" = extraction failed permanently (bad file), distinct from
+// "partial_failed" which means generation finished with some batches failed.
 export const mirrorJobStatusEnum = pgEnum("mirror_job_status", [
   "pending",
   "complete",
   "partial_failed",
+  "extracting",
+  "failed",
 ]);
 export const mirrorBatchStatusEnum = pgEnum("mirror_batch_status", [
   "pending",
@@ -266,6 +274,20 @@ export const mirrorJobs = pgTable(
     // Set once graduateMirrorJob() creates the real deck — null while the job
     // is still generating.
     deckId: uuid("deckId").references(() => decks.id),
+    // Extraction/OCR staging (background worker, app/api/mirror/extract) —
+    // accumulated page text + which pages still need OCR. Cleared once
+    // finalizeMirrorJobExtraction() creates the real mirrorBatches rows,
+    // since each batch then owns its own pageTexts slice.
+    pageTexts:
+      jsonb("pageTexts").$type<
+        { page: number; text: string; hasText: boolean }[]
+      >(),
+    pagesNeedingOcr: jsonb("pagesNeedingOcr").$type<number[]>(),
+    ocrFailedPages: jsonb("ocrFailedPages").$type<number[]>(),
+    extractionError: text("extractionError"),
+    extractionAttemptCount: integer("extractionAttemptCount")
+      .default(0)
+      .notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -342,11 +364,15 @@ export type MirrorBatch = typeof mirrorBatches.$inferSelect;
 
 // Book-level status (QStash queue migration) — books had no status column
 // at all before this; mirrors mirrorJobs.status's role.
+// "extracting"/"failed" mirror mirrorJobStatusEnum's additions above — same
+// reasoning, for كتبي's own extraction/OCR background worker.
 export const bookStatusEnum = pgEnum("book_status", [
   "pending",
   "processing",
   "complete",
   "partial_failed",
+  "extracting",
+  "failed",
 ]);
 
 export const books = pgTable(
@@ -361,8 +387,23 @@ export const books = pgTable(
     pageCount: integer("pageCount").default(0).notNull(),
     // How chapters were determined — "headings" (regex-detected) or
     // "fixed_windows" (fallback fixed-size page chunks) — see detectChapters().
-    chapterDetectionMethod: text("chapterDetectionMethod").notNull(),
+    // Null while status is "extracting": unknown until finalizeBookExtraction()
+    // runs detectChapters() against the fully-extracted text.
+    chapterDetectionMethod: text("chapterDetectionMethod"),
     status: bookStatusEnum("status").default("pending").notNull(),
+    // Extraction/OCR staging (background worker, app/api/books/extract) —
+    // same role as mirrorJobs' equivalent columns above. Cleared once
+    // finalizeBookExtraction() creates the real bookChapters rows.
+    pageTexts:
+      jsonb("pageTexts").$type<
+        { page: number; text: string; hasText: boolean }[]
+      >(),
+    pagesNeedingOcr: jsonb("pagesNeedingOcr").$type<number[]>(),
+    ocrFailedPages: jsonb("ocrFailedPages").$type<number[]>(),
+    extractionError: text("extractionError"),
+    extractionAttemptCount: integer("extractionAttemptCount")
+      .default(0)
+      .notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),

@@ -3,13 +3,14 @@
 // ownership-scoped queries via joins, safe-empty-default reads, throw-on-write
 // when the DB isn't configured), kept separate from lib/db.ts for the same
 // reason lib/db-books.ts is: a distinct pipeline with its own lifecycle.
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import {
   cards,
   decks,
   mirrorBatches,
   mirrorJobs,
   type MirrorBatch,
+  type MirrorJob,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import type { GeneratedCard } from "./pdf-cards";
@@ -69,16 +70,18 @@ function splitMirrorPages(pages: MirrorPageText[]): MirrorPageGroup[] {
   return groups;
 }
 
-export async function createMirrorJobWithBatches(
+// Step 1 of the مِرآة pipeline: a bare job row, status "extracting", with no
+// batches yet — created synchronously by upload-and-plan so it can return
+// {jobId} immediately, then handed to the extract_mirror_job background
+// worker (app/api/mirror/extract/route.ts) which does the actual PDF
+// text-extraction + OCR and calls finalizeMirrorJobExtraction below once
+// done. Splitting job-creation from extraction this way is what keeps
+// upload-and-plan itself always fast (<1s), regardless of file size — see
+// drizzle/schema.ts's mirrorJobStatusEnum comment for why "extracting" exists.
+export async function createMirrorJobShell(
   userId: string,
-  input: {
-    fileName: string;
-    fileKey: string;
-    pageCount: number;
-    depth: string;
-    pages: MirrorPageText[];
-  }
-) {
+  input: { fileName: string; fileKey: string; depth: string }
+): Promise<MirrorJob> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
 
@@ -88,12 +91,95 @@ export async function createMirrorJobWithBatches(
       userId,
       fileName: input.fileName,
       fileKey: input.fileKey,
-      pageCount: input.pageCount,
       depth: input.depth,
+      status: "extracting",
     })
     .returning();
+  return job;
+}
 
-  const batchPageGroups = splitMirrorPages(input.pages);
+// No-ownership-filter lookup for the extraction queue worker — same
+// trust-boundary reasoning as getMirrorBatchById below.
+export async function getMirrorJobById(
+  jobId: string
+): Promise<MirrorJob | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  const [job] = await db
+    .select()
+    .from(mirrorJobs)
+    .where(eq(mirrorJobs.id, jobId))
+    .limit(1);
+  return job ?? null;
+}
+
+// Persists one extraction worker invocation's progress (initial text extract,
+// or one OCR batch's results merged in) so the next self-published
+// extract_mirror_job invocation can resume exactly where this one left off.
+// pageCount is only passed on the very first invocation, once parser.getText()
+// reveals the file's true page count.
+export async function updateMirrorJobExtractionProgress(
+  jobId: string,
+  update: {
+    pageCount?: number;
+    pageTexts: MirrorPageText[];
+    pagesNeedingOcr: number[];
+    ocrFailedPages: number[];
+  }
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorJobs)
+    .set({
+      ...(update.pageCount !== undefined
+        ? { pageCount: update.pageCount }
+        : {}),
+      pageTexts: update.pageTexts,
+      pagesNeedingOcr: update.pagesNeedingOcr,
+      ocrFailedPages: update.ocrFailedPages,
+      extractionAttemptCount: sql`${mirrorJobs.extractionAttemptCount} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorJobs.id, jobId));
+}
+
+// Terminal extraction failure (unreadable/missing pages after OCR) — the
+// file itself is the problem, so unlike batch/chapter failures this is never
+// automatically retried by QStash; the student re-uploads instead (see
+// app/mirror/[jobId]/page.tsx's "failed" banner).
+export async function markMirrorJobExtractionFailed(
+  jobId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorJobs)
+    .set({
+      status: "failed",
+      extractionError: errorMessage,
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorJobs.id, jobId));
+}
+
+// Step 2: once every page has usable text, splits it into generation batches
+// (same splitMirrorPages logic createMirrorJobWithBatches used to run
+// up-front) and creates them against the EXISTING job row from
+// createMirrorJobShell — clearing the now-unneeded staging columns since
+// each batch owns its own pageTexts slice from here on. Leaves the job in
+// "pending" (its original pre-extraction status), which the rest of the
+// pipeline (finalizeMirrorJobIfDone etc.) already understands.
+export async function finalizeMirrorJobExtraction(
+  jobId: string,
+  pages: MirrorPageText[]
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  const batchPageGroups = splitMirrorPages(pages);
 
   let batches: {
     id: string;
@@ -106,7 +192,7 @@ export async function createMirrorJobWithBatches(
       .insert(mirrorBatches)
       .values(
         batchPageGroups.map((group, index) => ({
-          jobId: job.id,
+          jobId,
           orderIndex: index,
           startPage: group[0].page,
           endPage: group[group.length - 1].page,
@@ -119,10 +205,23 @@ export async function createMirrorJobWithBatches(
         startPage: mirrorBatches.startPage,
         endPage: mirrorBatches.endPage,
       });
-    // Same caveat as createBookWithChapters: INSERT...RETURNING row order
-    // isn't guaranteed, so sort explicitly by the stored orderIndex.
+    // INSERT...RETURNING row order isn't guaranteed, so sort explicitly by
+    // the stored orderIndex.
     batches = inserted.sort((a, b) => a.orderIndex - b.orderIndex);
   }
+
+  const [job] = await db
+    .update(mirrorJobs)
+    .set({
+      status: "pending",
+      pageTexts: null,
+      pagesNeedingOcr: null,
+      ocrFailedPages: null,
+      extractionError: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorJobs.id, jobId))
+    .returning();
 
   return { job, batches };
 }

@@ -6,7 +6,12 @@
 // *processing* in our own DB — a useful second signal if Flow Control is
 // ever misconfigured, disabled, or its semantics don't perfectly match ours.
 import { and, count, eq } from "drizzle-orm";
-import { books, bookChapters, mirrorBatches, mirrorJobs } from "../../drizzle/schema";
+import {
+  books,
+  bookChapters,
+  mirrorBatches,
+  mirrorJobs,
+} from "../../drizzle/schema";
 import { getDb } from "../db";
 import { getQueueGlobalConcurrency, getQueuePerUserConcurrency } from "./types";
 
@@ -36,7 +41,10 @@ export async function countProcessingForUser(
       .from(mirrorBatches)
       .innerJoin(mirrorJobs, eq(mirrorJobs.id, mirrorBatches.jobId))
       .where(
-        and(eq(mirrorBatches.status, "processing"), eq(mirrorJobs.userId, userId))
+        and(
+          eq(mirrorBatches.status, "processing"),
+          eq(mirrorJobs.userId, userId)
+        )
       );
     return Number(row?.c ?? 0);
   }

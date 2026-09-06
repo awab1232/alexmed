@@ -2,43 +2,28 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  CheckCircle2,
-  CircleAlert,
-  FileText,
-  Loader2,
-  Upload as UploadIcon,
-  X,
-} from "lucide-react";
+import { CircleAlert, FileText, Loader2, Upload as UploadIcon, X } from "lucide-react";
 
-type ChapterProgress = {
-  id: string;
-  title: string;
-  status: "pending" | "analyzing" | "complete" | "failed";
-};
-
-type Stage = "idle" | "uploading" | "planning" | "analyzing" | "done";
-
-const RATE_LIMIT_MAX_RETRIES = 3;
-const BATCH_RETRY_MAX_RETRIES = 2;
-const BATCH_RETRY_DELAY_MS = 4000;
-const sleep = (ms: number) =>
-  new Promise<void>(resolve => setTimeout(resolve, ms));
+type Stage = "idle" | "uploading" | "planning";
 
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// Upload + extraction/OCR + chapter analysis all live on the server (see
+// app/api/books/extract/route.ts and app/api/books/analyze-chapter/route.ts,
+// both QStash-driven background workers) — this page's only job is to hand
+// the file off and send the user to the resumable /books/[bookId] page,
+// which polls status from here on. It used to drive chapter analysis itself
+// with a client-side loop; that broke once analyze-chapter became a
+// QStash-signature-verified worker no longer callable from the browser.
 export default function BookUploadPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState("");
-  const [warning, setWarning] = useState("");
-  const [bookId, setBookId] = useState<string | null>(null);
-  const [chapters, setChapters] = useState<ChapterProgress[]>([]);
   const [dragActive, setDragActive] = useState(false);
 
   function chooseFile(nextFile: File | undefined) {
@@ -54,51 +39,9 @@ export default function BookUploadPage() {
     setFile(nextFile);
   }
 
-  async function analyzeChapter(chapterId: string): Promise<boolean> {
-    for (let attempt = 0; ; attempt++) {
-      let response: Response | null = null;
-      let data: { error?: string; retryAfterMs?: number } | null = null;
-      try {
-        response = await fetch("/api/books/analyze-chapter", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chapterId }),
-        });
-        data = await response.json();
-      } catch {
-        // falls through to the retry policy below, same as a non-ok response
-      }
-
-      if (response?.ok) return true;
-
-      const isRateLimited = response?.status === 429;
-      const canRetry = isRateLimited
-        ? attempt < RATE_LIMIT_MAX_RETRIES
-        : attempt < BATCH_RETRY_MAX_RETRIES;
-
-      if (canRetry) {
-        const waitMs = isRateLimited
-          ? typeof data?.retryAfterMs === "number"
-            ? data.retryAfterMs
-            : 20_000
-          : BATCH_RETRY_DELAY_MS;
-        setWarning(
-          isRateLimited
-            ? `تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي — ننتظر ${Math.ceil(waitMs / 1000)} ثانية...`
-            : `تعذر تحليل هذا الفصل، جارٍ إعادة المحاولة...`
-        );
-        await sleep(waitMs);
-        continue;
-      }
-
-      return false;
-    }
-  }
-
   async function startProcessing() {
     if (!file) return;
     setError("");
-    setWarning("");
     setStage("uploading");
 
     try {
@@ -133,41 +76,11 @@ export default function BookUploadPage() {
       });
       const planData = await planResponse.json();
       if (!planResponse.ok)
-        throw new Error(
-          planData.error || "تعذر قراءة الملف أو تقسيمه إلى فصول."
-        );
+        throw new Error(planData.error || "تعذر تجهيز الكتاب.");
 
-      const plannedChapters: ChapterProgress[] = planData.chapters.map(
-        (chapter: { id: string; title: string }) => ({
-          id: chapter.id,
-          title: chapter.title,
-          status: "pending" as const,
-        })
-      );
-      setBookId(planData.bookId);
-      setChapters(plannedChapters);
-      setStage("analyzing");
-
-      for (const chapter of plannedChapters) {
-        setChapters(previous =>
-          previous.map(c =>
-            c.id === chapter.id ? { ...c, status: "analyzing" } : c
-          )
-        );
-        const ok = await analyzeChapter(chapter.id);
-        setWarning("");
-        setChapters(previous =>
-          previous.map(c =>
-            c.id === chapter.id
-              ? { ...c, status: ok ? "complete" : "failed" }
-              : c
-          )
-        );
-      }
-
-      setStage("done");
+      router.push(`/books/${planData.bookId}`);
     } catch (processingError) {
-      setStage(bookId ? "analyzing" : "idle");
+      setStage("idle");
       setError(
         processingError instanceof Error
           ? processingError.message
@@ -176,10 +89,7 @@ export default function BookUploadPage() {
     }
   }
 
-  const isProcessing =
-    stage === "uploading" || stage === "planning" || stage === "analyzing";
-  const completeCount = chapters.filter(c => c.status === "complete").length;
-  const failedCount = chapters.filter(c => c.status === "failed").length;
+  const isProcessing = stage === "uploading" || stage === "planning";
 
   return (
     <section className="upload-view">
@@ -273,14 +183,8 @@ export default function BookUploadPage() {
               {error}
             </div>
           )}
-          {warning && (
-            <div className="inline-alert warning">
-              <CircleAlert size={16} />
-              {warning}
-            </div>
-          )}
 
-          {(stage === "uploading" || stage === "planning") && (
+          {isProcessing && (
             <div className="live-progress" role="status" aria-live="polite">
               <div className="progress-heading">
                 <div className="progress-orbit">
@@ -290,88 +194,11 @@ export default function BookUploadPage() {
                   <strong>
                     {stage === "uploading"
                       ? "جاري رفع الملف"
-                      : "نقرأ الكتاب ونقسّمه لفصول"}
+                      : "جاري تجهيز الكتاب"}
                   </strong>
                 </div>
               </div>
             </div>
-          )}
-
-          {chapters.length > 0 && (
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              <div style={{ fontSize: 12, color: "#8a9493" }}>
-                {stage === "done"
-                  ? `تم تحليل ${completeCount} من ${chapters.length} فصل${failedCount ? ` (تعذر تحليل ${failedCount})` : ""}`
-                  : `تم تحليل ${completeCount} من ${chapters.length} فصل`}
-              </div>
-              <div className="progress-track">
-                <i
-                  style={{
-                    width: `${(completeCount / chapters.length) * 100}%`,
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
-                  marginTop: 8,
-                }}
-              >
-                {chapters.map(chapter => (
-                  <div
-                    key={chapter.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      fontSize: 12,
-                    }}
-                  >
-                    {chapter.status === "complete" && (
-                      <CheckCircle2 size={16} color="#5d9b78" />
-                    )}
-                    {chapter.status === "failed" && (
-                      <CircleAlert size={16} color="#c8544d" />
-                    )}
-                    {chapter.status === "analyzing" && (
-                      <Loader2 size={16} className="spin" color="#da774c" />
-                    )}
-                    {chapter.status === "pending" && (
-                      <span
-                        style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          border: "2px solid #d8d1c7",
-                          display: "inline-block",
-                        }}
-                      />
-                    )}
-                    <span>{chapter.title}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {stage === "done" && bookId && (
-            <button
-              type="button"
-              className="primary-button"
-              style={{ marginTop: 18 }}
-              onClick={() => router.push(`/books/${bookId}`)}
-            >
-              فتح الكتاب
-            </button>
           )}
 
           {stage === "idle" && (
@@ -388,8 +215,8 @@ export default function BookUploadPage() {
 
           {isProcessing && (
             <p style={{ marginTop: 12, fontSize: 11, color: "#8a9493" }}>
-              تقدر تسكّر الصفحة وترجع بعدين — مش هنفقد أي تقدم، وهيكمل من الفصل
-              اللي وقفت عنده.
+              تقدر تسكّر الصفحة وترجع بعدين — مش هنفقد أي تقدم، وهيكمل من حيث
+              وقفت.
             </p>
           )}
         </div>
