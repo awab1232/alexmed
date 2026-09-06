@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, CircleAlert, Loader2, RotateCcw } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
@@ -19,6 +19,8 @@ export default function MirrorJobPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const noRedirect = searchParams.get("noRedirect") === "1";
   const utils = trpc.useUtils();
   const jobQuery = trpc.mirror.get.useQuery(
     { id: jobId },
@@ -35,14 +37,23 @@ export default function MirrorJobPage() {
     onSuccess: () => utils.mirror.get.invalidate({ id: jobId }),
   });
 
-  // Once the job graduates (all batches complete → a real deck exists),
-  // send the user straight to their library instead of leaving them on a
-  // now-inert progress page.
+  // The deck exists (and starts accepting cards) as soon as extraction
+  // finishes — see finalizeMirrorJobExtraction in lib/db-mirror.ts — so once
+  // the FIRST batch is ready, send the student straight into a live review
+  // session instead of making them wait on this progress page for every
+  // batch to finish (components/Home.tsx's deck view keeps polling for the
+  // rest). Skipped when ?noRedirect=1 — used by the review view's "التفاصيل"
+  // link, so a student checking progress/retrying a failed batch on purpose
+  // isn't immediately bounced back to their session.
   useEffect(() => {
-    if (jobQuery.data?.job.status === "complete" && jobQuery.data.job.deckId) {
-      router.replace(`/?openDeck=${jobQuery.data.job.deckId}`);
+    if (noRedirect) return;
+    const job = jobQuery.data?.job;
+    const batches = jobQuery.data?.batches ?? [];
+    const completeCount = batches.filter(b => b.status === "complete").length;
+    if (job?.deckId && completeCount >= 1) {
+      router.replace(`/?openDeck=${job.deckId}`);
     }
-  }, [jobQuery.data, router]);
+  }, [jobQuery.data, noRedirect, router]);
 
   if (jobQuery.isLoading) {
     return (
@@ -103,8 +114,8 @@ export default function MirrorJobPage() {
             </div>
           </div>
           <p className="progress-caption">
-            قد يستغرق هذا وقتًا أطول قليلًا للملفات الممسوحة ضوئيًا. يمكنك
-            إغلاق هذه الصفحة والعودة لاحقًا من أي جهاز دون فقدان التقدم.
+            قد يستغرق هذا وقتًا أطول قليلًا للملفات الممسوحة ضوئيًا. يمكنك إغلاق
+            هذه الصفحة والعودة لاحقًا من أي جهاز دون فقدان التقدم.
           </p>
         </div>
       )}
@@ -141,7 +152,11 @@ export default function MirrorJobPage() {
             {job.extractionError ||
               "تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه."}
           </span>
-          <Link href="/" className="secondary-button" style={{ marginRight: 12 }}>
+          <Link
+            href="/"
+            className="secondary-button"
+            style={{ marginRight: 12 }}
+          >
             ارفع ملفًا جديدًا
           </Link>
         </div>
@@ -150,7 +165,9 @@ export default function MirrorJobPage() {
       {job.status === "complete" && (
         <div className="inline-alert success wide">
           <CheckCircle2 size={16} />
-          اكتمل التوليد — جاري نقلك لمكتبتك...
+          {noRedirect
+            ? "اكتمل التوليد."
+            : "اكتمل التوليد — جاري نقلك لمكتبتك..."}
         </div>
       )}
 

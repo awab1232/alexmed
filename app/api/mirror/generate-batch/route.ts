@@ -74,6 +74,13 @@ export async function POST(request: Request) {
       // occasionally, not an error. Ack without doing any AI work.
       return NextResponse.json({ batchId, status: "already_processing" });
     }
+    if (!batch.deckId) {
+      // Invariant violation: finalizeMirrorJobExtraction always sets
+      // mirrorJobs.deckId before any batch is created, so this should never
+      // happen — treat as a transient error rather than silently dropping
+      // this batch's cards on the floor.
+      throw new Error(`Mirror job ${batch.jobId} has no deckId`);
+    }
   } catch (error) {
     // Anything before the claim (malformed body, a transient DB error) is
     // safe to let QStash retry — nothing has been claimed/mutated yet.
@@ -88,7 +95,7 @@ export async function POST(request: Request) {
   if (!pages.length) {
     // No usable text in this batch (e.g. every page failed OCR) — complete
     // it with zero cards rather than failing; there's nothing to retry.
-    await completeBatchGeneration(batchId, batch.jobId, batch.userId, []);
+    await completeBatchGeneration(batchId, batch.deckId!, []);
     await finalizeMirrorJobIfDone(batch.jobId);
     return NextResponse.json({ batchId, status: "complete", cards: [] });
   }
@@ -135,7 +142,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await completeBatchGeneration(batchId, batch.jobId, batch.userId, cards);
+    await completeBatchGeneration(batchId, batch.deckId!, cards);
     await finalizeMirrorJobIfDone(batch.jobId);
 
     return NextResponse.json({ batchId, status: "complete", cards });

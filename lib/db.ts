@@ -2,7 +2,14 @@ import bcrypt from "bcryptjs";
 import { and, count, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { cards, decks, InsertUser, users } from "../drizzle/schema";
+import {
+  cards,
+  decks,
+  InsertUser,
+  mirrorBatches,
+  mirrorJobs,
+  users,
+} from "../drizzle/schema";
 import type { GeneratedCard } from "./pdf-cards";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -155,6 +162,14 @@ export async function listDecksForUser(userId: string) {
     .orderBy(desc(decks.createdAt));
 }
 
+// `job` is non-null only for a deck created by مِرآة's background pipeline
+// (see finalizeMirrorJobExtraction in lib/db-mirror.ts, which creates the
+// deck immediately and sets mirrorJobs.deckId before any batch has generated
+// a card) — it's what lets the review UI (components/Home.tsx) know whether
+// to keep polling for more cards and whether to surface a failed-batch
+// notice. A deck created any other way (e.g. decksRouter.create) has no
+// associated job, so `job` is null and the UI behaves exactly as before —
+// one static fetch, no polling.
 export async function getDeckWithCards(userId: string, deckId: string) {
   const db = getDb();
   if (!db) return null;
@@ -172,7 +187,28 @@ export async function getDeckWithCards(userId: string, deckId: string) {
     .where(eq(cards.deckId, deckId))
     .orderBy(cards.sourcePage);
 
-  return { deck, cards: deckCards };
+  const [job] = await db
+    .select({ id: mirrorJobs.id, status: mirrorJobs.status })
+    .from(mirrorJobs)
+    .where(eq(mirrorJobs.deckId, deckId))
+    .limit(1);
+
+  let failedBatchCount = 0;
+  if (job) {
+    const [row] = await db
+      .select({ c: count() })
+      .from(mirrorBatches)
+      .where(
+        and(eq(mirrorBatches.jobId, job.id), eq(mirrorBatches.status, "failed"))
+      );
+    failedBatchCount = Number(row?.c ?? 0);
+  }
+
+  return {
+    deck,
+    cards: deckCards,
+    job: job ? { ...job, failedBatchCount } : null,
+  };
 }
 
 export async function deleteDeck(userId: string, deckId: string) {

@@ -2,7 +2,13 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CircleAlert, FileText, Loader2, Upload as UploadIcon, X } from "lucide-react";
+import {
+  CircleAlert,
+  FileText,
+  Loader2,
+  Upload as UploadIcon,
+  X,
+} from "lucide-react";
 
 type Stage = "idle" | "uploading" | "planning";
 

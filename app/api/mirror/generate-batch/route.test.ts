@@ -75,6 +75,7 @@ describe("POST /api/mirror/generate-batch", () => {
       id: "b1",
       jobId: "j1",
       userId: "u1",
+      deckId: "d1",
       depth: "balanced",
       pageTexts: [{ page: 1, text: "some question text", hasText: true }],
     });

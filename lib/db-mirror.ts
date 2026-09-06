@@ -172,6 +172,14 @@ export async function markMirrorJobExtractionFailed(
 // each batch owns its own pageTexts slice from here on. Leaves the job in
 // "pending" (its original pre-extraction status), which the rest of the
 // pipeline (finalizeMirrorJobIfDone etc.) already understands.
+//
+// Also creates the real `decks` row (and sets mirrorJobs.deckId) right here,
+// BEFORE any batch has generated a single card — this is what lets a student
+// open a live review session the moment the first batch completes, instead
+// of waiting for the whole job to finish (see completeBatchGeneration below,
+// which inserts each batch's cards into this deck directly as they're
+// generated). A deck with zero cards yet is a normal, valid state for the
+// review UI to poll against.
 export async function finalizeMirrorJobExtraction(
   jobId: string,
   pages: MirrorPageText[]
@@ -181,49 +189,70 @@ export async function finalizeMirrorJobExtraction(
 
   const batchPageGroups = splitMirrorPages(pages);
 
-  let batches: {
-    id: string;
-    orderIndex: number;
-    startPage: number;
-    endPage: number;
-  }[] = [];
-  if (batchPageGroups.length) {
-    const inserted = await db
-      .insert(mirrorBatches)
-      .values(
-        batchPageGroups.map((group, index) => ({
-          jobId,
-          orderIndex: index,
-          startPage: group[0].page,
-          endPage: group[group.length - 1].page,
-          pageTexts: group,
-        }))
-      )
-      .returning({
-        id: mirrorBatches.id,
-        orderIndex: mirrorBatches.orderIndex,
-        startPage: mirrorBatches.startPage,
-        endPage: mirrorBatches.endPage,
-      });
-    // INSERT...RETURNING row order isn't guaranteed, so sort explicitly by
-    // the stored orderIndex.
-    batches = inserted.sort((a, b) => a.orderIndex - b.orderIndex);
-  }
+  return db.transaction(async tx => {
+    const [job] = await tx
+      .select()
+      .from(mirrorJobs)
+      .where(eq(mirrorJobs.id, jobId))
+      .limit(1);
+    if (!job) throw new Error("Mirror job not found");
 
-  const [job] = await db
-    .update(mirrorJobs)
-    .set({
-      status: "pending",
-      pageTexts: null,
-      pagesNeedingOcr: null,
-      ocrFailedPages: null,
-      extractionError: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(mirrorJobs.id, jobId))
-    .returning();
+    const [deck] = await tx
+      .insert(decks)
+      .values({
+        userId: job.userId,
+        fileName: job.fileName,
+        fileKey: job.fileKey,
+        pageCount: job.pageCount,
+        depth: job.depth,
+      })
+      .returning();
 
-  return { job, batches };
+    let batches: {
+      id: string;
+      orderIndex: number;
+      startPage: number;
+      endPage: number;
+    }[] = [];
+    if (batchPageGroups.length) {
+      const inserted = await tx
+        .insert(mirrorBatches)
+        .values(
+          batchPageGroups.map((group, index) => ({
+            jobId,
+            orderIndex: index,
+            startPage: group[0].page,
+            endPage: group[group.length - 1].page,
+            pageTexts: group,
+          }))
+        )
+        .returning({
+          id: mirrorBatches.id,
+          orderIndex: mirrorBatches.orderIndex,
+          startPage: mirrorBatches.startPage,
+          endPage: mirrorBatches.endPage,
+        });
+      // INSERT...RETURNING row order isn't guaranteed, so sort explicitly by
+      // the stored orderIndex.
+      batches = inserted.sort((a, b) => a.orderIndex - b.orderIndex);
+    }
+
+    const [updatedJob] = await tx
+      .update(mirrorJobs)
+      .set({
+        status: "pending",
+        deckId: deck.id,
+        pageTexts: null,
+        pagesNeedingOcr: null,
+        ocrFailedPages: null,
+        extractionError: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(mirrorJobs.id, jobId))
+      .returning();
+
+    return { job: updatedJob, deck, batches };
+  });
 }
 
 export async function listMirrorJobsForUser(userId: string) {
@@ -292,18 +321,22 @@ export async function deleteMirrorJob(userId: string, jobId: string) {
 export async function getMirrorBatchForUser(
   userId: string,
   batchId: string
-): Promise<(MirrorBatch & { depth: string }) | null> {
+): Promise<(MirrorBatch & { depth: string; deckId: string | null }) | null> {
   const db = getDb();
   if (!db) return null;
 
   const [row] = await db
-    .select({ batch: mirrorBatches, depth: mirrorJobs.depth })
+    .select({
+      batch: mirrorBatches,
+      depth: mirrorJobs.depth,
+      deckId: mirrorJobs.deckId,
+    })
     .from(mirrorBatches)
     .innerJoin(mirrorJobs, eq(mirrorJobs.id, mirrorBatches.jobId))
     .where(and(eq(mirrorBatches.id, batchId), eq(mirrorJobs.userId, userId)))
     .limit(1);
 
-  return row ? { ...row.batch, depth: row.depth } : null;
+  return row ? { ...row.batch, depth: row.depth, deckId: row.deckId } : null;
 }
 
 // No-ownership-filter lookup for a queue worker, which has no session to
@@ -313,7 +346,10 @@ export async function getMirrorBatchForUser(
 // user-facing getMirrorBatchForUser above.
 export async function getMirrorBatchById(
   batchId: string
-): Promise<(MirrorBatch & { depth: string; userId: string }) | null> {
+): Promise<
+  (MirrorBatch & { depth: string; userId: string; deckId: string | null })
+  | null
+> {
   const db = getDb();
   if (!db) return null;
 
@@ -322,13 +358,16 @@ export async function getMirrorBatchById(
       batch: mirrorBatches,
       depth: mirrorJobs.depth,
       userId: mirrorJobs.userId,
+      deckId: mirrorJobs.deckId,
     })
     .from(mirrorBatches)
     .innerJoin(mirrorJobs, eq(mirrorJobs.id, mirrorBatches.jobId))
     .where(eq(mirrorBatches.id, batchId))
     .limit(1);
 
-  return row ? { ...row.batch, depth: row.depth, userId: row.userId } : null;
+  return row
+    ? { ...row.batch, depth: row.depth, userId: row.userId, deckId: row.deckId }
+    : null;
 }
 
 // Resets a failed batch back to "pending" for a fresh retry budget — used by
@@ -390,7 +429,10 @@ export async function markMirrorBatchFailedTerminal(
 // Idempotent finalize: safe to call repeatedly (once per batch completion/
 // terminal-failure) — SELECT ... FOR UPDATE on the job row serializes
 // concurrent finalize attempts for the same job, so two batches finishing at
-// nearly the same moment can't both observe "all done" and double-graduate.
+// nearly the same moment can't both flip the job's status twice. The deck
+// and its cards already exist by this point (see finalizeMirrorJobExtraction
+// and completeBatchGeneration) — this just rolls the job's own status up
+// from its batches' statuses, same role as finalizeBookIfDone in db-books.ts.
 export async function finalizeMirrorJobIfDone(jobId: string) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
@@ -421,61 +463,12 @@ export async function finalizeMirrorJobIfDone(jobId: string) {
     if (stillWorking) return;
 
     const anyFailed = siblings.some(sibling => sibling.status === "failed");
-    if (anyFailed) {
-      await tx
-        .update(mirrorJobs)
-        .set({ status: "partial_failed", updatedAt: new Date() })
-        .where(eq(mirrorJobs.id, jobId));
-      return;
-    }
-
-    // Every batch complete — graduate: same deck-creation logic as
-    // graduateMirrorJob, inlined here so it runs inside this same FOR UPDATE
-    // transaction rather than opening a second one.
-    if (job.deckId) return;
-
-    const batches = await tx
-      .select({ cards: mirrorBatches.cards })
-      .from(mirrorBatches)
-      .where(eq(mirrorBatches.jobId, jobId))
-      .orderBy(asc(mirrorBatches.orderIndex));
-    const allCards = batches.flatMap(batch => batch.cards ?? []);
-
-    const [deck] = await tx
-      .insert(decks)
-      .values({
-        userId: job.userId,
-        fileName: job.fileName,
-        fileKey: job.fileKey,
-        pageCount: job.pageCount,
-        depth: job.depth,
-      })
-      .returning();
-
-    if (allCards.length) {
-      await tx.insert(cards).values(
-        allCards.map(card => ({
-          deckId: deck.id,
-          question: card.question,
-          questionArabic: card.questionArabic,
-          answer: card.answer,
-          answerArabic: card.answerArabic,
-          explanation: card.explanation,
-          explanationArabic: card.explanationArabic,
-          keyIdea: card.keyIdea,
-          keyIdeaArabic: card.keyIdeaArabic,
-          keyword: card.keyword,
-          keywordArabic: card.keywordArabic,
-          sourcePage: card.sourcePage,
-          status: card.status,
-          confidence: card.confidence,
-        }))
-      );
-    }
-
     await tx
       .update(mirrorJobs)
-      .set({ status: "complete", deckId: deck.id, updatedAt: new Date() })
+      .set({
+        status: anyFailed ? "partial_failed" : "complete",
+        updatedAt: new Date(),
+      })
       .where(eq(mirrorJobs.id, jobId));
   });
 }
@@ -505,14 +498,18 @@ export async function setBatchFailed(batchId: string, errorMessage: string) {
     .where(eq(mirrorBatches.id, batchId));
 }
 
-// Completes one batch, then graduates the whole job the moment every batch
-// has reached "complete" — this is what lets the client just drive batches
-// one at a time (like كتبي's analyze-chapter loop) without a separate
-// "finalize" step of its own.
+// Completes one batch and inserts its cards directly into the job's deck
+// (created up front by finalizeMirrorJobExtraction) — this is what lets a
+// student open the deck and start reviewing while later batches are still
+// generating, with new cards simply appearing as more INSERTs land, instead
+// of waiting for a single all-batches-complete "graduation" copy. Safe to
+// call at most once per batch: the caller only reaches here after
+// claimMirrorBatch's atomic claim (WHERE status IN ('pending','failed'))
+// succeeded, so a given batchId can never have two concurrent/duplicate
+// generations both trying to insert its cards.
 export async function completeBatchGeneration(
   batchId: string,
-  jobId: string,
-  userId: string,
+  deckId: string,
   generatedCards: GeneratedCard[]
 ) {
   const db = getDb();
@@ -528,74 +525,24 @@ export async function completeBatchGeneration(
     })
     .where(eq(mirrorBatches.id, batchId));
 
-  const siblings = await db
-    .select({ status: mirrorBatches.status })
-    .from(mirrorBatches)
-    .where(eq(mirrorBatches.jobId, jobId));
-  const allComplete = siblings.every(sibling => sibling.status === "complete");
-  if (allComplete) {
-    await graduateMirrorJob(jobId, userId);
+  if (generatedCards.length) {
+    await db.insert(cards).values(
+      generatedCards.map(card => ({
+        deckId,
+        question: card.question,
+        questionArabic: card.questionArabic,
+        answer: card.answer,
+        answerArabic: card.answerArabic,
+        explanation: card.explanation,
+        explanationArabic: card.explanationArabic,
+        keyIdea: card.keyIdea,
+        keyIdeaArabic: card.keyIdeaArabic,
+        keyword: card.keyword,
+        keywordArabic: card.keywordArabic,
+        sourcePage: card.sourcePage,
+        status: card.status,
+        confidence: card.confidence,
+      }))
+    );
   }
-}
-
-// Copies a fully-generated job's cards into a real decks/cards row (the
-// established library/browse/SRS-review surface needs no changes as a
-// result) and marks the job complete. Idempotent via the deckId-still-null
-// check, in case of a rare double-invocation race.
-export async function graduateMirrorJob(jobId: string, userId: string) {
-  const db = getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db.transaction(async tx => {
-    const [job] = await tx
-      .select()
-      .from(mirrorJobs)
-      .where(and(eq(mirrorJobs.id, jobId), eq(mirrorJobs.userId, userId)))
-      .limit(1);
-    if (!job || job.deckId) return;
-
-    const batches = await tx
-      .select({ cards: mirrorBatches.cards })
-      .from(mirrorBatches)
-      .where(eq(mirrorBatches.jobId, jobId))
-      .orderBy(asc(mirrorBatches.orderIndex));
-    const allCards = batches.flatMap(batch => batch.cards ?? []);
-
-    const [deck] = await tx
-      .insert(decks)
-      .values({
-        userId,
-        fileName: job.fileName,
-        fileKey: job.fileKey,
-        pageCount: job.pageCount,
-        depth: job.depth,
-      })
-      .returning();
-
-    if (allCards.length) {
-      await tx.insert(cards).values(
-        allCards.map(card => ({
-          deckId: deck.id,
-          question: card.question,
-          questionArabic: card.questionArabic,
-          answer: card.answer,
-          answerArabic: card.answerArabic,
-          explanation: card.explanation,
-          explanationArabic: card.explanationArabic,
-          keyIdea: card.keyIdea,
-          keyIdeaArabic: card.keyIdeaArabic,
-          keyword: card.keyword,
-          keywordArabic: card.keywordArabic,
-          sourcePage: card.sourcePage,
-          status: card.status,
-          confidence: card.confidence,
-        }))
-      );
-    }
-
-    await tx
-      .update(mirrorJobs)
-      .set({ status: "complete", deckId: deck.id, updatedAt: new Date() })
-      .where(eq(mirrorJobs.id, jobId));
-  });
 }

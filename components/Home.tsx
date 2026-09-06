@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowUp,
   BookOpen,
@@ -51,6 +52,10 @@ type Card = {
 type View = "upload" | "cards" | "library";
 type Stage = "idle" | "extracting" | "processing" | "ready";
 const UPLOAD_MAX_MB = Number(process.env.NEXT_PUBLIC_UPLOAD_MAX_MB) || 250;
+// Same polling convention as app/mirror/[jobId]/page.tsx — once a deck's
+// originating مِرآة job reaches one of these, no more cards are coming.
+const POLL_INTERVAL_MS = 3000;
+const TERMINAL_JOB_STATUSES = new Set(["complete", "partial_failed", "failed"]);
 
 const depthOptions = [
   { value: "quick", label: "سريع", caption: "مراجعة خاطفة" },
@@ -119,6 +124,49 @@ export default function Home() {
       utils.decks.list.invalidate();
     },
   });
+
+  // Live-updating deck view: while the deck's originating مِرآة job is still
+  // generating (job.status not yet terminal), keeps polling so new batches'
+  // cards simply appear — this is what lets a student open a large file's
+  // deck and start reviewing the first ready cards immediately instead of
+  // waiting for every batch to finish. A deck with no associated job (job:
+  // null) — or one whose job already finished — never polls, same as a
+  // plain one-time fetch.
+  const deckQuery = trpc.decks.get.useQuery(
+    { id: openDeckId ?? "" },
+    {
+      enabled: view === "cards" && !!openDeckId,
+      refetchInterval: query => {
+        const status = query.state.data?.job?.status;
+        return status && !TERMINAL_JOB_STATUSES.has(status)
+          ? POLL_INTERVAL_MS
+          : false;
+      },
+    }
+  );
+  const jobStatus = deckQuery.data?.job?.status ?? null;
+  const isLive = !!jobStatus && !TERMINAL_JOB_STATUSES.has(jobStatus);
+  const liveJobId = deckQuery.data?.job?.id ?? null;
+  const failedBatchCount = deckQuery.data?.job?.failedBatchCount ?? 0;
+
+  // Merges newly-arrived cards onto the end of local state (by id, so
+  // existing cards — and the student's activeCard position — are never
+  // touched) and syncs the deck's display metadata. Runs on first load too:
+  // `cards` starts empty for a freshly-opened deck, so every fetched card is
+  // "new" and gets appended in the order getDeckWithCards returns them.
+  useEffect(() => {
+    const data = deckQuery.data;
+    if (!data) return;
+    setCurrentFileName(data.deck.fileName);
+    setPageCount(data.deck.pageCount);
+    setDepth(data.deck.depth);
+    setProcessedPages(data.deck.pageCount);
+    setCards(prev => {
+      const seen = new Set(prev.map(card => card.id));
+      const incoming = data.cards.filter(card => !seen.has(card.id));
+      return incoming.length ? [...prev, ...incoming] : prev;
+    });
+  }, [deckQuery.data]);
 
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
 
@@ -274,28 +322,24 @@ export default function Home() {
     setShowAnswer(false);
   }
 
-  async function openDeck(deckId: string) {
+  // Just switches into the deck's live view — deckQuery (above) does the
+  // actual fetching/polling, and its effect populates cards/metadata as data
+  // arrives. Kept synchronous (no fetch here) so this also works as the
+  // target of the ?openDeck= redirect effect below, which may run before
+  // the deck's first batch even exists yet.
+  function openDeck(deckId: string) {
     setLibraryError("");
-    try {
-      const result = await utils.decks.get.fetch({ id: deckId });
-      setFile(null);
-      setCurrentFileName(result.deck.fileName);
-      setOpenDeckId(result.deck.id);
-      setPageCount(result.deck.pageCount);
-      setPages([]);
-      setFileUrl("");
-      setCards(result.cards);
-      setDepth(result.deck.depth);
-      setProcessedPages(result.deck.pageCount);
-      setStage("ready");
-      setView("cards");
-      setQuery("");
-      setOnlyReview(false);
-      setActiveCard(0);
-      setShowAnswer(false);
-    } catch {
-      setLibraryError("تعذر فتح هذا الملف. حاول مرة أخرى.");
-    }
+    setFile(null);
+    setOpenDeckId(deckId);
+    setCards([]);
+    setPages([]);
+    setFileUrl("");
+    setStage("ready");
+    setView("cards");
+    setQuery("");
+    setOnlyReview(false);
+    setActiveCard(0);
+    setShowAnswer(false);
   }
 
   async function removeDeck(deckId: string) {
@@ -349,10 +393,14 @@ export default function Home() {
   function goToCard(direction: number) {
     if (!visibleCards.length) return;
     stopSpeaking();
-    setActiveCard(
-      current =>
-        (current + direction + visibleCards.length) % visibleCards.length
-    );
+    setActiveCard(current => {
+      const next = current + direction;
+      // While more cards may still be on the way, stop at the last ready
+      // one instead of wrapping back to the first — the "جاري تجهيز المزيد"
+      // banner takes over from here rather than looping the session.
+      if (isLive && next >= visibleCards.length) return current;
+      return (next + visibleCards.length) % visibleCards.length;
+    });
     setShowAnswer(false);
   }
 
@@ -631,6 +679,20 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            {deckQuery.isError && (
+              <div className="inline-alert error wide">
+                <CircleAlert size={16} />
+                <span>تعذر فتح هذا الملف. حاول مرة أخرى.</span>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  style={{ marginRight: 12 }}
+                  onClick={() => setView("library")}
+                >
+                  العودة لمكتبتي
+                </button>
+              </div>
+            )}
             {warning && (
               <div className="inline-alert warning wide">
                 <CircleAlert size={16} />
@@ -698,6 +760,42 @@ export default function Home() {
                 <div className="small-progress">
                   <i style={{ width: `${progress}%` }} />
                 </div>
+              </div>
+            )}
+            {isLive && (
+              <div className="processing-banner">
+                <Loader2 size={18} className="spin" />
+                <div>
+                  <strong>جاري تجهيز المزيد من البطاقات...</strong>
+                  <span>{cards.length} بطاقة جاهزة حتى الآن — تقدر تكمل مذاكرتك وهي توصل تلقائيًا.</span>
+                </div>
+              </div>
+            )}
+            {jobStatus === "complete" && (
+              <div className="inline-alert success wide">
+                <CheckCircle2 size={16} />
+                اكتملت كل البطاقات.
+              </div>
+            )}
+            {failedBatchCount > 0 && (
+              <div className="inline-alert warning wide">
+                <CircleAlert size={16} />
+                <span>
+                  تعذر توليد {failedBatchCount}{" "}
+                  {failedBatchCount === 1 ? "جزء" : "أجزاء"}
+                  {isLive
+                    ? " حتى الآن — الباقي مستمر بالخلفية."
+                    : " من الملف."}
+                </span>
+                {liveJobId && (
+                  <Link
+                    href={`/mirror/${liveJobId}?noRedirect=1`}
+                    className="secondary-button"
+                    style={{ marginRight: 12 }}
+                  >
+                    التفاصيل
+                  </Link>
+                )}
               </div>
             )}
             {!selectedCard ? (
