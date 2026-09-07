@@ -23,12 +23,22 @@ function getReceiver(): Receiver {
 // `rawBody` must be the exact request body text (before JSON.parse) — QStash
 // signs the raw bytes, so parsing first and re-stringifying can break
 // verification if key order or whitespace differs.
+//
+// The URL QStash signed for is reconstructed from APP_BASE_URL + the
+// incoming request's pathname, rather than trusting `request.url` verbatim —
+// behind a reverse proxy (Railway, and most non-Vercel hosts) the app
+// process often sees an internal scheme/host that doesn't match the public
+// URL QStash actually called, which fails verification even for a genuine
+// QStash request.
 export async function verifyQStashRequest(
   rawBody: string,
   signature: string | null,
-  url: string
+  request: Request
 ): Promise<boolean> {
   if (!signature) return false;
+  const base = process.env.APP_BASE_URL?.replace(/\/$/, "");
+  const pathname = new URL(request.url).pathname;
+  const url = base ? `${base}${pathname}` : request.url;
   try {
     return await getReceiver().verify({ signature, body: rawBody, url });
   } catch {

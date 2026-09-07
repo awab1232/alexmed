@@ -7,6 +7,7 @@ describe("verifyQStashRequest", () => {
   beforeEach(() => {
     process.env.QSTASH_CURRENT_SIGNING_KEY = "sig_test_current";
     process.env.QSTASH_NEXT_SIGNING_KEY = "sig_test_next";
+    process.env.APP_BASE_URL = "https://example.com";
   });
 
   afterEach(() => {
@@ -17,7 +18,7 @@ describe("verifyQStashRequest", () => {
     const result = await verifyQStashRequest(
       '{"batchId":"x"}',
       null,
-      "https://example.com/api/mirror/generate-batch"
+      new Request("https://example.com/api/mirror/generate-batch")
     );
     expect(result).toBe(false);
   });
@@ -26,7 +27,7 @@ describe("verifyQStashRequest", () => {
     const result = await verifyQStashRequest(
       '{"batchId":"x"}',
       "not-a-real-jwt",
-      "https://example.com/api/mirror/generate-batch"
+      new Request("https://example.com/api/mirror/generate-batch")
     );
     expect(result).toBe(false);
   });
@@ -37,7 +38,7 @@ describe("verifyQStashRequest", () => {
     const result = await verifyQStashRequest(
       '{"batchId":"x"}',
       "some-signature",
-      "https://example.com/api/mirror/generate-batch"
+      new Request("https://example.com/api/mirror/generate-batch")
     );
     expect(result).toBe(false);
   });

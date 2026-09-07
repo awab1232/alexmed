@@ -41,7 +41,7 @@ const PAGES_PER_INVOCATION = 12;
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("upstash-signature");
-  const verified = await verifyQStashRequest(rawBody, signature, request.url);
+  const verified = await verifyQStashRequest(rawBody, signature, request);
   if (!verified) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 401 });
   }
