@@ -6,7 +6,7 @@ export function resolveProvider(): ProviderName {
   const configured = process.env.LLM_PROVIDER?.trim().toLowerCase();
 
   if (configured === "omniroute") {
-    if (!process.env.OMNIROUTE_API_KEY) {
+    if (!omniRouteConfig.apiKey) {
       console.warn(
         "[AI] LLM_PROVIDER=omniroute but OMNIROUTE_API_KEY is missing — falling back to openrouter"
       );
@@ -19,7 +19,7 @@ export function resolveProvider(): ProviderName {
 
   // LLM_PROVIDER unset/unrecognized: prefer OmniRoute as the default AI
   // gateway once it's configured, otherwise keep the existing OpenRouter path.
-  return process.env.OMNIROUTE_API_KEY ? "omniroute" : "openrouter";
+  return omniRouteConfig.apiKey ? "omniroute" : "openrouter";
 }
 
 export const omniRouteConfig = {
@@ -30,7 +30,7 @@ export const omniRouteConfig = {
     ).replace(/\/+$/, "");
   },
   get apiKey() {
-    return process.env.OMNIROUTE_API_KEY;
+    return process.env.OMNIROUTE_API_KEY?.trim() || undefined;
   },
   get defaultModel() {
     return process.env.OMNIROUTE_DEFAULT_MODEL?.trim() || undefined;
@@ -39,6 +39,6 @@ export const omniRouteConfig = {
 
 export const openRouterConfig = {
   get apiKey() {
-    return process.env.OPENROUTER_API_KEY;
+    return process.env.OPENROUTER_API_KEY?.trim() || undefined;
   },
 };
