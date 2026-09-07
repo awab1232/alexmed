@@ -24,10 +24,10 @@ export type OcrResult = {
   failedPages: number[];
 };
 
-// Caps each call at 4 pages regardless of what the caller passes — matches
-// the screenshot+vision-model cost per page, kept identical to the limit
-// مِرآة's OCR route has always enforced.
-const MAX_PAGES_PER_CALL = 4;
+// Caps each call regardless of what the caller passes — matches the
+// screenshot+vision-model cost per page, kept identical to the limit each
+// extract route enforces (OCR_BATCH_SIZE).
+const MAX_PAGES_PER_CALL = 12;
 
 export async function ocrPages(
   parser: PDFParse,

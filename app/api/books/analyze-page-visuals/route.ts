@@ -23,13 +23,11 @@ import { NextResponse } from "next/server";
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
-// Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
-// this value — processes at most PAGES_PER_INVOCATION pages (each its own
-// screenshot + vision-model call) then self-chains, same OCR_BATCH_SIZE
-// convention as app/api/books/extract/route.ts.
-export const maxDuration = 60;
-
-const PAGES_PER_INVOCATION = 4;
+// Processes at most PAGES_PER_INVOCATION pages (each its own screenshot +
+// vision-model call) then self-chains — keeps each invocation's AI-call
+// volume bounded, same OCR_BATCH_SIZE convention as
+// app/api/books/extract/route.ts.
+const PAGES_PER_INVOCATION = 12;
 
 // كتبي's page-level visual pipeline — runs on EVERY page of every book,
 // always (product decision), entirely independent of and never blocking

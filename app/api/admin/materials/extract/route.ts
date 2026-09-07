@@ -15,13 +15,10 @@ import { NextResponse } from "next/server";
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 
-// Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
-// this value — this route processes at most one OCR batch (≤4 pages) per
-// invocation, same reasoning as app/api/mirror/extract/route.ts, which this
-// file mirrors closely (see that file's comment for the full design).
-export const maxDuration = 60;
-
-const OCR_BATCH_SIZE = 4;
+// Processes at most one OCR batch per invocation, then self-chains — same
+// reasoning as app/api/mirror/extract/route.ts, which this file mirrors
+// closely (see that file's comment for the full design).
+const OCR_BATCH_SIZE = 12;
 
 // مكتبة الأدمن's counterpart to app/api/mirror/extract/route.ts — an admin's
 // uploaded PDF goes through the exact same extraction+OCR pipeline as a
