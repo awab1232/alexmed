@@ -10,6 +10,7 @@ import {
   OCR_MODEL,
   parseJsonResponse,
 } from "./pdf-cards";
+import { getScreenshotUnderLimit } from "./pdf-screenshot";
 import type { PDFParse } from "pdf-parse";
 
 export type OcrPage = {
@@ -39,13 +40,8 @@ export async function ocrPages(
 
   for (const pageNumber of capped) {
     try {
-      const screenshot = await parser.getScreenshot({
-        partial: [pageNumber],
-        desiredWidth: 1800,
-        imageDataUrl: true,
-        imageBuffer: false,
-      });
-      const imageUrl = screenshot.pages[0]?.dataUrl;
+      const screenshot = await getScreenshotUnderLimit(parser, pageNumber);
+      const imageUrl = screenshot?.dataUrl;
       if (!imageUrl) throw new Error("OCR image was not produced");
 
       const response = await invokeLLM({

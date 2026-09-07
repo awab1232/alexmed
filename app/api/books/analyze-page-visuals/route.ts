@@ -17,6 +17,7 @@ import { invokeLLM } from "@/lib/llm";
 import { claimBookPageVisual } from "@/lib/queue/claim";
 import { publishMessage } from "@/lib/queue/client";
 import { storageGetSignedUrl, storagePut } from "@/lib/storage";
+import { getScreenshotUnderLimit } from "@/lib/pdf-screenshot";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
@@ -84,13 +85,11 @@ export async function POST(request: Request) {
           parser = new PDFParse({ url: signedGetUrl, CanvasFactory });
         }
 
-        const screenshot = await parser.getScreenshot({
-          partial: [candidate.pageNumber],
-          desiredWidth: 1800,
-          imageDataUrl: true,
-          imageBuffer: true,
-        });
-        const shot = screenshot.pages[0];
+        const shot = await getScreenshotUnderLimit(
+          parser,
+          candidate.pageNumber,
+          { imageBuffer: true }
+        );
         if (!shot?.dataUrl || !shot.data) {
           throw new Error("Page screenshot generation failed");
         }
