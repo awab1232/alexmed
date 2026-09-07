@@ -94,8 +94,16 @@ export const ocrResponseSchema = {
     schema: {
       type: "object",
       additionalProperties: false,
-      properties: { text: { type: "string" } },
-      required: ["text"],
+      // hasText is the model's own explicit call on whether this page has
+      // any text at all — an empty `text` alone doesn't tell us whether the
+      // page is genuinely image-only (a diagram/photo, hasText: false) or
+      // the model simply failed to transcribe real content (a contradiction
+      // pdf-ocr.ts treats as a failure worth retrying).
+      properties: {
+        hasText: { type: "boolean" },
+        text: { type: "string" },
+      },
+      required: ["hasText", "text"],
     },
   },
 };
@@ -236,7 +244,7 @@ export function buildOcrMessages(imageUrl: string): Message[] {
       content: [
         {
           type: "text",
-          text: "Act as a high-accuracy OCR engine. Transcribe every visible word from this exam page, preserving question numbering, line breaks, answer choices, punctuation, English, and Arabic. Do not summarize, translate, solve, or invent text. If a word is unreadable, write [unclear] instead. Return JSON only.",
+          text: "Act as a high-accuracy OCR engine. Transcribe every visible word from this exam page, preserving question numbering, line breaks, answer choices, punctuation, English, and Arabic. Do not summarize, translate, solve, or invent text. If a word is unreadable, write [unclear] instead of skipping it. Set hasText to true if the page has ANY text at all, even a single unclear word — only set it to false if the page is purely a diagram, photo, or illustration with no text whatsoever. Return JSON only.",
         },
         { type: "image_url", image_url: { url: imageUrl, detail: "high" } },
       ],

@@ -56,14 +56,22 @@ export async function ocrPages(
       });
       const parsed = parseJsonResponse(
         response.choices[0]?.message.content
-      ) as unknown as { text?: string };
+      ) as unknown as { hasText?: boolean; text?: string };
       const text =
         typeof parsed.text === "string" ? normalizePageText(parsed.text) : "";
-      // A successful call returning no text means the page is image-only
-      // (a diagram/photo with nothing to transcribe) — not a failure. Only
-      // an actual thrown error below (bad screenshot, AI-call failure,
-      // unparseable response) counts as this page needing a retry.
-      pages.push({ page: pageNumber, text, hasText: text.length > 0, ocr: true });
+      // Trust actual transcribed text over the flag if they disagree in
+      // that direction — never discard real content just because the model
+      // second-guessed its own hasText call.
+      const hasText = parsed.hasText === true || text.length > 0;
+      // The model's own explicit hasText call decides whether this page is
+      // genuinely image-only (a diagram/photo with nothing to transcribe —
+      // not a failure) versus one it should have transcribed. Claiming text
+      // exists but transcribing nothing is a contradiction, not a legitimate
+      // empty page — treat it as a failure worth retrying like any other.
+      if (hasText && !text) {
+        throw new Error("OCR reported text but returned an empty transcription");
+      }
+      pages.push({ page: pageNumber, text, hasText, ocr: true });
     } catch (error) {
       console.error(`[PDF OCR] Page ${pageNumber} failed`, error);
       failedPages.push(pageNumber);
