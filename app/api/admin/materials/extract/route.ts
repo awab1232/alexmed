@@ -152,7 +152,11 @@ export async function POST(request: Request) {
     const unreadablePages = pages
       .filter(page => !page.hasText)
       .map(page => page.page);
-    if (missingPages.length || unreadablePages.length || ocrFailedPages.length) {
+    if (
+      missingPages.length ||
+      unreadablePages.length ||
+      ocrFailedPages.length
+    ) {
       const pagesToRetry = Array.from(
         new Set([...missingPages, ...unreadablePages, ...ocrFailedPages])
       ).sort((a, b) => a - b);
@@ -167,7 +171,10 @@ export async function POST(request: Request) {
       });
     }
 
-    const { batches } = await finalizeAdminMaterialExtraction(materialId, pages);
+    const { batches } = await finalizeAdminMaterialExtraction(
+      materialId,
+      pages
+    );
 
     try {
       await Promise.all(

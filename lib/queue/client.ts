@@ -6,6 +6,7 @@ import { Client, type FlowControl } from "@upstash/qstash";
 import type { QueueMessage } from "./types";
 import {
   getAdminMaterialsQueueConcurrency,
+  getBooksVisualQueueConcurrency,
   getQueueGlobalConcurrency,
   getQueueMaxAttempts,
 } from "./types";
@@ -53,6 +54,8 @@ function resolveDestination(message: QueueMessage): string {
       return `${base}/api/admin/materials/generate-batch`;
     case "finalize_admin_material":
       return `${base}/api/admin/materials/finalize`;
+    case "analyze_book_page_visuals":
+      return `${base}/api/books/analyze-page-visuals`;
   }
 }
 
@@ -72,17 +75,28 @@ function defaultFlowControl(message: QueueMessage): FlowControl {
     case "generate_mirror_batch":
     case "finalize_mirror_job":
     case "extract_mirror_job":
-      return { key: "mirror-pipeline", parallelism: getQueueGlobalConcurrency() };
+      return {
+        key: "mirror-pipeline",
+        parallelism: getQueueGlobalConcurrency(),
+      };
     case "extract_book_job":
     case "analyze_book_chapter":
     case "finalize_book":
-      return { key: "books-pipeline", parallelism: getQueueGlobalConcurrency() };
+      return {
+        key: "books-pipeline",
+        parallelism: getQueueGlobalConcurrency(),
+      };
     case "extract_admin_material":
     case "generate_admin_material_batch":
     case "finalize_admin_material":
       return {
         key: "admin-materials-pipeline",
         parallelism: getAdminMaterialsQueueConcurrency(),
+      };
+    case "analyze_book_page_visuals":
+      return {
+        key: "books-visual-pipeline",
+        parallelism: getBooksVisualQueueConcurrency(),
       };
   }
 }

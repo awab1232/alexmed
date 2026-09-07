@@ -29,22 +29,28 @@ import { invokeLLM } from "@/lib/llm";
 import { POST } from "./route";
 
 const mockVerify = verifyQStashRequest as unknown as ReturnType<typeof vi.fn>;
-const mockClaim = claimAdminMaterialBatch as unknown as ReturnType<typeof vi.fn>;
-const mockGetBatch = getAdminMaterialBatchById as unknown as ReturnType<typeof vi.fn>;
-const mockComplete = completeAdminMaterialBatchGeneration as unknown as ReturnType<
+const mockClaim = claimAdminMaterialBatch as unknown as ReturnType<
   typeof vi.fn
 >;
+const mockGetBatch = getAdminMaterialBatchById as unknown as ReturnType<
+  typeof vi.fn
+>;
+const mockComplete =
+  completeAdminMaterialBatchGeneration as unknown as ReturnType<typeof vi.fn>;
 const mockRetrying = markAdminMaterialBatchRetrying as unknown as ReturnType<
   typeof vi.fn
 >;
 const mockInvoke = invokeLLM as unknown as ReturnType<typeof vi.fn>;
 
 function request(body: unknown) {
-  return new Request("https://app.example.com/api/admin/materials/generate-batch", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return new Request(
+    "https://app.example.com/api/admin/materials/generate-batch",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
 }
 
 describe("POST /api/admin/materials/generate-batch", () => {
@@ -93,7 +99,11 @@ describe("POST /api/admin/materials/generate-batch", () => {
       materialId: "m1",
       pageTexts: [{ page: 1, text: "some question text", hasText: true }],
     });
-    mockClaim.mockResolvedValue({ id: "b1", materialId: "m1", attemptCount: 0 });
+    mockClaim.mockResolvedValue({
+      id: "b1",
+      materialId: "m1",
+      attemptCount: 0,
+    });
     mockInvoke.mockResolvedValue({
       choices: [
         {

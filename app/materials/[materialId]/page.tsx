@@ -31,7 +31,11 @@ export default function StudentMaterialDetailPage() {
         <div className="empty-state">
           <CircleAlert size={28} />
           <h3>تعذر العثور على هذه المادة</h3>
-          <Link href="/materials" className="secondary-button" style={{ marginTop: 12 }}>
+          <Link
+            href="/materials"
+            className="secondary-button"
+            style={{ marginTop: 12 }}
+          >
             العودة للمكتبة
           </Link>
         </div>
@@ -48,7 +52,11 @@ export default function StudentMaterialDetailPage() {
     <section className="cards-view">
       <div className="cards-header">
         <div>
-          <Link href="/materials" className="eyebrow" style={{ marginBottom: 8 }}>
+          <Link
+            href="/materials"
+            className="eyebrow"
+            style={{ marginBottom: 8 }}
+          >
             <span className="eyebrow-dot" /> ‹ رجوع للمكتبة
           </Link>
           <h1>{material.title}</h1>
@@ -75,7 +83,9 @@ export default function StudentMaterialDetailPage() {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}
+      >
         <button
           type="button"
           className="primary-button"
@@ -86,7 +96,9 @@ export default function StudentMaterialDetailPage() {
         <button
           type="button"
           className="secondary-button"
-          onClick={() => router.push(`/materials/${materialId}/review?filter=due`)}
+          onClick={() =>
+            router.push(`/materials/${materialId}/review?filter=due`)
+          }
         >
           <RotateCcw size={16} /> البطاقات المستحقة اليوم
         </button>

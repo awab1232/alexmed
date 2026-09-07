@@ -189,6 +189,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // Kicks off the page-visual pipeline (images/diagrams/tables) — entirely
+    // independent of chapter analysis above, never blocks/delays it. A
+    // failure to enqueue this is logged but doesn't fail the extraction
+    // response itself: chapters/cards are already usable, and the coverage
+    // report (books.getCoverageReport) will simply show visual processing
+    // stuck at 0 until an admin/student retries or it's re-triggered.
+    try {
+      await publishMessage(
+        { type: "analyze_book_page_visuals", bookId },
+        { flowControl: { key: `books-visual-${bookId}`, parallelism: 1 } }
+      );
+    } catch (publishError) {
+      console.error(
+        "[Books] Failed to enqueue page visual analysis",
+        publishError
+      );
+    }
+
     return NextResponse.json({
       bookId,
       status: "extracted",

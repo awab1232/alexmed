@@ -476,6 +476,148 @@ export const bookChapters = pgTable(
   })
 );
 
+// ── كتبي visual content (images/diagrams/tables/screenshots) ─────────────
+// Additive to كتبي only — a page's full-resolution screenshot is captured
+// independently of whether its text was extractable (see
+// app/api/books/analyze-page-visuals/route.ts), so a fully-scanned or
+// all-image page still gets a real book_pages row instead of being treated
+// as empty. bookCards/bookMcqs are NOT modified — their sourcePage→visual
+// linkage is computed at read time (join through here) rather than stored,
+// since visual analysis finishes independently of (and later than) chapter
+// analysis; see getChapterContentForUser in lib/db-books.ts.
+export const bookPageTextStatusEnum = pgEnum("book_page_text_status", [
+  "pending",
+  "complete",
+  "failed",
+]);
+export const bookPageVisualStatusEnum = pgEnum("book_page_visual_status", [
+  "pending",
+  "processing",
+  "complete",
+  "needs_review",
+  "failed",
+]);
+export const bookVisualAssetTypeEnum = pgEnum("book_visual_asset_type", [
+  "image",
+  "diagram",
+  "table",
+  "screenshot",
+  "chart",
+]);
+export const bookVisualConfidenceEnum = pgEnum("book_visual_confidence", [
+  "high",
+  "medium",
+  "low",
+]);
+export const bookVisualReviewStatusEnum = pgEnum("book_visual_review_status", [
+  "complete",
+  "needs_review",
+]);
+
+export const bookPages = pgTable(
+  "book_pages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    // Known once detectChapters() runs (same finalizeBookExtraction call
+    // that creates these rows) — null only briefly if a chapter is later
+    // deleted independently.
+    chapterId: uuid("chapterId").references(() => bookChapters.id, {
+      onDelete: "set null",
+    }),
+    pageNumber: integer("pageNumber").notNull(),
+    // Full-page screenshot (see lib/pdf-ocr.ts's getScreenshot usage) —
+    // never a cropped sub-image; book_visual_assets below reuse this same
+    // key rather than a truly cropped one (no image-segmentation capability
+    // exists in this pipeline yet).
+    storageKey: text("storageKey"),
+    previewKey: text("previewKey"),
+    extractedText: text("extractedText"),
+    textStatus: bookPageTextStatusEnum("textStatus")
+      .default("pending")
+      .notNull(),
+    visualStatus: bookPageVisualStatusEnum("visualStatus")
+      .default("pending")
+      .notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    hasImages: boolean("hasImages").default(false).notNull(),
+    hasTables: boolean("hasTables").default(false).notNull(),
+    hasDiagrams: boolean("hasDiagrams").default(false).notNull(),
+    errorMessage: text("errorMessage"),
+    attemptCount: integer("attemptCount").default(0).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    // Prevents a duplicate page row / duplicate preview generation for the
+    // same (book, pageNumber) — the finalize step that creates these rows
+    // only ever runs once per book, and this is the hard DB-level backstop.
+    bookPageUnique: uniqueIndex("book_pages_book_id_page_number_idx").on(
+      table.bookId,
+      table.pageNumber
+    ),
+    chapterIdx: index("book_pages_chapter_id_idx").on(table.chapterId),
+    visualStatusIdx: index("book_pages_visual_status_idx").on(
+      table.visualStatus
+    ),
+  })
+);
+
+export const bookVisualAssets = pgTable(
+  "book_visual_assets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    chapterId: uuid("chapterId").references(() => bookChapters.id, {
+      onDelete: "set null",
+    }),
+    pageId: uuid("pageId")
+      .notNull()
+      .references(() => bookPages.id, { onDelete: "cascade" }),
+    assetType: bookVisualAssetTypeEnum("assetType").notNull(),
+    storageKey: text("storageKey").notNull(),
+    previewKey: text("previewKey"),
+    altText: text("altText"),
+    descriptionAr: text("descriptionAr"),
+    descriptionEn: text("descriptionEn"),
+    // Reserved for a future real object-detection pass — never populated by
+    // the current page-level vision analysis (see plan's explicit note).
+    boundingBox: jsonb("boundingBox").$type<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }>(),
+    sortOrder: integer("sortOrder").default(0).notNull(),
+    confidence: bookVisualConfidenceEnum("confidence"),
+    reviewStatus: bookVisualReviewStatusEnum("reviewStatus")
+      .default("complete")
+      .notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    pageIdx: index("book_visual_assets_page_id_idx").on(table.pageId),
+    bookIdx: index("book_visual_assets_book_id_idx").on(table.bookId),
+  })
+);
+
+export type BookPage = typeof bookPages.$inferSelect;
+export type BookVisualAsset = typeof bookVisualAssets.$inferSelect;
+
 export const bookTerms = pgTable("book_terms", {
   id: uuid("id").defaultRandom().primaryKey(),
   chapterId: uuid("chapterId")
@@ -616,18 +758,20 @@ export const adminMaterialBatchStatusEnum = pgEnum(
 // Deliberately a separate enum type from cardConfidenceEnum above (same
 // values) — this feature stays isolated even where the domain happens to
 // coincide, per the isolation requirement.
-export const adminMaterialConfidenceEnum = pgEnum(
-  "admin_material_confidence",
-  ["high", "medium", "low"]
-);
+export const adminMaterialConfidenceEnum = pgEnum("admin_material_confidence", [
+  "high",
+  "medium",
+  "low",
+]);
 export const adminMaterialReviewStatusEnum = pgEnum(
   "admin_material_review_status",
   ["pending", "approved", "needs_review"]
 );
-export const adminMaterialDifficultyEnum = pgEnum(
-  "admin_material_difficulty",
-  ["easy", "medium", "hard"]
-);
+export const adminMaterialDifficultyEnum = pgEnum("admin_material_difficulty", [
+  "easy",
+  "medium",
+  "hard",
+]);
 
 export const adminMaterials = pgTable(
   "admin_materials",
@@ -697,9 +841,7 @@ export const adminMaterialBatches = pgTable(
       jsonb("pageTexts").$type<
         { page: number; text: string; hasText: boolean }[]
       >(),
-    status: adminMaterialBatchStatusEnum("status")
-      .default("pending")
-      .notNull(),
+    status: adminMaterialBatchStatusEnum("status").default("pending").notNull(),
     errorMessage: text("errorMessage"),
     attemptCount: integer("attemptCount").default(0).notNull(),
     lastStartedAt: timestamp("lastStartedAt", { withTimezone: true }),
@@ -787,10 +929,9 @@ export const adminMaterialReviews = pgTable(
   table => ({
     // Upserted on every rating — a student can only ever have one SRS state
     // row per card.
-    userCardUnique: uniqueIndex("admin_material_reviews_user_id_card_id_idx").on(
-      table.userId,
-      table.materialCardId
-    ),
+    userCardUnique: uniqueIndex(
+      "admin_material_reviews_user_id_card_id_idx"
+    ).on(table.userId, table.materialCardId),
     userDueIdx: index("admin_material_reviews_user_id_due_at_idx").on(
       table.userId,
       table.dueAt

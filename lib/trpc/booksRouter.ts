@@ -2,15 +2,19 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   deleteBook,
+  getBookCoverageReport,
   getBookForUser,
+  getBookPageOwnedByUser,
   getBookStatsForUser,
   getChapterContentForUser,
   getChapterForUser,
   getDueCardsForUser,
   listBooksForUser,
+  listBookPagesForUser,
   listMcqsForUser,
   rateBookCard,
   resetBookChapterForRetry,
+  resetBookPageVisualForRetry,
   submitMcqAttemptForUser,
 } from "../db-books";
 import { publishMessage } from "../queue/client";
@@ -124,6 +128,49 @@ export const booksRouter = router({
         chapterId: input.chapterId,
         bookId: chapter.bookId,
       });
+      return { success: true } as const;
+    }),
+
+  // ── Page visuals (images/diagrams/tables) ───────────────────────────────
+  listPages: protectedProcedure
+    .input(z.object({ bookId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return listBookPagesForUser(ctx.user.id, input.bookId);
+    }),
+
+  getCoverageReport: protectedProcedure
+    .input(z.object({ bookId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // Ownership check first — getBookCoverageReport itself has no
+      // per-user filter (it's a plain aggregate over one bookId), so the
+      // caller must prove ownership before we run it.
+      const owned = await getBookForUser(ctx.user.id, input.bookId);
+      if (!owned) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
+      }
+      return getBookCoverageReport(input.bookId);
+    }),
+
+  // Student/admin-initiated retry for a page whose visual analysis failed —
+  // same pattern as retryChapter above.
+  retryPageVisual: protectedProcedure
+    .input(z.object({ pageId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const page = await getBookPageOwnedByUser(ctx.user.id, input.pageId);
+      if (!page) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Page not found" });
+      }
+      if (page.visualStatus !== "failed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only a failed page can be retried",
+        });
+      }
+      await resetBookPageVisualForRetry(input.pageId);
+      await publishMessage(
+        { type: "analyze_book_page_visuals", bookId: page.bookId },
+        { flowControl: { key: `books-visual-${page.bookId}`, parallelism: 1 } }
+      );
       return { success: true } as const;
     }),
 });

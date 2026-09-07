@@ -18,7 +18,8 @@ export async function POST(request: Request) {
 
   try {
     const body = JSON.parse(rawBody) as { materialId?: string };
-    const materialId = typeof body.materialId === "string" ? body.materialId : "";
+    const materialId =
+      typeof body.materialId === "string" ? body.materialId : "";
     if (!materialId) {
       return NextResponse.json(
         { error: "معرف المادة مفقود." },

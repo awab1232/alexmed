@@ -31,11 +31,19 @@ export const studentMaterialsRouter = router({
   get: protectedProcedure
     .input(z.object({ materialId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const material = await getPublishedAdminMaterialForStudent(input.materialId);
+      const material = await getPublishedAdminMaterialForStudent(
+        input.materialId
+      );
       if (!material) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Material not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Material not found",
+        });
       }
-      const progress = await getStudentMaterialProgress(input.materialId, ctx.user.id);
+      const progress = await getStudentMaterialProgress(
+        input.materialId,
+        ctx.user.id
+      );
       await recordAdminMaterialView(input.materialId, ctx.user.id);
       return { material, progress };
     }),

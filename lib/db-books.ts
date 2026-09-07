@@ -3,17 +3,21 @@
 // pattern: getDb() singleton, ownership-scoped queries via and(eq(id,...),
 // eq(userId,...)), read functions return safe empty defaults, write
 // functions throw when the DB isn't configured.
-import { and, asc, count, desc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import {
   bookCards,
   bookChapters,
   bookMcqAttempts,
   bookMcqs,
   books,
+  bookPages,
   bookReviewEvents,
   bookTerms,
+  bookVisualAssets,
   type Book,
   type BookChapter,
+  type BookPage,
+  type BookVisualAsset,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { detectChapters } from "./book-chapters";
@@ -157,6 +161,35 @@ export async function finalizeBookExtraction(
     // order, so sort explicitly by the stored orderIndex rather than relying
     // on it — the client drives its analyze-loop by this order.
     chapters = inserted.sort((a, b) => a.orderIndex - b.orderIndex);
+  }
+
+  // One book_pages row per page, text already known (visual analysis is a
+  // separate, independent background pass — see
+  // app/api/books/analyze-page-visuals/route.ts). chapterId is already known
+  // here since detectChapters() just ran, so no later backfill is needed.
+  // This function only ever runs once per book (same guarantee bookChapters
+  // above relies on), so the (bookId, pageNumber) unique index is a backstop,
+  // never expected to actually reject anything.
+  if (pages.length) {
+    const chapterIdByPage = new Map<number, string>();
+    boundaries.forEach((chapter, index) => {
+      const chapterId = chapters[index]?.id;
+      if (!chapterId) return;
+      for (let p = chapter.startPage; p <= chapter.endPage; p++) {
+        chapterIdByPage.set(p, chapterId);
+      }
+    });
+
+    await db.insert(bookPages).values(
+      pages.map(page => ({
+        bookId,
+        chapterId: chapterIdByPage.get(page.page) ?? null,
+        pageNumber: page.page,
+        extractedText: page.text,
+        textStatus: "complete" as const,
+        visualStatus: "pending" as const,
+      }))
+    );
   }
 
   const [book] = await db
@@ -325,12 +358,279 @@ export async function markBookChapterFailedTerminal(
     .where(eq(bookChapters.id, chapterId));
 }
 
+// ── كتبي page visual analysis (images/diagrams/tables) ──────────────────
+// No-ownership-filter lookup for the queue worker — same trust-boundary
+// reasoning as getChapterById above.
+export async function getBookPageById(
+  pageId: string
+): Promise<BookPage | null> {
+  const db = getDb();
+  if (!db) return null;
+  const [page] = await db
+    .select()
+    .from(bookPages)
+    .where(eq(bookPages.id, pageId))
+    .limit(1);
+  return page ?? null;
+}
+
+// Next page still needing visual analysis for a given book — the worker
+// drives itself off this rather than a batch id, since pages were all
+// created up front by finalizeBookExtraction (unlike مِرآة/مكتبة الأدمن's
+// batches, there's no separate "claim by id" queued unit here per se; the
+// caller looks this up, then claims that specific page).
+export async function getNextPendingBookPage(
+  bookId: string
+): Promise<BookPage | null> {
+  const db = getDb();
+  if (!db) return null;
+  const [page] = await db
+    .select()
+    .from(bookPages)
+    .where(
+      and(
+        eq(bookPages.bookId, bookId),
+        inArray(bookPages.visualStatus, ["pending", "failed"])
+      )
+    )
+    .orderBy(asc(bookPages.pageNumber))
+    .limit(1);
+  return page ?? null;
+}
+
+export async function updateBookPageVisualResult(
+  pageId: string,
+  update: {
+    storageKey: string;
+    width?: number;
+    height?: number;
+    extractedText?: string;
+    hasImages: boolean;
+    hasTables: boolean;
+    hasDiagrams: boolean;
+    visualStatus: "complete" | "needs_review";
+  }
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookPages)
+    .set({
+      storageKey: update.storageKey,
+      width: update.width,
+      height: update.height,
+      ...(update.extractedText ? { extractedText: update.extractedText } : {}),
+      hasImages: update.hasImages,
+      hasTables: update.hasTables,
+      hasDiagrams: update.hasDiagrams,
+      visualStatus: update.visualStatus,
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookPages.id, pageId));
+}
+
+export async function markBookPageVisualFailed(
+  pageId: string,
+  errorMessage: string
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookPages)
+    .set({
+      visualStatus: "failed",
+      errorMessage,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookPages.id, pageId));
+}
+
+// Student/admin-triggered retry of one failed page — resets it back to
+// "pending" so getNextPendingBookPage picks it up again; the caller
+// republishes an analyze_book_page_visuals message for the book.
+export async function resetBookPageVisualForRetry(pageId: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookPages)
+    .set({
+      visualStatus: "pending",
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookPages.id, pageId));
+}
+
+export async function insertBookVisualAssets(
+  pageId: string,
+  bookId: string,
+  chapterId: string | null,
+  assets: {
+    assetType: "image" | "diagram" | "table" | "screenshot" | "chart";
+    storageKey: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    confidence: "high" | "medium" | "low";
+    reviewStatus: "complete" | "needs_review";
+  }[]
+) {
+  if (!assets.length) return;
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(bookVisualAssets).values(
+    assets.map((asset, index) => ({
+      bookId,
+      chapterId,
+      pageId,
+      assetType: asset.assetType,
+      storageKey: asset.storageKey,
+      descriptionAr: asset.descriptionAr,
+      descriptionEn: asset.descriptionEn,
+      confidence: asset.confidence,
+      reviewStatus: asset.reviewStatus,
+      sortOrder: index,
+    }))
+  );
+}
+
+// Ownership check for a page-scoped action (the retryPageVisual mutation) —
+// same join-through-books pattern as getChapterForUser.
+export async function getBookPageOwnedByUser(
+  userId: string,
+  pageId: string
+): Promise<BookPage | null> {
+  const db = getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ page: bookPages })
+    .from(bookPages)
+    .innerJoin(books, eq(books.id, bookPages.bookId))
+    .where(and(eq(bookPages.id, pageId), eq(books.userId, userId)))
+    .limit(1);
+  return row?.page ?? null;
+}
+
+export async function listBookPagesForUser(userId: string, bookId: string) {
+  const db = getDb();
+  if (!db) return [];
+  const [book] = await db
+    .select({ id: books.id })
+    .from(books)
+    .where(and(eq(books.id, bookId), eq(books.userId, userId)))
+    .limit(1);
+  if (!book) return [];
+
+  return db
+    .select()
+    .from(bookPages)
+    .where(eq(bookPages.bookId, bookId))
+    .orderBy(asc(bookPages.pageNumber));
+}
+
+export async function getBookPageForUser(
+  userId: string,
+  bookId: string,
+  pageNumber: number
+) {
+  const db = getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ page: bookPages, ownerId: books.userId })
+    .from(bookPages)
+    .innerJoin(books, eq(books.id, bookPages.bookId))
+    .where(
+      and(
+        eq(bookPages.bookId, bookId),
+        eq(bookPages.pageNumber, pageNumber),
+        eq(books.userId, userId)
+      )
+    )
+    .limit(1);
+  if (!row) return null;
+
+  const visuals = await db
+    .select()
+    .from(bookVisualAssets)
+    .where(eq(bookVisualAssets.pageId, row.page.id))
+    .orderBy(asc(bookVisualAssets.sortOrder));
+
+  return { page: row.page, visuals };
+}
+
+// Coverage report — never claim "اكتمل" without showing what's still
+// pending/failed (see plan's explicit requirement). All counts are simple,
+// cheap COUNT()s scoped to one book.
+export async function getBookCoverageReport(bookId: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const [pageStats] = await db
+    .select({
+      total: count(),
+      textComplete: count(
+        sql`case when ${bookPages.textStatus} = 'complete' then 1 end`
+      ),
+      previewsReady: count(
+        sql`case when ${bookPages.storageKey} is not null then 1 end`
+      ),
+      withVisuals: count(
+        sql`case when ${bookPages.hasImages} or ${bookPages.hasTables} or ${bookPages.hasDiagrams} then 1 end`
+      ),
+      needsReview: count(
+        sql`case when ${bookPages.visualStatus} = 'needs_review' then 1 end`
+      ),
+      failed: count(
+        sql`case when ${bookPages.visualStatus} = 'failed' then 1 end`
+      ),
+      visualPending: count(
+        sql`case when ${bookPages.visualStatus} in ('pending','processing') then 1 end`
+      ),
+    })
+    .from(bookPages)
+    .where(eq(bookPages.bookId, bookId));
+
+  const [cardStats] = await db
+    .select({ c: count() })
+    .from(bookCards)
+    .innerJoin(bookChapters, eq(bookChapters.id, bookCards.chapterId))
+    .where(eq(bookChapters.bookId, bookId));
+
+  const [mcqStats] = await db
+    .select({ c: count() })
+    .from(bookMcqs)
+    .innerJoin(bookChapters, eq(bookChapters.id, bookMcqs.chapterId))
+    .where(eq(bookChapters.bookId, bookId));
+
+  return {
+    totalPages: Number(pageStats?.total ?? 0),
+    textComplete: Number(pageStats?.textComplete ?? 0),
+    previewsReady: Number(pageStats?.previewsReady ?? 0),
+    pagesWithVisuals: Number(pageStats?.withVisuals ?? 0),
+    needsReview: Number(pageStats?.needsReview ?? 0),
+    failed: Number(pageStats?.failed ?? 0),
+    visualPending: Number(pageStats?.visualPending ?? 0),
+    linkedCardCount: Number(cardStats?.c ?? 0),
+    linkedMcqCount: Number(mcqStats?.c ?? 0),
+  };
+}
+
 // Idempotent finalize: safe to call repeatedly — SELECT ... FOR UPDATE on
 // the book row serializes concurrent finalize attempts for the same book, so
 // two chapters finishing at nearly the same moment can't race each other.
 // Unlike مِرآة, there's no "graduation" step here — chapters' content
 // (bookTerms/bookCards/bookMcqs) is already the durable content, this just
 // rolls the book's own status up from its chapters' statuses.
+//
+// Also gates on every book_pages row's visualStatus reaching a terminal
+// state (complete/needs_review/failed) — a student can already read
+// chapters/cards while visual analysis is still running in the background
+// (it never blocks that), but the book itself isn't reported "complete"
+// until visual coverage is honestly settled too, per the plan's requirement
+// not to show "اكتمل" while pages remain unprocessed. "needs_review" alone
+// (no true failures) does not force "partial_failed" — only a real chapter
+// or page failure does; needs_review content is surfaced via the coverage
+// report instead of blocking completion.
 export async function finalizeBookIfDone(bookId: string) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
@@ -355,16 +655,31 @@ export async function finalizeBookIfDone(bookId: string) {
       .where(eq(bookChapters.bookId, bookId));
     if (!chapters.length) return;
 
-    const stillWorking = chapters.some(
+    const chaptersStillWorking = chapters.some(
       chapter =>
         chapter.status === "pending" ||
         chapter.status === "processing" ||
         chapter.status === "analyzing" ||
         chapter.status === "retrying"
     );
-    if (stillWorking) return;
+    if (chaptersStillWorking) return;
 
-    const anyFailed = chapters.some(chapter => chapter.status === "failed");
+    const pages = await tx
+      .select({ visualStatus: bookPages.visualStatus })
+      .from(bookPages)
+      .where(eq(bookPages.bookId, bookId));
+    const pagesStillWorking = pages.some(
+      page =>
+        page.visualStatus === "pending" || page.visualStatus === "processing"
+    );
+    if (pagesStillWorking) return;
+
+    const anyChapterFailed = chapters.some(
+      chapter => chapter.status === "failed"
+    );
+    const anyPageFailed = pages.some(page => page.visualStatus === "failed");
+    const anyFailed = anyChapterFailed || anyPageFailed;
+
     await tx
       .update(books)
       .set({
@@ -493,6 +808,41 @@ export async function completeChapterAnalysis(
   });
 }
 
+// Computes sourcePage -> visual-asset linkage at READ time (not stored on
+// bookCards/bookMcqs) — visual analysis finishes independently of, and
+// often later than, chapter analysis, so a stored/write-time column would
+// need to coordinate two out-of-order background pipelines. Joining by
+// (chapterId, pageNumber=sourcePage) here works regardless of which
+// pipeline finished first or whether visual analysis has even started yet.
+// Pure (no DB access) — kept separate from getChapterContentForUser
+// specifically so it's directly unit-testable without mocking getDb().
+// Given the pages a chapter has and the visual assets those pages own,
+// returns a lookup from a card/MCQ's sourcePage to {pageId, relatedAssetIds}.
+// A sourcePage with no matching page (shouldn't happen given the
+// sourcePage-range filter in analyze-chapter/route.ts, but defensive
+// regardless) or a page with no visuals yet (visual analysis hasn't reached
+// it) both resolve to an empty relatedAssetIds — never throws.
+export function linkSourcePagesToVisualAssets(
+  pages: Pick<BookPage, "id" | "pageNumber">[],
+  visuals: Pick<BookVisualAsset, "id" | "pageId">[]
+): (sourcePage: number) => {
+  pageId: string | null;
+  relatedAssetIds: string[];
+} {
+  const pageIdByNumber = new Map(pages.map(page => [page.pageNumber, page.id]));
+  const assetIdsByPageId = new Map<string, string[]>();
+  for (const asset of visuals) {
+    const list = assetIdsByPageId.get(asset.pageId) ?? [];
+    list.push(asset.id);
+    assetIdsByPageId.set(asset.pageId, list);
+  }
+  return (sourcePage: number) => {
+    const pageId = pageIdByNumber.get(sourcePage) ?? null;
+    const relatedAssetIds = pageId ? (assetIdsByPageId.get(pageId) ?? []) : [];
+    return { pageId, relatedAssetIds };
+  };
+}
+
 export async function getChapterContentForUser(
   userId: string,
   chapterId: string
@@ -503,13 +853,40 @@ export async function getChapterContentForUser(
   const chapter = await getChapterForUser(userId, chapterId);
   if (!chapter) return null;
 
-  const [terms, cards, mcqs] = await Promise.all([
+  const [terms, cards, mcqs, pages] = await Promise.all([
     db.select().from(bookTerms).where(eq(bookTerms.chapterId, chapterId)),
     db.select().from(bookCards).where(eq(bookCards.chapterId, chapterId)),
     db.select().from(bookMcqs).where(eq(bookMcqs.chapterId, chapterId)),
+    db
+      .select()
+      .from(bookPages)
+      .where(eq(bookPages.chapterId, chapterId))
+      .orderBy(asc(bookPages.pageNumber)),
   ]);
 
-  return { chapter, terms, cards, mcqs };
+  const pageIds = pages.map(page => page.id);
+  const visuals = pageIds.length
+    ? await db
+        .select()
+        .from(bookVisualAssets)
+        .where(inArray(bookVisualAssets.pageId, pageIds))
+        .orderBy(asc(bookVisualAssets.sortOrder))
+    : [];
+
+  const linkFor = linkSourcePagesToVisualAssets(pages, visuals);
+
+  const pagesWithVisuals = pages.map(page => ({
+    ...page,
+    visuals: visuals.filter(asset => asset.pageId === page.id),
+  }));
+
+  return {
+    chapter,
+    terms,
+    cards: cards.map(card => ({ ...card, ...linkFor(card.sourcePage) })),
+    mcqs: mcqs.map(mcq => ({ ...mcq, ...linkFor(mcq.sourcePage) })),
+    pages: pagesWithVisuals,
+  };
 }
 
 // ── SRS review (see lib/srs.ts's applySrsRating for the scheduling formula) ──

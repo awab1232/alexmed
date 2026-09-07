@@ -138,7 +138,11 @@ export async function POST(request: Request) {
       );
     }
 
-    await completeAdminMaterialBatchGeneration(batchId, batch.materialId, cards);
+    await completeAdminMaterialBatchGeneration(
+      batchId,
+      batch.materialId,
+      cards
+    );
     await finalizeAdminMaterialIfDone(batch.materialId);
 
     return NextResponse.json({ batchId, status: "complete", cards });

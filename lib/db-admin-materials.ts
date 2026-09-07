@@ -4,7 +4,18 @@
 // importing مِرآة's) even though the pipeline shape is intentionally the
 // same. Same getDb() singleton / ownership-scoped-query / throw-on-write
 // conventions as the rest of the app.
-import { and, asc, count, desc, eq, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   adminMaterialAuditLogs,
   adminMaterialBatches,
@@ -155,7 +166,9 @@ export async function startAdminMaterialProcessing(
   const claimed = await db
     .update(adminMaterials)
     .set({ status: "processing", updatedAt: new Date() })
-    .where(and(eq(adminMaterials.id, materialId), eq(adminMaterials.status, "draft")))
+    .where(
+      and(eq(adminMaterials.id, materialId), eq(adminMaterials.status, "draft"))
+    )
     .returning({ id: adminMaterials.id });
   if (claimed.length) {
     await writeAuditLog(materialId, actorUserId, "start_processing");
@@ -212,7 +225,11 @@ export async function markAdminMaterialExtractionFailed(
   if (!db) throw new Error("Database not available");
   await db
     .update(adminMaterials)
-    .set({ status: "failed", extractionError: errorMessage, updatedAt: new Date() })
+    .set({
+      status: "failed",
+      extractionError: errorMessage,
+      updatedAt: new Date(),
+    })
     .where(eq(adminMaterials.id, materialId));
 }
 
@@ -542,7 +559,10 @@ export async function listAdminMaterials(filters?: { search?: string }) {
   if (filters?.search) {
     const like = `%${filters.search}%`;
     conditions.push(
-      or(ilike(adminMaterials.title, like), ilike(adminMaterials.fileName, like))
+      or(
+        ilike(adminMaterials.title, like),
+        ilike(adminMaterials.fileName, like)
+      )
     );
   }
 
@@ -576,7 +596,10 @@ export async function getAdminMaterialStats() {
   const [{ c: publishedCardCount }] = await db
     .select({ c: count() })
     .from(adminMaterialCards)
-    .innerJoin(adminMaterials, eq(adminMaterials.id, adminMaterialCards.materialId))
+    .innerJoin(
+      adminMaterials,
+      eq(adminMaterials.id, adminMaterialCards.materialId)
+    )
     .where(eq(adminMaterials.status, "published"));
 
   const [{ c: reviewEventCount }] = await db
@@ -698,7 +721,9 @@ export async function deleteAdminMaterialCard(cardId: string) {
 export async function bulkDeleteAdminMaterialCards(cardIds: string[]) {
   const db = getDb();
   if (!db || !cardIds.length) return;
-  await db.delete(adminMaterialCards).where(inArray(adminMaterialCards.id, cardIds));
+  await db
+    .delete(adminMaterialCards)
+    .where(inArray(adminMaterialCards.id, cardIds));
 }
 
 export async function bulkApproveAdminMaterialCards(cardIds: string[]) {
@@ -723,13 +748,17 @@ export async function listPublishedAdminMaterialsForStudents(filters?: {
   if (!db) return [];
 
   const conditions = [eq(adminMaterials.status, "published")];
-  if (filters?.category) conditions.push(eq(adminMaterials.category, filters.category));
+  if (filters?.category)
+    conditions.push(eq(adminMaterials.category, filters.category));
   if (filters?.difficulty)
     conditions.push(eq(adminMaterials.difficulty, filters.difficulty));
   if (filters?.search) {
     const like = `%${filters.search}%`;
     conditions.push(
-      or(ilike(adminMaterials.title, like), ilike(adminMaterials.description, like))!
+      or(
+        ilike(adminMaterials.title, like),
+        ilike(adminMaterials.description, like)
+      )!
     );
   }
 
@@ -759,7 +788,10 @@ export async function getPublishedAdminMaterialForStudent(materialId: string) {
     .select()
     .from(adminMaterials)
     .where(
-      and(eq(adminMaterials.id, materialId), eq(adminMaterials.status, "published"))
+      and(
+        eq(adminMaterials.id, materialId),
+        eq(adminMaterials.status, "published")
+      )
     )
     .limit(1);
   return material ?? null;
@@ -780,7 +812,10 @@ export async function getPublishedAdminMaterialCardsForStudent(
       review: adminMaterialReviews,
     })
     .from(adminMaterialCards)
-    .innerJoin(adminMaterials, eq(adminMaterials.id, adminMaterialCards.materialId))
+    .innerJoin(
+      adminMaterials,
+      eq(adminMaterials.id, adminMaterialCards.materialId)
+    )
     .leftJoin(
       adminMaterialReviews,
       and(
@@ -789,23 +824,35 @@ export async function getPublishedAdminMaterialCardsForStudent(
       )
     )
     .where(
-      and(eq(adminMaterialCards.materialId, materialId), eq(adminMaterials.status, "published"))
+      and(
+        eq(adminMaterialCards.materialId, materialId),
+        eq(adminMaterials.status, "published")
+      )
     )
     .orderBy(asc(adminMaterialCards.sourcePage));
 
   return rows.map(row => ({ ...row.card, review: row.review }));
 }
 
-export async function getStudentMaterialProgress(materialId: string, userId: string) {
+export async function getStudentMaterialProgress(
+  materialId: string,
+  userId: string
+) {
   const db = getDb();
   if (!db) return { total: 0, reviewed: 0, dueToday: 0 };
 
   const [{ c: total }] = await db
     .select({ c: count() })
     .from(adminMaterialCards)
-    .innerJoin(adminMaterials, eq(adminMaterials.id, adminMaterialCards.materialId))
+    .innerJoin(
+      adminMaterials,
+      eq(adminMaterials.id, adminMaterialCards.materialId)
+    )
     .where(
-      and(eq(adminMaterialCards.materialId, materialId), eq(adminMaterials.status, "published"))
+      and(
+        eq(adminMaterialCards.materialId, materialId),
+        eq(adminMaterials.status, "published")
+      )
     );
 
   const [{ c: reviewed }] = await db
@@ -858,7 +905,10 @@ export async function rateAdminMaterialCard(
   const [row] = await db
     .select({ materialStatus: adminMaterials.status })
     .from(adminMaterialCards)
-    .innerJoin(adminMaterials, eq(adminMaterials.id, adminMaterialCards.materialId))
+    .innerJoin(
+      adminMaterials,
+      eq(adminMaterials.id, adminMaterialCards.materialId)
+    )
     .where(eq(adminMaterialCards.id, materialCardId))
     .limit(1);
   if (!row || row.materialStatus !== "published") return null;
@@ -896,7 +946,10 @@ export async function rateAdminMaterialCard(
       lastReviewedAt: new Date(),
     })
     .onConflictDoUpdate({
-      target: [adminMaterialReviews.userId, adminMaterialReviews.materialCardId],
+      target: [
+        adminMaterialReviews.userId,
+        adminMaterialReviews.materialCardId,
+      ],
       set: {
         easeFactor: update.easeFactor,
         intervalDays: update.intervalDays,

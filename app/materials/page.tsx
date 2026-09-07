@@ -9,7 +9,9 @@ import { trpc } from "@/lib/trpc-client";
 // studentMaterialsRouter.list، الذي يفرض status="published" من الخادم دومًا).
 export default function StudentMaterialsPage() {
   const [search, setSearch] = useState("");
-  const [difficulty, setDifficulty] = useState<"" | "easy" | "medium" | "hard">("");
+  const [difficulty, setDifficulty] = useState<"" | "easy" | "medium" | "hard">(
+    ""
+  );
 
   const materialsQuery = trpc.materials.list.useQuery({
     search: search || undefined,

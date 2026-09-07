@@ -125,6 +125,19 @@ export async function POST(request: Request) {
 
     const merged = mergeSubChunkResults(subChunkResults);
 
+    // Reject (not coerce) any card/MCQ whose sourcePage falls outside this
+    // chapter's own page range — same data-integrity guard مِرآة (generate-
+    // batch) and مكتبة الأدمن already have; كتبي never had it until now.
+    const flashcards = merged.flashcards.filter(
+      card =>
+        card.sourcePage >= chapter.startPage &&
+        card.sourcePage <= chapter.endPage
+    );
+    const mcqs = merged.mcqs.filter(
+      mcq =>
+        mcq.sourcePage >= chapter.startPage && mcq.sourcePage <= chapter.endPage
+    );
+
     let chapterSummary = merged.summaries[0] ?? "";
     if (merged.summaries.length > 1) {
       const summaryResponse = await invokeLLM({
@@ -143,8 +156,8 @@ export async function POST(request: Request) {
       keyPoints: merged.keyPoints,
       chapterSummary,
       terms: merged.medicalTerms,
-      cards: merged.flashcards,
-      mcqs: merged.mcqs,
+      cards: flashcards,
+      mcqs,
     });
     await finalizeBookIfDone(chapter.bookId);
 

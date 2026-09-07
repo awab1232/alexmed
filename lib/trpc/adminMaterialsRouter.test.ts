@@ -36,9 +36,8 @@ import {
 } from "../db-admin-materials";
 
 const mockList = listAdminMaterials as unknown as ReturnType<typeof vi.fn>;
-const mockGetPublished = getPublishedAdminMaterialForStudent as unknown as ReturnType<
-  typeof vi.fn
->;
+const mockGetPublished =
+  getPublishedAdminMaterialForStudent as unknown as ReturnType<typeof vi.fn>;
 
 function callerAs(role: "user" | "admin") {
   return adminMaterialsRouter.createCaller({

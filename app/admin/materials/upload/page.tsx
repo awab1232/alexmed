@@ -14,7 +14,12 @@ import { trpc } from "@/lib/trpc-client";
 
 type Stage = "idle" | "uploading" | "processing";
 const POLL_INTERVAL_MS = 3000;
-const TERMINAL_STATUSES = new Set(["ready_for_review", "published", "archived", "failed"]);
+const TERMINAL_STATUSES = new Set([
+  "ready_for_review",
+  "published",
+  "archived",
+  "failed",
+]);
 
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -31,7 +36,9 @@ export default function AdminMaterialUploadPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
+    "medium"
+  );
   const [language, setLanguage] = useState("both");
   const [stage, setStage] = useState<Stage>("idle");
   const [materialId, setMaterialId] = useState<string | null>(null);
@@ -48,7 +55,9 @@ export default function AdminMaterialUploadPage() {
       enabled: !!materialId,
       refetchInterval: query => {
         const status = query.state.data?.material.status;
-        return status && !TERMINAL_STATUSES.has(status) ? POLL_INTERVAL_MS : false;
+        return status && !TERMINAL_STATUSES.has(status)
+          ? POLL_INTERVAL_MS
+          : false;
       },
     }
   );
@@ -91,7 +100,9 @@ export default function AdminMaterialUploadPage() {
         body: file,
       });
       if (!putResponse.ok)
-        throw new Error("تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى.");
+        throw new Error(
+          "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
+        );
 
       const draft = await createDraft.mutateAsync({
         fileName: file.name,
@@ -147,7 +158,10 @@ export default function AdminMaterialUploadPage() {
                 </div>
                 <FileText size={23} className="heading-icon" />
               </div>
-              <div className="drop-zone" onClick={() => inputRef.current?.click()}>
+              <div
+                className="drop-zone"
+                onClick={() => inputRef.current?.click()}
+              >
                 <input
                   ref={inputRef}
                   type="file"
@@ -159,7 +173,11 @@ export default function AdminMaterialUploadPage() {
                   <UploadIcon size={23} />
                 </div>
                 <strong>{file ? file.name : "اسحب الملف إلى هنا"}</strong>
-                <span>{file ? `${formatBytes(file.size)} · جاهز للرفع` : "أو اضغط للاختيار"}</span>
+                <span>
+                  {file
+                    ? `${formatBytes(file.size)} · جاهز للرفع`
+                    : "أو اضغط للاختيار"}
+                </span>
               </div>
 
               <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
@@ -187,7 +205,9 @@ export default function AdminMaterialUploadPage() {
                     className="text-input"
                     value={difficulty}
                     onChange={event =>
-                      setDifficulty(event.target.value as "easy" | "medium" | "hard")
+                      setDifficulty(
+                        event.target.value as "easy" | "medium" | "hard"
+                      )
                     }
                   >
                     <option value="easy">سهل</option>
@@ -252,8 +272,11 @@ export default function AdminMaterialUploadPage() {
                   <p className="progress-caption">
                     صفحات الملف: {material?.pageCount ?? 0} · صفحات تحتاج OCR
                     متبقية: {pagesNeedingOcr} · دفعات: {completeBatches}/
-                    {batches.length} مكتملة{failedBatches.length ? ` (${failedBatches.length} فاشلة)` : ""} ·
-                    بطاقات ناتجة حتى الآن: {data?.liveCardCount ?? 0}
+                    {batches.length} مكتملة
+                    {failedBatches.length
+                      ? ` (${failedBatches.length} فاشلة)`
+                      : ""}{" "}
+                    · بطاقات ناتجة حتى الآن: {data?.liveCardCount ?? 0}
                   </p>
                 </div>
               ) : material.status === "failed" ? (
@@ -265,7 +288,8 @@ export default function AdminMaterialUploadPage() {
               ) : (
                 <div className="inline-alert success wide">
                   <CheckCircle2 size={16} />
-                  انتهت المعالجة — {data?.liveCardCount ?? 0} بطاقة جاهزة للمراجعة.
+                  انتهت المعالجة — {data?.liveCardCount ?? 0} بطاقة جاهزة
+                  للمراجعة.
                 </div>
               )}
 
@@ -289,7 +313,12 @@ export default function AdminMaterialUploadPage() {
                         onClick={() => {
                           retryBatch.mutate(
                             { batchId: batch.id },
-                            { onSuccess: () => utils.adminMaterials.get.invalidate({ materialId: materialId! }) }
+                            {
+                              onSuccess: () =>
+                                utils.adminMaterials.get.invalidate({
+                                  materialId: materialId!,
+                                }),
+                            }
                           );
                         }}
                       >
@@ -305,7 +334,9 @@ export default function AdminMaterialUploadPage() {
                   type="button"
                   className="primary-button"
                   style={{ marginTop: 18 }}
-                  onClick={() => router.push(`/admin/materials/${material.id}/review`)}
+                  onClick={() =>
+                    router.push(`/admin/materials/${material.id}/review`)
+                  }
                 >
                   مراجعة البطاقات
                 </button>

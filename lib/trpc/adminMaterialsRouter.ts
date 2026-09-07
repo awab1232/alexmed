@@ -19,10 +19,7 @@ import {
   writeAdminMaterialAuditLog,
 } from "../db-admin-materials";
 import { publishMessage } from "../queue/client";
-import {
-  assertJobCreationAllowed,
-  RateLimitedError,
-} from "../queue/rateLimit";
+import { assertJobCreationAllowed, RateLimitedError } from "../queue/rateLimit";
 import { adminProcedure, router } from "./trpc";
 
 // Every procedure here uses adminProcedure (lib/trpc/trpc.ts) — server-side
@@ -41,7 +38,10 @@ export const adminMaterialsRouter = router({
     .query(async ({ input }) => {
       const result = await getAdminMaterialWithBatches(input.materialId);
       if (!result) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Material not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Material not found",
+        });
       }
       return result;
     }),
@@ -63,7 +63,10 @@ export const adminMaterialsRouter = router({
         await assertJobCreationAllowed(ctx.user.id, "admin_materials");
       } catch (error) {
         if (error instanceof RateLimitedError) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: error.message,
+          });
         }
         throw error;
       }
@@ -123,9 +126,14 @@ export const adminMaterialsRouter = router({
         batchId: input.batchId,
         materialId: batch.materialId,
       });
-      await writeAdminMaterialAuditLog(batch.materialId, ctx.user.id, "retry_batch", {
-        metadata: { batchId: input.batchId },
-      });
+      await writeAdminMaterialAuditLog(
+        batch.materialId,
+        ctx.user.id,
+        "retry_batch",
+        {
+          metadata: { batchId: input.batchId },
+        }
+      );
       return { success: true } as const;
     }),
 
@@ -147,7 +155,10 @@ export const adminMaterialsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ok = await archiveAdminMaterial(input.materialId, ctx.user.id);
       if (!ok) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Material not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Material not found",
+        });
       }
       return { success: true } as const;
     }),
@@ -157,7 +168,10 @@ export const adminMaterialsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ok = await deleteAdminMaterial(input.materialId, ctx.user.id);
       if (!ok) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Material not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Material not found",
+        });
       }
       return { success: true } as const;
     }),
@@ -167,7 +181,9 @@ export const adminMaterialsRouter = router({
       z.object({
         materialId: z.string(),
         search: z.string().optional(),
-        reviewStatus: z.enum(["pending", "approved", "needs_review"]).optional(),
+        reviewStatus: z
+          .enum(["pending", "approved", "needs_review"])
+          .optional(),
         confidence: z.enum(["high", "medium", "low"]).optional(),
       })
     )

@@ -15,7 +15,8 @@ export type QueueMessage =
       batchId: string;
       materialId: string;
     }
-  | { type: "finalize_admin_material"; materialId: string };
+  | { type: "finalize_admin_material"; materialId: string }
+  | { type: "analyze_book_page_visuals"; bookId: string };
 
 function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -44,6 +45,14 @@ export function getQueuePerUserConcurrency(): number {
 // capacity.
 export function getAdminMaterialsQueueConcurrency(): number {
   return readIntEnv("ADMIN_MATERIALS_QUEUE_CONCURRENCY", 2);
+}
+
+// كتبي page-visual analysis runs on every page always (per product
+// decision) — separate, modest budget from "books-pipeline" (text
+// extraction/chapter analysis) so a big scanned book's visual pass never
+// starves other كتبي uploads' text/chapter processing.
+export function getBooksVisualQueueConcurrency(): number {
+  return readIntEnv("BOOKS_VISUAL_QUEUE_CONCURRENCY", 2);
 }
 
 export function getJobCreationRateLimitMax(): number {

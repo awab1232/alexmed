@@ -26,12 +26,20 @@ function formatDate(value: string | Date | null) {
 export default function AdminMaterialsListPage() {
   const [search, setSearch] = useState("");
   const utils = trpc.useUtils();
-  const listQuery = trpc.adminMaterials.list.useQuery({ search: search || undefined });
+  const listQuery = trpc.adminMaterials.list.useQuery({
+    search: search || undefined,
+  });
 
   const invalidate = () => utils.adminMaterials.list.invalidate();
-  const publishMutation = trpc.adminMaterials.publish.useMutation({ onSuccess: invalidate });
-  const archiveMutation = trpc.adminMaterials.archive.useMutation({ onSuccess: invalidate });
-  const deleteMutation = trpc.adminMaterials.delete.useMutation({ onSuccess: invalidate });
+  const publishMutation = trpc.adminMaterials.publish.useMutation({
+    onSuccess: invalidate,
+  });
+  const archiveMutation = trpc.adminMaterials.archive.useMutation({
+    onSuccess: invalidate,
+  });
+  const deleteMutation = trpc.adminMaterials.delete.useMutation({
+    onSuccess: invalidate,
+  });
 
   return (
     <section className="cards-view">

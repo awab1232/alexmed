@@ -36,6 +36,19 @@ export default function BookDetailPage() {
   const retryChapter = trpc.books.retryChapter.useMutation({
     onSuccess: () => utils.books.get.invalidate({ id: bookId }),
   });
+  const coverageQuery = trpc.books.getCoverageReport.useQuery(
+    { bookId },
+    {
+      refetchInterval: query => {
+        const report = query.state.data;
+        // Keep polling while any page still needs visual processing —
+        // independent of (and typically outlasting) chapter completion.
+        return report && report.totalPages > 0 && report.visualPending > 0
+          ? POLL_INTERVAL_MS
+          : false;
+      },
+    }
+  );
 
   if (bookQuery.isLoading) {
     return (
@@ -90,6 +103,34 @@ export default function BookDetailPage() {
           </p>
         </div>
       </div>
+
+      {coverageQuery.data && coverageQuery.data.totalPages > 0 && (
+        <div className="stats-row" style={{ marginBottom: 18 }}>
+          <div className="stat-card">
+            <span>صفحات مُجهّزة بصريًا</span>
+            <strong>
+              {coverageQuery.data.totalPages - coverageQuery.data.visualPending}
+              /{coverageQuery.data.totalPages}
+            </strong>
+          </div>
+          <div className="stat-card">
+            <span>صفحات فيها صور/مخططات</span>
+            <strong>{coverageQuery.data.pagesWithVisuals}</strong>
+          </div>
+          {coverageQuery.data.needsReview > 0 && (
+            <div className="stat-card accent">
+              <span>تحتاج مراجعة</span>
+              <strong>{coverageQuery.data.needsReview}</strong>
+            </div>
+          )}
+          {coverageQuery.data.failed > 0 && (
+            <div className="stat-card accent">
+              <span>صفحات فشل تحليلها</span>
+              <strong>{coverageQuery.data.failed}</strong>
+            </div>
+          )}
+        </div>
+      )}
 
       {isExtracting && (
         <div className="inline-alert warning wide">

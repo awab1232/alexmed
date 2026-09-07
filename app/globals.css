@@ -1731,3 +1731,119 @@ h1 em {
 .admin-table tbody tr:hover {
   background: #fffdf9;
 }
+
+/* كتبي — BookPageViewer (components/BookPageViewer.tsx). Exact classes/
+   values as specified — object-fit never "cover" for the page/visual
+   images, so no medical diagram/table is ever cropped. */
+.book-page-viewer {
+  width: 100%;
+  margin: 20px 0;
+  border: 1px solid var(--line-color, #e5ded4);
+  border-radius: 18px;
+  background: #faf8f4;
+  overflow: hidden;
+}
+
+.book-page-image-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 240px;
+  padding: 14px;
+  background: #ffffff;
+  overflow: auto;
+  cursor: zoom-in;
+}
+
+.book-page-image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.book-page-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #8d9895;
+  font-size: 12px;
+}
+.book-page-placeholder.error {
+  color: #c8544d;
+}
+
+.book-visual-asset {
+  margin: 16px auto;
+  max-width: 100%;
+}
+
+.book-visual-asset img {
+  display: block;
+  width: 100%;
+  max-height: 620px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.book-page-caption {
+  padding: 10px 14px;
+  color: #737e7d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.book-page-mobile-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Lightbox overlay opened by clicking a page image — plain CSS, no modal
+   library dependency, consistent with the rest of this file. */
+.book-page-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(20, 24, 23, 0.86);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.book-page-lightbox-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.book-page-lightbox-toolbar button {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 12px;
+}
+.book-page-lightbox-scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.book-page-lightbox-scroll img {
+  border-radius: 6px;
+}
+
+@media (max-width: 720px) {
+  .book-page-image-wrap {
+    min-height: 180px;
+  }
+}

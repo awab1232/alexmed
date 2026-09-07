@@ -20,7 +20,9 @@ export default function AdminMaterialReviewPage() {
   const [reviewStatus, setReviewStatus] = useState<ReviewStatusFilter>("all");
   const [confidence, setConfidence] = useState<ConfidenceFilter>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [editing, setEditing] = useState<Record<string, Record<string, string>>>({});
+  const [editing, setEditing] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   const materialQuery = trpc.adminMaterials.get.useQuery({ materialId });
   const cardsQuery = trpc.adminMaterials.cardsForReview.useQuery({
@@ -35,8 +37,12 @@ export default function AdminMaterialReviewPage() {
     utils.adminMaterials.get.invalidate({ materialId });
   };
 
-  const updateCard = trpc.adminMaterials.updateCard.useMutation({ onSuccess: invalidateCards });
-  const deleteCard = trpc.adminMaterials.deleteCard.useMutation({ onSuccess: invalidateCards });
+  const updateCard = trpc.adminMaterials.updateCard.useMutation({
+    onSuccess: invalidateCards,
+  });
+  const deleteCard = trpc.adminMaterials.deleteCard.useMutation({
+    onSuccess: invalidateCards,
+  });
   const bulkApprove = trpc.adminMaterials.bulkApproveCards.useMutation({
     onSuccess: () => {
       invalidateCards();
@@ -82,7 +88,11 @@ export default function AdminMaterialReviewPage() {
     <section className="cards-view">
       <div className="cards-header">
         <div>
-          <Link href="/admin/materials/list" className="eyebrow" style={{ marginBottom: 8 }}>
+          <Link
+            href="/admin/materials/list"
+            className="eyebrow"
+            style={{ marginBottom: 8 }}
+          >
             <span className="eyebrow-dot" /> ‹ رجوع لكل الملفات
           </Link>
           <h1>{material?.title ?? "مراجعة البطاقات"}</h1>
@@ -124,7 +134,9 @@ export default function AdminMaterialReviewPage() {
           className="text-input"
           style={{ width: "auto" }}
           value={reviewStatus}
-          onChange={event => setReviewStatus(event.target.value as ReviewStatusFilter)}
+          onChange={event =>
+            setReviewStatus(event.target.value as ReviewStatusFilter)
+          }
         >
           <option value="all">كل حالات المراجعة</option>
           <option value="pending">بانتظار المراجعة</option>
@@ -135,7 +147,9 @@ export default function AdminMaterialReviewPage() {
           className="text-input"
           style={{ width: "auto" }}
           value={confidence}
-          onChange={event => setConfidence(event.target.value as ConfidenceFilter)}
+          onChange={event =>
+            setConfidence(event.target.value as ConfidenceFilter)
+          }
         >
           <option value="all">كل مستويات الثقة</option>
           <option value="high">ثقة عالية</option>
@@ -152,7 +166,9 @@ export default function AdminMaterialReviewPage() {
             className="secondary-button"
             style={{ marginRight: 10 }}
             disabled={bulkApprove.isPending}
-            onClick={() => bulkApprove.mutate({ cardIds: Array.from(selected) })}
+            onClick={() =>
+              bulkApprove.mutate({ cardIds: Array.from(selected) })
+            }
           >
             اعتماد المحدد
           </button>
@@ -193,7 +209,9 @@ export default function AdminMaterialReviewPage() {
                   marginBottom: 10,
                 }}
               >
-                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
                   <input
                     type="checkbox"
                     checked={selected.has(card.id)}
@@ -224,7 +242,8 @@ export default function AdminMaterialReviewPage() {
                     type="button"
                     className="secondary-button"
                     onClick={() => {
-                      if (confirm("حذف هذه البطاقة؟")) deleteCard.mutate({ cardId: card.id });
+                      if (confirm("حذف هذه البطاقة؟"))
+                        deleteCard.mutate({ cardId: card.id });
                     }}
                   >
                     <Trash2 size={14} />
@@ -240,59 +259,81 @@ export default function AdminMaterialReviewPage() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 10,
+                }}
+              >
                 <textarea
                   className="text-input"
                   rows={2}
                   defaultValue={card.questionEn}
-                  onChange={event => setField(card.id, "questionEn", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "questionEn", event.target.value)
+                  }
                   placeholder="السؤال (EN)"
                 />
                 <textarea
                   className="text-input"
                   rows={2}
                   defaultValue={card.questionAr}
-                  onChange={event => setField(card.id, "questionAr", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "questionAr", event.target.value)
+                  }
                   placeholder="السؤال (AR)"
                 />
                 <textarea
                   className="text-input"
                   rows={2}
                   defaultValue={card.answerEn}
-                  onChange={event => setField(card.id, "answerEn", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "answerEn", event.target.value)
+                  }
                   placeholder="الإجابة (EN)"
                 />
                 <textarea
                   className="text-input"
                   rows={2}
                   defaultValue={card.answerAr}
-                  onChange={event => setField(card.id, "answerAr", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "answerAr", event.target.value)
+                  }
                   placeholder="الإجابة (AR)"
                 />
                 <textarea
                   className="text-input"
                   rows={2}
                   defaultValue={card.explanationEn}
-                  onChange={event => setField(card.id, "explanationEn", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "explanationEn", event.target.value)
+                  }
                   placeholder="الشرح (EN)"
                 />
                 <textarea
                   className="text-input"
                   rows={2}
                   defaultValue={card.explanationAr}
-                  onChange={event => setField(card.id, "explanationAr", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "explanationAr", event.target.value)
+                  }
                   placeholder="الشرح (AR)"
                 />
                 <input
                   className="text-input"
                   defaultValue={card.keyIdeaEn}
-                  onChange={event => setField(card.id, "keyIdeaEn", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "keyIdeaEn", event.target.value)
+                  }
                   placeholder="الفكرة الأساسية (EN)"
                 />
                 <input
                   className="text-input"
                   defaultValue={card.keyIdeaAr}
-                  onChange={event => setField(card.id, "keyIdeaAr", event.target.value)}
+                  onChange={event =>
+                    setField(card.id, "keyIdeaAr", event.target.value)
+                  }
                   placeholder="الفكرة الأساسية (AR)"
                 />
               </div>

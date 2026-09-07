@@ -10,6 +10,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   adminMaterialBatches,
   bookChapters,
+  bookPages,
   mirrorBatches,
 } from "../../drizzle/schema";
 import { requireDb } from "../db";
@@ -29,6 +30,11 @@ const CLAIMABLE_ADMIN_MATERIAL_BATCH_STATUSES = [
   "failed",
   "retrying",
 ] as const;
+// No "retrying" state for book_pages visual analysis (mismatched-effort
+// call is retried by QStash itself; this DB status only tracks
+// pending/processing/complete/needs_review/failed) — pending or a
+// previously-failed page are both claimable.
+const CLAIMABLE_BOOK_PAGE_VISUAL_STATUSES = ["pending", "failed"] as const;
 
 export type ClaimedMirrorBatch = {
   id: string;
@@ -131,6 +137,43 @@ export async function claimAdminMaterialBatch(
       id: adminMaterialBatches.id,
       materialId: adminMaterialBatches.materialId,
       attemptCount: adminMaterialBatches.attemptCount,
+    });
+  return row ?? null;
+}
+
+export type ClaimedBookPageVisual = {
+  id: string;
+  bookId: string;
+  attemptCount: number;
+};
+
+// Claim-by-specific-id, same as the three claims above — the caller first
+// looks up a *candidate* page (lib/db-books.ts's getNextPendingBookPage),
+// then claims that exact id here. If a concurrent/duplicate delivery races
+// for the same candidate, only one claim succeeds; the loser simply skips
+// this page for this invocation rather than doing duplicate work.
+export async function claimBookPageVisual(
+  pageId: string
+): Promise<ClaimedBookPageVisual | null> {
+  const db = requireDb();
+  const [row] = await db
+    .update(bookPages)
+    .set({
+      visualStatus: "processing",
+      attemptCount: sql`${bookPages.attemptCount} + 1`,
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(bookPages.id, pageId),
+        inArray(bookPages.visualStatus, CLAIMABLE_BOOK_PAGE_VISUAL_STATUSES)
+      )
+    )
+    .returning({
+      id: bookPages.id,
+      bookId: bookPages.bookId,
+      attemptCount: bookPages.attemptCount,
     });
   return row ?? null;
 }

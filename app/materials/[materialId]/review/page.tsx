@@ -33,7 +33,9 @@ export default function StudentMaterialReviewPage() {
     const all = cardsQuery.data ?? [];
     if (!dueOnly) return all;
     const now = Date.now();
-    return all.filter(card => !card.review || new Date(card.review.dueAt).getTime() <= now);
+    return all.filter(
+      card => !card.review || new Date(card.review.dueAt).getTime() <= now
+    );
   }, [cardsQuery.data, dueOnly]);
 
   const current = queue[index];
@@ -73,7 +75,11 @@ export default function StudentMaterialReviewPage() {
         <div className="empty-state">
           <CircleAlert size={28} />
           <h3>تعذر تحميل هذه المادة</h3>
-          <Link href="/materials" className="secondary-button" style={{ marginTop: 12 }}>
+          <Link
+            href="/materials"
+            className="secondary-button"
+            style={{ marginTop: 12 }}
+          >
             العودة للمكتبة
           </Link>
         </div>
@@ -86,8 +92,14 @@ export default function StudentMaterialReviewPage() {
       <section className="upload-view">
         <div className="empty-state">
           <CheckCircle2 size={28} />
-          <h3>{dueOnly ? "لا توجد بطاقات مستحقة اليوم" : "لا توجد بطاقات بعد"}</h3>
-          <Link href={`/materials/${materialId}`} className="secondary-button" style={{ marginTop: 12 }}>
+          <h3>
+            {dueOnly ? "لا توجد بطاقات مستحقة اليوم" : "لا توجد بطاقات بعد"}
+          </h3>
+          <Link
+            href={`/materials/${materialId}`}
+            className="secondary-button"
+            style={{ marginTop: 12 }}
+          >
             العودة للمادة
           </Link>
         </div>
@@ -101,7 +113,11 @@ export default function StudentMaterialReviewPage() {
     <section className="cards-view">
       <div className="cards-header">
         <div>
-          <Link href={`/materials/${materialId}`} className="eyebrow" style={{ marginBottom: 8 }}>
+          <Link
+            href={`/materials/${materialId}`}
+            className="eyebrow"
+            style={{ marginBottom: 8 }}
+          >
             <span className="eyebrow-dot" /> ‹ رجوع للمادة
           </Link>
           <h1>جلسة المراجعة</h1>
@@ -125,18 +141,26 @@ export default function StudentMaterialReviewPage() {
           </div>
           <article className="flashcard">
             <div className="flashcard-topline">
-              <span className="card-tag">QUESTION · PAGE {current.sourcePage}</span>
-              <span className="card-confidence">{current.confidence} confidence</span>
+              <span className="card-tag">
+                QUESTION · PAGE {current.sourcePage}
+              </span>
+              <span className="card-confidence">
+                {current.confidence} confidence
+              </span>
             </div>
             <div className="question-block">
               <span className="micro-label">السؤال / QUESTION</span>
               <h2>{current.questionAr}</h2>
               <p>{current.questionEn}</p>
             </div>
-            <div className={showAnswer ? "answer-block revealed" : "answer-block"}>
+            <div
+              className={showAnswer ? "answer-block revealed" : "answer-block"}
+            >
               {showAnswer ? (
                 <>
-                  <span className="micro-label">الإجابة والشرح / ANSWER & WHY</span>
+                  <span className="micro-label">
+                    الإجابة والشرح / ANSWER & WHY
+                  </span>
                   <div className="answer-pair">
                     <strong>{current.answerAr}</strong>
                     <span>{current.answerEn}</span>
