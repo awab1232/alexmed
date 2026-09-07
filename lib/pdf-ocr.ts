@@ -59,8 +59,11 @@ export async function ocrPages(
       ) as unknown as { text?: string };
       const text =
         typeof parsed.text === "string" ? normalizePageText(parsed.text) : "";
-      if (!text) throw new Error("OCR returned empty text");
-      pages.push({ page: pageNumber, text, hasText: true, ocr: true });
+      // A successful call returning no text means the page is image-only
+      // (a diagram/photo with nothing to transcribe) — not a failure. Only
+      // an actual thrown error below (bad screenshot, AI-call failure,
+      // unparseable response) counts as this page needing a retry.
+      pages.push({ page: pageNumber, text, hasText: text.length > 0, ocr: true });
     } catch (error) {
       console.error(`[PDF OCR] Page ${pageNumber} failed`, error);
       failedPages.push(pageNumber);

@@ -149,20 +149,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Every page now has either original or OCR'd text — same completeness
-    // checks upload-and-plan used to run synchronously before creating
-    // batches.
+    // A page left with no text after OCR is treated as image-only content
+    // (nothing to transcribe), not a failure — only a page missing outright
+    // or one whose OCR call actually errored blocks extraction.
     const missingPages = findMissingPageNumbers(pages, totalPages);
-    const unreadablePages = pages
-      .filter(page => !page.hasText)
-      .map(page => page.page);
-    if (
-      missingPages.length ||
-      unreadablePages.length ||
-      ocrFailedPages.length
-    ) {
+    if (missingPages.length || ocrFailedPages.length) {
       const pagesToRetry = Array.from(
-        new Set([...missingPages, ...unreadablePages, ...ocrFailedPages])
+        new Set([...missingPages, ...ocrFailedPages])
       ).sort((a, b) => a - b);
       await markMirrorJobExtractionFailed(
         jobId,
