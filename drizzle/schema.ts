@@ -9,6 +9,7 @@ import {
   real,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -589,3 +590,249 @@ export type InsertBookCard = typeof bookCards.$inferInsert;
 export type BookMcq = typeof bookMcqs.$inferSelect;
 export type BookMcqAttempt = typeof bookMcqAttempts.$inferSelect;
 export type BookReviewEvent = typeof bookReviewEvents.$inferSelect;
+
+// ── مكتبة الأدمن (Admin Library) — a third, fully independent
+// feature/data layer, deliberately not sharing any table with مِرآة
+// (decks/cards/mirrorJobs/mirrorBatches) or كتبي (books/bookChapters/
+// bookCards). An admin uploads a PDF, it goes through the exact same
+// extraction+OCR+generation pipeline مِرآة uses (see lib/db-admin-materials.ts
+// and app/api/admin/materials/*), but nothing is ever visible to students
+// until the admin explicitly reviews and publishes it — so unlike
+// mirrorJobs/books, a material's row is durable and permanently queried
+// (there's no "graduation" into a second table): admin_material_cards IS
+// the durable content, gated purely by admin_materials.status.
+export const adminMaterialStatusEnum = pgEnum("admin_material_status", [
+  "draft",
+  "processing",
+  "ready_for_review",
+  "published",
+  "archived",
+  "failed",
+]);
+export const adminMaterialBatchStatusEnum = pgEnum(
+  "admin_material_batch_status",
+  ["pending", "processing", "complete", "failed", "retrying"]
+);
+// Deliberately a separate enum type from cardConfidenceEnum above (same
+// values) — this feature stays isolated even where the domain happens to
+// coincide, per the isolation requirement.
+export const adminMaterialConfidenceEnum = pgEnum(
+  "admin_material_confidence",
+  ["high", "medium", "low"]
+);
+export const adminMaterialReviewStatusEnum = pgEnum(
+  "admin_material_review_status",
+  ["pending", "approved", "needs_review"]
+);
+export const adminMaterialDifficultyEnum = pgEnum(
+  "admin_material_difficulty",
+  ["easy", "medium", "hard"]
+);
+
+export const adminMaterials = pgTable(
+  "admin_materials",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerAdminId: uuid("ownerAdminId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    fileName: text("fileName").notNull(),
+    fileKey: text("fileKey").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    category: text("category"),
+    difficulty: adminMaterialDifficultyEnum("difficulty")
+      .default("medium")
+      .notNull(),
+    language: text("language").default("both").notNull(),
+    pageCount: integer("pageCount").default(0).notNull(),
+    // Snapshot taken once, when the material reaches "ready_for_review" —
+    // not kept live during generation (no student is watching it stream in
+    // the way مِرآة's review session does; the admin's own progress screen
+    // reads live batch/card counts directly instead).
+    cardCount: integer("cardCount").default(0).notNull(),
+    status: adminMaterialStatusEnum("status").default("draft").notNull(),
+    // Extraction/OCR staging — identical role to mirrorJobs' equivalent
+    // columns (see that table's comment above).
+    pageTexts:
+      jsonb("pageTexts").$type<
+        { page: number; text: string; hasText: boolean }[]
+      >(),
+    pagesNeedingOcr: jsonb("pagesNeedingOcr").$type<number[]>(),
+    ocrFailedPages: jsonb("ocrFailedPages").$type<number[]>(),
+    extractionError: text("extractionError"),
+    extractionAttemptCount: integer("extractionAttemptCount")
+      .default(0)
+      .notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    publishedAt: timestamp("publishedAt", { withTimezone: true }),
+    archivedAt: timestamp("archivedAt", { withTimezone: true }),
+  },
+  table => ({
+    statusIdx: index("admin_materials_status_idx").on(table.status),
+    ownerCreatedIdx: index("admin_materials_owner_admin_id_created_at_idx").on(
+      table.ownerAdminId,
+      table.createdAt
+    ),
+    categoryIdx: index("admin_materials_category_idx").on(table.category),
+  })
+);
+
+export const adminMaterialBatches = pgTable(
+  "admin_material_batches",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    materialId: uuid("materialId")
+      .notNull()
+      .references(() => adminMaterials.id, { onDelete: "cascade" }),
+    batchIndex: integer("batchIndex").notNull(),
+    startPage: integer("startPage").notNull(),
+    endPage: integer("endPage").notNull(),
+    pageTexts:
+      jsonb("pageTexts").$type<
+        { page: number; text: string; hasText: boolean }[]
+      >(),
+    status: adminMaterialBatchStatusEnum("status")
+      .default("pending")
+      .notNull(),
+    errorMessage: text("errorMessage"),
+    attemptCount: integer("attemptCount").default(0).notNull(),
+    lastStartedAt: timestamp("lastStartedAt", { withTimezone: true }),
+    lastCompletedAt: timestamp("lastCompletedAt", { withTimezone: true }),
+    lastErrorAt: timestamp("lastErrorAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    materialOrderIdx: index(
+      "admin_material_batches_material_id_batch_index_idx"
+    ).on(table.materialId, table.batchIndex),
+    statusIdx: index("admin_material_batches_status_idx").on(table.status),
+  })
+);
+
+export const adminMaterialCards = pgTable(
+  "admin_material_cards",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    materialId: uuid("materialId")
+      .notNull()
+      .references(() => adminMaterials.id, { onDelete: "cascade" }),
+    batchId: uuid("batchId")
+      .notNull()
+      .references(() => adminMaterialBatches.id, { onDelete: "cascade" }),
+    questionEn: text("questionEn").notNull(),
+    questionAr: text("questionAr").notNull(),
+    answerEn: text("answerEn").notNull(),
+    answerAr: text("answerAr").notNull(),
+    explanationEn: text("explanationEn").notNull(),
+    explanationAr: text("explanationAr").notNull(),
+    keyIdeaEn: text("keyIdeaEn").notNull(),
+    keyIdeaAr: text("keyIdeaAr").notNull(),
+    keywordEn: text("keywordEn").notNull(),
+    keywordAr: text("keywordAr").notNull(),
+    sourcePage: integer("sourcePage").notNull(),
+    confidence: adminMaterialConfidenceEnum("confidence").notNull(),
+    reviewStatus: adminMaterialReviewStatusEnum("reviewStatus")
+      .default("pending")
+      .notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    materialSourcePageIdx: index(
+      "admin_material_cards_material_id_source_page_idx"
+    ).on(table.materialId, table.sourcePage),
+    reviewStatusIdx: index("admin_material_cards_review_status_idx").on(
+      table.reviewStatus
+    ),
+  })
+);
+
+// Per-(student, card) SRS state — unlike مِرآة's `cards`/كتبي's `bookCards`
+// (each row already owned by exactly one user), admin_material_cards are
+// shared read-only content across every student, so the spaced-repetition
+// schedule can't live on the card itself and instead lives in this junction
+// table, one row per student per card they've reviewed at least once.
+export const adminMaterialReviews = pgTable(
+  "admin_material_reviews",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    materialCardId: uuid("materialCardId")
+      .notNull()
+      .references(() => adminMaterialCards.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    easeFactor: real("easeFactor").default(2.5).notNull(),
+    intervalDays: integer("intervalDays").default(0).notNull(),
+    dueAt: timestamp("dueAt", { withTimezone: true }).defaultNow().notNull(),
+    reviewCount: integer("reviewCount").default(0).notNull(),
+    lastRating: bookCardRatingEnum("lastRating"),
+    lastReviewedAt: timestamp("lastReviewedAt", { withTimezone: true }),
+  },
+  table => ({
+    // Upserted on every rating — a student can only ever have one SRS state
+    // row per card.
+    userCardUnique: uniqueIndex("admin_material_reviews_user_id_card_id_idx").on(
+      table.userId,
+      table.materialCardId
+    ),
+    userDueIdx: index("admin_material_reviews_user_id_due_at_idx").on(
+      table.userId,
+      table.dueAt
+    ),
+  })
+);
+
+// Audit trail for admin actions — deliberately NOT foreign-keyed to
+// adminMaterials/users (see column comments): an audit log's job is to
+// outlive the rows it describes, not enforce referential integrity against
+// them. Also doubles as the source for "material opened"/"students who
+// used this material" stats via action="view_material" rows, rather than
+// adding a separate views table.
+export const adminMaterialAuditLogs = pgTable(
+  "admin_material_audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    // Plain uuid columns, no .references() — see table comment above.
+    materialId: uuid("materialId"),
+    actorUserId: uuid("actorUserId"),
+    action: text("action").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    ipAddress: text("ipAddress"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    materialIdx: index("admin_material_audit_logs_material_id_idx").on(
+      table.materialId
+    ),
+    actorIdx: index("admin_material_audit_logs_actor_user_id_idx").on(
+      table.actorUserId
+    ),
+    createdAtIdx: index("admin_material_audit_logs_created_at_idx").on(
+      table.createdAt
+    ),
+  })
+);
+
+export type AdminMaterial = typeof adminMaterials.$inferSelect;
+export type AdminMaterialBatch = typeof adminMaterialBatches.$inferSelect;
+export type AdminMaterialCard = typeof adminMaterialCards.$inferSelect;
+export type AdminMaterialReview = typeof adminMaterialReviews.$inferSelect;
+export type AdminMaterialAuditLog = typeof adminMaterialAuditLogs.$inferSelect;

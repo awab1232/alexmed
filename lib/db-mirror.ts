@@ -347,7 +347,7 @@ export async function getMirrorBatchForUser(
 export async function getMirrorBatchById(
   batchId: string
 ): Promise<
-  (MirrorBatch & { depth: string; userId: string; deckId: string | null })
+  | (MirrorBatch & { depth: string; userId: string; deckId: string | null })
   | null
 > {
   const db = getDb();

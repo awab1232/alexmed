@@ -7,7 +7,11 @@
 // while the first attempt is still in flight (or already finished) always
 // finds nothing left to claim.
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { bookChapters, mirrorBatches } from "../../drizzle/schema";
+import {
+  adminMaterialBatches,
+  bookChapters,
+  mirrorBatches,
+} from "../../drizzle/schema";
 import { requireDb } from "../db";
 
 const CLAIMABLE_MIRROR_BATCH_STATUSES = [
@@ -16,6 +20,11 @@ const CLAIMABLE_MIRROR_BATCH_STATUSES = [
   "retrying",
 ] as const;
 const CLAIMABLE_BOOK_CHAPTER_STATUSES = [
+  "pending",
+  "failed",
+  "retrying",
+] as const;
+const CLAIMABLE_ADMIN_MATERIAL_BATCH_STATUSES = [
   "pending",
   "failed",
   "retrying",
@@ -86,6 +95,42 @@ export async function claimBookChapter(
       id: bookChapters.id,
       bookId: bookChapters.bookId,
       attemptCount: bookChapters.attemptCount,
+    });
+  return row ?? null;
+}
+
+export type ClaimedAdminMaterialBatch = {
+  id: string;
+  materialId: string;
+  attemptCount: number;
+};
+
+export async function claimAdminMaterialBatch(
+  batchId: string
+): Promise<ClaimedAdminMaterialBatch | null> {
+  const db = requireDb();
+  const [row] = await db
+    .update(adminMaterialBatches)
+    .set({
+      status: "processing",
+      attemptCount: sql`${adminMaterialBatches.attemptCount} + 1`,
+      lastStartedAt: new Date(),
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(adminMaterialBatches.id, batchId),
+        inArray(
+          adminMaterialBatches.status,
+          CLAIMABLE_ADMIN_MATERIAL_BATCH_STATUSES
+        )
+      )
+    )
+    .returning({
+      id: adminMaterialBatches.id,
+      materialId: adminMaterialBatches.materialId,
+      attemptCount: adminMaterialBatches.attemptCount,
     });
   return row ?? null;
 }

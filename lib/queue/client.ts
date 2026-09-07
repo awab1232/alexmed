@@ -4,7 +4,11 @@
 // local dev (with a tunnel), preview deployments, and production.
 import { Client, type FlowControl } from "@upstash/qstash";
 import type { QueueMessage } from "./types";
-import { getQueueGlobalConcurrency, getQueueMaxAttempts } from "./types";
+import {
+  getAdminMaterialsQueueConcurrency,
+  getQueueGlobalConcurrency,
+  getQueueMaxAttempts,
+} from "./types";
 
 let _client: Client | null = null;
 
@@ -43,6 +47,12 @@ function resolveDestination(message: QueueMessage): string {
       return `${base}/api/books/analyze-chapter`;
     case "finalize_book":
       return `${base}/api/books/finalize`;
+    case "extract_admin_material":
+      return `${base}/api/admin/materials/extract`;
+    case "generate_admin_material_batch":
+      return `${base}/api/admin/materials/generate-batch`;
+    case "finalize_admin_material":
+      return `${base}/api/admin/materials/finalize`;
   }
 }
 
@@ -58,13 +68,23 @@ const RETRY_DELAY_FORMULA = "10 * pow(3, retried)";
 // since a single publish can only carry one Flow Control key and the global
 // cap is the more important protection against flooding the AI provider.
 function defaultFlowControl(message: QueueMessage): FlowControl {
-  const key =
-    message.type === "generate_mirror_batch" ||
-    message.type === "finalize_mirror_job" ||
-    message.type === "extract_mirror_job"
-      ? "mirror-pipeline"
-      : "books-pipeline";
-  return { key, parallelism: getQueueGlobalConcurrency() };
+  switch (message.type) {
+    case "generate_mirror_batch":
+    case "finalize_mirror_job":
+    case "extract_mirror_job":
+      return { key: "mirror-pipeline", parallelism: getQueueGlobalConcurrency() };
+    case "extract_book_job":
+    case "analyze_book_chapter":
+    case "finalize_book":
+      return { key: "books-pipeline", parallelism: getQueueGlobalConcurrency() };
+    case "extract_admin_material":
+    case "generate_admin_material_batch":
+    case "finalize_admin_material":
+      return {
+        key: "admin-materials-pipeline",
+        parallelism: getAdminMaterialsQueueConcurrency(),
+      };
+  }
 }
 
 export async function publishMessage(

@@ -3,7 +3,7 @@
 // check is infrequent (once per upload) and Postgres already has the rows
 // needed to count from.
 import { and, count, eq, gte } from "drizzle-orm";
-import { books, mirrorJobs } from "../../drizzle/schema";
+import { adminMaterials, books, mirrorJobs } from "../../drizzle/schema";
 import { getDb } from "../db";
 import {
   getJobCreationRateLimitMax,
@@ -21,16 +21,35 @@ export class RateLimitedError extends Error {
 
 export async function assertJobCreationAllowed(
   userId: string,
-  kind: "mirror" | "books"
+  kind: "mirror" | "books" | "admin_materials"
 ): Promise<void> {
   const db = getDb();
   if (!db) return; // no DB configured (local tooling) — nothing to enforce
 
-  const table = kind === "mirror" ? mirrorJobs : books;
   const windowStart = new Date(
     Date.now() - getJobCreationRateLimitWindowMinutes() * 60_000
   );
 
+  // adminMaterials' owner column is named ownerAdminId (not userId, unlike
+  // mirrorJobs/books) — handled as its own branch rather than forcing a
+  // shared column name across an unrelated, deliberately isolated table.
+  if (kind === "admin_materials") {
+    const [row] = await db
+      .select({ c: count() })
+      .from(adminMaterials)
+      .where(
+        and(
+          eq(adminMaterials.ownerAdminId, userId),
+          gte(adminMaterials.createdAt, windowStart)
+        )
+      );
+    if (Number(row?.c ?? 0) >= getJobCreationRateLimitMax()) {
+      throw new RateLimitedError();
+    }
+    return;
+  }
+
+  const table = kind === "mirror" ? mirrorJobs : books;
   const [row] = await db
     .select({ c: count() })
     .from(table)

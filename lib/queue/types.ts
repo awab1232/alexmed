@@ -8,7 +8,14 @@ export type QueueMessage =
   | { type: "finalize_mirror_job"; jobId: string }
   | { type: "extract_book_job"; bookId: string }
   | { type: "analyze_book_chapter"; chapterId: string; bookId: string }
-  | { type: "finalize_book"; bookId: string };
+  | { type: "finalize_book"; bookId: string }
+  | { type: "extract_admin_material"; materialId: string }
+  | {
+      type: "generate_admin_material_batch";
+      batchId: string;
+      materialId: string;
+    }
+  | { type: "finalize_admin_material"; materialId: string };
 
 function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -28,6 +35,15 @@ export function getQueueGlobalConcurrency(): number {
 
 export function getQueuePerUserConcurrency(): number {
   return readIntEnv("QUEUE_PER_USER_CONCURRENCY", 2);
+}
+
+// مكتبة الأدمن gets its own, separate concurrency budget/Flow Control key
+// (see lib/queue/client.ts) rather than sharing مِرآة's QUEUE_GLOBAL_CONCURRENCY
+// — admin uploads are rare compared to student مِرآة uploads, and this keeps
+// either one from starving the other's share of OmniRoute's own limited
+// capacity.
+export function getAdminMaterialsQueueConcurrency(): number {
+  return readIntEnv("ADMIN_MATERIALS_QUEUE_CONCURRENCY", 2);
 }
 
 export function getJobCreationRateLimitMax(): number {

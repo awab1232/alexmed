@@ -767,7 +767,10 @@ export default function Home() {
                 <Loader2 size={18} className="spin" />
                 <div>
                   <strong>جاري تجهيز المزيد من البطاقات...</strong>
-                  <span>{cards.length} بطاقة جاهزة حتى الآن — تقدر تكمل مذاكرتك وهي توصل تلقائيًا.</span>
+                  <span>
+                    {cards.length} بطاقة جاهزة حتى الآن — تقدر تكمل مذاكرتك وهي
+                    توصل تلقائيًا.
+                  </span>
                 </div>
               </div>
             )}
@@ -783,9 +786,7 @@ export default function Home() {
                 <span>
                   تعذر توليد {failedBatchCount}{" "}
                   {failedBatchCount === 1 ? "جزء" : "أجزاء"}
-                  {isLive
-                    ? " حتى الآن — الباقي مستمر بالخلفية."
-                    : " من الملف."}
+                  {isLive ? " حتى الآن — الباقي مستمر بالخلفية." : " من الملف."}
                 </span>
                 {liveJobId && (
                   <Link

@@ -9,11 +9,13 @@ import {
   BookOpen,
   CircleAlert,
   ClipboardList,
+  GraduationCap,
   Home,
   Layers3,
   Library,
   LogOut,
   RotateCcw,
+  Settings,
   ShieldCheck,
   Upload,
 } from "lucide-react";
@@ -78,6 +80,7 @@ export default function AppSidebar({
   const accountName = session?.user?.name || session?.user?.email || "";
   const accountInitial = accountName.trim().charAt(0).toUpperCase() || "؟";
   const inBooksArea = pathname.startsWith("/books");
+  const isAdmin = session?.user?.role === "admin";
 
   return (
     <aside className="sidebar">
@@ -183,6 +186,33 @@ export default function AppSidebar({
           <BarChart3 size={17} />
           <span>إحصائياتي</span>
         </Link>
+      </nav>
+
+      <div className="side-rule" />
+      <p className="side-label">مكتبة الأدمن</p>
+      <nav className="side-nav">
+        <Link
+          href="/materials"
+          className={
+            pathname.startsWith("/materials") ? "nav-item active" : "nav-item"
+          }
+        >
+          <GraduationCap size={17} />
+          <span>مكتبة الأدمن</span>
+        </Link>
+        {/* Cosmetic only — the real access control is server-side in
+            app/admin/layout.tsx and every adminProcedure/admin route. */}
+        {isAdmin && (
+          <Link
+            href="/admin/materials"
+            className={
+              pathname.startsWith("/admin") ? "nav-item active" : "nav-item"
+            }
+          >
+            <Settings size={17} />
+            <span>لوحة تحكم الأدمن</span>
+          </Link>
+        )}
       </nav>
 
       <div className="sidebar-bottom">

@@ -1,7 +1,9 @@
 import { signOut } from "../auth";
+import { adminMaterialsRouter } from "./adminMaterialsRouter";
 import { booksRouter } from "./booksRouter";
 import { decksRouter } from "./decksRouter";
 import { mirrorRouter } from "./mirrorRouter";
+import { studentMaterialsRouter } from "./studentMaterialsRouter";
 import { publicProcedure, router } from "./trpc";
 import { systemRouter } from "./systemRouter";
 
@@ -17,6 +19,12 @@ export const appRouter = router({
   decks: decksRouter,
   books: booksRouter,
   mirror: mirrorRouter,
+  // مكتبة الأدمن — kept as two separate top-level namespaces (not nested
+  // under one "admin" router) so the admin-only surface (adminMaterials) and
+  // the student-facing surface (materials) stay obviously distinct at every
+  // call site, matching adminProcedure vs protectedProcedure below them.
+  adminMaterials: adminMaterialsRouter,
+  materials: studentMaterialsRouter,
 });
 
 export type AppRouter = typeof appRouter;
