@@ -323,6 +323,20 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
       );
     }
 
+    // Server-log only (never sent to the client, never the API key) — the
+    // generic describeStatus() message thrown below deliberately omits this,
+    // but a 400 in particular usually means the payload itself was rejected
+    // for a reason worth seeing while debugging a new model/provider.
+    try {
+      const bodyText = (await response.text()).slice(0, 500);
+      console.warn(
+        `[AI][omniroute] ${model} returned ${response.status}: ${bodyText}`
+      );
+    } catch {
+      // Body already consumed or unreadable — the status-only warning below
+      // (for non-last candidates) still fires.
+    }
+
     if (!isLastCandidate) {
       console.warn(
         `[AI][omniroute] ${model} returned ${describeStatus(response.status)}, trying next fallback model`
