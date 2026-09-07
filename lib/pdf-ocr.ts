@@ -69,7 +69,9 @@ export async function ocrPages(
       // exists but transcribing nothing is a contradiction, not a legitimate
       // empty page — treat it as a failure worth retrying like any other.
       if (hasText && !text) {
-        throw new Error("OCR reported text but returned an empty transcription");
+        throw new Error(
+          "OCR reported text but returned an empty transcription"
+        );
       }
       pages.push({ page: pageNumber, text, hasText, ocr: true });
     } catch (error) {

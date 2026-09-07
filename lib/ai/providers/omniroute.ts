@@ -249,46 +249,20 @@ function buildPayload(model: string, params: GenerateParams, stream: boolean) {
   return payload;
 }
 
-async function generateText(params: GenerateParams): Promise<GenerateResult> {
-  const apiKey = requireApiKey();
-  const model = await resolveModel(params);
-
-  const response = await fetchWithTimeout(
-    `${omniRouteConfig.baseUrl}/chat/completions`,
-    {
-      method: "POST",
-      headers: headers(apiKey),
-      body: JSON.stringify(buildPayload(model, params, false)),
-    }
-  );
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new AiRateLimitError(
-        `OmniRoute chat completion failed: ${describeStatus(response.status)}`,
-        parseRetryAfterMs(response)
-      );
-    }
-    throw new Error(
-      `OmniRoute chat completion failed: ${describeStatus(response.status)}`
-    );
-  }
-
-  const raw = (await response.json()) as {
-    id: string;
-    created: number;
-    model: string;
-    choices: Array<{
-      message: { role: string; content: string | null };
-      finish_reason: string | null;
-    }>;
-    usage?: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
-    };
+function parseGenerateResponse(raw: {
+  id: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    message: { role: string; content: string | null };
+    finish_reason: string | null;
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
   };
-
+}): GenerateResult {
   const choice = raw.choices[0];
   return {
     id: raw.id,
@@ -304,6 +278,70 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
         }
       : undefined,
   };
+}
+
+async function generateText(params: GenerateParams): Promise<GenerateResult> {
+  const apiKey = requireApiKey();
+  const primaryModel = await resolveModel(params);
+  // Only chain fallback models when the caller left the model unspecified —
+  // an explicit params.model is a deliberate choice (e.g. a required vision
+  // model) that a silent substitution could quietly violate.
+  const candidates = params.model?.trim()
+    ? [primaryModel]
+    : [
+        primaryModel,
+        ...omniRouteConfig.fallbackModels.filter(m => m !== primaryModel),
+      ];
+
+  let lastFailure: Response | undefined;
+  for (let i = 0; i < candidates.length; i++) {
+    const model = candidates[i];
+    const isLastCandidate = i === candidates.length - 1;
+
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(
+        `${omniRouteConfig.baseUrl}/chat/completions`,
+        {
+          method: "POST",
+          headers: headers(apiKey),
+          body: JSON.stringify(buildPayload(model, params, false)),
+        }
+      );
+    } catch (error) {
+      if (isLastCandidate) throw error;
+      console.warn(
+        `[AI][omniroute] ${model} request failed, trying next fallback model`,
+        error
+      );
+      continue;
+    }
+
+    if (response.ok) {
+      return parseGenerateResponse(
+        (await response.json()) as Parameters<typeof parseGenerateResponse>[0]
+      );
+    }
+
+    if (!isLastCandidate) {
+      console.warn(
+        `[AI][omniroute] ${model} returned ${describeStatus(response.status)}, trying next fallback model`
+      );
+      continue;
+    }
+    lastFailure = response;
+  }
+
+  // Every candidate (primary + all configured fallbacks) failed.
+  if (lastFailure!.status === 429) {
+    throw new AiRateLimitError(
+      `OmniRoute chat completion failed: ${describeStatus(lastFailure!.status)}`,
+      parseRetryAfterMs(lastFailure!)
+    );
+  }
+  throw new Error(
+    `OmniRoute chat completion failed: ${describeStatus(lastFailure!.status)}`
+  );
 }
 
 async function* streamText(

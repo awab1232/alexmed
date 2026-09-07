@@ -35,6 +35,17 @@ export const omniRouteConfig = {
   get defaultModel() {
     return process.env.OMNIROUTE_DEFAULT_MODEL?.trim() || undefined;
   },
+  // Comma-separated concrete model ids tried in order, after defaultModel,
+  // when a call has no explicit model and the previous one fails — OmniRoute's
+  // own "auto/*" routing has been observed picking a provider with no active
+  // credentials for vision requests, so falling back to another "auto/*"
+  // alias wouldn't help; these need to be concrete provider/model ids.
+  get fallbackModels() {
+    return (process.env.OMNIROUTE_FALLBACK_MODELS ?? "")
+      .split(",")
+      .map(model => model.trim())
+      .filter(Boolean);
+  },
 };
 
 export const openRouterConfig = {
