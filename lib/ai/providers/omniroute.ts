@@ -289,18 +289,15 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
   // equals primaryModel here in practice — there's no real caller whose
   // explicit choice a fallback would be overriding. Always chain fallbacks.
   //
-  // Shuffled (not primary-first) so concurrent calls spread load across
-  // every configured model instead of all hammering the same one first and
-  // only trickling onto the others once it's rate-limited — genuine load
-  // distribution across the pool, not just an ordered failover list.
+  // Tried in listed order (OMNIROUTE_DEFAULT_MODEL first, then
+  // OMNIROUTE_FALLBACK_MODELS in order) — a deliberate priority, not load
+  // distribution: e.g. a free provider first, a paid/quota-limited one only
+  // as last resort. (An earlier version shuffled this for load spreading;
+  // that's what a fixed order gives up in exchange for honoring priority.)
   const candidates = [
     primaryModel,
     ...omniRouteConfig.fallbackModels.filter(m => m !== primaryModel),
   ];
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-  }
 
   let lastFailure: Response | undefined;
   for (let i = 0; i < candidates.length; i++) {
