@@ -9,11 +9,13 @@
 // fits comfortably under the limit.
 import type { PDFParse } from "pdf-parse";
 
-// Leaves headroom below Bedrock's exact 5,242,880-byte ceiling since our
-// estimate from the base64 data URL length is approximate (ignores the
-// data: URL's own byte overhead, which is small enough not to matter here).
-const MAX_IMAGE_BYTES = 4_800_000;
-const WIDTH_STEPS = [1800, 1400, 1100, 850, 650];
+// Leaves generous headroom below Bedrock's exact 5,242,880-byte ceiling: the
+// same page rendered at the same desiredWidth has been observed producing a
+// meaningfully larger PNG on the Linux/Railway canvas backend than on a
+// local Windows dev machine (font/anti-aliasing differences), so this can't
+// assume dev-machine measurements transfer directly to production.
+const MAX_IMAGE_BYTES = 3_000_000;
+const WIDTH_STEPS = [1800, 1400, 1100, 850, 650, 450, 300];
 
 function estimateDecodedBytes(dataUrl: string): number {
   const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
