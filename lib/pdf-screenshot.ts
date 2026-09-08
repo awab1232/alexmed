@@ -49,8 +49,11 @@ export async function getScreenshotUnderLimit(
     last = {
       dataUrl: shot.dataUrl,
       data: shot.data,
-      width: shot.width,
-      height: shot.height,
+      // pdf.js viewport dimensions come out as floats (scale-factor math,
+      // e.g. 1800.0000000000002) — round for any caller that persists these
+      // to an integer DB column (book_pages.width/height).
+      width: Math.round(shot.width),
+      height: Math.round(shot.height),
     };
     if (estimateDecodedBytes(shot.dataUrl) <= MAX_IMAGE_BYTES) return last;
   }
