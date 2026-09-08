@@ -283,15 +283,16 @@ function parseGenerateResponse(raw: {
 async function generateText(params: GenerateParams): Promise<GenerateResult> {
   const apiKey = requireApiKey();
   const primaryModel = await resolveModel(params);
-  // Only chain fallback models when the caller left the model unspecified —
-  // an explicit params.model is a deliberate choice (e.g. a required vision
-  // model) that a silent substitution could quietly violate.
-  const candidates = params.model?.trim()
-    ? [primaryModel]
-    : [
-        primaryModel,
-        ...omniRouteConfig.fallbackModels.filter(m => m !== primaryModel),
-      ];
+  // Every call site in this app resolves its model from
+  // OMNIROUTE_DEFAULT_MODEL up front (OmniRoute "owns model selection —
+  // never client-selectable", per lib/pdf-cards.ts's OCR_MODEL/etc.) and
+  // passes that resolved string as params.model, so params.model always
+  // equals primaryModel here in practice — there's no real caller whose
+  // explicit choice a fallback would be overriding. Always chain fallbacks.
+  const candidates = [
+    primaryModel,
+    ...omniRouteConfig.fallbackModels.filter(m => m !== primaryModel),
+  ];
 
   let lastFailure: Response | undefined;
   for (let i = 0; i < candidates.length; i++) {
