@@ -3,6 +3,7 @@ import {
   completeBatchGeneration,
   finalizeMirrorJobIfDone,
   getMirrorBatchById,
+  getNextPendingMirrorBatches,
   markMirrorBatchFailedTerminal,
   markMirrorBatchRetrying,
 } from "@/lib/db-mirror";
@@ -16,6 +17,7 @@ import {
 } from "@/lib/pdf-cards";
 import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
 import { claimMirrorBatch } from "@/lib/queue/claim";
+import { publishMessage } from "@/lib/queue/client";
 import { getQueueMaxAttempts } from "@/lib/queue/types";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
@@ -23,6 +25,25 @@ import { NextResponse } from "next/server";
 // Vercel Hobby's hard ceiling for a serverless function is 60s regardless of
 // this value.
 export const maxDuration = 60;
+
+// Replenishes the windowed dispatch (see app/api/mirror/extract/route.ts's
+// GENERATE_WINDOW_SIZE comment): called once this batch reaches a terminal
+// outcome (complete or permanently failed — never on a mid-retry redelivery,
+// which still occupies this same slot), publishing the next un-started batch
+// so roughly GENERATE_WINDOW_SIZE stay in flight for the job at any time
+// instead of every batch being live at once.
+async function advanceGenerationWindow(jobId: string) {
+  const [next] = await getNextPendingMirrorBatches(jobId, 1);
+  if (!next) return;
+  try {
+    await publishMessage({ type: "generate_mirror_batch", batchId: next.id, jobId });
+  } catch (error) {
+    // Logged only — this batch just stays "pending" with no in-flight
+    // message, same recoverable state a fresh extraction leaves batches in;
+    // nothing here has been claimed or mutated for it.
+    console.error("[Mirror] Failed to advance generation window", error);
+  }
+}
 
 // The مِرآة worker (QStash queue migration): generates cards for exactly ONE
 // batch and persists the full result before returning. This route is no
@@ -97,6 +118,7 @@ export async function POST(request: Request) {
     // it with zero cards rather than failing; there's nothing to retry.
     await completeBatchGeneration(batchId, batch.deckId!, []);
     await finalizeMirrorJobIfDone(batch.jobId);
+    await advanceGenerationWindow(batch.jobId);
     return NextResponse.json({ batchId, status: "complete", cards: [] });
   }
 
@@ -106,6 +128,7 @@ export async function POST(request: Request) {
     if (claimed!.attemptCount >= maxAttempts) {
       await markMirrorBatchFailedTerminal(batchId, errorMessage);
       await finalizeMirrorJobIfDone(batch!.jobId);
+      await advanceGenerationWindow(batch!.jobId);
       // Ack — attempts exhausted, no more QStash retries wanted.
       return NextResponse.json({
         batchId,
@@ -144,6 +167,7 @@ export async function POST(request: Request) {
 
     await completeBatchGeneration(batchId, batch.deckId!, cards);
     await finalizeMirrorJobIfDone(batch.jobId);
+    await advanceGenerationWindow(batch.jobId);
 
     return NextResponse.json({ batchId, status: "complete", cards });
   } catch (error) {
@@ -155,6 +179,7 @@ export async function POST(request: Request) {
           "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
         );
         await finalizeMirrorJobIfDone(batch.jobId);
+        await advanceGenerationWindow(batch.jobId);
         return NextResponse.json({ batchId, status: "failed" });
       }
       await markMirrorBatchRetrying(

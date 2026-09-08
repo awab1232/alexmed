@@ -498,6 +498,29 @@ export async function setBatchFailed(batchId: string, errorMessage: string) {
     .where(eq(mirrorBatches.id, batchId));
 }
 
+// Next un-started batches for a job, oldest orderIndex first — backs the
+// windowed dispatch in app/api/mirror/{extract,generate-batch}/route.ts:
+// only a handful of batches are ever published to QStash at once (seeded at
+// extraction-finalize time, replenished one-for-one as each finishes)
+// instead of publishing every batch up front and relying entirely on
+// QStash's own flow-control concurrency cap to pace them.
+export async function getNextPendingMirrorBatches(
+  jobId: string,
+  limit: number
+): Promise<Pick<MirrorBatch, "id">[]> {
+  const db = getDb();
+  if (!db) return [];
+
+  return db
+    .select({ id: mirrorBatches.id })
+    .from(mirrorBatches)
+    .where(
+      and(eq(mirrorBatches.jobId, jobId), eq(mirrorBatches.status, "pending"))
+    )
+    .orderBy(asc(mirrorBatches.orderIndex))
+    .limit(limit);
+}
+
 // Completes one batch and inserts its cards directly into the job's deck
 // (created up front by finalizeMirrorJobExtraction) — this is what lets a
 // student open the deck and start reviewing while later batches are still

@@ -11,7 +11,9 @@ vi.mock("@/lib/db-mirror", () => ({
   finalizeMirrorJobIfDone: vi.fn(),
   markMirrorBatchFailedTerminal: vi.fn(),
   markMirrorBatchRetrying: vi.fn(),
+  getNextPendingMirrorBatches: vi.fn().mockResolvedValue([]),
 }));
+vi.mock("@/lib/queue/client", () => ({ publishMessage: vi.fn() }));
 vi.mock("@/lib/llm", async importOriginal => {
   const actual = await importOriginal<typeof import("@/lib/llm")>();
   return { ...actual, invokeLLM: vi.fn() };

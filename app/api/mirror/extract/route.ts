@@ -20,6 +20,11 @@ import { PDFParse } from "pdf-parse";
 // progress checkpointed no matter how many pages the file needs OCR'd.
 const OCR_BATCH_SIZE = 12;
 
+// How many generation batches are ever "in flight" (published to QStash but
+// not yet complete/failed) for one job at a time — see the comment at the
+// publish call below for why this replaces publishing every batch up front.
+export const GENERATE_WINDOW_SIZE = 4;
+
 // Step 1 of the مِرآة pipeline, background half: upload-and-plan creates a
 // bare job (status "extracting") and publishes one extract_mirror_job
 // message; this worker does the actual PDF text-extraction + OCR, resuming
@@ -170,11 +175,14 @@ export async function POST(request: Request) {
 
     const { batches } = await finalizeMirrorJobExtraction(jobId, pages);
 
-    // Publish one QStash message per generation batch — same handoff
-    // upload-and-plan used to do right after creating them inline.
+    // Seed only the first GENERATE_WINDOW_SIZE batches — generate-batch's
+    // own handler republishes one more each time a batch finishes, keeping
+    // a small rolling window in flight instead of publishing every batch up
+    // front and relying entirely on QStash's shared flow-control concurrency
+    // cap to pace potentially dozens of them at once.
     try {
       await Promise.all(
-        batches.map(batch =>
+        batches.slice(0, GENERATE_WINDOW_SIZE).map(batch =>
           publishMessage({
             type: "generate_mirror_batch",
             batchId: batch.id,
