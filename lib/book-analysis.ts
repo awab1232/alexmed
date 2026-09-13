@@ -46,7 +46,7 @@ export const bookChapterSchema = {
     explanationEn: {
       type: "string",
       description:
-        "A concise, exam-focused English explanation of the same content.",
+        "A detailed, structured, exam-focused English explanation. Preserve important definitions, criteria, durations, causes, clinical findings, investigations, management, warnings, and exceptions present in the source.",
     },
     keyPoints: {
       type: "array",
@@ -135,7 +135,7 @@ export const bookChapterSchema = {
     chapterSummary: {
       type: "string",
       description:
-        "A short Arabic summary of the whole chapter (this call's slice of it).",
+        "A short English-first summary of the whole chapter (this call's slice of it), followed by a brief Arabic support line when useful.",
     },
   },
   required: [
@@ -264,6 +264,14 @@ export function buildChapterAnalysisMessages(
     profile === "medical"
       ? "important medical terms (Arabic + English + a simple pronunciation guide)"
       : "important terms/vocabulary a student of this subject should memorize (Arabic + English + a simple pronunciation guide when relevant, otherwise leave pronunciation empty)";
+  const precisionInstruction =
+    profile === "medical"
+      ? "Keep the English explanation medically precise"
+      : "Keep the English explanation precise for the subject";
+  const terminologyInstruction =
+    profile === "medical"
+      ? "Keep the English medical term visible in the English fields."
+      : "Keep the English subject terminology visible in the English fields.";
 
   return [
     {
@@ -271,7 +279,11 @@ export function buildChapterAnalysisMessages(
       content: [
         `You are a meticulous, encouraging study coach writing for a student who finds English difficult and forgets quickly.`,
         `You are given the raw text of one chapter (or part of one) from a ${subjectLabel}, titled "${chapterTitle}".`,
-        `Produce: a simple Arabic explanation, a concise exam-focused English explanation, key points, ${termsInstruction}, flashcards, and 4-option multiple-choice questions.`,
+        `Produce: a detailed, exam-focused English explanation first, a clear Arabic support explanation, key points, ${termsInstruction}, high-quality flashcards, and 4-option multiple-choice questions.`,
+        `The English explanation is the primary study output: ${precisionInstruction}, structured with readable headings and bullets, and cover every meaningful section without replacing important detail with vague generalities. The Arabic explanation is a faithful support layer for understanding, not a substitute for the English terminology.`,
+        "Build flashcards as active-recall cards, not copied paragraphs. Use a balanced mix of Definition, Classification, Causes, Clinical features, Diagnosis, Management, Why, Comparison, Sequence, Red flags, and Clinical case cards whenever the source supports them. The front/question must be a natural English exam-style prompt; the answer must be concise, directly retrievable, and may contain numbered items when the source lists causes, criteria, or steps.",
+        `${terminologyInstruction} In Arabic fields, give the meaning naturally without damaging the English wording. A term card should make the relationship explicit: English term first in the study experience, Arabic meaning as support.`,
+        "Do not make every card a simple definition and do not create filler cards. Prefer one testable idea per card, include threshold, duration, and classification details exactly when present, and create application cards from clinical scenarios only when the source supports the answer.",
         "Cover the material thoroughly — do not skip sections. Every flashcard and MCQ must cite the real PDF page number (sourcePage) it came from, using the PDF PAGE markers below.",
         "Do not invent facts not present in the source text. If the source text is too thin or unclear to extract real content from, say so plainly in explanationAr/explanationEn instead of inventing filler.",
         "Write ONLY in Arabic and English — every field in every language, never any third language, never mix scripts within a field.",
@@ -295,7 +307,7 @@ export function buildSummaryMergeMessages(
     {
       role: "system",
       content:
-        "You merge partial chapter summaries into ONE coherent Arabic summary of the whole chapter, 3-5 sentences, simple language. Return JSON only, matching the given schema.",
+        "You merge partial chapter summaries into ONE coherent English-first summary of the whole chapter, 3-5 concise sentences, followed by one short Arabic support paragraph. Preserve distinct facts and do not drop important details. Return JSON only, matching the given schema.",
     },
     {
       role: "user",

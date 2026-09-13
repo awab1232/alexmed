@@ -241,17 +241,17 @@ export default function ReviewPage() {
           )}
         </div>
         <div className="question-block">
-          <span className="micro-label">السؤال / QUESTION</span>
-          <h2>{card.questionAr}</h2>
-          <p>{card.questionEn}</p>
+          <span className="micro-label">QUESTION / السؤال</span>
+          <h2 className="en" dir="ltr">{card.questionEn}</h2>
+          <p>{card.questionAr}</p>
         </div>
         <div className={showAnswer ? "answer-block revealed" : "answer-block"}>
           {showAnswer ? (
             <>
-              <span className="micro-label">الإجابة / ANSWER</span>
+              <span className="micro-label">ANSWER / الإجابة</span>
               <div className="answer-pair">
-                <strong>{card.answerAr}</strong>
-                <span>{card.answerEn}</span>
+                <strong className="en" dir="ltr">{card.answerEn}</strong>
+                <span>{card.answerAr}</span>
               </div>
               {card.relatedTermEn && (
                 <div className="concept-grid">

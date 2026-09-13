@@ -68,6 +68,83 @@ const COMING_SOON_TABS = ["اختبرني الآن"];
 
 type PendingSelection = { selectedText: string; start: number; end: number };
 
+type FlashcardPreviewData = {
+  questionEn: string;
+  questionAr: string;
+  answerEn: string;
+  answerAr: string;
+  relatedTermEn?: string | null;
+  relatedTermAr?: string | null;
+  sourcePage?: number;
+};
+
+function FlashcardPreview({ card }: { card: FlashcardPreviewData }) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div
+      className="panel-card"
+      style={{ display: "flex", flexDirection: "column", gap: 10 }}
+    >
+      <span className="micro-label">QUESTION / السؤال</span>
+      <strong className="en" dir="ltr" style={{ fontSize: 15 }}>
+        {card.questionEn}
+      </strong>
+      <p style={{ margin: 0, color: "#8a9493", fontSize: 13 }}>
+        {card.questionAr}
+      </p>
+      {!revealed ? (
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => setRevealed(true)}
+          style={{ alignSelf: "flex-start", marginTop: 4 }}
+        >
+          إظهار الإجابة <span className="en">· Show answer</span>
+        </button>
+      ) : (
+        <div style={{ borderTop: "1px solid #eee6dc", paddingTop: 12 }}>
+          <span className="micro-label">ANSWER / الإجابة</span>
+          <p
+            className="en"
+            dir="ltr"
+            style={{ whiteSpace: "pre-line", fontWeight: 600, margin: "8px 0 6px" }}
+          >
+            {card.answerEn}
+          </p>
+          <p style={{ whiteSpace: "pre-line", margin: 0, color: "#65716f" }}>
+            {card.answerAr}
+          </p>
+          {(card.relatedTermEn || card.relatedTermAr) && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: "8px 10px",
+                background: "#f6f2eb",
+                borderRadius: 8,
+              }}
+            >
+              <span className="micro-label">TERM / المصطلح</span>
+              <strong
+                className="en"
+                dir="ltr"
+                style={{ display: "block", marginTop: 4 }}
+              >
+                {card.relatedTermEn}
+              </strong>
+              {card.relatedTermAr && <small>{card.relatedTermAr}</small>}
+            </div>
+          )}
+          {card.sourcePage && (
+            <small style={{ display: "block", marginTop: 8, color: "#9a9186" }}>
+              Source page / صفحة المصدر: {card.sourcePage}
+            </small>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ChapterDetailPage() {
   const params = useParams<{ bookId: string; chapterId: string }>();
   const searchParams = useSearchParams();
@@ -513,23 +590,28 @@ export default function ChapterDetailPage() {
             >
               {chapter.chapterSummary && (
                 <div>
-                  <span className="micro-label">ملخص الفصل</span>
-                  <p>{chapter.chapterSummary}</p>
+                  <span className="micro-label">Chapter summary / ملخص الفصل</span>
+                  <p className="en" dir="ltr" style={{ whiteSpace: "pre-line", fontWeight: 600 }}>
+                    {chapter.chapterSummary}
+                  </p>
                 </div>
               )}
               <div>
-                <span className="micro-label">الشرح بالعربي</span>
-                <p style={{ whiteSpace: "pre-line" }}>
-                  {chapter.explanationAr}
+                <span className="micro-label">English explanation / الشرح الأساسي</span>
+                <p
+                  className="en"
+                  dir="ltr"
+                  style={{ whiteSpace: "pre-line" }}
+                >
+                  {chapter.explanationEn}
                 </p>
               </div>
               <div>
-                <span className="micro-label">English Explanation</span>
+                <span className="micro-label">Arabic support / شرح عربي مساعد</span>
                 <p
-                  className="en"
-                  style={{ whiteSpace: "pre-line", direction: "ltr" }}
+                  style={{ whiteSpace: "pre-line", direction: "rtl" }}
                 >
-                  {chapter.explanationEn}
+                  {chapter.explanationAr}
                 </p>
               </div>
               {/* Audit Phase 7 — connects the explanation above to this
@@ -603,9 +685,14 @@ export default function ChapterDetailPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {terms.map(term => (
                 <div className="panel-card" key={term.id}>
-                  <strong>{term.ar}</strong>
-                  <p style={{ fontSize: 12, color: "#8a9493" }}>
-                    {term.en} · {term.pronunciation}
+                  <strong className="en" dir="ltr" style={{ fontSize: 16 }}>
+                    {term.en}
+                  </strong>
+                  <p style={{ margin: "4px 0 0", fontWeight: 600 }}>
+                    {term.ar}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#8a9493", margin: "4px 0 0" }}>
+                    {term.pronunciation && `Pronunciation: ${term.pronunciation}`}
                   </p>
                 </div>
               ))}
@@ -628,14 +715,25 @@ export default function ChapterDetailPage() {
                   <Layers3 size={16} /> ابدأ المراجعة ({cards.length})
                 </button>
               )}
-              {(currentPage ? pageCardsAndMcqs.cards : cards).map(card => (
-                <div className="panel-card" key={card.id}>
-                  <strong>{card.questionAr}</strong>
-                  <p style={{ fontSize: 12, color: "#8a9493" }}>
-                    {card.answerAr}
-                  </p>
-                </div>
-              ))}
+              {(currentPage ? pageCardsAndMcqs.cards : cards).map(card => {
+                const relatedTerm = terms.find(
+                  term => term.en.toLowerCase() === card.relatedTermEn?.toLowerCase()
+                );
+                return (
+                  <FlashcardPreview
+                    key={card.id}
+                    card={{
+                      questionEn: card.questionEn,
+                      questionAr: card.questionAr,
+                      answerEn: card.answerEn,
+                      answerAr: card.answerAr,
+                      relatedTermEn: card.relatedTermEn,
+                      relatedTermAr: relatedTerm?.ar,
+                      sourcePage: card.sourcePage,
+                    }}
+                  />
+                );
+              })}
               {!(currentPage ? pageCardsAndMcqs.cards : cards).length && (
                 <p>لا توجد بطاقات لهذه الصفحة.</p>
               )}
@@ -695,8 +793,11 @@ export default function ChapterDetailPage() {
                 </div>
 
                 <div>
-                  <span className="micro-label">السؤال</span>
-                  <p style={{ fontSize: 15, fontWeight: 600 }}>
+                  <span className="micro-label">QUESTION / السؤال</span>
+                  <p className="en" dir="ltr" style={{ fontSize: 15, fontWeight: 600 }}>
+                    {studyQueue[studyIndex].questionEn}
+                  </p>
+                  <p style={{ color: "#8a9493", fontSize: 13 }}>
                     {studyQueue[studyIndex].questionAr}
                   </p>
                 </div>
@@ -713,8 +814,13 @@ export default function ChapterDetailPage() {
                 ) : (
                   <>
                     <div style={{ marginTop: 14 }}>
-                      <span className="micro-label">الإجابة</span>
-                      <p>{studyQueue[studyIndex].answerAr}</p>
+                      <span className="micro-label">ANSWER / الإجابة</span>
+                      <p className="en" dir="ltr" style={{ whiteSpace: "pre-line", fontWeight: 600 }}>
+                        {studyQueue[studyIndex].answerEn}
+                      </p>
+                      <p style={{ whiteSpace: "pre-line", color: "#65716f" }}>
+                        {studyQueue[studyIndex].answerAr}
+                      </p>
                     </div>
                     <div
                       style={{
