@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,7 +10,9 @@ import {
   CircleAlert,
   Layers3,
   Loader2,
+  List,
   Mic,
+  Printer,
   RotateCcw,
   Search,
   Send,
@@ -183,6 +185,7 @@ export default function ChapterDetailPage() {
     useState<PendingSelection | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [summaryPage, setSummaryPage] = useState(0);
   const appliedInitialPageRef = useRef(false);
 
   const { chapter, terms, cards, mcqs, pages } = chapterQuery.data ?? {
@@ -193,6 +196,39 @@ export default function ChapterDetailPage() {
     pages: [],
   };
   const currentPage = pages[pageIndex];
+  const summarySections = useMemo(
+    () => [
+      {
+        id: "overview",
+        label: "Overview",
+        arabicLabel: "نظرة عامة",
+        kind: "overview" as const,
+      },
+      {
+        id: "english",
+        label: "English explanation",
+        arabicLabel: "الشرح الأساسي",
+        kind: "english" as const,
+      },
+      {
+        id: "arabic",
+        label: "Arabic support",
+        arabicLabel: "الشرح العربي",
+        kind: "arabic" as const,
+      },
+      ...(chapter?.keyPoints?.length
+        ? [
+            {
+              id: "high-yield",
+              label: "High-Yield review",
+              arabicLabel: "نقاط الامتحان",
+              kind: "high-yield" as const,
+            },
+          ]
+        : []),
+    ],
+    [chapter?.keyPoints?.length]
+  );
 
   // Jumps to the page a due-card/mcq's "عرض في الكتاب" link pointed at, once
   // `pages` has loaded — a ref (not a dependency-gated effect) guards this
@@ -584,6 +620,41 @@ export default function ChapterDetailPage() {
           </div>
 
           {assistantTab === "explanation" && (
+            <div className="summary-reader">
+              <div className="summary-reader-toolbar">
+                <div className="summary-reader-breadcrumb">
+                  <List size={15} />
+                  <span>Study document</span>
+                  <b>/</b>
+                  <span>{chapter.title}</span>
+                </div>
+                <div className="summary-reader-actions">
+                  <span>Page {summaryPage + 1} of {summarySections.length}</span>
+                  <button type="button" className="summary-print-button" onClick={() => window.print()} title="Print summary">
+                    <Printer size={14} /> Print
+                  </button>
+                </div>
+              </div>
+              <div className="summary-reader-layout">
+                <aside className="summary-toc" aria-label="Summary contents">
+                  <span className="micro-label">Contents / الفهرس</span>
+                  {summarySections.map((section, index) => (
+                    <button
+                      type="button"
+                      key={section.id}
+                      className={summaryPage === index ? "active" : ""}
+                      onClick={() => {
+                        setSummaryPage(index);
+                        document.getElementById(`summary-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                    >
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <strong>{section.label}</strong>
+                      <small>{section.arabicLabel}</small>
+                    </button>
+                  ))}
+                </aside>
+                <div className="summary-document">
             <div className="summary-panel">
               <div className="summary-panel-header">
                 <div>
@@ -599,7 +670,7 @@ export default function ChapterDetailPage() {
                 </div>
               </div>
               {chapter.chapterSummary && (
-                <div className="summary-hero">
+                <div className="summary-hero" id="summary-overview">
                   <div className="summary-hero-mark"><Sparkles size={18} /></div>
                   <div>
                   <span className="micro-label">Chapter summary / ملخص الفصل</span>
@@ -610,7 +681,7 @@ export default function ChapterDetailPage() {
                 </div>
               )}
               <div className="summary-language-grid">
-                <section className="summary-section summary-section-primary">
+                <section className="summary-section summary-section-primary" id="summary-english">
                   <div className="summary-section-title">
                     <span className="summary-step">01</span>
                     <div>
@@ -622,7 +693,7 @@ export default function ChapterDetailPage() {
                     {chapter.explanationEn}
                   </p>
                 </section>
-                <section className="summary-section summary-section-support">
+                <section className="summary-section summary-section-support" id="summary-arabic">
                   <div className="summary-section-title">
                     <span className="summary-step">02</span>
                     <div>
@@ -683,7 +754,7 @@ export default function ChapterDetailPage() {
                   pipeline, just labeled and emphasized for exam prep —
                   no regeneration, no new AI call. */}
               {!!chapter.keyPoints?.length && (
-                <div className="summary-keypoints">
+                <div className="summary-keypoints" id="summary-high-yield">
                   <div className="summary-keypoints-heading">
                     <span className="summary-keypoints-icon">⚡</span>
                     <div>
@@ -698,6 +769,9 @@ export default function ChapterDetailPage() {
                   </ul>
                 </div>
               )}
+            </div>
+                </div>
+              </div>
             </div>
           )}
 
