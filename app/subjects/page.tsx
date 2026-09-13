@@ -5,6 +5,12 @@ import Link from "next/link";
 import { BookOpen, CircleAlert, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
+// Cycled by list position (not the subject's own type/color, since none is
+// stored) purely to make one folder visually distinct from its neighbor in
+// the grid — count must match the number of .subject-folder-card-N rules
+// defined in app/globals.css.
+const FOLDER_COLOR_COUNT = 5;
+
 const TYPE_LABELS: Record<string, string> = {
   general: "عام",
   medical: "طبي",
@@ -171,26 +177,24 @@ export default function SubjectsPage() {
           <p>جرّب اسمًا آخر للبحث.</p>
         </div>
       ) : (
-        <div className="library-grid">
-          {filtered.map(subject => {
+        <div className="subject-folder-grid">
+          {filtered.map((subject, i) => {
             const lastUpdate = formatLastUpdate(subject.lastUpdatedAt);
             return (
               <Link
                 key={subject.id}
                 href={`/subjects/${subject.id}`}
-                className="library-item"
-                style={{ display: "contents" }}
+                className={`subject-folder-card subject-folder-card-${i % FOLDER_COLOR_COUNT}`}
               >
-                <div className="library-item-icon">
-                  <BookOpen size={18} />
-                </div>
-                <div className="library-item-meta">
-                  <strong>{subject.name}</strong>
-                  <span>
-                    {subject.bookCount} ملف
-                    {lastUpdate ? ` · آخر تحديث ${lastUpdate}` : ""}
-                  </span>
-                </div>
+                <span className="subject-folder-icon">
+                  <BookOpen size={20} />
+                </span>
+                <strong>{subject.name}</strong>
+                <span className="subject-folder-count">
+                  {subject.bookCount} ملف
+                  {subject.deckCount ? ` · ${subject.deckCount} ملف أسئلة` : ""}
+                  {lastUpdate ? ` · آخر تحديث ${lastUpdate}` : ""}
+                </span>
               </Link>
             );
           })}

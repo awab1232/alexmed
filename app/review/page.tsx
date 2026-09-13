@@ -1,15 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CheckCircle2, Layers3 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  Layers3,
+  Loader2,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+
+function formatElapsed(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
 
 type Rating = "hard" | "good" | "easy";
 
 // Normalized shape both مِرآة's `decks.dueCards` and كتبي's `books.dueCards`
 // rows get mapped into, so one queue/UI can show either kind of card without
 // a server-side merged endpoint or a polymorphic schema — see Item C of the
-// approved plan for why this stays a client-side merge.
+// approved plan for why this stays a client-side merge. bookId/chapterId are
+// only ever set for source === "book" — مِرآة decks have no page-reader
+// route to jump to, so "View in book" only ever renders for بطاقات كتبي.
 type DueCard = {
   id: string;
   source: "book" | "deck";
@@ -20,6 +39,9 @@ type DueCard = {
   tag: string;
   relatedTermEn?: string | null;
   dueAt: string | Date;
+  bookId?: string;
+  chapterId?: string;
+  sourcePage?: number;
 };
 
 export default function ReviewPage() {
@@ -42,6 +64,36 @@ export default function ReviewPage() {
 
   const [index, setIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
+  // Session-local, not server state — FSRS/SM-2 track long-term scheduling,
+  // not "how many did I rate well just now." Ticks every second like
+  // Learnra's own session timer; "good"/"easy" count toward mastered the
+  // same way a successful recall would, "hard"/"again" don't (they'll be
+  // back due again soon, so they were never really mastered this session).
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [masteredCount, setMasteredCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(
+      () => setElapsedSeconds(seconds => seconds + 1),
+      1000
+    );
+    return () => clearInterval(interval);
+  }, []);
+  // Keyed by cardId (not just "the current explanation") so stale text from
+  // a previous card can never flash for the next one — state that outlives
+  // an index change is otherwise indistinguishable from state that's still
+  // valid for it.
+  const [explanation, setExplanation] = useState<{
+    cardId: string;
+    textAr: string;
+  } | null>(null);
+  const explainCard = trpc.books.explainCard.useMutation({
+    onSuccess: (result, variables) => {
+      setExplanation({
+        cardId: variables.cardId,
+        textAr: result.explanationAr,
+      });
+    },
+  });
 
   const cards = useMemo<DueCard[]>(() => {
     const fromBooks: DueCard[] = (booksDue.data ?? []).map(card => ({
@@ -54,6 +106,9 @@ export default function ReviewPage() {
       tag: `${card.bookFileName} · ${card.chapterTitle} · صفحة ${card.sourcePage}`,
       relatedTermEn: card.relatedTermEn,
       dueAt: card.dueAt,
+      bookId: card.bookId,
+      chapterId: card.chapterId,
+      sourcePage: card.sourcePage,
     }));
     const fromDecks: DueCard[] = (decksDue.data ?? []).map(card => ({
       id: card.id,
@@ -82,6 +137,9 @@ export default function ReviewPage() {
       rateBookCard.mutate({ cardId: card.id, rating });
     } else {
       rateDeckCard.mutate({ cardId: card.id, rating });
+    }
+    if (rating === "good" || rating === "easy") {
+      setMasteredCount(count => count + 1);
     }
     setShowAnswer(false);
     setIndex(current => Math.min(current, Math.max(0, cards.length - 2)));
@@ -156,11 +214,31 @@ export default function ReviewPage() {
           </h1>
           <p>باقي لك {cards.length - index} بطاقة فقط.</p>
         </div>
+        <div className="review-stats-bar">
+          <span className="review-stat">
+            <Clock size={13} /> {formatElapsed(elapsedSeconds)}
+          </span>
+          <span className="review-stat">
+            <Layers3 size={13} /> {cards.length - index} متبقية
+          </span>
+          <span className="review-stat mastered">
+            <Trophy size={13} /> {masteredCount} أتقنتها
+          </span>
+        </div>
       </div>
 
       <article className="flashcard">
         <div className="flashcard-topline">
           <span className="card-tag">{card.tag}</span>
+          {card.source === "book" && card.bookId && card.chapterId && (
+            <Link
+              href={`/books/${card.bookId}/chapters/${card.chapterId}?page=${card.sourcePage}&focusCard=${card.id}`}
+              className="card-source-link"
+            >
+              <BookOpen size={13} />
+              عرض في الكتاب
+            </Link>
+          )}
         </div>
         <div className="question-block">
           <span className="micro-label">السؤال / QUESTION</span>
@@ -183,6 +261,29 @@ export default function ReviewPage() {
                   </div>
                 </div>
               )}
+              {card.source === "book" &&
+                (explanation?.cardId === card.id ? (
+                  <div className="explain-card-panel">
+                    <span className="micro-label">
+                      <Sparkles size={12} /> بشكل أبسط
+                    </span>
+                    <p>{explanation.textAr}</p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="explain-card-button"
+                    disabled={explainCard.isPending}
+                    onClick={() => explainCard.mutate({ cardId: card.id })}
+                  >
+                    {explainCard.isPending ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : (
+                      <Sparkles size={14} />
+                    )}
+                    اشرحها ببساطة
+                  </button>
+                ))}
             </>
           ) : (
             <button

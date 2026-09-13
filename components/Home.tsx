@@ -104,7 +104,13 @@ export default function Home() {
   const [libraryError, setLibraryError] = useState("");
   const [processedPages, setProcessedPages] = useState(0);
   const [stage, setStage] = useState<Stage>("idle");
-  const [view, setView] = useState<View>("upload");
+  // Lets other pages (e.g. account's quick links) send the student straight
+  // to "مكتبتي" instead of always landing on the upload screen — same
+  // deep-link shape as ?openDeck= below, just for the view instead of a
+  // specific deck.
+  const [view, setView] = useState<View>(() =>
+    searchParams.get("view") === "library" ? "library" : "upload"
+  );
   const [depth, setDepth] = useState("balanced");
   const [activeCard, setActiveCard] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -118,6 +124,15 @@ export default function Home() {
   const utils = trpc.useUtils();
   const decksQuery = trpc.decks.list.useQuery(undefined, {
     enabled: view === "library",
+  });
+  const subjectsQuery = trpc.subjects.list.useQuery(undefined, {
+    enabled: view === "library",
+  });
+  const setDeckSubjectMutation = trpc.decks.setSubject.useMutation({
+    onSuccess: () => {
+      utils.decks.list.invalidate();
+      utils.subjects.list.invalidate();
+    },
   });
   const deleteDeckMutation = trpc.decks.delete.useMutation({
     onSuccess: () => {
@@ -411,22 +426,27 @@ export default function Home() {
   return (
     <div className="app-shell">
       <main className="main-content">
-        <header className="topbar">
-          <div className="breadcrumb">
-            <span>مِرآة</span>
-            <span className="slash">/</span>
-            <strong>
+        <div className="cards-header">
+          <div>
+            <Link href="/subjects" className="eyebrow">
+              <span className="eyebrow-dot" /> ‹ رجوع للرئيسية
+            </Link>
+            <h1>
               {view === "upload"
-                ? "ملف جديد"
+                ? "مِرآة"
                 : view === "library"
                   ? "مكتبتي"
                   : "بطاقات المذاكرة"}
-            </strong>
+            </h1>
+            <p>
+              {view === "upload"
+                ? "حوّل ملف أسئلتك إلى بطاقات مذاكرة سريعة."
+                : view === "library"
+                  ? "ملفات الأسئلة اللي رفعتها سابقًا."
+                  : currentFileName}
+            </p>
           </div>
-          <div className="topbar-note">
-            <Sparkles size={15} /> bilingual learning workspace
-          </div>
-        </header>
+        </div>
 
         {/* Replaces AppSidebar's onMiratNavigate buttons (PR9) — same three
             destinations, same state setters, navigation shape only. */}
@@ -1050,16 +1070,37 @@ export default function Home() {
               <div className="library-grid">
                 {decksQuery.data.map(deck => (
                   <div className="library-item" key={deck.id}>
-                    <div className="library-item-icon">
+                    <div className="library-item-icon deck-item-icon">
                       <FileText size={18} />
                     </div>
                     <div className="library-item-meta">
-                      <strong>{deck.fileName}</strong>
+                      <strong>
+                        {deck.fileName}
+                        <span className="content-type-badge">ملف أسئلة</span>
+                      </strong>
                       <span>
                         {deck.pageCount} صفحة · {deck.cardCount} بطاقة ·{" "}
                         {new Date(deck.createdAt).toLocaleDateString("ar")}
                       </span>
                     </div>
+                    <select
+                      value={deck.subjectId ?? "__none__"}
+                      disabled={setDeckSubjectMutation.isPending}
+                      onChange={event => {
+                        const value = event.target.value;
+                        setDeckSubjectMutation.mutate({
+                          deckId: deck.id,
+                          subjectId: value === "__none__" ? null : value,
+                        });
+                      }}
+                    >
+                      <option value="__none__">بدون مجلد</option>
+                      {(subjectsQuery.data ?? []).map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
                     <div className="library-item-actions">
                       <button
                         type="button"

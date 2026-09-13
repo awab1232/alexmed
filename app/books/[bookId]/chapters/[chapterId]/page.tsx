@@ -20,6 +20,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import { findSourceHighlight } from "@/lib/text-source-match";
 import BookPageViewer from "@/components/BookPageViewer";
 import McqCard from "@/components/McqCard";
 import {
@@ -88,18 +89,24 @@ export default function ChapterDetailPage() {
       utils.books.getChapter.invalidate({ id: params.chapterId }),
   });
   // Preselected when arriving from the book page's study-tools chooser
-  // (app/books/[bookId]/page.tsx links here with ?tool=cards|mcqs|explanation).
+  // (app/books/[bookId]/page.tsx links here with ?tool=cards|mcqs|explanation)
+  // or from the daily review queue's "عرض في الكتاب" link (app/review/page.tsx
+  // links here with ?page=N&focusCard=ID, in which case the البطاقات tab is
+  // the useful default so the student sees the card next to its source).
+  const focusCardId = searchParams.get("focusCard");
   const [assistantTab, setAssistantTab] = useState<AssistantTab>(() => {
     const tool = searchParams.get("tool");
-    return tool === "cards" || tool === "mcqs" || tool === "explanation"
-      ? tool
-      : "explanation";
+    if (tool === "cards" || tool === "mcqs" || tool === "explanation") {
+      return tool;
+    }
+    return focusCardId ? "cards" : "explanation";
   });
   const [pageIndex, setPageIndex] = useState(0);
   const [pendingSelection, setPendingSelection] =
     useState<PendingSelection | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const appliedInitialPageRef = useRef(false);
 
   const { chapter, terms, cards, mcqs, pages } = chapterQuery.data ?? {
     chapter: null,
@@ -109,6 +116,20 @@ export default function ChapterDetailPage() {
     pages: [],
   };
   const currentPage = pages[pageIndex];
+
+  // Jumps to the page a due-card/mcq's "عرض في الكتاب" link pointed at, once
+  // `pages` has loaded — a ref (not a dependency-gated effect) guards this
+  // since pageIndex itself is a legitimate 0 for a student manually paging
+  // back to page 1, so "have we already consumed the URL's ?page=" can't be
+  // inferred from pageIndex's value alone.
+  useEffect(() => {
+    if (appliedInitialPageRef.current || !pages.length) return;
+    const requestedPage = Number(searchParams.get("page"));
+    if (!Number.isFinite(requestedPage) || requestedPage <= 0) return;
+    const targetIndex = pages.findIndex(p => p.pageNumber === requestedPage);
+    if (targetIndex !== -1) setPageIndex(targetIndex);
+    appliedInitialPageRef.current = true;
+  }, [pages, searchParams]);
 
   const annotationsQuery = trpc.annotations.listForPage.useQuery(
     { pageId: currentPage?.id ?? "" },
@@ -273,6 +294,21 @@ export default function ChapterDetailPage() {
     a => a.type === "highlight" && a.positionJson
   );
 
+  // "عرض في الكتاب" deep link (see app/review/page.tsx) — locates the due
+  // card's answer inside this page's extracted text so the student sees
+  // exactly where it came from, the same way their own highlight
+  // annotations already render. No stored source range exists for this
+  // (see lib/text-source-match.ts's header comment), so it's computed here,
+  // and only rendered when a real match is found — never a guessed range.
+  const focusedCard = focusCardId
+    ? cards.find(card => card.id === focusCardId)
+    : undefined;
+  const sourceHighlightRange =
+    focusedCard && currentPage
+      ? (findSourceHighlight(currentPage.extractedText, focusedCard.answerEn) ??
+        findSourceHighlight(currentPage.extractedText, focusedCard.answerAr))
+      : null;
+
   function saveHighlightOnly() {
     if (!currentPage || !pendingSelection) return;
     createAnnotation.mutate({
@@ -418,11 +454,16 @@ export default function ChapterDetailPage() {
                   page={currentPage}
                   visuals={currentPage.visuals}
                   showExtractedText
-                  highlights={highlightAnnotations.map(a => ({
-                    start: a.positionJson!.start,
-                    end: a.positionJson!.end,
-                    color: a.color,
-                  }))}
+                  highlights={[
+                    ...highlightAnnotations.map(a => ({
+                      start: a.positionJson!.start,
+                      end: a.positionJson!.end,
+                      color: a.color,
+                    })),
+                    ...(sourceHighlightRange
+                      ? [{ ...sourceHighlightRange, color: "#bfe6cf" }]
+                      : []),
+                  ]}
                   onTextSelected={data => {
                     setPendingSelection(data);
                     setAssistantTab("notes");

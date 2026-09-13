@@ -6,8 +6,8 @@
 // cross-cutting concept (will eventually group books, and later
 // decks/quizzes/errors/notes — see the StudyOS plan's later phases), not
 // كتبي-specific.
-import { and, count, desc, eq, max } from "drizzle-orm";
-import { books, subjects, type Subject } from "../drizzle/schema";
+import { and, count, desc, eq, isNotNull, max } from "drizzle-orm";
+import { books, decks, subjects, type Subject } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type SubjectInput = {
@@ -155,5 +155,50 @@ export async function assignBookToSubject(
     .set({ subjectId, updatedAt: new Date() })
     .where(and(eq(books.id, bookId), eq(books.userId, userId)))
     .returning({ id: books.id });
+  return updated.length > 0;
+}
+
+// Separate query rather than a second leftJoin bolted onto
+// listSubjectsForUser above — joining both books and decks off the same
+// subjects row in one query would cross-multiply each subject's book rows
+// against its deck rows before COUNT ever saw them, inflating both counts.
+// Returns only subjects that actually have at least one deck, so callers
+// merge it as a sparse lookup rather than assuming every subject id exists.
+export async function listDeckCountsBySubjectForUser(
+  userId: string
+): Promise<Map<string, number>> {
+  const db = getDb();
+  if (!db) return new Map();
+
+  const rows = await db
+    .select({ subjectId: decks.subjectId, deckCount: count(decks.id) })
+    .from(decks)
+    .where(and(eq(decks.userId, userId), isNotNull(decks.subjectId)))
+    .groupBy(decks.subjectId);
+  return new Map(rows.map(row => [row.subjectId as string, row.deckCount]));
+}
+
+// Moves a مِرآة deck (ملف أسئلة) into a subject/folder — same ownership
+// checks and "unassign rather than delete" semantics as assignBookToSubject
+// above, so a book and a deck can live in the same folder without either
+// system needing to know about the other's table.
+export async function assignDeckToSubject(
+  userId: string,
+  deckId: string,
+  subjectId: string | null
+): Promise<boolean> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (subjectId) {
+    const owned = await getSubjectForUser(userId, subjectId);
+    if (!owned) return false;
+  }
+
+  const updated = await db
+    .update(decks)
+    .set({ subjectId, updatedAt: new Date() })
+    .where(and(eq(decks.id, deckId), eq(decks.userId, userId)))
+    .returning({ id: decks.id });
   return updated.length > 0;
 }

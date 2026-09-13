@@ -739,6 +739,61 @@ export function parseVisualInsights(content: unknown): string {
   return parsed.visualInsightsAr;
 }
 
+// "اشرحها ببساطة" — an on-demand, un-cached simplification of a due card's
+// answer (lib/trpc/booksRouter.ts's explainCard), distinct from the card's
+// own answerAr/En: those stay exactly what the student needs to recall,
+// while this is a friendlier restatement plus an analogy, generated fresh
+// each time it's asked for rather than stored on the card.
+export const explainCardSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    explanationAr: {
+      type: "string",
+      description:
+        "A short, simple Arabic explanation (2-4 sentences) of the flashcard's answer, written for a student seeing this concept for the first time. End with one short, concrete everyday analogy or example that makes it memorable. Do not just restate the answer — actually unpack and simplify it.",
+    },
+  },
+  required: ["explanationAr"],
+};
+
+export const explainCardResponseSchema = {
+  type: "json_schema" as const,
+  json_schema: {
+    name: "flashcard_simple_explanation",
+    strict: true,
+    schema: explainCardSchema,
+  },
+};
+
+export function buildExplainCardMessages(
+  questionEn: string,
+  answerEn: string
+): Message[] {
+  return [
+    {
+      role: "system",
+      content: [
+        "A student is reviewing a flashcard and wants the answer explained more simply, in Arabic.",
+        "Write a short, simple explanation of the answer below, as if explaining it to someone seeing the concept for the first time.",
+        "End with ONE short, concrete everyday analogy or example.",
+        "Return JSON only.",
+      ].join("\n"),
+    },
+    {
+      role: "user",
+      content: `Question: ${questionEn}\nAnswer: ${answerEn}`,
+    },
+  ];
+}
+
+export function parseExplainCard(content: unknown): string {
+  const parsed = parseJsonResponse(content) as unknown as {
+    explanationAr: string;
+  };
+  return parsed.explanationAr;
+}
+
 export function mergeSubChunkResults(
   results: BookChapterAnalysis[]
 ): MergedChapterAnalysis {

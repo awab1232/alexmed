@@ -4,6 +4,7 @@ import {
   deleteBook,
   getBookCoverageDetail,
   getBookCoverageReport,
+  getBookCardForUser,
   getBookForUser,
   getBookMindMapForUser,
   getBookPageOwnedByUser,
@@ -32,12 +33,15 @@ import {
   generateAndSaveVisualInsights,
 } from "../book-enrichment";
 import {
+  buildExplainCardMessages,
   buildGapQuestionsMessages,
   buildMcqValidationMessages,
+  explainCardResponseSchema,
   findDuplicateMcqIds,
   findUncoveredPages,
   gapQuestionsResponseSchema,
   mcqValidationResponseSchema,
+  parseExplainCard,
   parseGapQuestions,
   parseMcqValidation,
 } from "../book-analysis";
@@ -133,6 +137,29 @@ export const booksRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
       }
       return result;
+    }),
+
+  // "اشرحها ببساطة" (see lib/book-analysis.ts's buildExplainCardMessages
+  // header comment) — deliberately un-cached/un-persisted: a student can ask
+  // again for a different phrasing, and there's no automatic caller (unlike
+  // generateMindMapSections/generateVisualInsights above) that would need an
+  // idempotent, saved result.
+  explainCard: protectedProcedure
+    .input(z.object({ cardId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const card = await getBookCardForUser(ctx.user.id, input.cardId);
+      if (!card) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+      }
+      const response = await invokeLLM({
+        max_tokens: 400,
+        messages: buildExplainCardMessages(card.questionEn, card.answerEn),
+        response_format: explainCardResponseSchema,
+      });
+      const explanationAr = parseExplainCard(
+        response.choices[0]?.message.content
+      );
+      return { explanationAr };
     }),
 
   listMcqs: protectedProcedure.query(async ({ ctx }) => {

@@ -7,6 +7,7 @@ import {
   listDecksForUser,
 } from "../db";
 import { getDueCardsForUser, rateCard } from "../db-decks-srs";
+import { assignDeckToSubject } from "../db-subjects";
 import { protectedProcedure, router } from "./trpc";
 
 const cardInput = z.object({
@@ -61,6 +62,26 @@ export const decksRouter = router({
       const ok = await deleteDeck(ctx.user.id, input.id);
       if (!ok) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Deck not found" });
+      }
+      return { success: true } as const;
+    }),
+
+  // Moves a ملف أسئلة deck into a subject/folder, or out of one
+  // (subjectId: null) — same shape as books.setSubject, so the folder UI can
+  // treat both content types identically at the call-site level.
+  setSubject: protectedProcedure
+    .input(z.object({ deckId: z.string(), subjectId: z.string().nullable() }))
+    .mutation(async ({ ctx, input }) => {
+      const ok = await assignDeckToSubject(
+        ctx.user.id,
+        input.deckId,
+        input.subjectId
+      );
+      if (!ok) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Deck or subject not found",
+        });
       }
       return { success: true } as const;
     }),

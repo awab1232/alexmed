@@ -146,6 +146,12 @@ export const decks = pgTable(
     userId: uuid("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    // Nullable, same rationale as books.subjectId above: a ملف أسئلة can
+    // exist unassigned, and deleting a subject only unassigns its decks
+    // rather than deleting them.
+    subjectId: uuid("subjectId").references(() => subjects.id, {
+      onDelete: "set null",
+    }),
     fileName: text("fileName").notNull(),
     // Storage key (see lib/storage.ts) — nullable since the underlying object
     // may expire/be removed independently of the deck's saved cards.

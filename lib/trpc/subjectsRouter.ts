@@ -4,6 +4,7 @@ import {
   createSubject,
   deleteSubject,
   getSubjectForUser,
+  listDeckCountsBySubjectForUser,
   listSubjectsForUser,
   updateSubject,
 } from "../db-subjects";
@@ -21,7 +22,14 @@ const subjectTypeSchema = z.enum([
 
 export const subjectsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    return listSubjectsForUser(ctx.user.id);
+    const [subjectsList, deckCounts] = await Promise.all([
+      listSubjectsForUser(ctx.user.id),
+      listDeckCountsBySubjectForUser(ctx.user.id),
+    ]);
+    return subjectsList.map(subject => ({
+      ...subject,
+      deckCount: deckCounts.get(subject.id) ?? 0,
+    }));
   }),
 
   get: protectedProcedure

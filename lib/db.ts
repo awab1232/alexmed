@@ -188,6 +188,7 @@ export async function listDecksForUser(userId: string) {
   return db
     .select({
       id: decks.id,
+      subjectId: decks.subjectId,
       fileName: decks.fileName,
       pageCount: decks.pageCount,
       depth: decks.depth,

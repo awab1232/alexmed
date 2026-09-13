@@ -1500,6 +1500,26 @@ export async function getChapterContentForUser(
   };
 }
 
+// Ownership-scoped single-card read for the "اشرحها ببساطة" on-demand
+// explanation (lib/trpc/booksRouter.ts's explainCard) — unlike
+// getDueCardsForUser below, this doesn't need the chapter/book join since
+// the caller already has the card's own display context from the due-cards
+// list; it only needs the two fields an explanation prompt is built from.
+export async function getBookCardForUser(userId: string, cardId: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const [card] = await db
+    .select({
+      questionEn: bookCards.questionEn,
+      answerEn: bookCards.answerEn,
+    })
+    .from(bookCards)
+    .where(and(eq(bookCards.id, cardId), eq(bookCards.userId, userId)))
+    .limit(1);
+  return card ?? null;
+}
+
 // ── SRS review (see lib/srs.ts's applySrsRating for the scheduling formula) ──
 
 export async function getDueCardsForUser(userId: string) {
@@ -1516,6 +1536,8 @@ export async function getDueCardsForUser(userId: string) {
       relatedTermEn: bookCards.relatedTermEn,
       sourcePage: bookCards.sourcePage,
       dueAt: bookCards.dueAt,
+      bookId: bookChapters.bookId,
+      chapterId: bookCards.chapterId,
       chapterTitle: bookChapters.title,
       bookFileName: books.fileName,
     })

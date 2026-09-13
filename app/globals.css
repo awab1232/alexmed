@@ -359,6 +359,109 @@ input:focus-visible {
   color: #203b43;
   background: rgba(32, 59, 67, 0.09);
 }
+.student-bottom-nav-fab-wrap {
+  flex: 1 1 0;
+  max-width: 120px;
+  display: flex;
+  justify-content: center;
+  text-decoration: none;
+}
+.student-bottom-nav-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-top: -26px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 8px 20px rgba(232, 123, 69, 0.4);
+  border: 4px solid #ffffff;
+  transition: transform 0.15s ease;
+}
+.student-bottom-nav-fab-wrap:hover .student-bottom-nav-fab {
+  transform: scale(1.05);
+}
+.student-bottom-nav-fab-wrap {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Upload chooser — plain CSS, no modal library dependency, consistent with
+   .book-page-lightbox-backdrop (components/BookPageViewer.tsx). */
+.upload-chooser-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(20, 24, 23, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.upload-chooser-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 32px rgba(32, 44, 50, 0.18);
+}
+.upload-chooser-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 6px auto 16px;
+}
+.upload-chooser-sheet h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  color: var(--foreground);
+}
+.upload-chooser-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: var(--secondary);
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.upload-chooser-option:last-child {
+  margin-bottom: 0;
+}
+.upload-chooser-option:hover {
+  background: var(--muted);
+}
+.upload-chooser-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.upload-chooser-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.upload-chooser-text strong {
+  color: var(--foreground);
+  font-size: 14px;
+}
+.upload-chooser-text span {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
 @media (min-width: 781px) {
   .student-bottom-nav {
     gap: 10px;
@@ -1158,6 +1261,26 @@ h1 em {
   gap: 9px;
   padding-bottom: 6px;
 }
+.review-stats-bar {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+.review-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  font-size: 11px;
+  font-weight: 700;
+}
+.review-stat.mastered {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
 .secondary-button,
 .ghost-button {
   min-height: 37px;
@@ -1219,6 +1342,71 @@ h1 em {
 }
 .stat-card small {
   color: #a3aaa4;
+}
+
+/* Account page ("حسابي") — .account-profile-card replaces a former misuse of
+   .empty-state (a dashed, centered, muted "nothing here" placeholder) for
+   real profile content; .library-card was used here with no rule at all
+   (rendering unstyled) until now. Both scoped to this page only. */
+.account-profile-card {
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--card);
+  box-shadow: 0 12px 30px rgba(47, 55, 51, 0.035);
+}
+.account-profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.account-profile-identity .sidebar-account-avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 17px;
+}
+.account-profile-identity strong {
+  color: var(--foreground);
+  font-size: 15px;
+}
+.account-profile-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.account-quicklinks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 24px;
+}
+.library-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color 0.15s ease;
+}
+.library-card:hover {
+  border-color: var(--primary);
+}
+.library-card svg {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+@media (min-width: 620px) {
+  .account-quicklinks-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 .cards-toolbar {
   display: flex;
@@ -1413,6 +1601,24 @@ h1 em {
   color: #b6783e;
   flex-shrink: 0;
 }
+/* Additive modifier (combined with .library-item-icon, never used alone) —
+   gives مِرآة's ملف أسئلة decks a distinct color from كتبي's warm brown
+   books, so the two content types read apart at a glance. */
+.deck-item-icon {
+  background: #e3ecfa;
+  color: #3b5998;
+}
+.content-type-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e3ecfa;
+  color: #3b5998;
+  font-size: 9px;
+  font-weight: 700;
+  vertical-align: middle;
+}
 .library-item-meta {
   min-width: 0;
   flex: 1;
@@ -1440,6 +1646,80 @@ h1 em {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+/* Subject folders on the home screen ("ملفاتي") — deliberately its own
+   class family, NOT a restyle of .library-grid/.library-item above, since
+   those are shared by a dozen other unrelated lists (books, materials, chat
+   sessions...) across the app; folders are the one browsing surface that
+   warrants the bigger, colorful tile treatment. */
+.subject-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+.subject-folder-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 128px;
+  padding: 16px;
+  border-radius: 16px;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 10px 22px rgba(32, 44, 50, 0.1);
+  transition: transform 0.15s ease;
+}
+.subject-folder-card:hover {
+  transform: translateY(-2px);
+}
+.subject-folder-card-0 {
+  background: linear-gradient(155deg, #2f6f63, #234f47);
+}
+.subject-folder-card-1 {
+  background: linear-gradient(155deg, #c9683e, #a3502d);
+}
+.subject-folder-card-2 {
+  background: linear-gradient(155deg, #45608a, #33456a);
+}
+.subject-folder-card-3 {
+  background: linear-gradient(155deg, #8b5a7c, #6b4260);
+}
+.subject-folder-card-4 {
+  background: linear-gradient(155deg, #4a5a6a, #38454f);
+}
+.subject-folder-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.subject-folder-card strong {
+  margin-top: auto;
+  padding-top: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.subject-folder-count {
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+}
+@media (min-width: 620px) {
+  .subject-folder-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .subject-folder-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 .flashcard-wrap {
   min-width: 0;
@@ -1472,6 +1752,30 @@ h1 em {
   background: #e3f0e8;
   color: #528c6d;
 }
+/* Marks a run of English text inside this RTL-wide app (html[dir="rtl"] —
+   see app/layout.tsx) so it keeps left-to-right punctuation/paragraph
+   direction instead of inheriting the page's rtl context. Used across
+   McqCard, quizzes, the chapter reader and review page for every English
+   question/choice/term — was applied everywhere already but had never had a
+   matching rule, so none of it actually took effect until now. */
+.en {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+}
+.review-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f7ded9;
+  color: #974d49;
+  font-size: 11px;
+  font-weight: 700;
+}
 .flashcard {
   overflow: hidden;
   border: 1px solid #dcd5ca;
@@ -1494,6 +1798,23 @@ h1 em {
     9px "Inter",
     sans-serif;
   letter-spacing: 0.12em;
+}
+.card-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #dce9e1;
+  color: #204d46;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+.card-source-link:hover {
+  background: #cbdfd3;
 }
 .card-confidence {
   color: #9ba39e;
@@ -1627,6 +1948,46 @@ h1 em {
   color: #50666a;
   font-size: 11px;
   line-height: 1.5;
+}
+.explain-card-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fffdf9;
+  color: var(--accent-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.explain-card-button:hover:not(:disabled) {
+  background: var(--accent);
+}
+.explain-card-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.explain-card-panel {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--accent);
+}
+.explain-card-panel .micro-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-foreground);
+}
+.explain-card-panel p {
+  margin: 8px 0 0;
+  color: var(--foreground);
+  font-size: 13px;
+  line-height: 1.7;
 }
 .concept-grid small {
   margin-top: 3px;

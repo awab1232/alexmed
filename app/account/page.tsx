@@ -21,7 +21,7 @@ import { trpc } from "@/lib/trpc-client";
 // (ملفاتي) as of PR10 — plus every other page AppSidebar used to expose, so
 // removing the persistent sidebar never strands an existing feature.
 const QUICK_LINKS = [
-  { href: "/", label: "مِرآة", icon: BookOpen },
+  { href: "/?view=library", label: "مِرآة", icon: BookOpen },
   { href: "/today", label: "لوحة اليوم", icon: LayoutDashboard },
   { href: "/review", label: "المراجعة اليومية", icon: RotateCcw },
   { href: "/books/quizzes", label: "اختباراتي", icon: ClipboardList },
@@ -74,18 +74,8 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <div
-        className="empty-state"
-        style={{ alignItems: "flex-start", textAlign: "right" }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 18,
-          }}
-        >
+      <div className="account-profile-card">
+        <div className="account-profile-identity">
           <div className="sidebar-account-avatar">{initial}</div>
           <div>
             <strong>{name}</strong>
@@ -96,9 +86,7 @@ export default function AccountPage() {
         {/* PR18 — real, saved profile fields (no fake settings/language
             toggles added: this app has no i18n/notification system to back
             them, so a control here would do nothing real). */}
-        <div
-          style={{ display: "flex", gap: 12, flexWrap: "wrap", width: "100%" }}
-        >
+        <div className="account-profile-fields">
           <label style={{ flex: "1 1 160px" }}>
             <span style={{ display: "block", fontSize: 12, marginBottom: 4 }}>
               السنة الدراسية
@@ -180,7 +168,7 @@ export default function AccountPage() {
         </div>
       )}
 
-      <div className="library-grid">
+      <div className="account-quicklinks-grid">
         {QUICK_LINKS.map(link => {
           const Icon = link.icon;
           return (

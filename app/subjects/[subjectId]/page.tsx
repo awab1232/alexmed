@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { BookOpen, CircleAlert, Loader2, Plus } from "lucide-react";
+import { BookOpen, CircleAlert, Layers3, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -35,9 +35,16 @@ export default function SubjectDetailPage() {
   const subjectQuery = trpc.subjects.get.useQuery({ id: subjectId });
   const subjectsQuery = trpc.subjects.list.useQuery();
   const booksQuery = trpc.books.list.useQuery();
+  const decksQuery = trpc.decks.list.useQuery();
   const setSubject = trpc.books.setSubject.useMutation({
     onSuccess: () => {
       utils.books.list.invalidate();
+      utils.subjects.list.invalidate();
+    },
+  });
+  const setDeckSubject = trpc.decks.setSubject.useMutation({
+    onSuccess: () => {
+      utils.decks.list.invalidate();
       utils.subjects.list.invalidate();
     },
   });
@@ -97,6 +104,9 @@ export default function SubjectDetailPage() {
   const booksInSubject = (booksQuery.data ?? []).filter(
     book => book.subjectId === subjectId
   );
+  const decksInSubject = (decksQuery.data ?? []).filter(
+    deck => deck.subjectId === subjectId
+  );
   const otherSubjects = (subjectsQuery.data ?? []).filter(
     s => s.id !== subjectId
   );
@@ -116,6 +126,9 @@ export default function SubjectDetailPage() {
           <p>
             {TYPE_LABELS[subject.type] ?? subject.type} ·{" "}
             {booksInSubject.length} ملف
+            {decksInSubject.length
+              ? ` · ${decksInSubject.length} ملف أسئلة`
+              : ""}
           </p>
         </div>
         <div className="header-actions">
@@ -186,6 +199,62 @@ export default function SubjectDetailPage() {
             );
           })}
         </div>
+      )}
+
+      {/* ملفات أسئلة مِرآة — عمدًا قسم منفصل بشارة لون مختلفة، مش مدموجة مع
+          "كتاب دراسي" فوق: نوع محتوى مختلف تمامًا (بطاقات سريعة بلا فصول)
+          ولازم يبين هيك للطالب بأول نظرة. الفتح عبر ?openDeck= الموجودة
+          أصلاً بـcomponents/Home.tsx، مش راوت مستقل لتفادي إعادة كتابة تلك
+          الشاشة الكبيرة. */}
+      {!!decksInSubject.length && (
+        <>
+          <div className="cards-header" style={{ marginTop: 28 }}>
+            <div>
+              <span className="section-kicker">ملفات الأسئلة</span>
+            </div>
+          </div>
+          <div className="library-grid">
+            {decksInSubject.map(deck => (
+              <div className="library-item" key={deck.id}>
+                <div className="library-item-icon deck-item-icon">
+                  <Layers3 size={18} />
+                </div>
+                <Link
+                  href={`/?openDeck=${deck.id}`}
+                  className="library-item-meta"
+                  style={{ display: "block" }}
+                >
+                  <strong>
+                    {deck.fileName}
+                    <span className="content-type-badge">ملف أسئلة</span>
+                  </strong>
+                  <span>
+                    {deck.cardCount} بطاقة · {deck.pageCount} صفحة
+                  </span>
+                </Link>
+                <select
+                  value={subjectId}
+                  disabled={setDeckSubject.isPending}
+                  onChange={event => {
+                    const value = event.target.value;
+                    setDeckSubject.mutate({
+                      deckId: deck.id,
+                      subjectId: value === "__none__" ? null : value,
+                    });
+                  }}
+                >
+                  <option value={subjectId}>{subject.name}</option>
+                  <option value="__none__">بدون مادة</option>
+                  {otherSubjects.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );
