@@ -584,35 +584,56 @@ export default function ChapterDetailPage() {
           </div>
 
           {assistantTab === "explanation" && (
-            <div
-              className="panel-card"
-              style={{ display: "flex", flexDirection: "column", gap: 18 }}
-            >
-              {chapter.chapterSummary && (
+            <div className="summary-panel">
+              <div className="summary-panel-header">
                 <div>
+                  <span className="eyebrow">
+                    <span className="eyebrow-dot green" /> Study summary
+                  </span>
+                  <h2>فهم الفصل، ثم راجعه بذكاء</h2>
+                  <p>English-first explanation with Arabic support</p>
+                </div>
+                <div className="summary-language-badge">
+                  <span>EN</span>
+                  <small>+ عربي</small>
+                </div>
+              </div>
+              {chapter.chapterSummary && (
+                <div className="summary-hero">
+                  <div className="summary-hero-mark"><Sparkles size={18} /></div>
+                  <div>
                   <span className="micro-label">Chapter summary / ملخص الفصل</span>
                   <p className="en" dir="ltr" style={{ whiteSpace: "pre-line", fontWeight: 600 }}>
                     {chapter.chapterSummary}
                   </p>
+                  </div>
                 </div>
               )}
-              <div>
-                <span className="micro-label">English explanation / الشرح الأساسي</span>
-                <p
-                  className="en"
-                  dir="ltr"
-                  style={{ whiteSpace: "pre-line" }}
-                >
-                  {chapter.explanationEn}
-                </p>
-              </div>
-              <div>
-                <span className="micro-label">Arabic support / شرح عربي مساعد</span>
-                <p
-                  style={{ whiteSpace: "pre-line", direction: "rtl" }}
-                >
-                  {chapter.explanationAr}
-                </p>
+              <div className="summary-language-grid">
+                <section className="summary-section summary-section-primary">
+                  <div className="summary-section-title">
+                    <span className="summary-step">01</span>
+                    <div>
+                      <span className="micro-label">Primary study layer</span>
+                      <h3>English explanation</h3>
+                    </div>
+                  </div>
+                  <p className="en summary-body" dir="ltr">
+                    {chapter.explanationEn}
+                  </p>
+                </section>
+                <section className="summary-section summary-section-support">
+                  <div className="summary-section-title">
+                    <span className="summary-step">02</span>
+                    <div>
+                      <span className="micro-label">Support layer</span>
+                      <h3>شرح عربي مبسط</h3>
+                    </div>
+                  </div>
+                  <p className="summary-body" dir="rtl">
+                    {chapter.explanationAr}
+                  </p>
+                </section>
               </div>
               {/* Audit Phase 7 — connects the explanation above to this
                   chapter's real images/diagrams/tables (never blocks or
@@ -662,18 +683,17 @@ export default function ChapterDetailPage() {
                   pipeline, just labeled and emphasized for exam prep —
                   no regeneration, no new AI call. */}
               {!!chapter.keyPoints?.length && (
-                <div
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 10,
-                    background: "#fff8e6",
-                    border: "1px solid #f0dba0",
-                  }}
-                >
-                  <span className="micro-label">⚡ High-Yield للامتحان</span>
-                  <ul style={{ margin: "8px 0 0" }}>
+                <div className="summary-keypoints">
+                  <div className="summary-keypoints-heading">
+                    <span className="summary-keypoints-icon">⚡</span>
+                    <div>
+                      <span className="micro-label">Exam focus</span>
+                      <strong>High-Yield للامتحان</strong>
+                    </div>
+                  </div>
+                  <ul>
                     {chapter.keyPoints.map((point, i) => (
-                      <li key={i}>{point}</li>
+                      <li key={i}><span>{i + 1}</span>{point}</li>
                     ))}
                   </ul>
                 </div>

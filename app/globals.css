@@ -2463,3 +2463,187 @@ h1 em {
     min-height: 180px;
   }
 }
+
+/* English-first chapter summary — a focused study surface rather than one long text card. */
+.summary-panel {
+  padding: 24px;
+  border: 1px solid #e0dad1;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fffdf9 0%, #fbf7f0 100%);
+  box-shadow: 0 16px 38px rgba(47, 55, 51, 0.06);
+}
+.summary-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ebe4da;
+}
+.summary-panel-header h2 {
+  margin: 12px 0 4px;
+  color: #203b43;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+.summary-panel-header p {
+  margin: 0;
+  color: #87918f;
+  font-size: 12px;
+  direction: ltr;
+  text-align: left;
+}
+.summary-language-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid #d6e4dc;
+  border-radius: 999px;
+  background: #eef7f0;
+  color: #39735c;
+  font: 700 11px "Inter", sans-serif;
+  white-space: nowrap;
+}
+.summary-language-badge small {
+  color: #6f8880;
+  font: 600 11px "Noto Sans Arabic", sans-serif;
+}
+.summary-hero {
+  display: flex;
+  gap: 13px;
+  margin: 20px 0;
+  padding: 16px 17px;
+  border: 1px solid #f1d7a6;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #fff8e6, #fffaf2);
+}
+.summary-hero-mark {
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f6dcae;
+  color: #a66b2e;
+}
+.summary-hero p {
+  margin: 8px 0 0;
+  color: #34474a;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.summary-language-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: 14px;
+  align-items: start;
+}
+.summary-section {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e7e0d7;
+  border-radius: 14px;
+  background: rgba(255, 253, 249, 0.82);
+}
+.summary-section-primary {
+  border-top: 3px solid #e87b45;
+}
+.summary-section-support {
+  border-top: 3px solid #7da88e;
+  background: #f7fbf7;
+}
+.summary-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee8df;
+}
+.summary-step {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: #f8e4d8;
+  color: #c56739;
+  font: 700 10px "Inter", sans-serif;
+}
+.summary-section-support .summary-step {
+  background: #dfeee3;
+  color: #52866b;
+}
+.summary-section-title h3 {
+  margin: 4px 0 0;
+  color: #263f43;
+  font-size: 16px;
+}
+.summary-body {
+  margin: 15px 0 0;
+  color: #3e4b4e;
+  font-size: 13px;
+  line-height: 2;
+  white-space: pre-line;
+}
+.summary-keypoints {
+  margin-top: 16px;
+  padding: 16px 17px;
+  border: 1px solid #f0dba0;
+  border-radius: 14px;
+  background: #fff8e6;
+}
+.summary-keypoints-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.summary-keypoints-heading strong {
+  display: block;
+  margin-top: 4px;
+  color: #805b2d;
+  font-size: 14px;
+}
+.summary-keypoints-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #f5dba4;
+  font-size: 16px;
+}
+.summary-keypoints ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 18px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.summary-keypoints li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #5e513d;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.summary-keypoints li span {
+  flex: 0 0 21px;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #f3dda9;
+  color: #94652e;
+  font: 700 10px "Inter", sans-serif;
+}
+@media (max-width: 780px) {
+  .summary-panel { padding: 17px; border-radius: 15px; }
+  .summary-panel-header h2 { font-size: 19px; }
+  .summary-language-grid { grid-template-columns: 1fr; }
+  .summary-keypoints ul { grid-template-columns: 1fr; }
+}
