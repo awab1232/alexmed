@@ -3,7 +3,7 @@
 // pattern: getDb() singleton, ownership-scoped queries via and(eq(id,...),
 // eq(userId,...)), read functions return safe empty defaults, write
 // functions throw when the DB isn't configured.
-import { and, asc, count, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lte, lt, or, sql } from "drizzle-orm";
 import { deleteObjects } from "./storage";
 import {
   bookCards,
@@ -740,6 +740,7 @@ export async function getBookPageById(
 export async function getNextPendingBookPage(
   bookId: string
 ): Promise<BookPage | null> {
+  const maxVisualAttempts = 3;
   const db = getDb();
   if (!db) return null;
   const [page] = await db
@@ -748,7 +749,13 @@ export async function getNextPendingBookPage(
     .where(
       and(
         eq(bookPages.bookId, bookId),
-        inArray(bookPages.visualStatus, ["pending", "failed"])
+        or(
+          eq(bookPages.visualStatus, "pending"),
+          and(
+            eq(bookPages.visualStatus, "failed"),
+            lt(bookPages.attemptCount, maxVisualAttempts)
+          )
+        )
       )
     )
     .orderBy(asc(bookPages.pageNumber))
