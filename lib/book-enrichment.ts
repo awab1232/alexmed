@@ -18,6 +18,7 @@
 // result.
 import {
   getChapterById,
+  getChapterStudySignals,
   getChapterTerms,
   getChapterVisualAssets,
   saveChapterMindMapSections,
@@ -39,20 +40,37 @@ export async function generateAndSaveMindMapSections(
 ): Promise<ChapterMindMapSection[] | null> {
   const chapter = await getChapterById(chapterId);
   if (!chapter || chapter.status !== "complete") return null;
-  if (chapter.mindMapSections) return chapter.mindMapSections;
+  if (chapter.mindMapSections) {
+    // Older cached maps predate the linked English/exam/prompt fields. Keep
+    // them readable and let a later explicit regeneration enrich them.
+    return chapter.mindMapSections.map(section => ({
+      ...section,
+      summaryEn: section.summaryEn ?? "",
+      examPoints: section.examPoints ?? [],
+      cardPrompts: section.cardPrompts ?? [],
+      concepts: section.concepts.map(concept => ({
+        ...concept,
+        explanationEn: concept.explanationEn ?? "",
+      })),
+    }));
+  }
 
   const terms = await getChapterTerms(chapter.id);
+  const studySignals = await getChapterStudySignals(chapter.id);
   const validPages = Array.from(
     { length: chapter.endPage - chapter.startPage + 1 },
     (_, i) => chapter.startPage + i
   );
   const response = await invokeLLM({
-    max_tokens: 2000,
+    max_tokens: 3500,
     messages: buildMindMapSectionsMessages(
       chapter.title,
+      chapter.explanationEn ?? "",
       chapter.explanationAr ?? "",
       chapter.keyPoints ?? [],
       terms,
+      studySignals.flashcards,
+      studySignals.mcqs,
       validPages
     ),
     response_format: mindMapSectionsResponseSchema,

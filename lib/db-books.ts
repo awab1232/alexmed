@@ -1500,6 +1500,33 @@ export async function getChapterContentForUser(
   };
 }
 
+// Compact study signals for mind-map generation: the map is grounded in the
+// same English explanation, flashcards, and MCQs the student already studies,
+// without duplicating the full reader/page payload.
+export async function getChapterStudySignals(chapterId: string) {
+  const db = getDb();
+  if (!db) return { flashcards: [], mcqs: [] };
+  const [flashcards, mcqs] = await Promise.all([
+    db
+      .select({
+        questionEn: bookCards.questionEn,
+        answerEn: bookCards.answerEn,
+        sourcePage: bookCards.sourcePage,
+      })
+      .from(bookCards)
+      .where(eq(bookCards.chapterId, chapterId)),
+    db
+      .select({
+        questionEn: bookMcqs.questionEn,
+        explanationEn: bookMcqs.explanationEn,
+        sourcePage: bookMcqs.sourcePage,
+      })
+      .from(bookMcqs)
+      .where(eq(bookMcqs.chapterId, chapterId)),
+  ]);
+  return { flashcards, mcqs };
+}
+
 // Ownership-scoped single-card read for the "اشرحها ببساطة" on-demand
 // explanation (lib/trpc/booksRouter.ts's explainCard) — unlike
 // getDueCardsForUser below, this doesn't need the chapter/book join since

@@ -370,6 +370,10 @@ export const mindMapSectionsSchema = {
         additionalProperties: false,
         properties: {
           title: { type: "string" },
+          summaryEn: {
+            type: "string",
+            description: "A concise English explanation of this branch.",
+          },
           explanationAr: {
             type: "string",
             description:
@@ -389,13 +393,24 @@ export const mindMapSectionsSchema = {
               properties: {
                 termAr: { type: "string" },
                 termEn: { type: "string" },
+                explanationEn: { type: "string" },
                 explanationAr: { type: "string" },
               },
-              required: ["termAr", "termEn", "explanationAr"],
+              required: ["termAr", "termEn", "explanationEn", "explanationAr"],
             },
           },
+          examPoints: {
+            type: "array",
+            items: { type: "string" },
+            description: "High-yield points from the chapter's existing key points and cards.",
+          },
+          cardPrompts: {
+            type: "array",
+            items: { type: "string" },
+            description: "Short English prompts of the flashcards/MCQs that reinforce this branch.",
+          },
         },
-        required: ["title", "explanationAr", "sourcePages", "concepts"],
+        required: ["title", "summaryEn", "explanationAr", "sourcePages", "concepts", "examPoints", "cardPrompts"],
       },
     },
   },
@@ -413,24 +428,30 @@ export const mindMapSectionsResponseSchema = {
 
 export type ChapterMindMapSection = {
   title: string;
+  summaryEn: string;
   explanationAr: string;
   sourcePages: number[];
-  concepts: { termAr: string; termEn: string; explanationAr: string }[];
+  concepts: { termAr: string; termEn: string; explanationEn: string; explanationAr: string }[];
+  examPoints: string[];
+  cardPrompts: string[];
 };
 
 export function buildMindMapSectionsMessages(
   chapterTitle: string,
+  explanationEn: string,
   explanationAr: string,
   keyPoints: string[],
   terms: { ar: string; en: string }[],
+  flashcards: { questionEn: string; answerEn: string; sourcePage: number }[],
+  mcqs: { questionEn: string; explanationEn: string; sourcePage: number }[],
   validPages: number[]
 ): Message[] {
   return [
     {
       role: "system",
       content: [
-        `You organize an already-written Arabic chapter explanation into a hierarchical mind map: a few real Sections, each with its own key concepts.`,
-        `Use ONLY the content given below — do not add any fact, term, or page number that isn't already present in it.`,
+        `You organize an already-written chapter into a complete, hierarchical study mind map: a few real Sections, each with concepts, English explanation, Arabic support, high-yield exam points, and linked recall prompts.`,
+        `Use ONLY the content given below — do not add any fact, term, card idea, or page number that isn't already present in it. Do not merge away distinct facts just to make the map shorter.`,
         `Every section's sourcePages must be a subset of this chapter's real pages: ${validPages.join(", ")}.`,
         "Return JSON only.",
       ].join("\n"),
@@ -439,9 +460,13 @@ export function buildMindMapSectionsMessages(
       role: "user",
       content: [
         `Chapter: "${chapterTitle}"`,
+        `English explanation:\n${explanationEn}`,
         `Explanation:\n${explanationAr}`,
         `Key points:\n${keyPoints.map(point => `- ${point}`).join("\n")}`,
         `Terms:\n${terms.map(term => `- ${term.ar} / ${term.en}`).join("\n")}`,
+        `Flashcards:\n${flashcards.map(card => `- [p.${card.sourcePage}] ${card.questionEn} => ${card.answerEn}`).join("\n")}`,
+        `MCQs:\n${mcqs.map(mcq => `- [p.${mcq.sourcePage}] ${mcq.questionEn} => ${mcq.explanationEn}`).join("\n")}`,
+        "Every section should cite the pages it covers, preserve important branches, and attach relevant flashcard/MCQ prompts to the branch they test.",
       ].join("\n\n"),
     },
   ];

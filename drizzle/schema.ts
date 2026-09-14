@@ -627,9 +627,17 @@ export const bookChapters = pgTable(
     mindMapSections: jsonb("mindMapSections").$type<
       {
         title: string;
+        summaryEn: string;
         explanationAr: string;
         sourcePages: number[];
-        concepts: { termAr: string; termEn: string; explanationAr: string }[];
+        concepts: {
+          termAr: string;
+          termEn: string;
+          explanationEn: string;
+          explanationAr: string;
+        }[];
+        examPoints: string[];
+        cardPrompts: string[];
       }[]
     >(),
     // Audit Phase 7 — connects this chapter's already-written explanation to
