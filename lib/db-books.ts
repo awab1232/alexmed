@@ -852,6 +852,25 @@ export async function insertBookVisualAssets(
   );
 }
 
+export async function replaceBookPageVisualAssets(
+  pageId: string,
+  bookId: string,
+  chapterId: string | null,
+  assets: {
+    assetType: "image" | "diagram" | "table" | "screenshot" | "chart";
+    storageKey: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    confidence: "high" | "medium" | "low";
+    reviewStatus: "complete" | "needs_review";
+  }[]
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(bookVisualAssets).where(eq(bookVisualAssets.pageId, pageId));
+  await insertBookVisualAssets(pageId, bookId, chapterId, assets);
+}
+
 // Ownership check for a page-scoped action (the retryPageVisual mutation) —
 // same join-through-books pattern as getChapterForUser.
 export async function getBookPageOwnedByUser(
@@ -1180,11 +1199,31 @@ export async function getChapterVisualAssets(chapterId: string) {
       pageNumber: bookPages.pageNumber,
       assetType: bookVisualAssets.assetType,
       descriptionAr: bookVisualAssets.descriptionAr,
+      descriptionEn: bookVisualAssets.descriptionEn,
     })
     .from(bookVisualAssets)
     .innerJoin(bookPages, eq(bookPages.id, bookVisualAssets.pageId))
     .where(eq(bookPages.chapterId, chapterId))
     .orderBy(asc(bookPages.pageNumber));
+}
+
+// Wait for the independent page-vision worker before generating the chapter
+// study material. Failed pages are allowed through (and remain visible in
+// coverage), while pending/processing pages must not be silently omitted.
+export async function hasPendingChapterVisualAnalysis(chapterId: string) {
+  const db = getDb();
+  if (!db) return false;
+  const rows = await db
+    .select({ visualStatus: bookPages.visualStatus })
+    .from(bookPages)
+    .where(
+      and(
+        eq(bookPages.chapterId, chapterId),
+        inArray(bookPages.visualStatus, ["pending", "processing"])
+      )
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 export async function saveChapterVisualInsights(

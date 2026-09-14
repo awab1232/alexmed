@@ -2,10 +2,10 @@ import {
   finalizeBookIfDone,
   getBookById,
   getNextPendingBookPage,
-  insertBookVisualAssets,
   markBookPageVisualFailed,
   updateBookPageVisualResult,
 } from "@/lib/db-books";
+import { replaceSafeBookPageVisualAssets } from "@/lib/chapter-visual-context";
 import {
   buildPageVisualMessages,
   PAGE_VISUAL_MAX_TOKENS,
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
         const hasImages = analysis.visuals.some(
           v => v.assetType === "image" || v.assetType === "screenshot"
-        );
+        ) || analysis.extractedText.trim().length > 0;
         const hasTables = analysis.visuals.some(v => v.assetType === "table");
         const hasDiagrams = analysis.visuals.some(
           v => v.assetType === "diagram" || v.assetType === "chart"
@@ -133,12 +133,18 @@ export async function POST(request: Request) {
           visualStatus: analysis.reviewStatus,
         });
 
-        if (analysis.visuals.length) {
-          await insertBookVisualAssets(
-            candidate.id,
-            bookId,
-            candidate.chapterId,
-            analysis.visuals.map(v => ({
+        const assets = [...analysis.visuals];
+        if (analysis.extractedText.trim()) {
+          assets.push({
+            assetType: "screenshot",
+            descriptionAr: `نص مقروء من الصورة: ${analysis.extractedText}`,
+            descriptionEn: `Text read from the page image: ${analysis.extractedText}`,
+            confidence: analysis.confidence,
+            needsReview: analysis.reviewStatus === "needs_review",
+          });
+        }
+        if (assets.length) {
+          const normalizedAssets = assets.map(v => ({
               assetType: v.assetType,
               storageKey,
               descriptionAr: v.descriptionAr,
@@ -147,7 +153,12 @@ export async function POST(request: Request) {
               reviewStatus: v.needsReview
                 ? ("needs_review" as const)
                 : ("complete" as const),
-            }))
+            }));
+          await replaceSafeBookPageVisualAssets(
+            candidate.id,
+            bookId,
+            candidate.chapterId,
+            normalizedAssets,
           );
         }
       } catch (pageError) {
