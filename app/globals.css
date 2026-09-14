@@ -2818,3 +2818,123 @@ h1 em {
 .mindmap-chapter-footer { display: flex; justify-content: center; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed #d9ddd5; }.mindmap-chapter-footer a { display: inline-flex; align-items: center; gap: 5px; color: #d2764a; font-size: 11px; text-decoration: none; }.mindmap-chapter-footer a:hover { text-decoration: underline; }
 .mindmap-footer-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; padding: 13px 15px; border-radius: 11px; background: #eef4f0; color: #547467; font-size: 11px; line-height: 1.7; }.mindmap-footer-note svg { flex-shrink: 0; margin-top: 2px; color: #719d84; }
 @media (max-width: 780px) { .mindmap-hero { padding: 22px 18px; }.mindmap-hero-art { display: none; }.mindmap-hero h1 { font-size: 26px; }.mindmap-stats { grid-template-columns: repeat(2, 1fr); }.mindmap-branch-grid { grid-template-columns: 1fr; }.mindmap-branches { padding: 8px 12px 16px; }.mindmap-generate-row { align-items: stretch; flex-direction: column; padding: 0 16px 16px; }.mindmap-generate-row .primary-button { width: 100%; }.mindmap-chapter-head { padding: 14px; }.mindmap-chapter-number { flex: 0 0 32px; } }
+
+/* Visual summary pages — a designed study sheet inspired by high-yield medical notes. */
+.visual-summary-page {
+  position: relative;
+  min-height: 710px;
+  padding: 34px 36px 42px;
+  border: 1px solid #e8dfd3;
+  background-color: #fffefa;
+  background-image: linear-gradient(rgba(226, 219, 207, .28) 1px, transparent 1px), linear-gradient(90deg, rgba(226, 219, 207, .18) 1px, transparent 1px);
+  background-size: 100% 29px, 29px 100%;
+  box-shadow: inset 0 0 0 8px rgba(252, 248, 240, .65);
+}
+.visual-summary-page::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(190, 177, 159, .48);
+  pointer-events: none;
+}
+.visual-summary-page-number {
+  position: absolute;
+  top: 24px;
+  right: 31px;
+  z-index: 1;
+  color: #b6a998;
+  font: 700 11px "Inter", sans-serif;
+  letter-spacing: .14em;
+}
+.visual-summary-cover-mark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 6px 0 14px;
+  border-radius: 14px;
+  background: #e87b45;
+  color: #fffaf4;
+  box-shadow: 0 8px 16px rgba(232,123,69,.22);
+}
+.visual-summary-title {
+  max-width: 700px;
+  margin: 9px 0 7px;
+  color: #203b43;
+  font-size: 29px;
+  letter-spacing: -.04em;
+}
+.visual-summary-subtitle {
+  margin: 0 0 22px;
+  color: #7f8984;
+  direction: ltr;
+  font: 11px "Inter", sans-serif;
+}
+.visual-summary-page .summary-hero {
+  position: relative;
+  z-index: 1;
+  margin: 21px 0;
+  background: rgba(255, 248, 230, .92);
+}
+.visual-summary-page .summary-section {
+  position: relative;
+  z-index: 1;
+  min-height: 570px;
+  padding: 25px;
+  border-radius: 3px;
+  background: rgba(255, 253, 249, .92);
+  box-shadow: 0 8px 18px rgba(77, 69, 57, .06);
+}
+.visual-summary-page .summary-body {
+  font-size: 14px;
+  line-height: 2.15;
+}
+.visual-summary-page .summary-keypoints {
+  position: relative;
+  z-index: 1;
+}
+.visual-summary-visuals {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px dashed #b8cec1;
+  border-radius: 11px;
+  background: rgba(239, 247, 241, .88);
+}
+.visual-summary-visual {
+  display: grid;
+  grid-template-columns: 38px 85px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  margin-top: 8px;
+  color: #52655c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.visual-summary-visual > span { color: #668f78; font: 700 10px "Inter", sans-serif; }
+.visual-summary-visual > strong { color: #3e7459; font-size: 10px; text-transform: uppercase; }
+.visual-summary-visual p { margin: 0; }
+.summary-page-nav {
+  padding: 6px 8px;
+  border: 1px solid #e0d8cf;
+  border-radius: 7px;
+  background: #fffdf9;
+  color: #637174;
+  cursor: pointer;
+  font: 10px "Inter", sans-serif;
+}
+.summary-page-nav:hover:not(:disabled) { background: #f7f1e8; color: #263f43; }
+.summary-page-nav:disabled { cursor: not-allowed; opacity: .38; }
+@media print {
+  .visual-summary-page { min-height: 0; page-break-after: always; background-image: none; box-shadow: none; }
+  .visual-summary-page::before { display: block; }
+}
+@media (max-width: 780px) {
+  .visual-summary-page { min-height: 620px; padding: 27px 20px 30px; }
+  .visual-summary-title { font-size: 23px; }
+  .visual-summary-page .summary-section { min-height: 500px; padding: 18px; }
+  .visual-summary-visual { grid-template-columns: 32px 70px minmax(0, 1fr); font-size: 10px; }
+  .summary-reader-actions { gap: 4px; }
+  .summary-page-nav { padding: 6px 5px; }
+}

@@ -630,6 +630,8 @@ export default function ChapterDetailPage() {
                 </div>
                 <div className="summary-reader-actions">
                   <span>Page {summaryPage + 1} of {summarySections.length}</span>
+                  <button type="button" className="summary-page-nav" disabled={summaryPage === 0} onClick={() => setSummaryPage(page => Math.max(0, page - 1))}>Previous</button>
+                  <button type="button" className="summary-page-nav" disabled={summaryPage === summarySections.length - 1} onClick={() => setSummaryPage(page => Math.min(summarySections.length - 1, page + 1))}>Next</button>
                   <button type="button" className="summary-print-button" onClick={() => window.print()} title="Print summary">
                     <Printer size={14} /> Print
                   </button>
@@ -669,106 +671,53 @@ export default function ChapterDetailPage() {
                   <small>+ عربي</small>
                 </div>
               </div>
-              {chapter.chapterSummary && (
-                <div className="summary-hero" id="summary-overview">
-                  <div className="summary-hero-mark"><Sparkles size={18} /></div>
-                  <div>
-                  <span className="micro-label">Chapter summary / ملخص الفصل</span>
-                  <p className="en" dir="ltr" style={{ whiteSpace: "pre-line", fontWeight: 600 }}>
-                    {chapter.chapterSummary}
-                  </p>
+              <div className="visual-summary-page" id={`summary-${summarySections[summaryPage]?.id}`}>
+                <div className="visual-summary-page-number">{String(summaryPage + 1).padStart(2, "0")}</div>
+                {summaryPage === 0 && (
+                  <>
+                    <div className="visual-summary-cover-mark"><Sparkles size={22} /></div>
+                    <span className="micro-label">Chapter overview / نظرة عامة</span>
+                    <h2 className="visual-summary-title">{chapter.title}</h2>
+                    <p className="visual-summary-subtitle">High-yield visual study notes · English-first with Arabic support</p>
+                    {chapter.chapterSummary && (
+                      <div className="summary-hero" id="summary-overview">
+                        <div className="summary-hero-mark"><Sparkles size={18} /></div>
+                        <div><span className="micro-label">Chapter summary / ملخص الفصل</span><p className="en" dir="ltr">{chapter.chapterSummary}</p></div>
+                      </div>
+                    )}
+                    {!!chapter.keyPoints?.length && (
+                      <div className="summary-keypoints">
+                        <div className="summary-keypoints-heading"><span className="summary-keypoints-icon">⚡</span><div><span className="micro-label">Exam focus</span><strong>High-Yield للامتحان</strong></div></div>
+                        <ul>{chapter.keyPoints.map((point, i) => <li key={i}><span>{i + 1}</span>{point}</li>)}</ul>
+                      </div>
+                    )}
+                  </>
+                )}
+                {summaryPage === 1 && (
+                  <section className="summary-section summary-section-primary" id="summary-english">
+                    <div className="summary-section-title"><span className="summary-step">01</span><div><span className="micro-label">Primary study layer</span><h3>English explanation</h3></div></div>
+                    <p className="en summary-body" dir="ltr">{chapter.explanationEn}</p>
+                  </section>
+                )}
+                {summaryPage === 2 && (
+                  <section className="summary-section summary-section-support" id="summary-arabic">
+                    <div className="summary-section-title"><span className="summary-step">02</span><div><span className="micro-label">Support layer</span><h3>شرح عربي مبسط</h3></div></div>
+                    <p className="summary-body" dir="rtl">{chapter.explanationAr}</p>
+                  </section>
+                )}
+                {summaryPage === 3 && !!chapter.keyPoints?.length && (
+                  <div className="summary-keypoints" id="summary-high-yield">
+                    <div className="summary-keypoints-heading"><span className="summary-keypoints-icon">⚡</span><div><span className="micro-label">Exam focus</span><strong>High-Yield للامتحان</strong></div></div>
+                    <ul>{chapter.keyPoints.map((point, i) => <li key={i}><span>{i + 1}</span>{point}</li>)}</ul>
                   </div>
-                </div>
-              )}
-              <div className="summary-language-grid">
-                <section className="summary-section summary-section-primary" id="summary-english">
-                  <div className="summary-section-title">
-                    <span className="summary-step">01</span>
-                    <div>
-                      <span className="micro-label">Primary study layer</span>
-                      <h3>English explanation</h3>
-                    </div>
+                )}
+                {summaryPage === 0 && pages.some(page => page.visuals.length > 0) && (
+                  <div className="visual-summary-visuals">
+                    <span className="micro-label">Visual anchors / الصور والمخططات</span>
+                    {pages.flatMap(page => page.visuals.map((visual, index) => <div className="visual-summary-visual" key={`${page.pageNumber}-${index}`}><span>p.{page.pageNumber}</span><strong>{visual.assetType}</strong><p dir="ltr">{visual.descriptionEn || visual.descriptionAr}</p></div>))}
                   </div>
-                  <p className="en summary-body" dir="ltr">
-                    {chapter.explanationEn}
-                  </p>
-                </section>
-                <section className="summary-section summary-section-support" id="summary-arabic">
-                  <div className="summary-section-title">
-                    <span className="summary-step">02</span>
-                    <div>
-                      <span className="micro-label">Support layer</span>
-                      <h3>شرح عربي مبسط</h3>
-                    </div>
-                  </div>
-                  <p className="summary-body" dir="rtl">
-                    {chapter.explanationAr}
-                  </p>
-                </section>
+                )}
               </div>
-              {/* Audit Phase 7 — connects the explanation above to this
-                  chapter's real images/diagrams/tables (never blocks or
-                  reorders chapter/visual analysis themselves; purely an
-                  additive, on-demand enrichment — see
-                  generateVisualInsights). Only offered when the chapter
-                  actually has visuals to connect. */}
-              {pages.some(page => page.visuals.length > 0) && (
-                <div>
-                  <span className="micro-label">ربط الشرح بالصور</span>
-                  {chapter.visualInsightsAr === null ? (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      disabled={generateVisualInsights.isPending}
-                      onClick={() =>
-                        generateVisualInsights.mutate({ chapterId: chapter.id })
-                      }
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        width: "fit-content",
-                        marginTop: 6,
-                      }}
-                    >
-                      {generateVisualInsights.isPending ? (
-                        <Loader2 size={14} className="spin" />
-                      ) : (
-                        <Sparkles size={14} />
-                      )}
-                      <span>اربط الشرح بصور هذا الفصل</span>
-                    </button>
-                  ) : chapter.visualInsightsAr ? (
-                    <p style={{ whiteSpace: "pre-line" }}>
-                      {chapter.visualInsightsAr}
-                    </p>
-                  ) : (
-                    <p style={{ fontSize: 12, color: "#9a9186" }}>
-                      لا تضيف صور هذا الفصل معلومة جديدة على الشرح.
-                    </p>
-                  )}
-                </div>
-              )}
-              {/* PR18 — "⚡ High-Yield للامتحان": the exact same real
-                  chapter.keyPoints already generated by the analysis
-                  pipeline, just labeled and emphasized for exam prep —
-                  no regeneration, no new AI call. */}
-              {!!chapter.keyPoints?.length && (
-                <div className="summary-keypoints" id="summary-high-yield">
-                  <div className="summary-keypoints-heading">
-                    <span className="summary-keypoints-icon">⚡</span>
-                    <div>
-                      <span className="micro-label">Exam focus</span>
-                      <strong>High-Yield للامتحان</strong>
-                    </div>
-                  </div>
-                  <ul>
-                    {chapter.keyPoints.map((point, i) => (
-                      <li key={i}><span>{i + 1}</span>{point}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
                 </div>
               </div>
