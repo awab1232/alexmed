@@ -2938,3 +2938,53 @@ h1 em {
   .summary-reader-actions { gap: 4px; }
   .summary-page-nav { padding: 6px 5px; }
 }
+
+/* Light gamification for the study reader: encouraging, optional, never noisy. */
+.summary-motivation {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 150px;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 13px;
+  padding: 10px 12px;
+  border: 1px solid #d9e8dc;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #f0f8f1, #fff9ed);
+}
+.summary-motivation-emoji { font-size: 22px; text-align: center; }
+.summary-motivation strong { display: block; color: #416b58; font-size: 11px; line-height: 1.5; }
+.summary-motivation small { display: block; margin-top: 2px; color: #89998e; font-size: 10px; }
+.summary-progress-track { height: 7px; overflow: hidden; border-radius: 99px; background: #dfe9df; }
+.summary-progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #72ad82, #e8aa64); transition: width .35s ease; }
+.summary-progress-label { color: #658675; font-weight: 700; }
+.visual-summary-page-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px dashed #ddd5c9;
+}
+.summary-done-button {
+  padding: 8px 11px;
+  border: 1px solid #b9d8c1;
+  border-radius: 9px;
+  background: #f1f9f2;
+  color: #4d8060;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  transition: transform .15s ease, background .15s ease;
+}
+.summary-done-button:hover { transform: translateY(-1px); background: #e5f3e8; }
+.summary-done-button.is-done { border-color: #e5c486; background: #fff5d9; color: #966d31; }
+.visual-summary-page-footer > span { color: #92958f; font-size: 10px; line-height: 1.5; text-align: right; }
+@media (max-width: 780px) {
+  .summary-motivation { grid-template-columns: 32px minmax(0, 1fr); }
+  .summary-progress-track { grid-column: 1 / -1; }
+  .visual-summary-page-footer { align-items: flex-start; flex-direction: column; }
+  .visual-summary-page-footer > span { text-align: left; }
+}

@@ -186,6 +186,7 @@ export default function ChapterDetailPage() {
   const [noteDraft, setNoteDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [summaryPage, setSummaryPage] = useState(0);
+  const [completedSummaryPages, setCompletedSummaryPages] = useState<number[]>([]);
   const appliedInitialPageRef = useRef(false);
 
   const { chapter, terms, cards, mcqs, pages } = chapterQuery.data ?? {
@@ -229,6 +230,21 @@ export default function ChapterDetailPage() {
     ],
     [chapter?.keyPoints?.length]
   );
+  const summaryProgress = summarySections.length
+    ? Math.round((completedSummaryPages.length / summarySections.length) * 100)
+    : 0;
+  const summaryEncouragement = completedSummaryPages.length === summarySections.length
+    ? "🎉 خلصت الملخص! الآن البطاقات هي التي ستخاف منك، وليس العكس."
+    : completedSummaryPages.length > 0
+      ? "🔥 ممتاز! صفحة وراء صفحة، والامتحان بدأ يشعر بالقلق."
+      : "🚀 البداية القوية نصف العلامة—ابدأ بالصفحة الحالية وخذها بهدوء.";
+  const toggleSummaryPageDone = () => {
+    setCompletedSummaryPages(current =>
+      current.includes(summaryPage)
+        ? current.filter(page => page !== summaryPage)
+        : [...current, summaryPage]
+    );
+  };
 
   // Jumps to the page a due-card/mcq's "عرض في الكتاب" link pointed at, once
   // `pages` has loaded — a ref (not a dependency-gated effect) guards this
@@ -629,6 +645,7 @@ export default function ChapterDetailPage() {
                   <span>{chapter.title}</span>
                 </div>
                 <div className="summary-reader-actions">
+                  <span className="summary-progress-label">📚 {summaryProgress}% studied</span>
                   <span>Page {summaryPage + 1} of {summarySections.length}</span>
                   <button type="button" className="summary-page-nav" disabled={summaryPage === 0} onClick={() => setSummaryPage(page => Math.max(0, page - 1))}>Previous</button>
                   <button type="button" className="summary-page-nav" disabled={summaryPage === summarySections.length - 1} onClick={() => setSummaryPage(page => Math.min(summarySections.length - 1, page + 1))}>Next</button>
@@ -658,6 +675,11 @@ export default function ChapterDetailPage() {
                 </aside>
                 <div className="summary-document">
             <div className="summary-panel">
+              <div className="summary-motivation" role="status">
+                <span className="summary-motivation-emoji">{summaryProgress === 100 ? "🏆" : "💪"}</span>
+                <div><strong>{summaryEncouragement}</strong><small>Study smart · لا تحفظ كل شيء دفعة واحدة</small></div>
+                <div className="summary-progress-track" aria-label={`Study progress ${summaryProgress}%`}><span style={{ width: `${summaryProgress}%` }} /></div>
+              </div>
               <div className="summary-panel-header">
                 <div>
                   <span className="eyebrow">
@@ -717,6 +739,12 @@ export default function ChapterDetailPage() {
                     {pages.flatMap(page => page.visuals.map((visual, index) => <div className="visual-summary-visual" key={`${page.pageNumber}-${index}`}><span>p.{page.pageNumber}</span><strong>{visual.assetType}</strong><p dir="ltr">{visual.descriptionEn || visual.descriptionAr}</p></div>))}
                   </div>
                 )}
+                <div className="visual-summary-page-footer">
+                  <button type="button" className={completedSummaryPages.includes(summaryPage) ? "summary-done-button is-done" : "summary-done-button"} onClick={toggleSummaryPageDone}>
+                    {completedSummaryPages.includes(summaryPage) ? "✅ Page mastered" : "☑️ Mark page studied"}
+                  </button>
+                  <span>{completedSummaryPages.includes(summaryPage) ? "أحسنت، لا تنسَ مراجعتها لاحقًا" : "اضغط بعد فهم الصفحة—not just reading it 😉"}</span>
+                </div>
               </div>
             </div>
                 </div>
