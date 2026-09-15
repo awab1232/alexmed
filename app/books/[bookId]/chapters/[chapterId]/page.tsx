@@ -187,6 +187,7 @@ export default function ChapterDetailPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [summaryPage, setSummaryPage] = useState(0);
   const [completedSummaryPages, setCompletedSummaryPages] = useState<number[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const appliedInitialPageRef = useRef(false);
 
   const { chapter, terms, cards, mcqs, pages } = chapterQuery.data ?? {
@@ -736,7 +737,15 @@ export default function ChapterDetailPage() {
                 {summaryPage === 0 && pages.some(page => page.visuals.length > 0) && (
                   <div className="visual-summary-visuals">
                     <span className="micro-label">Visual anchors / الصور والمخططات</span>
-                    {pages.flatMap(page => page.visuals.map((visual, index) => <div className="visual-summary-visual" key={`${page.pageNumber}-${index}`}><span>p.{page.pageNumber}</span><strong>{visual.assetType}</strong><p dir="ltr">{visual.descriptionEn || visual.descriptionAr}</p></div>))}
+                    {pages.filter(page => page.visuals.length > 0).map(page => (
+                      <div className="visual-summary-visual-card" key={page.pageNumber}>
+                        <div className="visual-summary-image-wrap">
+                          <img src={`/api/books/${params.bookId}/pages/${page.pageNumber}/image`} alt={`Original page ${page.pageNumber}`} loading="lazy" />
+                          <span>Page {page.pageNumber}</span>
+                        </div>
+                        <div>{page.visuals.map((visual, index) => <div className="visual-summary-visual" key={`${page.pageNumber}-${index}`}><strong>{visual.assetType}</strong><p dir="ltr">{visual.descriptionEn || "Visual description unavailable."}</p><p dir="rtl">{visual.descriptionAr || "لا يوجد شرح عربي متاح."}</p></div>)}</div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 <div className="visual-summary-page-footer">
@@ -754,17 +763,20 @@ export default function ChapterDetailPage() {
 
           {assistantTab === "terms" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="term-dictionary-intro"><span>📖</span><div><strong>Interactive medical dictionary</strong><small>اضغط على أي مصطلح لفهمه بسرعة — English, Arabic, pronunciation & clinical context.</small></div></div>
               {terms.map(term => (
-                <div className="panel-card" key={term.id}>
-                  <strong className="en" dir="ltr" style={{ fontSize: 16 }}>
-                    {term.en}
-                  </strong>
-                  <p style={{ margin: "4px 0 0", fontWeight: 600 }}>
-                    {term.ar}
-                  </p>
-                  <p style={{ fontSize: 12, color: "#8a9493", margin: "4px 0 0" }}>
-                    {term.pronunciation && `Pronunciation: ${term.pronunciation}`}
-                  </p>
+                <div className={selectedTermId === term.id ? "term-dictionary-card is-open" : "term-dictionary-card"} key={term.id}>
+                  <button type="button" className="term-dictionary-trigger" onClick={() => setSelectedTermId(selectedTermId === term.id ? null : term.id)}>
+                    <span><strong className="en" dir="ltr">{term.en}</strong><small dir="rtl">{term.ar}</small></span><b>{selectedTermId === term.id ? "−" : "+"}</b>
+                  </button>
+                  {selectedTermId === term.id && (() => {
+                    const relatedCard = cards.find(card => card.relatedTermEn?.toLowerCase() === term.en.toLowerCase());
+                    return <div className="term-dictionary-detail">
+                      <div><span className="micro-label">Pronunciation / النطق</span><p className="en">{term.pronunciation || "Not provided"}</p></div>
+                      <div><span className="micro-label">Simple meaning / المعنى المبسط</span><p>{term.ar} — <span className="en">{relatedCard?.answerEn || `A medical concept related to ${term.en}.`}</span></p></div>
+                      <div><span className="micro-label">Clinical example / مثال سريري</span><p className="en" dir="ltr">{relatedCard?.questionEn || "Review the related flashcard for a clinical application."}</p></div>
+                    </div>;
+                  })()}
                 </div>
               ))}
               {!terms.length && <p>لا توجد مصطلحات لهذا الفصل.</p>}
