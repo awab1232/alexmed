@@ -616,6 +616,25 @@ export const bookChapters = pgTable(
     explanationEn: text("explanationEn"),
     keyPoints: jsonb("keyPoints").$type<string[]>(),
     chapterSummary: text("chapterSummary"),
+    // AI Medical Note Composer output: source-grounded, page-ready medical
+    // notes (definition, features, diagnosis, management, red flags, etc.).
+    // Kept additive to the existing chapter analysis so cards/MCQs remain
+    // untouched and older chapters continue to render normally.
+    medicalNotePages: jsonb("medicalNotePages").$type<{
+      title: string;
+      subtitle: string;
+      layout: "overview" | "sections" | "comparison" | "algorithm" | "exam";
+      sourcePages: number[];
+      blocks: {
+        kind: "definition" | "bullet_group" | "alert" | "comparison" | "algorithm" | "image";
+        heading: string;
+        bodyEn: string;
+        bodyAr: string;
+        items: string[];
+        tone: "default" | "high_yield" | "warning" | "clinical";
+        sourcePages: number[];
+      }[];
+    }[]>(),
     // Audit Phase 6 — real hierarchical mind map data: Chapter -> Sections ->
     // Key concepts, each section carrying the real page numbers it came
     // from. Generated lazily (on first mind-map view, one bounded LLM call

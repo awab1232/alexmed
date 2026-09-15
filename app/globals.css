@@ -3028,3 +3028,28 @@ h1 em {
   .visual-summary-image-wrap img { height: 190px; }
   .term-dictionary-detail { grid-template-columns: 1fr; }
 }
+
+/* AI Medical Note Composer — structured, source-aware medical revision sheets. */
+.composer-launcher { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; padding: 14px 16px; border: 1px solid #d9e6dc; border-radius: 13px; background: linear-gradient(110deg, #eff8f1, #fff9ed); }
+.composer-launcher strong { display: block; margin-top: 4px; color: #355e50; font-size: 13px; }
+.composer-launcher small { display: block; margin-top: 3px; color: #77877b; font-size: 10px; }
+.composer-launcher .primary-button { flex-shrink: 0; padding: 9px 12px; font-size: 11px; }
+.composer-ready { flex-shrink: 0; color: #4d8963; font: 700 11px "Inter", sans-serif; }
+.composer-pages { display: grid; gap: 18px; margin-bottom: 16px; }
+.composer-page { position: relative; overflow: hidden; padding: 27px 30px 31px; border: 1px solid #ded6c9; background: #fffefa; background-image: linear-gradient(rgba(226,219,207,.23) 1px, transparent 1px); background-size: 100% 28px; box-shadow: 0 12px 28px rgba(50,58,50,.08); }
+.composer-page::after { content: ""; position: absolute; inset: 12px; border: 1px solid rgba(192,180,160,.42); pointer-events: none; }
+.composer-page > * { position: relative; z-index: 1; }
+.composer-page-head { display: flex; justify-content: space-between; color: #9d9487; font: 700 10px "Inter", sans-serif; letter-spacing: .12em; }
+.composer-page h2 { margin: 15px 0 4px; color: #243f45; font-size: 25px; letter-spacing: -.03em; }
+.composer-subtitle { margin: 0 0 18px; color: #7c8983; font: 11px "Inter", sans-serif; }
+.composer-block { margin-top: 12px; padding: 12px 14px; border: 1px solid #e5ded2; border-left: 4px solid #8ba697; border-radius: 9px; background: rgba(255,255,255,.8); }
+.composer-block.tone-high_yield { border-left-color: #e1ad54; background: #fff8e6; }
+.composer-block.tone-warning { border-left-color: #d97862; background: #fff0ec; }
+.composer-block.tone-clinical { border-left-color: #7299a5; background: #eef6f8; }
+.composer-block-heading { display: flex; align-items: center; gap: 7px; color: #355d59; }
+.composer-block-heading > span { font-size: 16px; }
+.composer-block-heading strong { font-size: 13px; }
+.composer-block-heading small { margin-left: auto; color: #a29a8d; font: 10px "Inter", sans-serif; }
+.composer-block p { margin: 7px 0 0; color: #53615e; font-size: 11px; line-height: 1.75; }
+.composer-block ul { display: grid; gap: 5px; margin: 8px 0 0; padding-left: 20px; color: #4d5f59; font-size: 11px; line-height: 1.7; }
+@media (max-width: 780px) { .composer-launcher { align-items: stretch; flex-direction: column; }.composer-launcher .primary-button { width: 100%; }.composer-page { padding: 22px 18px 26px; }.composer-page h2 { font-size: 21px; }.composer-block-heading { align-items: flex-start; }.composer-block-heading small { margin-left: auto; } }

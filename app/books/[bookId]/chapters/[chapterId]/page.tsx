@@ -167,6 +167,9 @@ export default function ChapterDetailPage() {
     onSuccess: () =>
       utils.books.getChapter.invalidate({ id: params.chapterId }),
   });
+  const generateMedicalNotePages = trpc.books.generateMedicalNotePages.useMutation({
+    onSuccess: () => utils.books.getChapter.invalidate({ id: params.chapterId }),
+  });
   // Preselected when arriving from the book page's study-tools chooser
   // (app/books/[bookId]/page.tsx links here with ?tool=cards|mcqs|explanation)
   // or from the daily review queue's "عرض في الكتاب" link (app/review/page.tsx
@@ -637,6 +640,24 @@ export default function ChapterDetailPage() {
           </div>
 
           {assistantTab === "explanation" && (
+            <>
+            <div className="composer-launcher">
+              <div><span className="eyebrow"><span className="eyebrow-dot green" /> AI Medical Note Composer</span><strong>حوّل الفصل إلى صفحات مراجعة طبية منظمة</strong><small>Definition · Clinical features · Diagnosis · Management · Red flags</small></div>
+              {!chapter.medicalNotePages && <button type="button" className="primary-button" disabled={generateMedicalNotePages.isPending} onClick={() => generateMedicalNotePages.mutate({ chapterId: chapter.id })}>{generateMedicalNotePages.isPending ? "Designing notes…" : "✨ Compose medical notes"}</button>}
+              {chapter.medicalNotePages && <span className="composer-ready">✅ Ready</span>}
+            </div>
+            {chapter.medicalNotePages && <div className="composer-pages">
+              {chapter.medicalNotePages.map((notePage, pageIndex) => <article className="composer-page" key={`${notePage.title}-${pageIndex}`}>
+                <div className="composer-page-head"><span>PAGE {String(pageIndex + 1).padStart(2, "0")}</span><small>Source: p.{notePage.sourcePages.join(", ") || "—"}</small></div>
+                <h2>{notePage.title}</h2><p className="composer-subtitle">{notePage.subtitle}</p>
+                {notePage.blocks.map((block, blockIndex) => <section className={`composer-block tone-${block.tone}`} key={`${block.heading}-${blockIndex}`}>
+                  <div className="composer-block-heading"><span>{block.tone === "warning" ? "⚠️" : block.tone === "high_yield" ? "⚡" : block.tone === "clinical" ? "🩺" : "•"}</span><strong>{block.heading}</strong><small>p.{block.sourcePages.join(", ") || "—"}</small></div>
+                  {block.bodyEn && <p className="en" dir="ltr">{block.bodyEn}</p>}
+                  {block.bodyAr && <p dir="rtl">{block.bodyAr}</p>}
+                  {!!block.items.length && <ul>{block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>}
+                </section>)}
+              </article>)}
+            </div>}
             <div className="summary-reader">
               <div className="summary-reader-toolbar">
                 <div className="summary-reader-breadcrumb">
@@ -759,6 +780,7 @@ export default function ChapterDetailPage() {
                 </div>
               </div>
             </div>
+            </>
           )}
 
           {assistantTab === "terms" && (

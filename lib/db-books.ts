@@ -1193,6 +1193,18 @@ export async function saveChapterMindMapSections(
     .where(eq(bookChapters.id, chapterId));
 }
 
+export async function saveChapterMedicalNotePages(
+  chapterId: string,
+  pages: NonNullable<typeof bookChapters.$inferSelect.medicalNotePages>
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookChapters)
+    .set({ medicalNotePages: pages, updatedAt: new Date() })
+    .where(eq(bookChapters.id, chapterId));
+}
+
 // Audit Phase 7 — the caller (generateVisualInsights tRPC mutation) has
 // already proven chapter ownership via getChapterForUser, so this needs no
 // ownership filter of its own. Joined through bookPages (not

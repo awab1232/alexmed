@@ -30,6 +30,7 @@ import {
 import { assignBookToSubject } from "../db-subjects";
 import {
   generateAndSaveMindMapSections,
+  generateAndSaveMedicalNotePages,
   generateAndSaveVisualInsights,
 } from "../book-enrichment";
 import {
@@ -364,6 +365,19 @@ export const booksRouter = router({
       }
       const visualInsightsAr = await generateAndSaveVisualInsights(chapter.id);
       return { visualInsightsAr: visualInsightsAr ?? "" };
+    }),
+
+  generateMedicalNotePages: protectedProcedure
+    .input(z.object({ chapterId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
+      if (!chapter) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
+      }
+      if (chapter.status !== "complete") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Chapter analysis must complete first" });
+      }
+      return { pages: await generateAndSaveMedicalNotePages(chapter.id) };
     }),
 
   // Audit Phase 5 — Question Validation Agent. Lazy + idempotent, same

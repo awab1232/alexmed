@@ -22,6 +22,7 @@ import {
   getChapterTerms,
   getChapterVisualAssets,
   saveChapterMindMapSections,
+  saveChapterMedicalNotePages,
   saveChapterVisualInsights,
 } from "./db-books";
 import {
@@ -33,6 +34,12 @@ import {
   visualInsightsResponseSchema,
   type ChapterMindMapSection,
 } from "./book-analysis";
+import {
+  buildMedicalNoteComposerMessages,
+  medicalNotePagesResponseSchema,
+  parseMedicalNotePages,
+  type MedicalNotePage,
+} from "./medical-note-composer";
 import { invokeLLM } from "./llm";
 
 export async function generateAndSaveMindMapSections(
@@ -103,4 +110,36 @@ export async function generateAndSaveVisualInsights(
   );
   await saveChapterVisualInsights(chapter.id, visualInsightsAr);
   return visualInsightsAr;
+}
+
+export async function generateAndSaveMedicalNotePages(
+  chapterId: string
+): Promise<MedicalNotePage[] | null> {
+  const chapter = await getChapterById(chapterId);
+  if (!chapter || chapter.status !== "complete") return null;
+  if (chapter.medicalNotePages) return chapter.medicalNotePages as MedicalNotePage[];
+
+  const terms = await getChapterTerms(chapter.id);
+  const visuals = await getChapterVisualAssets(chapter.id);
+  const validPages = Array.from(
+    { length: chapter.endPage - chapter.startPage + 1 },
+    (_, i) => chapter.startPage + i
+  );
+  const response = await invokeLLM({
+    max_tokens: 7000,
+    messages: buildMedicalNoteComposerMessages({
+      title: chapter.title,
+      explanationEn: chapter.explanationEn ?? "",
+      explanationAr: chapter.explanationAr ?? "",
+      summary: chapter.chapterSummary ?? "",
+      keyPoints: chapter.keyPoints ?? [],
+      terms,
+      pages: (chapter.pageTexts ?? []).map(page => ({ page: page.page, text: page.text })),
+      visuals,
+    }),
+    response_format: medicalNotePagesResponseSchema,
+  });
+  const pages = parseMedicalNotePages(response.choices[0]?.message.content, validPages);
+  await saveChapterMedicalNotePages(chapter.id, pages);
+  return pages;
 }
