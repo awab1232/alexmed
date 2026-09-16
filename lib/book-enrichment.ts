@@ -20,11 +20,13 @@ import {
   getChapterById,
   getChapterCardCount,
   getChapterMcqCount,
+  getChapterStudySignals,
   getChapterTerms,
   getChapterVisualAssets,
   insertBookCards,
   insertBookMcqs,
   saveChapterMindMapSections,
+  saveChapterMedicalNotePages,
   saveChapterVisualInsights,
 } from "./db-books";
 import {
@@ -44,6 +46,12 @@ import {
   type ChapterMcq,
   type ChapterMindMapSection,
 } from "./book-analysis";
+import {
+  buildMedicalNoteComposerMessages,
+  medicalNotePagesResponseSchema,
+  parseMedicalNotePages,
+  type MedicalNotePage,
+} from "./medical-note-composer";
 import { invokeLLM } from "./llm";
 
 export async function generateAndSaveMindMapSections(
@@ -51,20 +59,37 @@ export async function generateAndSaveMindMapSections(
 ): Promise<ChapterMindMapSection[] | null> {
   const chapter = await getChapterById(chapterId);
   if (!chapter || chapter.status !== "complete") return null;
-  if (chapter.mindMapSections) return chapter.mindMapSections;
+  if (chapter.mindMapSections) {
+    // Older cached maps predate the linked English/exam/prompt fields. Keep
+    // them readable and let a later explicit regeneration enrich them.
+    return chapter.mindMapSections.map(section => ({
+      ...section,
+      summaryEn: section.summaryEn ?? "",
+      examPoints: section.examPoints ?? [],
+      cardPrompts: section.cardPrompts ?? [],
+      concepts: section.concepts.map(concept => ({
+        ...concept,
+        explanationEn: concept.explanationEn ?? "",
+      })),
+    }));
+  }
 
   const terms = await getChapterTerms(chapter.id);
+  const studySignals = await getChapterStudySignals(chapter.id);
   const validPages = Array.from(
     { length: chapter.endPage - chapter.startPage + 1 },
     (_, i) => chapter.startPage + i
   );
   const response = await invokeLLM({
-    max_tokens: 2000,
+    max_tokens: 3500,
     messages: buildMindMapSectionsMessages(
       chapter.title,
+      chapter.explanationEn ?? "",
       chapter.explanationAr ?? "",
       chapter.keyPoints ?? [],
       terms,
+      studySignals.flashcards,
+      studySignals.mcqs,
       validPages
     ),
     response_format: mindMapSectionsResponseSchema,
@@ -143,4 +168,36 @@ export async function generateAndSaveChapterMcqs(
   const mcqs = parseChapterMcqs(response.choices[0]?.message.content);
   await insertBookMcqs(chapter.id, mcqs);
   return mcqs;
+}
+
+export async function generateAndSaveMedicalNotePages(
+  chapterId: string
+): Promise<MedicalNotePage[] | null> {
+  const chapter = await getChapterById(chapterId);
+  if (!chapter || chapter.status !== "complete") return null;
+  if (chapter.medicalNotePages) return chapter.medicalNotePages as MedicalNotePage[];
+
+  const terms = await getChapterTerms(chapter.id);
+  const visuals = await getChapterVisualAssets(chapter.id);
+  const validPages = Array.from(
+    { length: chapter.endPage - chapter.startPage + 1 },
+    (_, i) => chapter.startPage + i
+  );
+  const response = await invokeLLM({
+    max_tokens: 7000,
+    messages: buildMedicalNoteComposerMessages({
+      title: chapter.title,
+      explanationEn: chapter.explanationEn ?? "",
+      explanationAr: chapter.explanationAr ?? "",
+      summary: chapter.chapterSummary ?? "",
+      keyPoints: chapter.keyPoints ?? [],
+      terms,
+      pages: (chapter.pageTexts ?? []).map(page => ({ page: page.page, text: page.text })),
+      visuals,
+    }),
+    response_format: medicalNotePagesResponseSchema,
+  });
+  const pages = parseMedicalNotePages(response.choices[0]?.message.content, validPages);
+  await saveChapterMedicalNotePages(chapter.id, pages);
+  return pages;
 }

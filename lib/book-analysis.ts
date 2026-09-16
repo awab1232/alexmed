@@ -46,7 +46,7 @@ export const bookChapterSchema = {
     explanationEn: {
       type: "string",
       description:
-        "A concise, exam-focused English explanation of the same content.",
+        "A detailed, structured, exam-focused English explanation. Preserve important definitions, criteria, durations, causes, clinical findings, investigations, management, warnings, and exceptions present in the source.",
     },
     keyPoints: {
       type: "array",
@@ -135,7 +135,7 @@ export const bookChapterSchema = {
     chapterSummary: {
       type: "string",
       description:
-        "A short Arabic summary of the whole chapter (this call's slice of it).",
+        "A short English-first summary of the whole chapter (this call's slice of it), followed by a brief Arabic support line when useful.",
     },
   },
   required: [
@@ -264,6 +264,14 @@ export function buildChapterAnalysisMessages(
     profile === "medical"
       ? "important medical terms (Arabic + English + a simple pronunciation guide)"
       : "important terms/vocabulary a student of this subject should memorize (Arabic + English + a simple pronunciation guide when relevant, otherwise leave pronunciation empty)";
+  const precisionInstruction =
+    profile === "medical"
+      ? "Keep the English explanation medically precise"
+      : "Keep the English explanation precise for the subject";
+  const terminologyInstruction =
+    profile === "medical"
+      ? "Keep the English medical term visible in the English fields."
+      : "Keep the English subject terminology visible in the English fields.";
 
   return [
     {
@@ -271,7 +279,9 @@ export function buildChapterAnalysisMessages(
       content: [
         `You are a meticulous, encouraging study coach writing for a student who finds English difficult and forgets quickly.`,
         `You are given the raw text of one chapter (or part of one) from a ${subjectLabel}, titled "${chapterTitle}".`,
-        `Produce: a simple Arabic explanation, a concise exam-focused English explanation, key points, and ${termsInstruction}.`,
+        `Produce: a detailed, exam-focused English explanation first, a clear Arabic support explanation, key points, and ${termsInstruction}.`,
+        `The English explanation is the primary study output: ${precisionInstruction}, structured with readable headings and bullets, and cover every meaningful section without replacing important detail with vague generalities. The Arabic explanation is a faithful support layer for understanding, not a substitute for the English terminology.`,
+        `${terminologyInstruction} In Arabic fields, give the meaning naturally without damaging the English wording.`,
         // Flashcards/MCQs moved to their own on-demand calls (buildChapterFlashcardsMessages/
         // buildChapterMcqsMessages below) — a student who only wants to read the explanation
         // no longer pays the extra generation time/tokens for study tools they didn't ask for.
@@ -300,7 +310,7 @@ export function buildSummaryMergeMessages(
     {
       role: "system",
       content:
-        "You merge partial chapter summaries into ONE coherent Arabic summary of the whole chapter, 3-5 sentences, simple language. Return JSON only, matching the given schema.",
+        "You merge partial chapter summaries into ONE coherent English-first summary of the whole chapter, 3-5 concise sentences, followed by one short Arabic support paragraph. Preserve distinct facts and do not drop important details. Return JSON only, matching the given schema.",
     },
     {
       role: "user",
@@ -363,6 +373,10 @@ export const mindMapSectionsSchema = {
         additionalProperties: false,
         properties: {
           title: { type: "string" },
+          summaryEn: {
+            type: "string",
+            description: "A concise English explanation of this branch.",
+          },
           explanationAr: {
             type: "string",
             description:
@@ -382,13 +396,24 @@ export const mindMapSectionsSchema = {
               properties: {
                 termAr: { type: "string" },
                 termEn: { type: "string" },
+                explanationEn: { type: "string" },
                 explanationAr: { type: "string" },
               },
-              required: ["termAr", "termEn", "explanationAr"],
+              required: ["termAr", "termEn", "explanationEn", "explanationAr"],
             },
           },
+          examPoints: {
+            type: "array",
+            items: { type: "string" },
+            description: "High-yield points from the chapter's existing key points and cards.",
+          },
+          cardPrompts: {
+            type: "array",
+            items: { type: "string" },
+            description: "Short English prompts of the flashcards/MCQs that reinforce this branch.",
+          },
         },
-        required: ["title", "explanationAr", "sourcePages", "concepts"],
+        required: ["title", "summaryEn", "explanationAr", "sourcePages", "concepts", "examPoints", "cardPrompts"],
       },
     },
   },
@@ -406,24 +431,30 @@ export const mindMapSectionsResponseSchema = {
 
 export type ChapterMindMapSection = {
   title: string;
+  summaryEn: string;
   explanationAr: string;
   sourcePages: number[];
-  concepts: { termAr: string; termEn: string; explanationAr: string }[];
+  concepts: { termAr: string; termEn: string; explanationEn: string; explanationAr: string }[];
+  examPoints: string[];
+  cardPrompts: string[];
 };
 
 export function buildMindMapSectionsMessages(
   chapterTitle: string,
+  explanationEn: string,
   explanationAr: string,
   keyPoints: string[],
   terms: { ar: string; en: string }[],
+  flashcards: { questionEn: string; answerEn: string; sourcePage: number }[],
+  mcqs: { questionEn: string; explanationEn: string; sourcePage: number }[],
   validPages: number[]
 ): Message[] {
   return [
     {
       role: "system",
       content: [
-        `You organize an already-written Arabic chapter explanation into a hierarchical mind map: a few real Sections, each with its own key concepts.`,
-        `Use ONLY the content given below — do not add any fact, term, or page number that isn't already present in it.`,
+        `You organize an already-written chapter into a complete, hierarchical study mind map: a few real Sections, each with concepts, English explanation, Arabic support, high-yield exam points, and linked recall prompts.`,
+        `Use ONLY the content given below — do not add any fact, term, card idea, or page number that isn't already present in it. Do not merge away distinct facts just to make the map shorter.`,
         `Every section's sourcePages must be a subset of this chapter's real pages: ${validPages.join(", ")}.`,
         "Return JSON only.",
       ].join("\n"),
@@ -432,9 +463,13 @@ export function buildMindMapSectionsMessages(
       role: "user",
       content: [
         `Chapter: "${chapterTitle}"`,
+        `English explanation:\n${explanationEn}`,
         `Explanation:\n${explanationAr}`,
         `Key points:\n${keyPoints.map(point => `- ${point}`).join("\n")}`,
         `Terms:\n${terms.map(term => `- ${term.ar} / ${term.en}`).join("\n")}`,
+        `Flashcards:\n${flashcards.map(card => `- [p.${card.sourcePage}] ${card.questionEn} => ${card.answerEn}`).join("\n")}`,
+        `MCQs:\n${mcqs.map(mcq => `- [p.${mcq.sourcePage}] ${mcq.questionEn} => ${mcq.explanationEn}`).join("\n")}`,
+        "Every section should cite the pages it covers, preserve important branches, and attach relevant flashcard/MCQ prompts to the branch they test.",
       ].join("\n\n"),
     },
   ];
@@ -745,6 +780,9 @@ export function buildChapterFlashcardsMessages(
       role: "system",
       content: [
         `You write bilingual (Arabic + English) flashcards for a chapter titled "${chapterTitle}", for a student who finds English difficult and forgets quickly.`,
+        "Build flashcards as active-recall cards, not copied paragraphs. Use a balanced mix of Definition, Classification, Causes, Clinical features, Diagnosis, Management, Why, Comparison, Sequence, Red flags, and Clinical case cards whenever the source supports them. The front/question must be a natural English exam-style prompt; the answer must be concise, directly retrievable, and may contain numbered items when the source lists causes, criteria, or steps.",
+        "Keep the English term visible in the English fields. In Arabic fields, give the meaning naturally without damaging the English wording. A term card should make the relationship explicit: English term first in the study experience, Arabic meaning as support.",
+        "Do not make every card a simple definition and do not create filler cards. Prefer one testable idea per card, include threshold, duration, and classification details exactly when present, and create application cards from clinical scenarios only when the source supports the answer.",
         "Cover the material thoroughly — do not skip sections. Every flashcard must cite the real PDF page number (sourcePage) it came from, using the PDF PAGE markers below.",
         "Do not invent facts not present in the source text.",
         "Return JSON only.",

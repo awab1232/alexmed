@@ -21,6 +21,10 @@ import {
   markBookChapterRetrying,
   saveChapterSubChunkProgress,
 } from "@/lib/db-books";
+import {
+  getSafeChapterVisualAssets,
+  hasSafePendingChapterVisualAnalysis,
+} from "@/lib/chapter-visual-context";
 import { invokeLLM } from "@/lib/llm";
 import { publishMessage } from "@/lib/queue/client";
 import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
@@ -114,12 +118,42 @@ export async function POST(request: Request) {
     return await retryOrFail("لا يوجد نص مستخرج لهذا الفصل.", 422);
   }
 
+  if (await hasSafePendingChapterVisualAnalysis(chapterId)) {
+    await markBookChapterRetrying(
+      chapterId,
+      "ننتظر اكتمال قراءة صور وجداول هذا الفصل قبل بناء الملخص.",
+    );
+    return NextResponse.json(
+      { chapterId, status: "waiting_for_visuals" },
+      { status: 429 },
+    );
+  }
+
+  const visualAssets = await getSafeChapterVisualAssets(chapterId);
+  const visualByPage = new Map<number, typeof visualAssets>();
+  for (const asset of visualAssets) {
+    const pageAssets = visualByPage.get(asset.pageNumber) ?? [];
+    pageAssets.push(asset);
+    visualByPage.set(asset.pageNumber, pageAssets);
+  }
+  const pagesWithVisualContext = pages.map(page => {
+    const assets = visualByPage.get(page.page) ?? [];
+    if (!assets.length) return page;
+    const visualContext = assets
+      .map(
+        asset =>
+          `[VISUAL ${asset.assetType} — page ${asset.pageNumber}]\nEnglish: ${asset.descriptionEn}\nArabic: ${asset.descriptionAr}`,
+      )
+      .join("\n");
+    return { ...page, text: `${page.text}\n\n${visualContext}` };
+  });
+
   try {
     // chunkChapterPages is a pure function of chapter.pageTexts, which never
     // changes after extraction — so this produces the exact same sub-chunk
     // boundaries on every invocation/retry, making it safe to resume from
     // wherever chapter.subChunkResults last left off.
-    const subChunks = chunkChapterPages(pages);
+    const subChunks = chunkChapterPages(pagesWithVisualContext);
     const subChunkResults: BookChapterAnalysis[] = [
       ...(chapter.subChunkResults ?? []),
     ];

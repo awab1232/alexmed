@@ -3,7 +3,7 @@
 // pattern: getDb() singleton, ownership-scoped queries via and(eq(id,...),
 // eq(userId,...)), read functions return safe empty defaults, write
 // functions throw when the DB isn't configured.
-import { and, asc, count, desc, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lte, lt, or, sql } from "drizzle-orm";
 import { deleteObjects } from "./storage";
 import {
   bookCards,
@@ -740,6 +740,7 @@ export async function getBookPageById(
 export async function getNextPendingBookPage(
   bookId: string
 ): Promise<BookPage | null> {
+  const maxVisualAttempts = 3;
   const db = getDb();
   if (!db) return null;
   const [page] = await db
@@ -748,7 +749,13 @@ export async function getNextPendingBookPage(
     .where(
       and(
         eq(bookPages.bookId, bookId),
-        inArray(bookPages.visualStatus, ["pending", "failed"])
+        or(
+          eq(bookPages.visualStatus, "pending"),
+          and(
+            eq(bookPages.visualStatus, "failed"),
+            lt(bookPages.attemptCount, maxVisualAttempts)
+          )
+        )
       )
     )
     .orderBy(asc(bookPages.pageNumber))
@@ -850,6 +857,25 @@ export async function insertBookVisualAssets(
       sortOrder: index,
     }))
   );
+}
+
+export async function replaceBookPageVisualAssets(
+  pageId: string,
+  bookId: string,
+  chapterId: string | null,
+  assets: {
+    assetType: "image" | "diagram" | "table" | "screenshot" | "chart";
+    storageKey: string;
+    descriptionAr: string;
+    descriptionEn: string;
+    confidence: "high" | "medium" | "low";
+    reviewStatus: "complete" | "needs_review";
+  }[]
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(bookVisualAssets).where(eq(bookVisualAssets.pageId, pageId));
+  await insertBookVisualAssets(pageId, bookId, chapterId, assets);
 }
 
 // Ownership check for a page-scoped action (the retryPageVisual mutation) —
@@ -1223,6 +1249,18 @@ export async function saveChapterMindMapSections(
     .where(eq(bookChapters.id, chapterId));
 }
 
+export async function saveChapterMedicalNotePages(
+  chapterId: string,
+  pages: NonNullable<typeof bookChapters.$inferSelect.medicalNotePages>
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookChapters)
+    .set({ medicalNotePages: pages, updatedAt: new Date() })
+    .where(eq(bookChapters.id, chapterId));
+}
+
 // Audit Phase 7 — the caller (generateVisualInsights tRPC mutation) has
 // already proven chapter ownership via getChapterForUser, so this needs no
 // ownership filter of its own. Joined through bookPages (not
@@ -1236,11 +1274,31 @@ export async function getChapterVisualAssets(chapterId: string) {
       pageNumber: bookPages.pageNumber,
       assetType: bookVisualAssets.assetType,
       descriptionAr: bookVisualAssets.descriptionAr,
+      descriptionEn: bookVisualAssets.descriptionEn,
     })
     .from(bookVisualAssets)
     .innerJoin(bookPages, eq(bookPages.id, bookVisualAssets.pageId))
     .where(eq(bookPages.chapterId, chapterId))
     .orderBy(asc(bookPages.pageNumber));
+}
+
+// Wait for the independent page-vision worker before generating the chapter
+// study material. Failed pages are allowed through (and remain visible in
+// coverage), while pending/processing pages must not be silently omitted.
+export async function hasPendingChapterVisualAnalysis(chapterId: string) {
+  const db = getDb();
+  if (!db) return false;
+  const rows = await db
+    .select({ visualStatus: bookPages.visualStatus })
+    .from(bookPages)
+    .where(
+      and(
+        eq(bookPages.chapterId, chapterId),
+        inArray(bookPages.visualStatus, ["pending", "processing"])
+      )
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 export async function saveChapterVisualInsights(
@@ -1554,6 +1612,33 @@ export async function getChapterContentForUser(
     mcqs: mcqs.map(mcq => ({ ...mcq, ...linkFor(mcq.sourcePage) })),
     pages: pagesWithVisuals,
   };
+}
+
+// Compact study signals for mind-map generation: the map is grounded in the
+// same English explanation, flashcards, and MCQs the student already studies,
+// without duplicating the full reader/page payload.
+export async function getChapterStudySignals(chapterId: string) {
+  const db = getDb();
+  if (!db) return { flashcards: [], mcqs: [] };
+  const [flashcards, mcqs] = await Promise.all([
+    db
+      .select({
+        questionEn: bookCards.questionEn,
+        answerEn: bookCards.answerEn,
+        sourcePage: bookCards.sourcePage,
+      })
+      .from(bookCards)
+      .where(eq(bookCards.chapterId, chapterId)),
+    db
+      .select({
+        questionEn: bookMcqs.questionEn,
+        explanationEn: bookMcqs.explanationEn,
+        sourcePage: bookMcqs.sourcePage,
+      })
+      .from(bookMcqs)
+      .where(eq(bookMcqs.chapterId, chapterId)),
+  ]);
+  return { flashcards, mcqs };
 }
 
 // Ownership-scoped single-card read for the "اشرحها ببساطة" on-demand
