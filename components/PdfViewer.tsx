@@ -283,6 +283,22 @@ export default function PdfViewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, scale]);
 
+  // Fallback so the viewer never depends solely on the IntersectionObserver
+  // above for its very first visible content: if the scroll container
+  // measures a collapsed/zero height at the moment the observer is created
+  // (a real layout race — e.g. this panel mounting before its surrounding
+  // page has finished laying out), no page ever reports as intersecting and
+  // every canvas stays blank forever with no error shown, which is exactly
+  // what a "the PDF area is just white" report looks like. Rendering page 1
+  // unconditionally here costs nothing extra once real scrolling does kick
+  // in (renderPage no-ops while already rendering/rendered), and later
+  // pages still render lazily as before.
+  useEffect(() => {
+    if (!doc || numPages < 1) return;
+    renderPage(1, scale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, numPages]);
+
   function scrollToPage(pageNumber: number) {
     const el = wrapperElsRef.current.get(pageNumber);
     el?.scrollIntoView({ behavior: "smooth", block: "start" });

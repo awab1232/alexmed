@@ -18,18 +18,30 @@
 // result.
 import {
   getChapterById,
+  getChapterCardCount,
+  getChapterMcqCount,
   getChapterTerms,
   getChapterVisualAssets,
+  insertBookCards,
+  insertBookMcqs,
   saveChapterMindMapSections,
   saveChapterVisualInsights,
 } from "./db-books";
 import {
+  buildChapterFlashcardsMessages,
+  buildChapterMcqsMessages,
   buildMindMapSectionsMessages,
   buildVisualInsightsMessages,
+  chapterFlashcardsResponseSchema,
+  chapterMcqsResponseSchema,
   mindMapSectionsResponseSchema,
+  parseChapterFlashcards,
+  parseChapterMcqs,
   parseMindMapSections,
   parseVisualInsights,
   visualInsightsResponseSchema,
+  type ChapterFlashcard,
+  type ChapterMcq,
   type ChapterMindMapSection,
 } from "./book-analysis";
 import { invokeLLM } from "./llm";
@@ -85,4 +97,50 @@ export async function generateAndSaveVisualInsights(
   );
   await saveChapterVisualInsights(chapter.id, visualInsightsAr);
   return visualInsightsAr;
+}
+
+// On-demand flashcards/MCQs (see lib/book-analysis.ts's comment on
+// buildChapterAnalysisMessages) — the automatic chapter-analysis call no
+// longer generates these itself, so a chapter reaching "complete" now means
+// only explanation/keyPoints/terms/summary are ready; a student who wants
+// study tools triggers one of these, same idempotent shape as the mind-map/
+// visual-insights generators above (count-check instead of a cached-field
+// check, since cards/mcqs are their own normalized tables, not a column on
+// bookChapters).
+export async function generateAndSaveChapterFlashcards(
+  chapterId: string
+): Promise<ChapterFlashcard[] | null> {
+  const chapter = await getChapterById(chapterId);
+  if (!chapter || chapter.status !== "complete") return null;
+  if ((await getChapterCardCount(chapterId)) > 0) return null;
+  if (!chapter.pageTexts?.length) return [];
+
+  const response = await invokeLLM({
+    max_tokens: 3000,
+    messages: buildChapterFlashcardsMessages(chapter.title, chapter.pageTexts),
+    response_format: chapterFlashcardsResponseSchema,
+  });
+  const flashcards = parseChapterFlashcards(
+    response.choices[0]?.message.content
+  );
+  await insertBookCards(chapter.id, chapter.userId, flashcards);
+  return flashcards;
+}
+
+export async function generateAndSaveChapterMcqs(
+  chapterId: string
+): Promise<ChapterMcq[] | null> {
+  const chapter = await getChapterById(chapterId);
+  if (!chapter || chapter.status !== "complete") return null;
+  if ((await getChapterMcqCount(chapterId)) > 0) return null;
+  if (!chapter.pageTexts?.length) return [];
+
+  const response = await invokeLLM({
+    max_tokens: 3000,
+    messages: buildChapterMcqsMessages(chapter.title, chapter.pageTexts),
+    response_format: chapterMcqsResponseSchema,
+  });
+  const mcqs = parseChapterMcqs(response.choices[0]?.message.content);
+  await insertBookMcqs(chapter.id, mcqs);
+  return mcqs;
 }

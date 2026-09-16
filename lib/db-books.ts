@@ -1139,6 +1139,62 @@ export async function insertBookMcqs(
   );
 }
 
+// On-demand flashcard generation's own insert (lib/book-enrichment.ts's
+// generateAndSaveChapterFlashcards) — mirrors insertBookMcqs above, the one
+// difference being bookCards denormalizes userId (see schema comment on
+// that column) so the caller must pass it through.
+export async function insertBookCards(
+  chapterId: string,
+  userId: string,
+  cards: {
+    questionAr: string;
+    questionEn: string;
+    answerAr: string;
+    answerEn: string;
+    relatedTermEn: string;
+    sourcePage: number;
+  }[]
+) {
+  if (!cards.length) return;
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(bookCards).values(
+    cards.map(card => ({
+      chapterId,
+      userId,
+      questionAr: card.questionAr,
+      questionEn: card.questionEn,
+      answerAr: card.answerAr,
+      answerEn: card.answerEn,
+      relatedTermEn: card.relatedTermEn,
+      sourcePage: card.sourcePage,
+    }))
+  );
+}
+
+// Idempotency checks for the two on-demand generations above — cheap counts
+// rather than fetching full rows, since the caller only needs to know
+// "has this already been done" before paying for another LLM call.
+export async function getChapterCardCount(chapterId: string): Promise<number> {
+  const db = getDb();
+  if (!db) return 0;
+  const [row] = await db
+    .select({ c: count() })
+    .from(bookCards)
+    .where(eq(bookCards.chapterId, chapterId));
+  return row?.c ?? 0;
+}
+
+export async function getChapterMcqCount(chapterId: string): Promise<number> {
+  const db = getDb();
+  if (!db) return 0;
+  const [row] = await db
+    .select({ c: count() })
+    .from(bookMcqs)
+    .where(eq(bookMcqs.chapterId, chapterId));
+  return row?.c ?? 0;
+}
+
 export async function saveMcqValidationResults(
   results: { id: string; status: "valid" | "flagged"; note: string | null }[]
 ) {

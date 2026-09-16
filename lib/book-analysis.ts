@@ -271,8 +271,13 @@ export function buildChapterAnalysisMessages(
       content: [
         `You are a meticulous, encouraging study coach writing for a student who finds English difficult and forgets quickly.`,
         `You are given the raw text of one chapter (or part of one) from a ${subjectLabel}, titled "${chapterTitle}".`,
-        `Produce: a simple Arabic explanation, a concise exam-focused English explanation, key points, ${termsInstruction}, flashcards, and 4-option multiple-choice questions.`,
-        "Cover the material thoroughly — do not skip sections. Every flashcard and MCQ must cite the real PDF page number (sourcePage) it came from, using the PDF PAGE markers below.",
+        `Produce: a simple Arabic explanation, a concise exam-focused English explanation, key points, and ${termsInstruction}.`,
+        // Flashcards/MCQs moved to their own on-demand calls (buildChapterFlashcardsMessages/
+        // buildChapterMcqsMessages below) — a student who only wants to read the explanation
+        // no longer pays the extra generation time/tokens for study tools they didn't ask for.
+        // The schema keeps requiring these two keys (see bookChapterSchema) so every existing
+        // sub-chunk-merge/parse/persist path stays unchanged; only their content changes here.
+        "Always return flashcards and mcqs as empty arrays — those are generated separately, only when a student asks for them.",
         "Do not invent facts not present in the source text. If the source text is too thin or unclear to extract real content from, say so plainly in explanationAr/explanationEn instead of inventing filler.",
         "Write ONLY in Arabic and English — every field in every language, never any third language, never mix scripts within a field.",
         "Return JSON only.",
@@ -668,6 +673,174 @@ export function parseGapQuestions(
   const parsed = parseJsonResponse(content) as unknown as { mcqs: GapMcq[] };
   const gapPageSet = new Set(gapPages);
   return parsed.mcqs.filter(mcq => gapPageSet.has(mcq.sourcePage));
+}
+
+// On-demand flashcards/MCQs for a whole chapter — split out of
+// buildChapterAnalysisMessages above (see its comment) so a student who
+// never asks for study tools never pays for generating them. Grounded in
+// the exact same page text the core analysis call already used
+// (chapter.pageTexts), never a fresh re-read of the PDF.
+export type ChapterFlashcard = {
+  questionAr: string;
+  questionEn: string;
+  answerAr: string;
+  answerEn: string;
+  relatedTermEn: string;
+  sourcePage: number;
+};
+
+export const chapterFlashcardsSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    flashcards: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          questionAr: { type: "string" },
+          questionEn: { type: "string" },
+          answerAr: { type: "string" },
+          answerEn: { type: "string" },
+          relatedTermEn: {
+            type: "string",
+            description:
+              "A term (English) from the chapter this card tests, or an empty string if none.",
+          },
+          sourcePage: { type: "integer" },
+        },
+        required: [
+          "questionAr",
+          "questionEn",
+          "answerAr",
+          "answerEn",
+          "relatedTermEn",
+          "sourcePage",
+        ],
+      },
+    },
+  },
+  required: ["flashcards"],
+};
+
+export const chapterFlashcardsResponseSchema = {
+  type: "json_schema" as const,
+  json_schema: {
+    name: "chapter_flashcards",
+    strict: true,
+    schema: chapterFlashcardsSchema,
+  },
+};
+
+export function buildChapterFlashcardsMessages(
+  chapterTitle: string,
+  pages: BookPageInput[]
+): Message[] {
+  const source = pages
+    .map(page => `\n===== PDF PAGE ${page.page} =====\n${page.text}`)
+    .join("\n");
+  return [
+    {
+      role: "system",
+      content: [
+        `You write bilingual (Arabic + English) flashcards for a chapter titled "${chapterTitle}", for a student who finds English difficult and forgets quickly.`,
+        "Cover the material thoroughly — do not skip sections. Every flashcard must cite the real PDF page number (sourcePage) it came from, using the PDF PAGE markers below.",
+        "Do not invent facts not present in the source text.",
+        "Return JSON only.",
+      ].join("\n"),
+    },
+    { role: "user", content: `Chapter text:\n${source}` },
+  ];
+}
+
+export function parseChapterFlashcards(content: unknown): ChapterFlashcard[] {
+  const parsed = parseJsonResponse(content) as unknown as {
+    flashcards: ChapterFlashcard[];
+  };
+  return parsed.flashcards;
+}
+
+export type ChapterMcq = {
+  questionEn: string;
+  choices: string[];
+  correctIndex: number;
+  explanationEn: string;
+  sourcePage: number;
+};
+
+export const chapterMcqsSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    mcqs: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          questionEn: { type: "string" },
+          choices: {
+            type: "array",
+            items: { type: "string" },
+            minItems: 4,
+            maxItems: 4,
+          },
+          correctIndex: {
+            type: "integer",
+            description: "0-based index into choices of the correct answer.",
+          },
+          explanationEn: { type: "string" },
+          sourcePage: { type: "integer" },
+        },
+        required: [
+          "questionEn",
+          "choices",
+          "correctIndex",
+          "explanationEn",
+          "sourcePage",
+        ],
+      },
+    },
+  },
+  required: ["mcqs"],
+};
+
+export const chapterMcqsResponseSchema = {
+  type: "json_schema" as const,
+  json_schema: {
+    name: "chapter_mcqs",
+    strict: true,
+    schema: chapterMcqsSchema,
+  },
+};
+
+export function buildChapterMcqsMessages(
+  chapterTitle: string,
+  pages: BookPageInput[]
+): Message[] {
+  const source = pages
+    .map(page => `\n===== PDF PAGE ${page.page} =====\n${page.text}`)
+    .join("\n");
+  return [
+    {
+      role: "system",
+      content: [
+        `You write 4-option multiple-choice questions covering a chapter titled "${chapterTitle}".`,
+        "Cover the material thoroughly — do not skip sections. Every question's sourcePage must cite the real PDF page number it came from, using the PDF PAGE markers below.",
+        "Do not invent facts not present in the source text.",
+        "Return JSON only.",
+      ].join("\n"),
+    },
+    { role: "user", content: `Chapter text:\n${source}` },
+  ];
+}
+
+export function parseChapterMcqs(content: unknown): ChapterMcq[] {
+  const parsed = parseJsonResponse(content) as unknown as {
+    mcqs: ChapterMcq[];
+  };
+  return parsed.mcqs;
 }
 
 // Audit Phase 7 — connects a chapter's already-written explanation to its

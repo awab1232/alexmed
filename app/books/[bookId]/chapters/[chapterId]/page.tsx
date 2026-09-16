@@ -88,6 +88,16 @@ export default function ChapterDetailPage() {
     onSuccess: () =>
       utils.books.getChapter.invalidate({ id: params.chapterId }),
   });
+  // البطاقات والاختبار صاروا اختياريين (مو جزء من تحليل الفصل التلقائي) —
+  // نفس نمط generateVisualInsights فوق تمامًا.
+  const generateFlashcards = trpc.books.generateChapterFlashcards.useMutation({
+    onSuccess: () =>
+      utils.books.getChapter.invalidate({ id: params.chapterId }),
+  });
+  const generateMcqs = trpc.books.generateChapterMcqs.useMutation({
+    onSuccess: () =>
+      utils.books.getChapter.invalidate({ id: params.chapterId }),
+  });
   // Preselected when arriving from the book page's study-tools chooser
   // (app/books/[bookId]/page.tsx links here with ?tool=cards|mcqs|explanation)
   // or from the daily review queue's "عرض في الكتاب" link (app/review/page.tsx
@@ -636,8 +646,32 @@ export default function ChapterDetailPage() {
                   </p>
                 </div>
               ))}
-              {!(currentPage ? pageCardsAndMcqs.cards : cards).length && (
-                <p>لا توجد بطاقات لهذه الصفحة.</p>
+              {!cards.length ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={generateFlashcards.isPending}
+                  onClick={() =>
+                    generateFlashcards.mutate({ chapterId: params.chapterId })
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    width: "fit-content",
+                  }}
+                >
+                  {generateFlashcards.isPending ? (
+                    <Loader2 size={14} className="spin" />
+                  ) : (
+                    <Sparkles size={14} />
+                  )}
+                  <span>توليد البطاقات لهذا الفصل</span>
+                </button>
+              ) : (
+                !(currentPage ? pageCardsAndMcqs.cards : cards).length && (
+                  <p>لا توجد بطاقات لهذه الصفحة.</p>
+                )
               )}
             </div>
           )}
@@ -816,8 +850,32 @@ export default function ChapterDetailPage() {
                   />
                 </div>
               ))}
-              {!(currentPage ? pageCardsAndMcqs.mcqs : mcqs).length && (
-                <p>لا توجد أسئلة لهذه الصفحة.</p>
+              {!mcqs.length ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={generateMcqs.isPending}
+                  onClick={() =>
+                    generateMcqs.mutate({ chapterId: params.chapterId })
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    width: "fit-content",
+                  }}
+                >
+                  {generateMcqs.isPending ? (
+                    <Loader2 size={14} className="spin" />
+                  ) : (
+                    <Sparkles size={14} />
+                  )}
+                  <span>توليد اختبار لهذا الفصل</span>
+                </button>
+              ) : (
+                !(currentPage ? pageCardsAndMcqs.mcqs : mcqs).length && (
+                  <p>لا توجد أسئلة لهذه الصفحة.</p>
+                )
               )}
             </div>
           )}

@@ -29,6 +29,8 @@ import {
 } from "../db-books";
 import { assignBookToSubject } from "../db-subjects";
 import {
+  generateAndSaveChapterFlashcards,
+  generateAndSaveChapterMcqs,
   generateAndSaveMindMapSections,
   generateAndSaveVisualInsights,
 } from "../book-enrichment";
@@ -364,6 +366,48 @@ export const booksRouter = router({
       }
       const visualInsightsAr = await generateAndSaveVisualInsights(chapter.id);
       return { visualInsightsAr: visualInsightsAr ?? "" };
+    }),
+
+  // البطاقات والاختبار صاروا اختياريين — لا يتولّدون تلقائيًا مع تحليل
+  // الفصل، بس عند طلب الطالب. نفس نمط generateVisualInsights فوق تمامًا.
+  generateChapterFlashcards: protectedProcedure
+    .input(z.object({ chapterId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
+      if (!chapter) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Chapter not found",
+        });
+      }
+      if (chapter.status !== "complete") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Chapter analysis must complete first",
+        });
+      }
+      const flashcards = await generateAndSaveChapterFlashcards(chapter.id);
+      return { count: flashcards?.length ?? 0 };
+    }),
+
+  generateChapterMcqs: protectedProcedure
+    .input(z.object({ chapterId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
+      if (!chapter) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Chapter not found",
+        });
+      }
+      if (chapter.status !== "complete") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Chapter analysis must complete first",
+        });
+      }
+      const mcqs = await generateAndSaveChapterMcqs(chapter.id);
+      return { count: mcqs?.length ?? 0 };
     }),
 
   // Audit Phase 5 — Question Validation Agent. Lazy + idempotent, same

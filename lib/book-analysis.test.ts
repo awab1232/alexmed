@@ -7,6 +7,8 @@ import {
   findUncoveredPages,
   mergeSubChunkResults,
   parseChapterAnalysis,
+  parseChapterFlashcards,
+  parseChapterMcqs,
   parseGapQuestions,
   parseMcqValidation,
   parseMindMapSections,
@@ -160,6 +162,21 @@ describe("buildChapterAnalysisMessages profile framing (PR2)", () => {
     const analysis = makeAnalysis();
     expect(parseChapterAnalysis(JSON.stringify(analysis))).toEqual(analysis);
   });
+
+  // Flashcards/MCQs moved to their own on-demand calls (generateAndSave
+  // ChapterFlashcards/Mcqs in lib/book-enrichment.ts) — the core chapter
+  // analysis call must tell the model to leave both empty rather than
+  // generate them, or the "optional, on request only" behavior silently
+  // regresses back to always-generated.
+  it("tells the model to leave flashcards/mcqs empty — they're generated separately on request", () => {
+    const content = systemContent();
+    expect(content).toContain(
+      "Always return flashcards and mcqs as empty arrays"
+    );
+    const produceLine = content.match(/Produce:.*/)?.[0] ?? "";
+    expect(produceLine).not.toContain("flashcards");
+    expect(produceLine).not.toContain("multiple-choice");
+  });
 });
 
 describe("parseChapterAnalysis", () => {
@@ -299,6 +316,51 @@ describe("parseGapQuestions", () => {
       ],
     });
     expect(parseGapQuestions(content, [4, 5])).toEqual([]);
+  });
+});
+
+describe("parseChapterFlashcards", () => {
+  it("extracts the flashcards array from the response", () => {
+    const content = JSON.stringify({
+      flashcards: [
+        {
+          questionAr: "س",
+          questionEn: "Q",
+          answerAr: "ج",
+          answerEn: "A",
+          relatedTermEn: "",
+          sourcePage: 3,
+        },
+      ],
+    });
+    expect(parseChapterFlashcards(content)).toHaveLength(1);
+  });
+
+  it("returns an empty array when the model generated none", () => {
+    const content = JSON.stringify({ flashcards: [] });
+    expect(parseChapterFlashcards(content)).toEqual([]);
+  });
+});
+
+describe("parseChapterMcqs", () => {
+  it("extracts the mcqs array from the response", () => {
+    const content = JSON.stringify({
+      mcqs: [
+        {
+          questionEn: "Q1",
+          choices: ["a", "b", "c", "d"],
+          correctIndex: 2,
+          explanationEn: "why",
+          sourcePage: 7,
+        },
+      ],
+    });
+    expect(parseChapterMcqs(content)).toHaveLength(1);
+  });
+
+  it("returns an empty array when the model generated none", () => {
+    const content = JSON.stringify({ mcqs: [] });
+    expect(parseChapterMcqs(content)).toEqual([]);
   });
 });
 
