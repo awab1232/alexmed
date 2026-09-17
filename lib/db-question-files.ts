@@ -6,8 +6,16 @@
 // lib/db-books.ts: getDb() singleton, ownership-scoped via
 // and(eq(id,...), eq(userId,...)).
 import { and, asc, count, desc, eq } from "drizzle-orm";
-import { books, extractedQuestions, type Book } from "../drizzle/schema";
+import {
+  books,
+  extractedQuestionImageRelations,
+  extractedQuestionImages,
+  extractedQuestions,
+  type Book,
+} from "../drizzle/schema";
 import { getDb } from "./db";
+import { getQuestionFileCoverage } from "./db-question-file-images";
+import { storageGet } from "./storage";
 import type { ExtractedQuestionInput } from "./question-extraction";
 
 export async function createQuestionFileShell(
@@ -88,7 +96,43 @@ export async function getQuestionFileForUser(userId: string, bookId: string) {
     .where(eq(extractedQuestions.bookId, bookId))
     .orderBy(asc(extractedQuestions.orderIndex));
 
-  return { book, questions };
+  // One query for every question's associated image (if any), rather than
+  // N+1 per question — a question with no row here just gets undefined,
+  // meaning "no image container" in the UI.
+  const imagesByQuestionId = new Map<string, string>();
+  if (questions.length) {
+    const rows = await db
+      .select({
+        questionId: extractedQuestionImageRelations.questionId,
+        storageKey: extractedQuestionImages.storageKey,
+      })
+      .from(extractedQuestionImageRelations)
+      .innerJoin(
+        extractedQuestionImages,
+        eq(extractedQuestionImages.id, extractedQuestionImageRelations.imageId)
+      )
+      // extractedQuestionImageRelations has no bookId of its own — the join
+      // above (through extractedQuestionImages) is what scopes this to the
+      // right book.
+      .where(eq(extractedQuestionImages.bookId, bookId));
+    for (const row of rows) {
+      if (!imagesByQuestionId.has(row.questionId)) {
+        imagesByQuestionId.set(
+          row.questionId,
+          (await storageGet(row.storageKey)).url
+        );
+      }
+    }
+  }
+
+  const questionsWithImages = questions.map(question => ({
+    ...question,
+    imageUrl: imagesByQuestionId.get(question.id) ?? null,
+  }));
+
+  const coverage = await getQuestionFileCoverage(bookId);
+
+  return { book, questions: questionsWithImages, coverage };
 }
 
 export async function saveExtractedQuestions(

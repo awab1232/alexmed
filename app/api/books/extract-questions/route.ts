@@ -7,6 +7,7 @@ import {
 import { normalizePageText } from "@/lib/pdf-cards";
 import { extractQuestionsFromPages } from "@/lib/question-extraction";
 import { storageGetSignedUrl } from "@/lib/storage";
+import { publishMessage } from "@/lib/queue/client";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts.
@@ -79,6 +80,12 @@ export async function POST(request: Request) {
 
     await saveExtractedQuestions(bookId, questions);
     await markQuestionFileComplete(bookId, result.total);
+
+    // Multimodal pipeline, stages 2+3 (lib/question-file-analysis.ts) — a
+    // separate, additive, best-effort background pass; the book is already
+    // "complete" above and the base questions are already usable regardless
+    // of how this later job goes.
+    await publishMessage({ type: "extract_question_file_images", bookId });
 
     return NextResponse.json({
       bookId,

@@ -620,21 +620,29 @@ export const bookChapters = pgTable(
     // notes (definition, features, diagnosis, management, red flags, etc.).
     // Kept additive to the existing chapter analysis so cards/MCQs remain
     // untouched and older chapters continue to render normally.
-    medicalNotePages: jsonb("medicalNotePages").$type<{
-      title: string;
-      subtitle: string;
-      layout: "overview" | "sections" | "comparison" | "algorithm" | "exam";
-      sourcePages: number[];
-      blocks: {
-        kind: "definition" | "bullet_group" | "alert" | "comparison" | "algorithm" | "image";
-        heading: string;
-        bodyEn: string;
-        bodyAr: string;
-        items: string[];
-        tone: "default" | "high_yield" | "warning" | "clinical";
+    medicalNotePages: jsonb("medicalNotePages").$type<
+      {
+        title: string;
+        subtitle: string;
+        layout: "overview" | "sections" | "comparison" | "algorithm" | "exam";
         sourcePages: number[];
-      }[];
-    }[]>(),
+        blocks: {
+          kind:
+            | "definition"
+            | "bullet_group"
+            | "alert"
+            | "comparison"
+            | "algorithm"
+            | "image";
+          heading: string;
+          bodyEn: string;
+          bodyAr: string;
+          items: string[];
+          tone: "default" | "high_yield" | "warning" | "clinical";
+          sourcePages: number[];
+        }[];
+      }[]
+    >(),
     // Audit Phase 6 — real hierarchical mind map data: Chapter -> Sections ->
     // Key concepts, each section carrying the real page numbers it came
     // from. Generated lazily (on first mind-map view, one bounded LLM call
@@ -963,6 +971,19 @@ export const bookMcqAttempts = pgTable("book_mcq_attempts", {
 // AnswerIndex is a deliberately distinct column reserved for a possible
 // future AI-assisted-guess feature; it must never be read as if it were
 // extractedAnswerIndex, and nothing in this PR ever writes to it.
+//
+// keywords/aiExplanationAr/ai{Status,Error,AttemptCount} below are that
+// "future AI-assisted-guess feature" (see lib/question-file-analysis.ts):
+// every extracted question — image-bearing or not — is run through
+// vision-aware AI once to produce these, same claim/retry-budget pattern as
+// bookPages' visualStatus/attemptCount. aiInferredAnswerIndex is only ever
+// written when extractedAnswerIndex IS NULL — it must never override a real,
+// source-stated answer.
+export const extractedQuestionAiStatusEnum = pgEnum(
+  "extracted_question_ai_status",
+  ["pending", "processing", "complete", "failed"]
+);
+
 export const extractedQuestions = pgTable(
   "extracted_questions",
   {
@@ -978,6 +999,13 @@ export const extractedQuestions = pgTable(
     aiInferredAnswerIndex: integer("aiInferredAnswerIndex"),
     explanationText: text("explanationText"),
     sourcePage: integer("sourcePage").notNull(),
+    keywords: jsonb("keywords").$type<string[]>(),
+    aiExplanationAr: text("aiExplanationAr"),
+    aiStatus: extractedQuestionAiStatusEnum("aiStatus")
+      .default("pending")
+      .notNull(),
+    aiError: text("aiError"),
+    aiAttemptCount: integer("aiAttemptCount").default(0).notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -987,10 +1015,109 @@ export const extractedQuestions = pgTable(
       table.bookId,
       table.orderIndex
     ),
+    aiStatusIdx: index("extracted_questions_ai_status_idx").on(table.aiStatus),
   })
 );
 
 export type ExtractedQuestion = typeof extractedQuestions.$inferSelect;
+
+// Per-page tracker for question-file image capture/classification (mirrors
+// bookPages' visualStatus/attemptCount claim pattern in lib/queue/claim.ts) —
+// this is what proves every page of the PDF was actually looked at (never
+// silently stops early on a long file), independent of extractedQuestions'
+// own per-question aiStatus above.
+export const questionFilePageStatusEnum = pgEnum("question_file_page_status", [
+  "pending",
+  "processing",
+  "complete",
+  "failed",
+]);
+
+export const questionFilePages = pgTable(
+  "question_file_pages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    pageNumber: integer("pageNumber").notNull(),
+    status: questionFilePageStatusEnum("status").default("pending").notNull(),
+    attemptCount: integer("attemptCount").default(0).notNull(),
+    errorMessage: text("errorMessage"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    bookPageUnique: uniqueIndex(
+      "question_file_pages_book_id_page_number_idx"
+    ).on(table.bookId, table.pageNumber),
+    statusIdx: index("question_file_pages_status_idx").on(table.status),
+  })
+);
+
+export type QuestionFilePage = typeof questionFilePages.$inferSelect;
+
+// One row per PDF page confirmed (by vision classification in stage 2 — see
+// lib/question-file-analysis.ts) to contain a real figure — NOT one row per
+// page unconditionally, unlike bookPages. v1 stores a full-page screenshot
+// (no real per-figure cropping yet, per the approved plan's explicit
+// architecture note); storageKey is the only field a future cropping pass
+// would ever need to change, and one page could then split into multiple
+// rows here — no schema redesign required for that later.
+export const extractedQuestionImages = pgTable(
+  "extracted_question_images",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    pageNumber: integer("pageNumber").notNull(),
+    storageKey: text("storageKey").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    bookPageIdx: index("extracted_question_images_book_id_page_number_idx").on(
+      table.bookId,
+      table.pageNumber
+    ),
+  })
+);
+
+export type ExtractedQuestionImage =
+  typeof extractedQuestionImages.$inferSelect;
+
+// The many-to-many join the user explicitly asked for: "ImageAsset ->
+// Questions, not Question -> permanently embedded image". v1's deterministic,
+// page-range association pass (lib/question-file-analysis.ts's
+// associateImagesWithQuestions) only ever inserts one row per question, but
+// nothing here stops a future real-cropping pass from linking one question
+// to more than one image.
+export const extractedQuestionImageRelations = pgTable(
+  "extracted_question_image_relations",
+  {
+    questionId: uuid("questionId")
+      .notNull()
+      .references(() => extractedQuestions.id, { onDelete: "cascade" }),
+    imageId: uuid("imageId")
+      .notNull()
+      .references(() => extractedQuestionImages.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    pk: primaryKey({ columns: [table.questionId, table.imageId] }),
+    imageIdx: index("extracted_question_image_relations_image_id_idx").on(
+      table.imageId
+    ),
+  })
+);
 
 // Append-only SRS rating log — separate from book_cards' own (mutable,
 // current-state) SRS fields, because stats (accuracy history, streaks) need

@@ -11,7 +11,9 @@ import {
   adminMaterialBatches,
   bookChapters,
   bookPages,
+  extractedQuestions,
   mirrorBatches,
+  questionFilePages,
 } from "../../drizzle/schema";
 import { requireDb } from "../db";
 
@@ -174,6 +176,80 @@ export async function claimBookPageVisual(
       id: bookPages.id,
       bookId: bookPages.bookId,
       attemptCount: bookPages.attemptCount,
+    });
+  return row ?? null;
+}
+
+// No "retrying" state, same reasoning as CLAIMABLE_BOOK_PAGE_VISUAL_STATUSES
+// above — QStash itself retries a failed invocation; this DB status only
+// tracks pending/processing/complete/failed.
+const CLAIMABLE_QUESTION_FILE_PAGE_STATUSES = ["pending", "failed"] as const;
+const CLAIMABLE_EXTRACTED_QUESTION_AI_STATUSES = ["pending", "failed"] as const;
+
+export type ClaimedQuestionFilePage = {
+  id: string;
+  bookId: string;
+  pageNumber: number;
+  attemptCount: number;
+};
+
+export async function claimQuestionFilePage(
+  pageId: string
+): Promise<ClaimedQuestionFilePage | null> {
+  const db = requireDb();
+  const [row] = await db
+    .update(questionFilePages)
+    .set({
+      status: "processing",
+      attemptCount: sql`${questionFilePages.attemptCount} + 1`,
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(questionFilePages.id, pageId),
+        inArray(questionFilePages.status, CLAIMABLE_QUESTION_FILE_PAGE_STATUSES)
+      )
+    )
+    .returning({
+      id: questionFilePages.id,
+      bookId: questionFilePages.bookId,
+      pageNumber: questionFilePages.pageNumber,
+      attemptCount: questionFilePages.attemptCount,
+    });
+  return row ?? null;
+}
+
+export type ClaimedExtractedQuestion = {
+  id: string;
+  bookId: string;
+  attemptCount: number;
+};
+
+export async function claimExtractedQuestion(
+  questionId: string
+): Promise<ClaimedExtractedQuestion | null> {
+  const db = requireDb();
+  const [row] = await db
+    .update(extractedQuestions)
+    .set({
+      aiStatus: "processing",
+      aiAttemptCount: sql`${extractedQuestions.aiAttemptCount} + 1`,
+      aiError: null,
+    })
+    .where(
+      and(
+        eq(extractedQuestions.id, questionId),
+        inArray(
+          extractedQuestions.aiStatus,
+          CLAIMABLE_EXTRACTED_QUESTION_AI_STATUSES
+        )
+      )
+    )
+    .returning({
+      id: extractedQuestions.id,
+      bookId: extractedQuestions.bookId,
+      attemptCount: extractedQuestions.aiAttemptCount,
     });
   return row ?? null;
 }

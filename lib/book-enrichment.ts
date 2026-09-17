@@ -175,7 +175,8 @@ export async function generateAndSaveMedicalNotePages(
 ): Promise<MedicalNotePage[] | null> {
   const chapter = await getChapterById(chapterId);
   if (!chapter || chapter.status !== "complete") return null;
-  if (chapter.medicalNotePages) return chapter.medicalNotePages as MedicalNotePage[];
+  if (chapter.medicalNotePages)
+    return chapter.medicalNotePages as MedicalNotePage[];
 
   const terms = await getChapterTerms(chapter.id);
   const visuals = await getChapterVisualAssets(chapter.id);
@@ -192,12 +193,18 @@ export async function generateAndSaveMedicalNotePages(
       summary: chapter.chapterSummary ?? "",
       keyPoints: chapter.keyPoints ?? [],
       terms,
-      pages: (chapter.pageTexts ?? []).map(page => ({ page: page.page, text: page.text })),
+      pages: (chapter.pageTexts ?? []).map(page => ({
+        page: page.page,
+        text: page.text,
+      })),
       visuals,
     }),
     response_format: medicalNotePagesResponseSchema,
   });
-  const pages = parseMedicalNotePages(response.choices[0]?.message.content, validPages);
+  const pages = parseMedicalNotePages(
+    response.choices[0]?.message.content,
+    validPages
+  );
   await saveChapterMedicalNotePages(chapter.id, pages);
   return pages;
 }

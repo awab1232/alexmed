@@ -7,6 +7,7 @@ import type { QueueMessage } from "./types";
 import {
   getAdminMaterialsQueueConcurrency,
   getBooksVisualQueueConcurrency,
+  getQuestionFilesEnrichmentQueueConcurrency,
   getQueueGlobalConcurrency,
   getQueueMaxAttempts,
 } from "./types";
@@ -62,6 +63,10 @@ function resolveDestination(message: QueueMessage): string {
       return `${base}/api/books/extract-questions`;
     case "generate_chapter_mindmap_sections":
       return `${base}/api/books/generate-mindmap-sections`;
+    case "extract_question_file_images":
+      return `${base}/api/books/extract-question-images`;
+    case "generate_question_file_content":
+      return `${base}/api/books/generate-question-content`;
   }
 }
 
@@ -120,6 +125,15 @@ function defaultFlowControl(message: QueueMessage): FlowControl {
       return {
         key: "books-pipeline",
         parallelism: getQueueGlobalConcurrency(),
+      };
+    // Entry-point flow control only — each route's own self-chained publish
+    // overrides this with a per-book key/parallelism-1, same two-tier
+    // pattern as analyze_book_page_visuals above.
+    case "extract_question_file_images":
+    case "generate_question_file_content":
+      return {
+        key: "question-files-enrichment-pipeline",
+        parallelism: getQuestionFilesEnrichmentQueueConcurrency(),
       };
   }
 }

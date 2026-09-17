@@ -25,7 +25,13 @@ export type QueueMessage =
   // analyze-chapter is already tight against Vercel's 60s ceiling (see its
   // own comments on sub-chunking), so a second LLM call there would
   // reintroduce exactly the timeout risk the P0 audit fix just removed.
-  | { type: "generate_chapter_mindmap_sections"; chapterId: string };
+  | { type: "generate_chapter_mindmap_sections"; chapterId: string }
+  // Multimodal question-files pipeline, stages 2 and 3 (see
+  // lib/question-file-analysis.ts) — fired once, right after stage 1's
+  // extract_question_file_job completes, entirely independent of and never
+  // blocking the base text extraction that job already did.
+  | { type: "extract_question_file_images"; bookId: string }
+  | { type: "generate_question_file_content"; bookId: string };
 
 function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -62,6 +68,14 @@ export function getAdminMaterialsQueueConcurrency(): number {
 // starves other كتبي uploads' text/chapter processing.
 export function getBooksVisualQueueConcurrency(): number {
   return readIntEnv("BOOKS_VISUAL_QUEUE_CONCURRENCY", 2);
+}
+
+// Shares one modest budget across both new stages (image capture and
+// per-question enrichment) — same reasoning as getBooksVisualQueueConcurrency
+// above: a big question file's own background enrichment must never starve
+// other students' uploads of OmniRoute capacity.
+export function getQuestionFilesEnrichmentQueueConcurrency(): number {
+  return readIntEnv("QUESTION_FILES_ENRICHMENT_QUEUE_CONCURRENCY", 2);
 }
 
 export function getJobCreationRateLimitMax(): number {

@@ -416,10 +416,16 @@ export const booksRouter = router({
     .mutation(async ({ ctx, input }) => {
       const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
       if (!chapter) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Chapter not found",
+        });
       }
       if (chapter.status !== "complete") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Chapter analysis must complete first" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Chapter analysis must complete first",
+        });
       }
       return { pages: await generateAndSaveMedicalNotePages(chapter.id) };
     }),

@@ -109,7 +109,11 @@ function FlashcardPreview({ card }: { card: FlashcardPreviewData }) {
           <p
             className="en"
             dir="ltr"
-            style={{ whiteSpace: "pre-line", fontWeight: 600, margin: "8px 0 6px" }}
+            style={{
+              whiteSpace: "pre-line",
+              fontWeight: 600,
+              margin: "8px 0 6px",
+            }}
           >
             {card.answerEn}
           </p>
@@ -177,9 +181,11 @@ export default function ChapterDetailPage() {
     onSuccess: () =>
       utils.books.getChapter.invalidate({ id: params.chapterId }),
   });
-  const generateMedicalNotePages = trpc.books.generateMedicalNotePages.useMutation({
-    onSuccess: () => utils.books.getChapter.invalidate({ id: params.chapterId }),
-  });
+  const generateMedicalNotePages =
+    trpc.books.generateMedicalNotePages.useMutation({
+      onSuccess: () =>
+        utils.books.getChapter.invalidate({ id: params.chapterId }),
+    });
   // Preselected when arriving from the book page's study-tools chooser
   // (app/books/[bookId]/page.tsx links here with ?tool=cards|mcqs|explanation)
   // or from the daily review queue's "عرض في الكتاب" link (app/review/page.tsx
@@ -199,7 +205,9 @@ export default function ChapterDetailPage() {
   const [noteDraft, setNoteDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [summaryPage, setSummaryPage] = useState(0);
-  const [completedSummaryPages, setCompletedSummaryPages] = useState<number[]>([]);
+  const [completedSummaryPages, setCompletedSummaryPages] = useState<number[]>(
+    []
+  );
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const appliedInitialPageRef = useRef(false);
 
@@ -247,11 +255,12 @@ export default function ChapterDetailPage() {
   const summaryProgress = summarySections.length
     ? Math.round((completedSummaryPages.length / summarySections.length) * 100)
     : 0;
-  const summaryEncouragement = completedSummaryPages.length === summarySections.length
-    ? "🎉 خلصت الملخص! الآن البطاقات هي التي ستخاف منك، وليس العكس."
-    : completedSummaryPages.length > 0
-      ? "🔥 ممتاز! صفحة وراء صفحة، والامتحان بدأ يشعر بالقلق."
-      : "🚀 البداية القوية نصف العلامة—ابدأ بالصفحة الحالية وخذها بهدوء.";
+  const summaryEncouragement =
+    completedSummaryPages.length === summarySections.length
+      ? "🎉 خلصت الملخص! الآن البطاقات هي التي ستخاف منك، وليس العكس."
+      : completedSummaryPages.length > 0
+        ? "🔥 ممتاز! صفحة وراء صفحة، والامتحان بدأ يشعر بالقلق."
+        : "🚀 البداية القوية نصف العلامة—ابدأ بالصفحة الحالية وخذها بهدوء.";
   const toggleSummaryPageDone = () => {
     setCompletedSummaryPages(current =>
       current.includes(summaryPage)
@@ -651,164 +660,468 @@ export default function ChapterDetailPage() {
 
           {assistantTab === "explanation" && (
             <>
-            <div className="composer-launcher">
-              <div><span className="eyebrow"><span className="eyebrow-dot green" /> AI Medical Note Composer</span><strong>حوّل الفصل إلى صفحات مراجعة طبية منظمة</strong><small>Definition · Clinical features · Diagnosis · Management · Red flags</small></div>
-              {!chapter.medicalNotePages && <button type="button" className="primary-button" disabled={generateMedicalNotePages.isPending} onClick={() => generateMedicalNotePages.mutate({ chapterId: chapter.id })}>{generateMedicalNotePages.isPending ? "Designing notes…" : "✨ Compose medical notes"}</button>}
-              {chapter.medicalNotePages && <span className="composer-ready">✅ Ready</span>}
-            </div>
-            {chapter.medicalNotePages && <div className="composer-pages">
-              {chapter.medicalNotePages.map((notePage, pageIndex) => <article className="composer-page" key={`${notePage.title}-${pageIndex}`}>
-                <div className="composer-page-head"><span>PAGE {String(pageIndex + 1).padStart(2, "0")}</span><small>Source: p.{notePage.sourcePages.join(", ") || "—"}</small></div>
-                <h2>{notePage.title}</h2><p className="composer-subtitle">{notePage.subtitle}</p>
-                {notePage.blocks.map((block, blockIndex) => <section className={`composer-block tone-${block.tone}`} key={`${block.heading}-${blockIndex}`}>
-                  <div className="composer-block-heading"><span>{block.tone === "warning" ? "⚠️" : block.tone === "high_yield" ? "⚡" : block.tone === "clinical" ? "🩺" : "•"}</span><strong>{block.heading}</strong><small>p.{block.sourcePages.join(", ") || "—"}</small></div>
-                  {block.bodyEn && <p className="en" dir="ltr">{block.bodyEn}</p>}
-                  {block.bodyAr && <p dir="rtl">{block.bodyAr}</p>}
-                  {!!block.items.length && <ul>{block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>}
-                </section>)}
-              </article>)}
-            </div>}
-            <div className="summary-reader">
-              <div className="summary-reader-toolbar">
-                <div className="summary-reader-breadcrumb">
-                  <List size={15} />
-                  <span>Study document</span>
-                  <b>/</b>
-                  <span>{chapter.title}</span>
-                </div>
-                <div className="summary-reader-actions">
-                  <span className="summary-progress-label">📚 {summaryProgress}% studied</span>
-                  <span>Page {summaryPage + 1} of {summarySections.length}</span>
-                  <button type="button" className="summary-page-nav" disabled={summaryPage === 0} onClick={() => setSummaryPage(page => Math.max(0, page - 1))}>Previous</button>
-                  <button type="button" className="summary-page-nav" disabled={summaryPage === summarySections.length - 1} onClick={() => setSummaryPage(page => Math.min(summarySections.length - 1, page + 1))}>Next</button>
-                  <button type="button" className="summary-print-button" onClick={() => window.print()} title="Print summary">
-                    <Printer size={14} /> Print
-                  </button>
-                </div>
-              </div>
-              <div className="summary-reader-layout">
-                <aside className="summary-toc" aria-label="Summary contents">
-                  <span className="micro-label">Contents / الفهرس</span>
-                  {summarySections.map((section, index) => (
-                    <button
-                      type="button"
-                      key={section.id}
-                      className={summaryPage === index ? "active" : ""}
-                      onClick={() => {
-                        setSummaryPage(index);
-                        document.getElementById(`summary-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }}
-                    >
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      <strong>{section.label}</strong>
-                      <small>{section.arabicLabel}</small>
-                    </button>
-                  ))}
-                </aside>
-                <div className="summary-document">
-            <div className="summary-panel">
-              <div className="summary-motivation" role="status">
-                <span className="summary-motivation-emoji">{summaryProgress === 100 ? "🏆" : "💪"}</span>
-                <div><strong>{summaryEncouragement}</strong><small>Study smart · لا تحفظ كل شيء دفعة واحدة</small></div>
-                <div className="summary-progress-track" aria-label={`Study progress ${summaryProgress}%`}><span style={{ width: `${summaryProgress}%` }} /></div>
-              </div>
-              <div className="summary-panel-header">
+              <div className="composer-launcher">
                 <div>
                   <span className="eyebrow">
-                    <span className="eyebrow-dot green" /> Study summary
+                    <span className="eyebrow-dot green" /> AI Medical Note
+                    Composer
                   </span>
-                  <h2>فهم الفصل، ثم راجعه بذكاء</h2>
-                  <p>English-first explanation with Arabic support</p>
+                  <strong>حوّل الفصل إلى صفحات مراجعة طبية منظمة</strong>
+                  <small>
+                    Definition · Clinical features · Diagnosis · Management ·
+                    Red flags
+                  </small>
                 </div>
-                <div className="summary-language-badge">
-                  <span>EN</span>
-                  <small>+ عربي</small>
-                </div>
-              </div>
-              <div className="visual-summary-page" id={`summary-${summarySections[summaryPage]?.id}`}>
-                <div className="visual-summary-page-number">{String(summaryPage + 1).padStart(2, "0")}</div>
-                {summaryPage === 0 && (
-                  <>
-                    <div className="visual-summary-cover-mark"><Sparkles size={22} /></div>
-                    <span className="micro-label">Chapter overview / نظرة عامة</span>
-                    <h2 className="visual-summary-title">{chapter.title}</h2>
-                    <p className="visual-summary-subtitle">High-yield visual study notes · English-first with Arabic support</p>
-                    {chapter.chapterSummary && (
-                      <div className="summary-hero" id="summary-overview">
-                        <div className="summary-hero-mark"><Sparkles size={18} /></div>
-                        <div><span className="micro-label">Chapter summary / ملخص الفصل</span><p className="en" dir="ltr">{chapter.chapterSummary}</p></div>
-                      </div>
-                    )}
-                    {!!chapter.keyPoints?.length && (
-                      <div className="summary-keypoints">
-                        <div className="summary-keypoints-heading"><span className="summary-keypoints-icon">⚡</span><div><span className="micro-label">Exam focus</span><strong>High-Yield للامتحان</strong></div></div>
-                        <ul>{chapter.keyPoints.map((point, i) => <li key={i}><span>{i + 1}</span>{point}</li>)}</ul>
-                      </div>
-                    )}
-                  </>
-                )}
-                {summaryPage === 1 && (
-                  <section className="summary-section summary-section-primary" id="summary-english">
-                    <div className="summary-section-title"><span className="summary-step">01</span><div><span className="micro-label">Primary study layer</span><h3>English explanation</h3></div></div>
-                    <p className="en summary-body" dir="ltr">{chapter.explanationEn}</p>
-                  </section>
-                )}
-                {summaryPage === 2 && (
-                  <section className="summary-section summary-section-support" id="summary-arabic">
-                    <div className="summary-section-title"><span className="summary-step">02</span><div><span className="micro-label">Support layer</span><h3>شرح عربي مبسط</h3></div></div>
-                    <p className="summary-body" dir="rtl">{chapter.explanationAr}</p>
-                  </section>
-                )}
-                {summaryPage === 3 && !!chapter.keyPoints?.length && (
-                  <div className="summary-keypoints" id="summary-high-yield">
-                    <div className="summary-keypoints-heading"><span className="summary-keypoints-icon">⚡</span><div><span className="micro-label">Exam focus</span><strong>High-Yield للامتحان</strong></div></div>
-                    <ul>{chapter.keyPoints.map((point, i) => <li key={i}><span>{i + 1}</span>{point}</li>)}</ul>
-                  </div>
-                )}
-                {summaryPage === 0 && pages.some(page => page.visuals.length > 0) && (
-                  <div className="visual-summary-visuals">
-                    <span className="micro-label">Visual anchors / الصور والمخططات</span>
-                    {pages.filter(page => page.visuals.length > 0).map(page => (
-                      <div className="visual-summary-visual-card" key={page.pageNumber}>
-                        <div className="visual-summary-image-wrap">
-                          <img src={`/api/books/${params.bookId}/pages/${page.pageNumber}/image`} alt={`Original page ${page.pageNumber}`} loading="lazy" />
-                          <span>Page {page.pageNumber}</span>
-                        </div>
-                        <div>{page.visuals.map((visual, index) => <div className="visual-summary-visual" key={`${page.pageNumber}-${index}`}><strong>{visual.assetType}</strong><p dir="ltr">{visual.descriptionEn || "Visual description unavailable."}</p><p dir="rtl">{visual.descriptionAr || "لا يوجد شرح عربي متاح."}</p></div>)}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="visual-summary-page-footer">
-                  <button type="button" className={completedSummaryPages.includes(summaryPage) ? "summary-done-button is-done" : "summary-done-button"} onClick={toggleSummaryPageDone}>
-                    {completedSummaryPages.includes(summaryPage) ? "✅ Page mastered" : "☑️ Mark page studied"}
+                {!chapter.medicalNotePages && (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={generateMedicalNotePages.isPending}
+                    onClick={() =>
+                      generateMedicalNotePages.mutate({ chapterId: chapter.id })
+                    }
+                  >
+                    {generateMedicalNotePages.isPending
+                      ? "Designing notes…"
+                      : "✨ Compose medical notes"}
                   </button>
-                  <span>{completedSummaryPages.includes(summaryPage) ? "أحسنت، لا تنسَ مراجعتها لاحقًا" : "اضغط بعد فهم الصفحة—not just reading it 😉"}</span>
+                )}
+                {chapter.medicalNotePages && (
+                  <span className="composer-ready">✅ Ready</span>
+                )}
+              </div>
+              {chapter.medicalNotePages && (
+                <div className="composer-pages">
+                  {chapter.medicalNotePages.map((notePage, pageIndex) => (
+                    <article
+                      className="composer-page"
+                      key={`${notePage.title}-${pageIndex}`}
+                    >
+                      <div className="composer-page-head">
+                        <span>
+                          PAGE {String(pageIndex + 1).padStart(2, "0")}
+                        </span>
+                        <small>
+                          Source: p.{notePage.sourcePages.join(", ") || "—"}
+                        </small>
+                      </div>
+                      <h2>{notePage.title}</h2>
+                      <p className="composer-subtitle">{notePage.subtitle}</p>
+                      {notePage.blocks.map((block, blockIndex) => (
+                        <section
+                          className={`composer-block tone-${block.tone}`}
+                          key={`${block.heading}-${blockIndex}`}
+                        >
+                          <div className="composer-block-heading">
+                            <span>
+                              {block.tone === "warning"
+                                ? "⚠️"
+                                : block.tone === "high_yield"
+                                  ? "⚡"
+                                  : block.tone === "clinical"
+                                    ? "🩺"
+                                    : "•"}
+                            </span>
+                            <strong>{block.heading}</strong>
+                            <small>
+                              p.{block.sourcePages.join(", ") || "—"}
+                            </small>
+                          </div>
+                          {block.bodyEn && (
+                            <p className="en" dir="ltr">
+                              {block.bodyEn}
+                            </p>
+                          )}
+                          {block.bodyAr && <p dir="rtl">{block.bodyAr}</p>}
+                          {!!block.items.length && (
+                            <ul>
+                              {block.items.map((item, itemIndex) => (
+                                <li key={itemIndex}>{item}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </section>
+                      ))}
+                    </article>
+                  ))}
+                </div>
+              )}
+              <div className="summary-reader">
+                <div className="summary-reader-toolbar">
+                  <div className="summary-reader-breadcrumb">
+                    <List size={15} />
+                    <span>Study document</span>
+                    <b>/</b>
+                    <span>{chapter.title}</span>
+                  </div>
+                  <div className="summary-reader-actions">
+                    <span className="summary-progress-label">
+                      📚 {summaryProgress}% studied
+                    </span>
+                    <span>
+                      Page {summaryPage + 1} of {summarySections.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="summary-page-nav"
+                      disabled={summaryPage === 0}
+                      onClick={() =>
+                        setSummaryPage(page => Math.max(0, page - 1))
+                      }
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      className="summary-page-nav"
+                      disabled={summaryPage === summarySections.length - 1}
+                      onClick={() =>
+                        setSummaryPage(page =>
+                          Math.min(summarySections.length - 1, page + 1)
+                        )
+                      }
+                    >
+                      Next
+                    </button>
+                    <button
+                      type="button"
+                      className="summary-print-button"
+                      onClick={() => window.print()}
+                      title="Print summary"
+                    >
+                      <Printer size={14} /> Print
+                    </button>
+                  </div>
+                </div>
+                <div className="summary-reader-layout">
+                  <aside className="summary-toc" aria-label="Summary contents">
+                    <span className="micro-label">Contents / الفهرس</span>
+                    {summarySections.map((section, index) => (
+                      <button
+                        type="button"
+                        key={section.id}
+                        className={summaryPage === index ? "active" : ""}
+                        onClick={() => {
+                          setSummaryPage(index);
+                          document
+                            .getElementById(`summary-${section.id}`)
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                        }}
+                      >
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <strong>{section.label}</strong>
+                        <small>{section.arabicLabel}</small>
+                      </button>
+                    ))}
+                  </aside>
+                  <div className="summary-document">
+                    <div className="summary-panel">
+                      <div className="summary-motivation" role="status">
+                        <span className="summary-motivation-emoji">
+                          {summaryProgress === 100 ? "🏆" : "💪"}
+                        </span>
+                        <div>
+                          <strong>{summaryEncouragement}</strong>
+                          <small>Study smart · لا تحفظ كل شيء دفعة واحدة</small>
+                        </div>
+                        <div
+                          className="summary-progress-track"
+                          aria-label={`Study progress ${summaryProgress}%`}
+                        >
+                          <span style={{ width: `${summaryProgress}%` }} />
+                        </div>
+                      </div>
+                      <div className="summary-panel-header">
+                        <div>
+                          <span className="eyebrow">
+                            <span className="eyebrow-dot green" /> Study summary
+                          </span>
+                          <h2>فهم الفصل، ثم راجعه بذكاء</h2>
+                          <p>English-first explanation with Arabic support</p>
+                        </div>
+                        <div className="summary-language-badge">
+                          <span>EN</span>
+                          <small>+ عربي</small>
+                        </div>
+                      </div>
+                      <div
+                        className="visual-summary-page"
+                        id={`summary-${summarySections[summaryPage]?.id}`}
+                      >
+                        <div className="visual-summary-page-number">
+                          {String(summaryPage + 1).padStart(2, "0")}
+                        </div>
+                        {summaryPage === 0 && (
+                          <>
+                            <div className="visual-summary-cover-mark">
+                              <Sparkles size={22} />
+                            </div>
+                            <span className="micro-label">
+                              Chapter overview / نظرة عامة
+                            </span>
+                            <h2 className="visual-summary-title">
+                              {chapter.title}
+                            </h2>
+                            <p className="visual-summary-subtitle">
+                              High-yield visual study notes · English-first with
+                              Arabic support
+                            </p>
+                            {chapter.chapterSummary && (
+                              <div
+                                className="summary-hero"
+                                id="summary-overview"
+                              >
+                                <div className="summary-hero-mark">
+                                  <Sparkles size={18} />
+                                </div>
+                                <div>
+                                  <span className="micro-label">
+                                    Chapter summary / ملخص الفصل
+                                  </span>
+                                  <p className="en" dir="ltr">
+                                    {chapter.chapterSummary}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {!!chapter.keyPoints?.length && (
+                              <div className="summary-keypoints">
+                                <div className="summary-keypoints-heading">
+                                  <span className="summary-keypoints-icon">
+                                    ⚡
+                                  </span>
+                                  <div>
+                                    <span className="micro-label">
+                                      Exam focus
+                                    </span>
+                                    <strong>High-Yield للامتحان</strong>
+                                  </div>
+                                </div>
+                                <ul>
+                                  {chapter.keyPoints.map((point, i) => (
+                                    <li key={i}>
+                                      <span>{i + 1}</span>
+                                      {point}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {summaryPage === 1 && (
+                          <section
+                            className="summary-section summary-section-primary"
+                            id="summary-english"
+                          >
+                            <div className="summary-section-title">
+                              <span className="summary-step">01</span>
+                              <div>
+                                <span className="micro-label">
+                                  Primary study layer
+                                </span>
+                                <h3>English explanation</h3>
+                              </div>
+                            </div>
+                            <p className="en summary-body" dir="ltr">
+                              {chapter.explanationEn}
+                            </p>
+                          </section>
+                        )}
+                        {summaryPage === 2 && (
+                          <section
+                            className="summary-section summary-section-support"
+                            id="summary-arabic"
+                          >
+                            <div className="summary-section-title">
+                              <span className="summary-step">02</span>
+                              <div>
+                                <span className="micro-label">
+                                  Support layer
+                                </span>
+                                <h3>شرح عربي مبسط</h3>
+                              </div>
+                            </div>
+                            <p className="summary-body" dir="rtl">
+                              {chapter.explanationAr}
+                            </p>
+                          </section>
+                        )}
+                        {summaryPage === 3 && !!chapter.keyPoints?.length && (
+                          <div
+                            className="summary-keypoints"
+                            id="summary-high-yield"
+                          >
+                            <div className="summary-keypoints-heading">
+                              <span className="summary-keypoints-icon">⚡</span>
+                              <div>
+                                <span className="micro-label">Exam focus</span>
+                                <strong>High-Yield للامتحان</strong>
+                              </div>
+                            </div>
+                            <ul>
+                              {chapter.keyPoints.map((point, i) => (
+                                <li key={i}>
+                                  <span>{i + 1}</span>
+                                  {point}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {summaryPage === 0 &&
+                          pages.some(page => page.visuals.length > 0) && (
+                            <div className="visual-summary-visuals">
+                              <span className="micro-label">
+                                Visual anchors / الصور والمخططات
+                              </span>
+                              {pages
+                                .filter(page => page.visuals.length > 0)
+                                .map(page => (
+                                  <div
+                                    className="visual-summary-visual-card"
+                                    key={page.pageNumber}
+                                  >
+                                    <div className="visual-summary-image-wrap">
+                                      <img
+                                        src={`/api/books/${params.bookId}/pages/${page.pageNumber}/image`}
+                                        alt={`Original page ${page.pageNumber}`}
+                                        loading="lazy"
+                                      />
+                                      <span>Page {page.pageNumber}</span>
+                                    </div>
+                                    <div>
+                                      {page.visuals.map((visual, index) => (
+                                        <div
+                                          className="visual-summary-visual"
+                                          key={`${page.pageNumber}-${index}`}
+                                        >
+                                          <strong>{visual.assetType}</strong>
+                                          <p dir="ltr">
+                                            {visual.descriptionEn ||
+                                              "Visual description unavailable."}
+                                          </p>
+                                          <p dir="rtl">
+                                            {visual.descriptionAr ||
+                                              "لا يوجد شرح عربي متاح."}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        <div className="visual-summary-page-footer">
+                          <button
+                            type="button"
+                            className={
+                              completedSummaryPages.includes(summaryPage)
+                                ? "summary-done-button is-done"
+                                : "summary-done-button"
+                            }
+                            onClick={toggleSummaryPageDone}
+                          >
+                            {completedSummaryPages.includes(summaryPage)
+                              ? "✅ Page mastered"
+                              : "☑️ Mark page studied"}
+                          </button>
+                          <span>
+                            {completedSummaryPages.includes(summaryPage)
+                              ? "أحسنت، لا تنسَ مراجعتها لاحقًا"
+                              : "اضغط بعد فهم الصفحة—not just reading it 😉"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-                </div>
-              </div>
-            </div>
             </>
           )}
 
           {assistantTab === "terms" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div className="term-dictionary-intro"><span>📖</span><div><strong>Interactive medical dictionary</strong><small>اضغط على أي مصطلح لفهمه بسرعة — English, Arabic, pronunciation & clinical context.</small></div></div>
+              <div className="term-dictionary-intro">
+                <span>📖</span>
+                <div>
+                  <strong>Interactive medical dictionary</strong>
+                  <small>
+                    اضغط على أي مصطلح لفهمه بسرعة — English, Arabic,
+                    pronunciation & clinical context.
+                  </small>
+                </div>
+              </div>
               {terms.map(term => (
-                <div className={selectedTermId === term.id ? "term-dictionary-card is-open" : "term-dictionary-card"} key={term.id}>
-                  <button type="button" className="term-dictionary-trigger" onClick={() => setSelectedTermId(selectedTermId === term.id ? null : term.id)}>
-                    <span><strong className="en" dir="ltr">{term.en}</strong><small dir="rtl">{term.ar}</small></span><b>{selectedTermId === term.id ? "−" : "+"}</b>
+                <div
+                  className={
+                    selectedTermId === term.id
+                      ? "term-dictionary-card is-open"
+                      : "term-dictionary-card"
+                  }
+                  key={term.id}
+                >
+                  <button
+                    type="button"
+                    className="term-dictionary-trigger"
+                    onClick={() =>
+                      setSelectedTermId(
+                        selectedTermId === term.id ? null : term.id
+                      )
+                    }
+                  >
+                    <span>
+                      <strong className="en" dir="ltr">
+                        {term.en}
+                      </strong>
+                      <small dir="rtl">{term.ar}</small>
+                    </span>
+                    <b>{selectedTermId === term.id ? "−" : "+"}</b>
                   </button>
-                  {selectedTermId === term.id && (() => {
-                    const relatedCard = cards.find(card => card.relatedTermEn?.toLowerCase() === term.en.toLowerCase());
-                    return <div className="term-dictionary-detail">
-                      <div><span className="micro-label">Pronunciation / النطق</span><p className="en">{term.pronunciation || "Not provided"}</p></div>
-                      <div><span className="micro-label">Simple meaning / المعنى المبسط</span><p>{term.ar} — <span className="en">{relatedCard?.answerEn || `A medical concept related to ${term.en}.`}</span></p></div>
-                      <div><span className="micro-label">Clinical example / مثال سريري</span><p className="en" dir="ltr">{relatedCard?.questionEn || "Review the related flashcard for a clinical application."}</p></div>
-                    </div>;
-                  })()}
+                  {selectedTermId === term.id &&
+                    (() => {
+                      const relatedCard = cards.find(
+                        card =>
+                          card.relatedTermEn?.toLowerCase() ===
+                          term.en.toLowerCase()
+                      );
+                      return (
+                        <div className="term-dictionary-detail">
+                          <div>
+                            <span className="micro-label">
+                              Pronunciation / النطق
+                            </span>
+                            <p className="en">
+                              {term.pronunciation || "Not provided"}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="micro-label">
+                              Simple meaning / المعنى المبسط
+                            </span>
+                            <p>
+                              {term.ar} —{" "}
+                              <span className="en">
+                                {relatedCard?.answerEn ||
+                                  `A medical concept related to ${term.en}.`}
+                              </span>
+                            </p>
+                          </div>
+                          <div>
+                            <span className="micro-label">
+                              Clinical example / مثال سريري
+                            </span>
+                            <p className="en" dir="ltr">
+                              {relatedCard?.questionEn ||
+                                "Review the related flashcard for a clinical application."}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
                 </div>
               ))}
               {!terms.length && <p>لا توجد مصطلحات لهذا الفصل.</p>}
@@ -832,7 +1145,8 @@ export default function ChapterDetailPage() {
               )}
               {(currentPage ? pageCardsAndMcqs.cards : cards).map(card => {
                 const relatedTerm = terms.find(
-                  term => term.en.toLowerCase() === card.relatedTermEn?.toLowerCase()
+                  term =>
+                    term.en.toLowerCase() === card.relatedTermEn?.toLowerCase()
                 );
                 return (
                   <FlashcardPreview
@@ -933,7 +1247,11 @@ export default function ChapterDetailPage() {
 
                 <div>
                   <span className="micro-label">QUESTION / السؤال</span>
-                  <p className="en" dir="ltr" style={{ fontSize: 15, fontWeight: 600 }}>
+                  <p
+                    className="en"
+                    dir="ltr"
+                    style={{ fontSize: 15, fontWeight: 600 }}
+                  >
                     {studyQueue[studyIndex].questionEn}
                   </p>
                   <p style={{ color: "#8a9493", fontSize: 13 }}>
@@ -954,7 +1272,11 @@ export default function ChapterDetailPage() {
                   <>
                     <div style={{ marginTop: 14 }}>
                       <span className="micro-label">ANSWER / الإجابة</span>
-                      <p className="en" dir="ltr" style={{ whiteSpace: "pre-line", fontWeight: 600 }}>
+                      <p
+                        className="en"
+                        dir="ltr"
+                        style={{ whiteSpace: "pre-line", fontWeight: 600 }}
+                      >
                         {studyQueue[studyIndex].answerEn}
                       </p>
                       <p style={{ whiteSpace: "pre-line", color: "#65716f" }}>

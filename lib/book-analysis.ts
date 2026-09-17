@@ -405,15 +405,25 @@ export const mindMapSectionsSchema = {
           examPoints: {
             type: "array",
             items: { type: "string" },
-            description: "High-yield points from the chapter's existing key points and cards.",
+            description:
+              "High-yield points from the chapter's existing key points and cards.",
           },
           cardPrompts: {
             type: "array",
             items: { type: "string" },
-            description: "Short English prompts of the flashcards/MCQs that reinforce this branch.",
+            description:
+              "Short English prompts of the flashcards/MCQs that reinforce this branch.",
           },
         },
-        required: ["title", "summaryEn", "explanationAr", "sourcePages", "concepts", "examPoints", "cardPrompts"],
+        required: [
+          "title",
+          "summaryEn",
+          "explanationAr",
+          "sourcePages",
+          "concepts",
+          "examPoints",
+          "cardPrompts",
+        ],
       },
     },
   },
@@ -434,7 +444,12 @@ export type ChapterMindMapSection = {
   summaryEn: string;
   explanationAr: string;
   sourcePages: number[];
-  concepts: { termAr: string; termEn: string; explanationEn: string; explanationAr: string }[];
+  concepts: {
+    termAr: string;
+    termEn: string;
+    explanationEn: string;
+    explanationAr: string;
+  }[];
   examPoints: string[];
   cardPrompts: string[];
 };
