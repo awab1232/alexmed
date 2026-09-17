@@ -31,6 +31,43 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// plain fetch() gives no upload-progress events at all, so a large file on a
+// slow connection just sits at a static spinner for however long the PUT
+// takes — indistinguishable from a genuine hang. A real student hit exactly
+// this (40MB, ~10 minutes, no visible movement) and navigated away thinking
+// it had frozen, which killed the in-flight upload with no error ever shown
+// (the component was already unmounted by then). XMLHttpRequest is the only
+// browser API that exposes real upload-progress events for a PUT body.
+function putFileWithProgress(
+  url: string,
+  file: File,
+  contentType: string,
+  onProgress: (percent: number) => void
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.upload.onprogress = event => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else
+        reject(
+          new Error("تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى.")
+        );
+    };
+    xhr.onerror = () =>
+      reject(
+        new Error("تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى.")
+      );
+    xhr.send(file);
+  });
+}
+
 // Upload + extraction/OCR + chapter analysis all live on the server (see
 // app/api/books/extract/route.ts and app/api/books/analyze-chapter/route.ts,
 // both QStash-driven background workers) — this page's only job is to hand
@@ -45,6 +82,7 @@ export default function BookUploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileKind, setFileKind] = useState<FileKind | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [profile, setProfile] = useState("general");
@@ -72,6 +110,7 @@ export default function BookUploadPage() {
   async function startProcessing() {
     if (!file || !fileKind) return;
     setError("");
+    setUploadProgress(0);
     setStage("uploading");
 
     try {
@@ -88,15 +127,12 @@ export default function BookUploadPage() {
       if (!uploadUrlResponse.ok)
         throw new Error(uploadUrlData.error || "تعذر تجهيز رابط الرفع.");
 
-      const putResponse = await fetch(uploadUrlData.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type || "application/pdf" },
-        body: file,
-      });
-      if (!putResponse.ok)
-        throw new Error(
-          "تعذر رفع الملف للتخزين. تحقق من الاتصال وحاول مرة أخرى."
-        );
+      await putFileWithProgress(
+        uploadUrlData.uploadUrl,
+        file,
+        file.type || "application/pdf",
+        setUploadProgress
+      );
 
       setStage("planning");
 
@@ -349,8 +385,22 @@ export default function BookUploadPage() {
                       ? "جاري رفع الملف"
                       : "جاري تجهيز الكتاب"}
                   </strong>
+                  {stage === "uploading" && (
+                    <span>
+                      {formatBytes(
+                        Math.round(((file?.size ?? 0) * uploadProgress) / 100)
+                      )}{" "}
+                      من {formatBytes(file?.size ?? 0)}
+                    </span>
+                  )}
                 </div>
+                {stage === "uploading" && <b>{uploadProgress}%</b>}
               </div>
+              {stage === "uploading" && (
+                <div className="progress-track">
+                  <i style={{ width: `${Math.max(uploadProgress, 4)}%` }} />
+                </div>
+              )}
             </div>
           )}
 
@@ -368,10 +418,23 @@ export default function BookUploadPage() {
             </button>
           )}
 
-          {isProcessing && (
+          {/* Only true once the file is fully in storage (stage "planning" —
+              server-side from here on, resumable). During "uploading" the
+              raw PUT is a plain client-side network transfer with no resume
+              support — closing/navigating away kills it outright. Telling
+              someone it's safe to leave DURING the upload is exactly what
+              caused a real student's upload to silently die after they
+              waited ~10 minutes with no progress feedback and left. */}
+          {stage === "uploading" && (
             <p style={{ marginTop: 12, fontSize: 11, color: "#8a9493" }}>
-              تقدر تسكّر الصفحة وترجع بعدين — مش هنفقد أي تقدم، وهيكمل من حيث
-              وقفت.
+              لا تسكّر الصفحة أو تنتقل لصفحة ثانية أثناء الرفع — الملف عم ينتقل
+              مباشرة من متصفحك، وأي تنقّل بيلغي الرفع.
+            </p>
+          )}
+          {stage === "planning" && (
+            <p style={{ marginTop: 12, fontSize: 11, color: "#8a9493" }}>
+              الملف وصل للتخزين — تقدر تسكّر الصفحة وترجع بعدين، مش هنفقد أي
+              تقدم من هون وطالع.
             </p>
           )}
         </div>
