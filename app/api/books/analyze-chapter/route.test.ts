@@ -15,6 +15,7 @@ vi.mock("@/lib/db-books", () => ({
   markBookChapterFailedTerminal: vi.fn(),
   markBookChapterRetrying: vi.fn(),
   saveChapterSubChunkProgress: vi.fn(),
+  hasPendingChapterVisualAnalysis: vi.fn().mockResolvedValue(false),
 }));
 vi.mock("@/lib/llm", async importOriginal => {
   const actual = await importOriginal<typeof import("@/lib/llm")>();
@@ -27,6 +28,7 @@ import { publishMessage } from "@/lib/queue/client";
 import {
   completeChapterAnalysis,
   getChapterById,
+  hasPendingChapterVisualAnalysis,
   saveChapterSubChunkProgress,
 } from "@/lib/db-books";
 import { invokeLLM } from "@/lib/llm";
@@ -43,6 +45,8 @@ const mockSaveProgress = saveChapterSubChunkProgress as unknown as ReturnType<
   typeof vi.fn
 >;
 const mockPublish = publishMessage as unknown as ReturnType<typeof vi.fn>;
+const mockHasPendingVisuals =
+  hasPendingChapterVisualAnalysis as unknown as ReturnType<typeof vi.fn>;
 
 function request(body: unknown) {
   return new Request("https://app.example.com/api/books/analyze-chapter", {
@@ -76,6 +80,39 @@ describe("POST /api/books/analyze-chapter", () => {
     mockInvoke.mockReset();
     mockSaveProgress.mockReset();
     mockPublish.mockReset().mockResolvedValue(undefined);
+    mockHasPendingVisuals.mockReset().mockResolvedValue(false);
+  });
+
+  // The actual bug a real book hit: page-visual analysis can legitimately
+  // take far longer than QStash's own retry budget (~2 minutes). The old
+  // code returned 429 and let QStash's limited retries do the re-checking,
+  // so once QStash gave up, the chapter was stuck in "retrying" forever even
+  // after visuals finished. The fix self-publishes its own delayed retry
+  // and returns 200 — never touching claimBookChapter/attemptCount at all.
+  it("self-publishes a delayed retry (not a claim/attempt) while visuals are still pending", async () => {
+    mockVerify.mockResolvedValue(true);
+    mockGetChapter.mockResolvedValue({
+      id: "c1",
+      bookId: "b1",
+      userId: "u1",
+      title: "Chapter 1",
+      startPage: 1,
+      endPage: 1,
+      pageTexts: [{ page: 1, text: "some chapter text" }],
+    });
+    mockHasPendingVisuals.mockResolvedValue(true);
+
+    const response = await POST(request({ chapterId: "c1" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe("waiting_for_visuals");
+    expect(mockClaim).not.toHaveBeenCalled();
+    expect(mockInvoke).not.toHaveBeenCalled();
+    expect(mockPublish).toHaveBeenCalledWith(
+      { type: "analyze_book_chapter", chapterId: "c1", bookId: "b1" },
+      { delay: 30 }
+    );
   });
 
   it("rejects a request with an invalid QStash signature", async () => {

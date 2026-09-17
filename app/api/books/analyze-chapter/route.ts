@@ -41,6 +41,13 @@ import { NextResponse } from "next/server";
 // instead of redoing (and re-paying for) the whole chapter from sub-chunk 0.
 export const maxDuration = 60;
 
+// Fixed re-check interval while waiting on a sibling chapter's page-visual
+// analysis to finish — deliberately NOT exponential backoff (unlike
+// extract/route.ts's OCR retries, which back off because failures there are
+// often transient provider errors worth spacing out): this isn't a failure
+// at all, just "not ready yet", so a steady poll is the right shape.
+const WAITING_FOR_VISUALS_RETRY_DELAY_SECONDS = 30;
+
 // The كتبي worker (QStash queue migration): analyzes exactly ONE chapter
 // (internally sub-chunked if it's long, resumably — see subChunkResults),
 // persisting each sub-chunk's result as it completes and the full merged
@@ -69,6 +76,34 @@ export async function POST(request: Request) {
     chapter = await getChapterById(chapterId);
     if (!chapter) {
       return NextResponse.json({ chapterId, status: "skipped" });
+    }
+
+    // Checked BEFORE claiming, and deliberately NOT going through
+    // claim/attemptCount at all: page-visual analysis (a sibling pipeline,
+    // self-chaining at its own pace — see analyze-page-visuals/route.ts) can
+    // legitimately take far longer than QStash's own retry budget
+    // (QUEUE_MAX_ATTEMPTS deliveries, ~10s+30s+90s ≈ 2 minutes total) allows
+    // for a real multi-page book. Returning 429 here used to spend that same
+    // shared budget on "still waiting" cycles — once QStash gave up after
+    // ~2 minutes, the chapter was stuck in "retrying" FOREVER even after
+    // visuals finished seconds/minutes later, since nothing ever re-checked
+    // it again. Self-publishing our own delayed retry (and returning 200,
+    // not a failure) decouples "healthy chapter patiently waiting on a
+    // sibling job" from the genuine-failure attemptCount budget below, and
+    // is provably bounded: hasPendingChapterVisualAnalysis only counts
+    // pending/processing pages, and every page's own visual pipeline
+    // terminates (complete or permanently failed) within its own bounded
+    // retry budget — so this can never wait forever.
+    if (await hasSafePendingChapterVisualAnalysis(chapterId)) {
+      await markBookChapterRetrying(
+        chapterId,
+        "ننتظر اكتمال قراءة صور وجداول هذا الفصل قبل بناء الملخص."
+      );
+      await publishMessage(
+        { type: "analyze_book_chapter", chapterId, bookId: chapter.bookId },
+        { delay: WAITING_FOR_VISUALS_RETRY_DELAY_SECONDS }
+      );
+      return NextResponse.json({ chapterId, status: "waiting_for_visuals" });
     }
 
     // Per-user concurrency backstop, checked BEFORE claiming — so one
@@ -118,17 +153,6 @@ export async function POST(request: Request) {
     return await retryOrFail("لا يوجد نص مستخرج لهذا الفصل.", 422);
   }
 
-  if (await hasSafePendingChapterVisualAnalysis(chapterId)) {
-    await markBookChapterRetrying(
-      chapterId,
-      "ننتظر اكتمال قراءة صور وجداول هذا الفصل قبل بناء الملخص.",
-    );
-    return NextResponse.json(
-      { chapterId, status: "waiting_for_visuals" },
-      { status: 429 },
-    );
-  }
-
   const visualAssets = await getSafeChapterVisualAssets(chapterId);
   const visualByPage = new Map<number, typeof visualAssets>();
   for (const asset of visualAssets) {
@@ -142,7 +166,7 @@ export async function POST(request: Request) {
     const visualContext = assets
       .map(
         asset =>
-          `[VISUAL ${asset.assetType} — page ${asset.pageNumber}]\nEnglish: ${asset.descriptionEn}\nArabic: ${asset.descriptionAr}`,
+          `[VISUAL ${asset.assetType} — page ${asset.pageNumber}]\nEnglish: ${asset.descriptionEn}\nArabic: ${asset.descriptionAr}`
       )
       .join("\n");
     return { ...page, text: `${page.text}\n\n${visualContext}` };
