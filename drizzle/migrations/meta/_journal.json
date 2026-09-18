@@ -176,6 +176,13 @@
       "when": 1789660887957,
       "tag": "0024_peaceful_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789746497937,
+      "tag": "0025_lethal_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }

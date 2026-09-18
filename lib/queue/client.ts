@@ -7,6 +7,7 @@ import type { QueueMessage } from "./types";
 import {
   getAdminMaterialsQueueConcurrency,
   getBooksVisualQueueConcurrency,
+  getMirrorImagesQueueConcurrency,
   getQuestionFilesEnrichmentQueueConcurrency,
   getQueueGlobalConcurrency,
   getQueueMaxAttempts,
@@ -67,6 +68,8 @@ function resolveDestination(message: QueueMessage): string {
       return `${base}/api/books/extract-question-images`;
     case "generate_question_file_content":
       return `${base}/api/books/generate-question-content`;
+    case "extract_mirror_images":
+      return `${base}/api/mirror/extract-images`;
   }
 }
 
@@ -134,6 +137,14 @@ function defaultFlowControl(message: QueueMessage): FlowControl {
       return {
         key: "question-files-enrichment-pipeline",
         parallelism: getQuestionFilesEnrichmentQueueConcurrency(),
+      };
+    // Entry-point flow control only — the route's own self-chained publish
+    // overrides this with a per-job key/parallelism-1, same two-tier
+    // pattern as analyze_book_page_visuals above.
+    case "extract_mirror_images":
+      return {
+        key: "mirror-images-pipeline",
+        parallelism: getMirrorImagesQueueConcurrency(),
       };
   }
 }

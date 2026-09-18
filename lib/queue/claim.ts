@@ -13,6 +13,7 @@ import {
   bookPages,
   extractedQuestions,
   mirrorBatches,
+  mirrorImagePages,
   questionFilePages,
 } from "../../drizzle/schema";
 import { requireDb } from "../db";
@@ -250,6 +251,42 @@ export async function claimExtractedQuestion(
       id: extractedQuestions.id,
       bookId: extractedQuestions.bookId,
       attemptCount: extractedQuestions.aiAttemptCount,
+    });
+  return row ?? null;
+}
+
+const CLAIMABLE_MIRROR_IMAGE_PAGE_STATUSES = ["pending", "failed"] as const;
+
+export type ClaimedMirrorImagePage = {
+  id: string;
+  jobId: string;
+  pageNumber: number;
+  attemptCount: number;
+};
+
+export async function claimMirrorImagePage(
+  pageId: string
+): Promise<ClaimedMirrorImagePage | null> {
+  const db = requireDb();
+  const [row] = await db
+    .update(mirrorImagePages)
+    .set({
+      status: "processing",
+      attemptCount: sql`${mirrorImagePages.attemptCount} + 1`,
+      errorMessage: null,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(mirrorImagePages.id, pageId),
+        inArray(mirrorImagePages.status, CLAIMABLE_MIRROR_IMAGE_PAGE_STATUSES)
+      )
+    )
+    .returning({
+      id: mirrorImagePages.id,
+      jobId: mirrorImagePages.jobId,
+      pageNumber: mirrorImagePages.pageNumber,
+      attemptCount: mirrorImagePages.attemptCount,
     });
   return row ?? null;
 }

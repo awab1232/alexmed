@@ -8,8 +8,10 @@ import {
   InsertUser,
   mirrorBatches,
   mirrorJobs,
+  mirrorPageImages,
   users,
 } from "../drizzle/schema";
+import { storageGet } from "./storage";
 import type { GeneratedCard } from "./pdf-cards";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -234,6 +236,11 @@ export async function getDeckWithCards(userId: string, deckId: string) {
     .limit(1);
 
   let failedBatchCount = 0;
+  // Multimodal مِرآة — computed live from mirrorPageImages rather than a
+  // persisted card<->image join, since cards arrive progressively across
+  // many separately-timed batches (see drizzle/schema.ts's mirrorPageImages
+  // comment for the full rationale).
+  const imageByCardId = new Map<string, string>();
   if (job) {
     const [row] = await db
       .select({ c: count() })
@@ -242,11 +249,47 @@ export async function getDeckWithCards(userId: string, deckId: string) {
         and(eq(mirrorBatches.jobId, job.id), eq(mirrorBatches.status, "failed"))
       );
     failedBatchCount = Number(row?.c ?? 0);
+
+    const pageImages = await db
+      .select({
+        pageNumber: mirrorPageImages.pageNumber,
+        storageKey: mirrorPageImages.storageKey,
+      })
+      .from(mirrorPageImages)
+      .where(eq(mirrorPageImages.jobId, job.id))
+      .orderBy(mirrorPageImages.pageNumber);
+
+    if (pageImages.length) {
+      const urlByStorageKey = new Map(
+        await Promise.all(
+          pageImages.map(
+            async image =>
+              [image.storageKey, (await storageGet(image.storageKey)).url] as const
+          )
+        )
+      );
+      for (const card of deckCards) {
+        // Same page-range rule as lib/question-file-analysis.ts's
+        // associateImagesWithQuestions: the latest image at or before this
+        // card's sourcePage owns it.
+        let owner: (typeof pageImages)[number] | null = null;
+        for (const image of pageImages) {
+          if (image.pageNumber > card.sourcePage) break;
+          owner = image;
+        }
+        if (owner) {
+          imageByCardId.set(card.id, urlByStorageKey.get(owner.storageKey)!);
+        }
+      }
+    }
   }
 
   return {
     deck,
-    cards: deckCards,
+    cards: deckCards.map(card => ({
+      ...card,
+      imageUrl: imageByCardId.get(card.id) ?? null,
+    })),
     job: job ? { ...job, failedBatchCount } : null,
   };
 }

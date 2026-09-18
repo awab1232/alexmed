@@ -31,7 +31,10 @@ export type QueueMessage =
   // extract_question_file_job completes, entirely independent of and never
   // blocking the base text extraction that job already did.
   | { type: "extract_question_file_images"; bookId: string }
-  | { type: "generate_question_file_content"; bookId: string };
+  | { type: "generate_question_file_content"; bookId: string }
+  // Multimodal مِرآة — best-effort, additive background pass alongside
+  // batch generation (see app/api/mirror/extract-images/route.ts).
+  | { type: "extract_mirror_images"; jobId: string };
 
 function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -76,6 +79,13 @@ export function getBooksVisualQueueConcurrency(): number {
 // other students' uploads of OmniRoute capacity.
 export function getQuestionFilesEnrichmentQueueConcurrency(): number {
   return readIntEnv("QUESTION_FILES_ENRICHMENT_QUEUE_CONCURRENCY", 2);
+}
+
+// مِرآة's own page-image capture pass — separate, modest budget so a big
+// file's image pass never starves other pipelines' share of OmniRoute
+// capacity, same reasoning as the other per-pipeline concurrency knobs above.
+export function getMirrorImagesQueueConcurrency(): number {
+  return readIntEnv("MIRROR_IMAGES_QUEUE_CONCURRENCY", 2);
 }
 
 export function getJobCreationRateLimitMax(): number {

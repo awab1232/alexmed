@@ -47,6 +47,11 @@ type Card = {
   sourcePage: number;
   status: "complete" | "needs_review";
   confidence: "high" | "medium" | "low";
+  // Multimodal مِرآة — same URL reused verbatim for every card whose
+  // sourcePage falls in this image's page range (see lib/db.ts's
+  // getDeckWithCards), never re-fetched or duplicated in storage. null for
+  // a card with no associated figure or for any non-مِرآة deck.
+  imageUrl?: string | null;
 };
 
 type View = "upload" | "cards" | "library";
@@ -952,6 +957,20 @@ export default function Home() {
                       </span>
                     </div>
                     <div className="question-block">
+                      {selectedCard.imageUrl && (
+                        <img
+                          src={selectedCard.imageUrl}
+                          alt=""
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            maxWidth: 420,
+                            borderRadius: 10,
+                            marginBottom: 12,
+                            border: "1px solid #e4ded5",
+                          }}
+                        />
+                      )}
                       <span className="micro-label">السؤال / QUESTION</span>
                       <h2>{selectedCard.questionArabic}</h2>
                       <p>{selectedCard.question}</p>

@@ -8,7 +8,9 @@ import {
   cards,
   decks,
   mirrorBatches,
+  mirrorImagePages,
   mirrorJobs,
+  mirrorPageImages,
   type MirrorBatch,
   type MirrorJob,
 } from "../drizzle/schema";
@@ -197,6 +199,86 @@ export async function resetMirrorJobFailedPagesForRetry(
     })
     .where(eq(mirrorJobs.id, jobId));
   return true;
+}
+
+// Multimodal مِرآة — page image capture (see drizzle/schema.ts's
+// mirrorImagePages/mirrorPageImages comment for the full architecture note).
+// Same conventions as lib/db-question-file-images.ts's equivalents.
+export async function ensureMirrorImagePages(
+  jobId: string,
+  pageCount: number
+): Promise<void> {
+  if (pageCount <= 0) return;
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await db
+    .select({ pageNumber: mirrorImagePages.pageNumber })
+    .from(mirrorImagePages)
+    .where(eq(mirrorImagePages.jobId, jobId));
+  const existingPageNumbers = new Set(existing.map(row => row.pageNumber));
+
+  const missing = [];
+  for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+    if (!existingPageNumbers.has(pageNumber)) {
+      missing.push({ jobId, pageNumber });
+    }
+  }
+  if (missing.length) {
+    await db.insert(mirrorImagePages).values(missing);
+  }
+}
+
+export async function getNextPendingMirrorImagePage(jobId: string) {
+  const maxAttempts = 3;
+  const db = getDb();
+  if (!db) return null;
+  const [page] = await db
+    .select()
+    .from(mirrorImagePages)
+    .where(
+      and(
+        eq(mirrorImagePages.jobId, jobId),
+        inArray(mirrorImagePages.status, ["pending", "failed"]),
+        sql`${mirrorImagePages.attemptCount} < ${maxAttempts}`
+      )
+    )
+    .orderBy(asc(mirrorImagePages.pageNumber))
+    .limit(1);
+  return page ?? null;
+}
+
+export async function markMirrorImagePageComplete(
+  pageId: string
+): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorImagePages)
+    .set({ status: "complete", errorMessage: null, updatedAt: new Date() })
+    .where(eq(mirrorImagePages.id, pageId));
+}
+
+export async function markMirrorImagePageFailed(
+  pageId: string,
+  errorMessage: string
+): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(mirrorImagePages)
+    .set({ status: "failed", errorMessage, updatedAt: new Date() })
+    .where(eq(mirrorImagePages.id, pageId));
+}
+
+export async function insertMirrorPageImage(
+  jobId: string,
+  pageNumber: number,
+  storageKey: string
+): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(mirrorPageImages).values({ jobId, pageNumber, storageKey });
 }
 
 // Step 2: once every page has usable text, splits it into generation batches

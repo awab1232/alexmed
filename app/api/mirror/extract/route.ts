@@ -212,6 +212,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // Multimodal مِرآة, additive image pass (see app/api/mirror/extract-images/
+    // route.ts) — entirely independent of batch generation above, never
+    // blocks/delays it. A failure to enqueue this is logged but doesn't fail
+    // extraction itself: cards are already generating regardless.
+    try {
+      await publishMessage({ type: "extract_mirror_images", jobId });
+    } catch (publishError) {
+      console.error(
+        "[Mirror] Failed to enqueue page image extraction",
+        publishError
+      );
+    }
+
     return NextResponse.json({
       jobId,
       status: "extracted",

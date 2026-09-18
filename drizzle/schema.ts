@@ -383,6 +383,79 @@ export const mirrorBatches = pgTable(
 export type MirrorJob = typeof mirrorJobs.$inferSelect;
 export type MirrorBatch = typeof mirrorBatches.$inferSelect;
 
+// Multimodal مِرآة — per-page image capture, mirroring كتبي question-files'
+// own extractedQuestionImages/questionFilePages pair exactly (see that
+// schema's comments for the full rationale). Deliberately NOT a persisted
+// card<->image join table: unlike question-files (where every question
+// exists up front before association runs), مِرآة's cards are created
+// progressively across many separately-timed batches, so persisting the
+// association would mean re-running it every time either side changes —
+// getDeckWithCards (lib/db.ts) instead computes each card's owning image
+// live at read time from this table + the card's own sourcePage, using the
+// same page-range rule (image at page P owns cards in [P, nextImagePage)).
+export const mirrorImagePageStatusEnum = pgEnum("mirror_image_page_status", [
+  "pending",
+  "processing",
+  "complete",
+  "failed",
+]);
+
+export const mirrorImagePages = pgTable(
+  "mirror_image_pages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    jobId: uuid("jobId")
+      .notNull()
+      .references(() => mirrorJobs.id, { onDelete: "cascade" }),
+    pageNumber: integer("pageNumber").notNull(),
+    status: mirrorImagePageStatusEnum("status").default("pending").notNull(),
+    attemptCount: integer("attemptCount").default(0).notNull(),
+    errorMessage: text("errorMessage"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    jobPageUnique: uniqueIndex("mirror_image_pages_job_id_page_number_idx").on(
+      table.jobId,
+      table.pageNumber
+    ),
+    statusIdx: index("mirror_image_pages_status_idx").on(table.status),
+  })
+);
+
+export type MirrorImagePage = typeof mirrorImagePages.$inferSelect;
+
+// One row per page confirmed (by vision classification) to contain a real
+// figure — not one row per page unconditionally. v1 stores a full-page
+// screenshot (no per-figure cropping yet), same architecture note as
+// extractedQuestionImages.
+export const mirrorPageImages = pgTable(
+  "mirror_page_images",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    jobId: uuid("jobId")
+      .notNull()
+      .references(() => mirrorJobs.id, { onDelete: "cascade" }),
+    pageNumber: integer("pageNumber").notNull(),
+    storageKey: text("storageKey").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    jobPageIdx: index("mirror_page_images_job_id_page_number_idx").on(
+      table.jobId,
+      table.pageNumber
+    ),
+  })
+);
+
+export type MirrorPageImage = typeof mirrorPageImages.$inferSelect;
+
 // ── كتبي (Book Study) — separate feature/data layer from decks/cards above.
 // A book is uploaded once, split into chapters (heading-detected or fixed
 // page windows — see lib/book-chapters.ts), and each chapter is analyzed by
