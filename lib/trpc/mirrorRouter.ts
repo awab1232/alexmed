@@ -6,6 +6,7 @@ import {
   getMirrorJobForUser,
   listMirrorJobsForUser,
   resetMirrorBatchForRetry,
+  resetMirrorJobFailedPagesForRetry,
 } from "../db-mirror";
 import { publishMessage } from "../queue/client";
 import { protectedProcedure, router } from "./trpc";
@@ -56,6 +57,37 @@ export const mirrorRouter = router({
         type: "generate_mirror_batch",
         batchId: input.batchId,
         jobId: batch.jobId,
+      });
+      return { success: true } as const;
+    }),
+
+  // Student-initiated retry for a job whose extraction failed on some pages —
+  // re-queues only those specific pages (never the whole file, never a page
+  // that already succeeded) via resetMirrorJobFailedPagesForRetry, then
+  // resumes the same self-chaining extraction loop as a fresh upload.
+  retryExtraction: protectedProcedure
+    .input(z.object({ jobId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const job = await getMirrorJobForUser(ctx.user.id, input.jobId);
+      if (!job) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Job not found" });
+      }
+      if (job.job.status !== "failed") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only a failed job can have its extraction retried",
+        });
+      }
+      const ok = await resetMirrorJobFailedPagesForRetry(input.jobId);
+      if (!ok) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No failed pages to retry",
+        });
+      }
+      await publishMessage({
+        type: "extract_mirror_job",
+        jobId: input.jobId,
       });
       return { success: true } as const;
     }),

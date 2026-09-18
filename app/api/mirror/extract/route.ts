@@ -96,6 +96,17 @@ export async function POST(request: Request) {
         return NextResponse.json({ jobId, status: "failed" });
       }
 
+      // A page number pdf-parse never returned at all (rare parser gap) is
+      // folded into the OCR retry queue rather than an immediate failure —
+      // same fix already applied to app/api/books/extract/route.ts:
+      // getScreenshotUnderLimit renders by page number directly, independent
+      // of getText()'s own output, so it's worth a real attempt first.
+      const missing = findMissingPageNumbers(pages, totalPages);
+      for (const pageNumber of missing) {
+        pages.push({ page: pageNumber, text: "", hasText: false });
+      }
+      pages.sort((a, b) => a.page - b.page);
+
       pagesNeedingOcr = pages
         .filter(page => !page.hasText)
         .map(page => page.page);

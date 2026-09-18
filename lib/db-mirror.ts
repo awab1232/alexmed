@@ -147,8 +147,10 @@ export async function updateMirrorJobExtractionProgress(
 
 // Terminal extraction failure (unreadable/missing pages after OCR) — the
 // file itself is the problem, so unlike batch/chapter failures this is never
-// automatically retried by QStash; the student re-uploads instead (see
-// app/mirror/[jobId]/page.tsx's "failed" banner).
+// automatically retried by QStash. The student can either re-upload (see
+// app/mirror/[jobId]/page.tsx's "failed" banner) or, cheaper, retry just the
+// pages that actually failed via resetMirrorJobFailedPagesForRetry below —
+// every page that DID read successfully stays as-is, never re-attempted.
 export async function markMirrorJobExtractionFailed(
   jobId: string,
   errorMessage: string
@@ -163,6 +165,38 @@ export async function markMirrorJobExtractionFailed(
       updatedAt: new Date(),
     })
     .where(eq(mirrorJobs.id, jobId));
+}
+
+// Student-initiated retry for a failed extraction (mirrors
+// lib/db-books.ts's resetBookExtractionForRetry, scoped to مِرآة's coarser
+// job-level ocrFailedPages array rather than a per-page table): re-queues
+// only the pages that actually failed OCR (or were missing outright — see
+// app/api/mirror/extract/route.ts's findMissingPageNumbers handling, folded
+// into pagesNeedingOcr the same way as a fresh job so a parser gap gets a
+// real OCR attempt too) back into pagesNeedingOcr, so the existing
+// self-chaining extraction loop resumes and re-attempts exactly those pages
+// — never the whole file from scratch, and never a page that already
+// succeeded. Ownership is checked by the caller (mirrorRouter.retryExtraction),
+// same trust-boundary split as every other worker-callable helper here.
+export async function resetMirrorJobFailedPagesForRetry(
+  jobId: string
+): Promise<boolean> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  const job = await getMirrorJobById(jobId);
+  if (!job || !job.ocrFailedPages?.length) return false;
+
+  await db
+    .update(mirrorJobs)
+    .set({
+      status: "extracting",
+      pagesNeedingOcr: job.ocrFailedPages,
+      ocrFailedPages: [],
+      extractionError: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(mirrorJobs.id, jobId));
+  return true;
 }
 
 // Step 2: once every page has usable text, splits it into generation batches

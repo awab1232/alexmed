@@ -36,6 +36,9 @@ export default function MirrorJobPage() {
   const retryBatch = trpc.mirror.retryBatch.useMutation({
     onSuccess: () => utils.mirror.get.invalidate({ id: jobId }),
   });
+  const retryExtraction = trpc.mirror.retryExtraction.useMutation({
+    onSuccess: () => utils.mirror.get.invalidate({ id: jobId }),
+  });
 
   // The deck exists (and starts accepting cards) as soon as extraction
   // finishes — see finalizeMirrorJobExtraction in lib/db-mirror.ts — so once
@@ -152,6 +155,19 @@ export default function MirrorJobPage() {
             {job.extractionError ||
               "تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه."}
           </span>
+          {/* Retries only the pages that actually failed (never the whole
+              file) — see lib/db-mirror.ts's resetMirrorJobFailedPagesForRetry.
+              Kept alongside the re-upload option since a badly-scanned file
+              may still be better replaced than repeatedly retried. */}
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ marginRight: 12 }}
+            disabled={retryExtraction.isPending}
+            onClick={() => retryExtraction.mutate({ jobId })}
+          >
+            <RotateCcw size={14} /> إعادة محاولة الصفحات الفاشلة
+          </button>
           <Link
             href="/"
             className="secondary-button"
