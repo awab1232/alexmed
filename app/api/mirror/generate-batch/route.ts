@@ -26,6 +26,21 @@ import { NextResponse } from "next/server";
 // this value.
 export const maxDuration = 60;
 
+// Same exponential shape as app/api/books/extract/route.ts's OCR retry
+// backoff. Real production incident: relying on a non-2xx response + QStash's
+// own retry budget (~2 minutes total across all its retries) left a batch
+// stuck in "retrying" forever once QStash gave up — attemptCount stayed at 1
+// for 10+ minutes with no further delivery ever arriving. Self-publishing our
+// own delayed retry (and acking with 200) makes retry timing entirely our
+// own responsibility again, decoupled from QStash's delivery budget.
+const BATCH_RETRY_BACKOFF_CAP_SECONDS = 90;
+function batchRetryBackoffSeconds(attemptNumber: number): number {
+  return Math.min(
+    BATCH_RETRY_BACKOFF_CAP_SECONDS,
+    10 * 3 ** Math.max(0, attemptNumber - 1)
+  );
+}
+
 // Replenishes the windowed dispatch (see app/api/mirror/extract/route.ts's
 // GENERATE_WINDOW_SIZE comment): called once this batch reaches a terminal
 // outcome (complete or permanently failed — never on a mid-retry redelivery,
@@ -124,12 +139,12 @@ export async function POST(request: Request) {
 
   const maxAttempts = getQueueMaxAttempts();
 
-  async function retryOrFail(errorMessage: string, httpStatus: number) {
+  async function retryOrFail(errorMessage: string) {
     if (claimed!.attemptCount >= maxAttempts) {
       await markMirrorBatchFailedTerminal(batchId, errorMessage);
       await finalizeMirrorJobIfDone(batch!.jobId);
       await advanceGenerationWindow(batch!.jobId);
-      // Ack — attempts exhausted, no more QStash retries wanted.
+      // Ack — attempts exhausted, no more retries wanted.
       return NextResponse.json({
         batchId,
         status: "failed",
@@ -137,8 +152,13 @@ export async function POST(request: Request) {
       });
     }
     await markMirrorBatchRetrying(batchId, errorMessage);
-    // Non-2xx — QStash redelivers per its own retry/backoff schedule.
-    return NextResponse.json({ error: errorMessage }, { status: httpStatus });
+    await publishMessage(
+      { type: "generate_mirror_batch", batchId, jobId: batch!.jobId },
+      { delay: batchRetryBackoffSeconds(claimed!.attemptCount) }
+    );
+    // 200, not a failure response — this batch's retry is now entirely our
+    // own responsibility via the delayed publish above.
+    return NextResponse.json({ batchId, status: "retrying", error: errorMessage });
   }
 
   try {
@@ -160,8 +180,7 @@ export async function POST(request: Request) {
 
     if (!cards.length) {
       return await retryOrFail(
-        "لم يتم العثور على أسئلة قابلة للتحويل إلى بطاقات في هذه الدفعة.",
-        422
+        "لم يتم العثور على أسئلة قابلة للتحويل إلى بطاقات في هذه الدفعة."
       );
     }
 
@@ -173,24 +192,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[Mirror] Batch generation failed", error);
     if (error instanceof AiRateLimitError) {
-      if (claimed.attemptCount >= maxAttempts) {
-        await markMirrorBatchFailedTerminal(
-          batchId,
-          "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
-        );
-        await finalizeMirrorJobIfDone(batch.jobId);
-        await advanceGenerationWindow(batch.jobId);
-        return NextResponse.json({ batchId, status: "failed" });
-      }
-      await markMirrorBatchRetrying(
-        batchId,
-        "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
-      );
-      return NextResponse.json(
-        { error: "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي." },
-        { status: 429 }
-      );
+      return await retryOrFail("تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي.");
     }
-    return await retryOrFail("تعذر توليد بطاقات لهذه الدفعة.", 502);
+    return await retryOrFail("تعذر توليد بطاقات لهذه الدفعة.");
   }
 }

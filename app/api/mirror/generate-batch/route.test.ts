@@ -25,8 +25,10 @@ import { claimMirrorBatch } from "@/lib/queue/claim";
 import {
   completeBatchGeneration,
   getMirrorBatchById,
+  markMirrorBatchFailedTerminal,
   markMirrorBatchRetrying,
 } from "@/lib/db-mirror";
+import { publishMessage } from "@/lib/queue/client";
 import { invokeLLM } from "@/lib/llm";
 import { POST } from "./route";
 
@@ -42,6 +44,9 @@ const mockComplete = completeBatchGeneration as unknown as ReturnType<
 const mockRetrying = markMirrorBatchRetrying as unknown as ReturnType<
   typeof vi.fn
 >;
+const mockFailedTerminal =
+  markMirrorBatchFailedTerminal as unknown as ReturnType<typeof vi.fn>;
+const mockPublish = publishMessage as unknown as ReturnType<typeof vi.fn>;
 const mockInvoke = invokeLLM as unknown as ReturnType<typeof vi.fn>;
 
 function request(body: unknown) {
@@ -60,6 +65,8 @@ describe("POST /api/mirror/generate-batch", () => {
     mockGetBatch.mockReset();
     mockComplete.mockReset();
     mockRetrying.mockReset();
+    mockFailedTerminal.mockReset();
+    mockPublish.mockReset().mockResolvedValue(undefined);
     mockInvoke.mockReset();
   });
 
@@ -114,9 +121,44 @@ describe("POST /api/mirror/generate-batch", () => {
     const response = await POST(request({ batchId: "b1" }));
 
     // Filtered out entirely -> zero valid cards -> retryable failure, not a
-    // silently-coerced/mislabeled card.
-    expect(response.status).toBe(422);
+    // silently-coerced/mislabeled card. Real production incident: this used
+    // to return a non-2xx and rely on QStash's own (too-small) retry budget,
+    // which left batches permanently stuck once QStash gave up. Now it self-
+    // publishes its own delayed retry and acks with 200.
+    expect(response.status).toBe(200);
     expect(mockComplete).not.toHaveBeenCalled();
     expect(mockRetrying).toHaveBeenCalledWith("b1", expect.any(String));
+    expect(mockPublish).toHaveBeenCalledWith(
+      { type: "generate_mirror_batch", batchId: "b1", jobId: "j1" },
+      { delay: expect.any(Number) }
+    );
+  });
+
+  it("marks a batch permanently failed (no further retry) once attempts are exhausted", async () => {
+    mockVerify.mockResolvedValue(true);
+    mockGetBatch.mockResolvedValue({
+      id: "b1",
+      jobId: "j1",
+      userId: "u1",
+      deckId: "d1",
+      depth: "balanced",
+      pageTexts: [{ page: 1, text: "some question text", hasText: true }],
+    });
+    // Already at the max-attempts ceiling (QUEUE_MAX_ATTEMPTS defaults to 4).
+    mockClaim.mockResolvedValue({ id: "b1", jobId: "j1", attemptCount: 4 });
+    mockInvoke.mockRejectedValue(new Error("LLM exploded"));
+
+    const response = await POST(request({ batchId: "b1" }));
+    const body = await response.json();
+
+    expect(body.status).toBe("failed");
+    expect(mockFailedTerminal).toHaveBeenCalledWith("b1", expect.any(String));
+    expect(mockRetrying).not.toHaveBeenCalled();
+    // Terminal failure still advances the generation window so the
+    // remaining pending batches aren't stuck behind this dead one.
+    expect(mockPublish).not.toHaveBeenCalledWith(
+      expect.objectContaining({ batchId: "b1" }),
+      expect.anything()
+    );
   });
 });
