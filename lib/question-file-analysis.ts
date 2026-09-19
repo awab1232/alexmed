@@ -16,6 +16,14 @@ import type { Message } from "./llm";
 import { parseJsonResponse } from "./pdf-cards";
 
 // ── Stage 2: page image classification ──────────────────────────────────
+// Live-reproduced bug (2026-09-19): the previous 200-token cap silently
+// truncated a "thinking"-style model (gemini-2.5-flash) before it reached the
+// actual JSON — its reasoning tokens share the same max_tokens budget, so a
+// tight cap can cut off the answer entirely, not just make it terse. Raised
+// well above what the tiny {hasImage, captionEn} output itself needs to
+// leave room for that reasoning.
+export const PAGE_IMAGE_CLASSIFICATION_MAX_TOKENS = 600;
+
 export type PageImageClassification = {
   hasImage: boolean;
   captionEn: string;

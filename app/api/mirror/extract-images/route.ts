@@ -8,6 +8,7 @@ import {
 } from "@/lib/db-mirror";
 import {
   buildPageImageClassificationMessages,
+  PAGE_IMAGE_CLASSIFICATION_MAX_TOKENS,
   pageImageClassificationResponseSchema,
   parsePageImageClassification,
 } from "@/lib/question-file-analysis";
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
 
         const response = await invokeLLM({
           model: DEFAULT_VISION_MODEL,
-          max_tokens: 200,
+          max_tokens: PAGE_IMAGE_CLASSIFICATION_MAX_TOKENS,
           messages: buildPageImageClassificationMessages(
             candidate.pageNumber,
             shot.dataUrl
