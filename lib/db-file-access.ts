@@ -50,5 +50,38 @@ export async function isFileKeyAccessibleToUser(
     .limit(1);
   if (publishedMaterial) return true;
 
+  // Derived per-page images (extracted from the original PDF, not the PDF
+  // itself) never equal any fileKey column above — they live under their own
+  // prefix keyed by the owning job/book's id, produced by
+  // app/api/mirror/extract-images/route.ts ("mirror-pages/{jobId}/...") and
+  // app/api/books/extract-question-images/route.ts
+  // ("question-files/{bookId}/..."). Missing these two cases meant every
+  // such image 404'd here regardless of real ownership — caught live via a
+  // broken-image icon on an otherwise-correct card.
+  const mirrorPageMatch = fileKey.match(/^mirror-pages\/([^/]+)\//);
+  if (mirrorPageMatch) {
+    const [ownedMirrorJob] = await db
+      .select({ id: mirrorJobs.id })
+      .from(mirrorJobs)
+      .where(
+        and(
+          eq(mirrorJobs.id, mirrorPageMatch[1]),
+          eq(mirrorJobs.userId, userId)
+        )
+      )
+      .limit(1);
+    if (ownedMirrorJob) return true;
+  }
+
+  const questionFileMatch = fileKey.match(/^question-files\/([^/]+)\//);
+  if (questionFileMatch) {
+    const [ownedQuestionFileBook] = await db
+      .select({ id: books.id })
+      .from(books)
+      .where(and(eq(books.id, questionFileMatch[1]), eq(books.userId, userId)))
+      .limit(1);
+    if (ownedQuestionFileBook) return true;
+  }
+
   return false;
 }
