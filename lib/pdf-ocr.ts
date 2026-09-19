@@ -2,6 +2,7 @@
 // كتبي (app/api/books/extract-and-plan/route.ts) so scanned/image-only PDFs
 // are handled identically in both pipelines instead of drifting apart.
 import { invokeLLM } from "./llm";
+import { isNemotronOcrConfigured, nemotronOcrPage } from "./nemotron-ocr";
 import {
   buildOcrMessages,
   normalizePageText,
@@ -43,6 +44,27 @@ export async function ocrPages(
       const screenshot = await getScreenshotUnderLimit(parser, pageNumber);
       const imageUrl = screenshot?.dataUrl;
       if (!imageUrl) throw new Error("OCR image was not produced");
+
+      // Try the dedicated text-detection model first, when configured — see
+      // lib/nemotron-ocr.ts's header comment for why this exists as a
+      // separate first attempt rather than just another chat-model fallback:
+      // it can't confidently hallucinate "no text" the way a general vision
+      // chat model landed on by the fallback chain did in a real incident.
+      // Any failure here (not configured, network error, unexpected shape)
+      // falls straight through to the existing chat-vision call below,
+      // exactly like today's behavior when only that path existed.
+      if (isNemotronOcrConfigured()) {
+        try {
+          const result = await nemotronOcrPage(imageUrl);
+          pages.push({ page: pageNumber, ...result, ocr: true });
+          continue;
+        } catch (nemotronError) {
+          console.error(
+            `[PDF OCR] nemotron-ocr-v1 failed for page ${pageNumber}, falling back to chat-vision model`,
+            nemotronError
+          );
+        }
+      }
 
       const response = await invokeLLM({
         model: OCR_MODEL,
