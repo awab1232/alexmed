@@ -106,7 +106,12 @@ export async function POST(request: Request) {
             shot.data,
             "image/png"
           );
-          await insertMirrorPageImage(jobId, candidate.pageNumber, storageKey);
+          await insertMirrorPageImage(
+            jobId,
+            candidate.pageNumber,
+            storageKey,
+            classification.isAtPageEnd
+          );
         }
 
         await markMirrorImagePageComplete(candidate.id);

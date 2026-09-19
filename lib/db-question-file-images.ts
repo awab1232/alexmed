@@ -91,13 +91,14 @@ export async function markQuestionFilePageFailed(
 export async function insertExtractedQuestionImage(
   bookId: string,
   pageNumber: number,
-  storageKey: string
+  storageKey: string,
+  isAtPageEnd: boolean
 ): Promise<{ id: string }> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
   const [row] = await db
     .insert(extractedQuestionImages)
-    .values({ bookId, pageNumber, storageKey })
+    .values({ bookId, pageNumber, storageKey, isAtPageEnd })
     .returning({ id: extractedQuestionImages.id });
   return row;
 }
@@ -118,6 +119,7 @@ export async function associateAndSaveQuestionImages(
     .select({
       id: extractedQuestionImages.id,
       pageNumber: extractedQuestionImages.pageNumber,
+      isAtPageEnd: extractedQuestionImages.isAtPageEnd,
     })
     .from(extractedQuestionImages)
     .where(eq(extractedQuestionImages.bookId, bookId));

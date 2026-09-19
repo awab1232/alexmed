@@ -93,7 +93,7 @@ function request(body: unknown) {
   );
 }
 
-function classificationResponse(hasImage: boolean) {
+function classificationResponse(hasImage: boolean, isAtPageEnd = false) {
   return {
     choices: [
       {
@@ -101,6 +101,7 @@ function classificationResponse(hasImage: boolean) {
           content: JSON.stringify({
             hasImage,
             captionEn: hasImage ? "a figure" : "",
+            isAtPageEnd,
           }),
         },
       },
@@ -164,10 +165,33 @@ describe("POST /api/books/extract-question-images", () => {
     expect(mockInsertImage).toHaveBeenCalledWith(
       "b1",
       1,
-      "question-files/b1/1.png"
+      "question-files/b1/1.png",
+      false
     );
     expect(mockMarkComplete).toHaveBeenCalledWith("p1");
     expect(mockMarkFailed).not.toHaveBeenCalled();
+  });
+
+  it("passes through isAtPageEnd:true when the model says no question follows the figure", async () => {
+    mockNextPage
+      .mockResolvedValueOnce({ id: "p1", bookId: "b1", pageNumber: 1 })
+      .mockResolvedValueOnce(null);
+    mockClaim.mockResolvedValueOnce({
+      id: "p1",
+      bookId: "b1",
+      pageNumber: 1,
+      attemptCount: 1,
+    });
+    mockInvoke.mockResolvedValue(classificationResponse(true, true));
+
+    await POST(request({ bookId: "b1" }));
+
+    expect(mockInsertImage).toHaveBeenCalledWith(
+      "b1",
+      1,
+      "question-files/b1/1.png",
+      true
+    );
   });
 
   it("marks the page complete without storing an image when classified as text-only", async () => {

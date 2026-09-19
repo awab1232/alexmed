@@ -442,6 +442,17 @@ export const mirrorPageImages = pgTable(
       .references(() => mirrorJobs.id, { onDelete: "cascade" }),
     pageNumber: integer("pageNumber").notNull(),
     storageKey: text("storageKey").notNull(),
+    // Live-reproduced (2026-09-19): many scanned exam PDFs place a figure at
+    // the very bottom of a page, with the question(s) that actually
+    // reference it starting on the NEXT page (a mid-explanation page break).
+    // The plain "owns every question from its own page onward" rule then
+    // attaches the image to the wrong (same-page, unrelated) question and
+    // leaves the real one pointing at the wrong figure. True when the page
+    // classification call found no question/answer text below the image on
+    // its own page — see lib/db.ts's getDeckWithCards owner-selection loop
+    // for how this shifts the image's effective ownership to start at
+    // pageNumber + 1 instead of pageNumber.
+    isAtPageEnd: boolean("isAtPageEnd").default(false).notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -1150,6 +1161,9 @@ export const extractedQuestionImages = pgTable(
       .references(() => books.id, { onDelete: "cascade" }),
     pageNumber: integer("pageNumber").notNull(),
     storageKey: text("storageKey").notNull(),
+    // See mirrorPageImages.isAtPageEnd's comment above — same fix, same
+    // reason, applied to كتبي's parallel question-files image pipeline.
+    isAtPageEnd: boolean("isAtPageEnd").default(false).notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),

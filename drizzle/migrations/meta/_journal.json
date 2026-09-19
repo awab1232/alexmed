@@ -183,6 +183,13 @@
       "when": 1789746497937,
       "tag": "0025_lethal_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789856420255,
+      "tag": "0026_omniscient_multiple_man",
+      "breakpoints": true
     }
   ]
 }

@@ -79,7 +79,7 @@ function request(body: unknown) {
   });
 }
 
-function classificationResponse(hasImage: boolean) {
+function classificationResponse(hasImage: boolean, isAtPageEnd = false) {
   return {
     choices: [
       {
@@ -87,6 +87,7 @@ function classificationResponse(hasImage: boolean) {
           content: JSON.stringify({
             hasImage,
             captionEn: hasImage ? "a figure" : "",
+            isAtPageEnd,
           }),
         },
       },
@@ -135,9 +136,32 @@ describe("POST /api/mirror/extract-images", () => {
     expect(mockInsertImage).toHaveBeenCalledWith(
       "j1",
       1,
-      "mirror-pages/j1/1.png"
+      "mirror-pages/j1/1.png",
+      false
     );
     expect(mockMarkComplete).toHaveBeenCalledWith("p1");
+  });
+
+  it("passes through isAtPageEnd:true when the model says no question follows the figure", async () => {
+    mockNextPage
+      .mockResolvedValueOnce({ id: "p1", jobId: "j1", pageNumber: 1 })
+      .mockResolvedValueOnce(null);
+    mockClaim.mockResolvedValueOnce({
+      id: "p1",
+      jobId: "j1",
+      pageNumber: 1,
+      attemptCount: 1,
+    });
+    mockInvoke.mockResolvedValue(classificationResponse(true, true));
+
+    await POST(request({ jobId: "j1" }));
+
+    expect(mockInsertImage).toHaveBeenCalledWith(
+      "j1",
+      1,
+      "mirror-pages/j1/1.png",
+      true
+    );
   });
 
   it("self-chains when pages remain pending after the batch", async () => {

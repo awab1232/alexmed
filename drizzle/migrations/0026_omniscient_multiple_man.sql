@@ -1,0 +1,2 @@
+ALTER TABLE "extracted_question_images" ADD COLUMN "isAtPageEnd" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "mirror_page_images" ADD COLUMN "isAtPageEnd" boolean DEFAULT false NOT NULL;

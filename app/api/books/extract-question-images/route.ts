@@ -114,7 +114,8 @@ export async function POST(request: Request) {
           await insertExtractedQuestionImage(
             bookId,
             candidate.pageNumber,
-            storageKey
+            storageKey,
+            classification.isAtPageEnd
           );
         }
 

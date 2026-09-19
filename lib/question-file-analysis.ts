@@ -27,6 +27,7 @@ export const PAGE_IMAGE_CLASSIFICATION_MAX_TOKENS = 600;
 export type PageImageClassification = {
   hasImage: boolean;
   captionEn: string;
+  isAtPageEnd: boolean;
 };
 
 export const pageImageClassificationResponseSchema = {
@@ -48,8 +49,13 @@ export const pageImageClassificationResponseSchema = {
           description:
             "A short (one sentence) English caption of the figure if hasImage is true, otherwise an empty string.",
         },
+        isAtPageEnd: {
+          type: "boolean",
+          description:
+            "Only meaningful when hasImage is true. true if the figure sits at the bottom of the page with NO exam question or answer text below it on this same page (the questions about it likely start at the TOP of the next page, after a page break). false if there is question/answer text on this same page below the figure, or hasImage is false.",
+        },
       },
-      required: ["hasImage", "captionEn"],
+      required: ["hasImage", "captionEn", "isAtPageEnd"],
     },
   },
 };
@@ -65,6 +71,7 @@ export function buildPageImageClassificationMessages(
         `You are looking at page ${pageNumber} of a scanned exam/question-bank PDF.`,
         "Decide whether this page contains a real, meaningful figure — a photo, X-ray/scan, diagram, chart, table, or instrument image — as opposed to a page that is just printed question/answer text.",
         "A page with only text (even dense text, headers, or page numbers) is NOT an image page.",
+        "If it does have a figure, also decide whether any exam question or answer text appears BELOW it on this same page. A figure at the very bottom of the page with nothing (or only a page number/footer) below it usually means the question(s) about it are on the NEXT page instead.",
         "Return JSON only, matching the given schema exactly.",
       ].join("\n"),
     },
@@ -187,19 +194,36 @@ export function parseExtractedQuestionEnrichment(
 // Deliberately page-position-based, never text-phrase matching ("the
 // instrument shown above" etc.), per the user's explicit instruction.
 export function associateImagesWithQuestions(
-  images: { id: string; pageNumber: number }[],
+  images: { id: string; pageNumber: number; isAtPageEnd?: boolean }[],
   questions: { id: string; sourcePage: number }[]
 ): { questionId: string; imageId: string }[] {
   if (!images.length) return [];
 
-  const sortedImages = [...images].sort((a, b) => a.pageNumber - b.pageNumber);
+  // Live-reproduced (2026-09-19): a figure at the bottom of its page with no
+  // question text below it belongs to the questions starting the NEXT page,
+  // not to whatever unrelated question happens to sit on its own page —
+  // shifting its effective ownership start to pageNumber + 1 fixes exactly
+  // that case without disturbing the (more common) same-page pattern, where
+  // a figure is immediately followed by the question(s) about it.
+  const sortedImages = [...images]
+    .sort((a, b) => a.pageNumber - b.pageNumber)
+    .map(image => ({
+      ...image,
+      effectiveStart: image.isAtPageEnd
+        ? image.pageNumber + 1
+        : image.pageNumber,
+    }));
   const relations: { questionId: string; imageId: string }[] = [];
 
   for (const question of questions) {
-    let owner: { id: string; pageNumber: number } | null = null;
+    let owner: (typeof sortedImages)[number] | null = null;
     for (const image of sortedImages) {
-      if (image.pageNumber > question.sourcePage) break;
-      owner = image;
+      if (
+        image.effectiveStart <= question.sourcePage &&
+        (!owner || image.effectiveStart >= owner.effectiveStart)
+      ) {
+        owner = image;
+      }
     }
     if (owner) {
       relations.push({ questionId: question.id, imageId: owner.id });

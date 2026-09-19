@@ -274,11 +274,14 @@ export async function markMirrorImagePageFailed(
 export async function insertMirrorPageImage(
   jobId: string,
   pageNumber: number,
-  storageKey: string
+  storageKey: string,
+  isAtPageEnd: boolean
 ): Promise<void> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(mirrorPageImages).values({ jobId, pageNumber, storageKey });
+  await db
+    .insert(mirrorPageImages)
+    .values({ jobId, pageNumber, storageKey, isAtPageEnd });
 }
 
 // Step 2: once every page has usable text, splits it into generation batches

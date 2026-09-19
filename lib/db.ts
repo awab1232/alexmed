@@ -13,6 +13,7 @@ import {
 } from "../drizzle/schema";
 import { storageGet } from "./storage";
 import type { GeneratedCard } from "./pdf-cards";
+import { associateImagesWithQuestions } from "./question-file-analysis";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -252,34 +253,35 @@ export async function getDeckWithCards(userId: string, deckId: string) {
 
     const pageImages = await db
       .select({
+        id: mirrorPageImages.id,
         pageNumber: mirrorPageImages.pageNumber,
         storageKey: mirrorPageImages.storageKey,
+        isAtPageEnd: mirrorPageImages.isAtPageEnd,
       })
       .from(mirrorPageImages)
       .where(eq(mirrorPageImages.jobId, job.id))
       .orderBy(mirrorPageImages.pageNumber);
 
     if (pageImages.length) {
-      const urlByStorageKey = new Map(
+      const urlByImageId = new Map(
         await Promise.all(
           pageImages.map(
             async image =>
-              [image.storageKey, (await storageGet(image.storageKey)).url] as const
+              [image.id, (await storageGet(image.storageKey)).url] as const
           )
         )
       );
-      for (const card of deckCards) {
-        // Same page-range rule as lib/question-file-analysis.ts's
-        // associateImagesWithQuestions: the latest image at or before this
-        // card's sourcePage owns it.
-        let owner: (typeof pageImages)[number] | null = null;
-        for (const image of pageImages) {
-          if (image.pageNumber > card.sourcePage) break;
-          owner = image;
-        }
-        if (owner) {
-          imageByCardId.set(card.id, urlByStorageKey.get(owner.storageKey)!);
-        }
+      // Shared with كتبي's identical question-files pipeline — see
+      // lib/question-file-analysis.ts's associateImagesWithQuestions for the
+      // isAtPageEnd rationale (a figure at the bottom of a page with no
+      // question text after it belongs to the next page's questions).
+      const relations = associateImagesWithQuestions(
+        pageImages,
+        deckCards.map(card => ({ id: card.id, sourcePage: card.sourcePage }))
+      );
+      for (const relation of relations) {
+        const url = urlByImageId.get(relation.imageId);
+        if (url) imageByCardId.set(relation.questionId, url);
       }
     }
   }
