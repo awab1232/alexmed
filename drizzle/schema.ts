@@ -242,11 +242,63 @@ export const cardReviewEvents = pgTable(
   })
 );
 
+// A student's own تضليل/قلم markings on one مِرآة card — one row per
+// (user, card) holding the whole set, since the client edits and saves it as
+// a unit (see lib/card-marks.ts for the shapes and why positions are
+// character offsets / card-width-normalised points rather than pixels).
+// Deleting the card or the user cascades the marks away; a row with no
+// highlights and no strokes is deleted rather than kept empty.
+export const cardMarks = pgTable(
+  "card_marks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    cardId: uuid("cardId")
+      .notNull()
+      .references(() => cards.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    highlights: jsonb("highlights")
+      .$type<
+        {
+          id: string;
+          field: string;
+          start: number;
+          end: number;
+          color: string;
+        }[]
+      >()
+      .default([])
+      .notNull(),
+    strokes: jsonb("strokes")
+      .$type<
+        {
+          id: string;
+          color: string;
+          width: number;
+          points: [number, number][];
+        }[]
+      >()
+      .default([])
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userCardUnique: uniqueIndex("card_marks_user_id_card_id_idx").on(
+      table.userId,
+      table.cardId
+    ),
+  })
+);
+
 export type Deck = typeof decks.$inferSelect;
 export type InsertDeck = typeof decks.$inferInsert;
 export type CardRow = typeof cards.$inferSelect;
 export type InsertCardRow = typeof cards.$inferInsert;
 export type CardReviewEvent = typeof cardReviewEvents.$inferSelect;
+export type CardMarksRow = typeof cardMarks.$inferSelect;
 
 // ── مِرآة generation jobs — a server-side, resumable staging area for the
 // upload→extract→OCR→generate pipeline, replacing browser localStorage as

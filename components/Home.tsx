@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import BottomNav from "@/components/BottomNav";
+import { MarkableText, MarkingSurface } from "@/components/CardMarks";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
 type Card = {
@@ -947,6 +948,7 @@ export default function Home() {
                       )}
                     </span>
                   </div>
+                  <MarkingSurface cardId={selectedCard.id}>
                   <article className="flashcard">
                     <div className="flashcard-topline">
                       <span className="card-tag">
@@ -972,8 +974,18 @@ export default function Home() {
                         />
                       )}
                       <span className="micro-label">السؤال / QUESTION</span>
-                      <h2>{selectedCard.questionArabic}</h2>
-                      <p>{selectedCard.question}</p>
+                      <h2>
+                        <MarkableText
+                          field="questionArabic"
+                          text={selectedCard.questionArabic}
+                        />
+                      </h2>
+                      <p>
+                        <MarkableText
+                          field="question"
+                          text={selectedCard.question}
+                        />
+                      </p>
                     </div>
                     <div
                       className={
@@ -986,27 +998,67 @@ export default function Home() {
                             الإجابة والشرح / ANSWER & WHY
                           </span>
                           <div className="answer-pair">
-                            <strong>{selectedCard.answerArabic}</strong>
-                            <span>{selectedCard.answer}</span>
+                            <strong>
+                              <MarkableText
+                                field="answerArabic"
+                                text={selectedCard.answerArabic}
+                              />
+                            </strong>
+                            <span>
+                              <MarkableText
+                                field="answer"
+                                text={selectedCard.answer}
+                              />
+                            </span>
                           </div>
                           <div className="explanation-pair">
-                            <p>{selectedCard.explanationArabic}</p>
-                            <p>{selectedCard.explanation}</p>
+                            <p>
+                              <MarkableText
+                                field="explanationArabic"
+                                text={selectedCard.explanationArabic}
+                              />
+                            </p>
+                            <p>
+                              <MarkableText
+                                field="explanation"
+                                text={selectedCard.explanation}
+                              />
+                            </p>
                           </div>
                           <div className="concept-grid">
                             <div>
                               <span>
                                 <Lightbulb size={14} /> الفكرة الأساسية
                               </span>
-                              <strong>{selectedCard.keyIdeaArabic}</strong>
-                              <small>{selectedCard.keyIdea}</small>
+                              <strong>
+                                <MarkableText
+                                  field="keyIdeaArabic"
+                                  text={selectedCard.keyIdeaArabic}
+                                />
+                              </strong>
+                              <small>
+                                <MarkableText
+                                  field="keyIdea"
+                                  text={selectedCard.keyIdea}
+                                />
+                              </small>
                             </div>
                             <div>
                               <span>
                                 <KeyRound size={14} /> الكلمة المفتاحية
                               </span>
-                              <strong>{selectedCard.keywordArabic}</strong>
-                              <small>{selectedCard.keyword}</small>
+                              <strong>
+                                <MarkableText
+                                  field="keywordArabic"
+                                  text={selectedCard.keywordArabic}
+                                />
+                              </strong>
+                              <small>
+                                <MarkableText
+                                  field="keyword"
+                                  text={selectedCard.keyword}
+                                />
+                              </small>
                             </div>
                           </div>
                         </>
@@ -1023,6 +1075,7 @@ export default function Home() {
                       )}
                     </div>
                   </article>
+                  </MarkingSurface>
                   <div className="card-navigation">
                     <button type="button" onClick={() => goToCard(-1)}>
                       <ChevronRight size={17} /> السابقة

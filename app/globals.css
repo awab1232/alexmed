@@ -1949,6 +1949,154 @@ h1 em {
   font-size: 11px;
   line-height: 1.5;
 }
+/* ── مِرآة: تضليل / قلم / ممحاة على بطاقة المراجعة (components/CardMarks.tsx) ── */
+.marking-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid #e4ded5;
+  border-radius: 14px;
+  background: #fffdf9;
+  box-shadow: 0 4px 14px rgba(58, 57, 48, 0.05);
+}
+.marking-tools {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #f3eee6;
+}
+.marking-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: #5c6b6e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.marking-tool:hover:not(:disabled) {
+  background: #ebe5db;
+}
+.marking-tool[aria-pressed="true"] {
+  background: #fff;
+  color: #c8582a;
+  box-shadow: 0 1px 4px rgba(58, 57, 48, 0.14);
+}
+.marking-tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.marking-swatches {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.marking-swatch {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(32, 44, 50, 0.18);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.marking-swatch:hover:not(:disabled) {
+  transform: scale(1.12);
+}
+.marking-swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #e87b45;
+}
+.marking-swatch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.marking-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline-start: auto;
+  color: #8d9895;
+  font-size: 11px;
+}
+.marking-status.error {
+  color: #b84d48;
+}
+.marking-status button {
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.marking-hint {
+  margin: 0 4px 8px;
+  color: #8d9895;
+  font-size: 11px;
+}
+.marking-surface {
+  position: relative;
+}
+.marking-surface.tool-pen,
+.marking-surface.tool-eraser {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.marking-surface.tool-highlight ::selection {
+  background: rgba(232, 123, 69, 0.28);
+}
+.marking-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.marking-canvas.active {
+  pointer-events: auto;
+  touch-action: none;
+}
+.marking-surface.tool-pen .marking-canvas.active {
+  cursor: crosshair;
+}
+.marking-surface.tool-eraser .marking-canvas.active {
+  cursor: cell;
+}
+/* Marker-pen look: the colour covers most of the line's height with soft
+   rounded ends rather than a flat full-height box, and clones its padding
+   across line breaks so a highlight that wraps still looks like one stroke. */
+.card-mark {
+  margin: 0 -0.05em;
+  padding: 0 0.15em;
+  border-radius: 0.35em;
+  background: linear-gradient(
+    180deg,
+    transparent 8%,
+    var(--mark-color) 8%,
+    var(--mark-color) 94%,
+    transparent 94%
+  );
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.card-mark.erasable {
+  outline: 1px dashed rgba(184, 77, 72, 0.5);
+  outline-offset: 1px;
+}
 .explain-card-button {
   display: inline-flex;
   align-items: center;

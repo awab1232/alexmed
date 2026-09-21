@@ -6,6 +6,7 @@ import { adminMaterialsRouter } from "./adminMaterialsRouter";
 import { adminUsersRouter } from "./adminUsersRouter";
 import { annotationsRouter } from "./annotationsRouter";
 import { booksRouter } from "./booksRouter";
+import { cardMarksRouter } from "./cardMarksRouter";
 import { chatRouter } from "./chatRouter";
 import { decksRouter } from "./decksRouter";
 import { mirrorRouter } from "./mirrorRouter";
@@ -47,6 +48,7 @@ export const appRouter = router({
   subjects: subjectsRouter,
   questionFiles: questionFilesRouter,
   annotations: annotationsRouter,
+  cardMarks: cardMarksRouter,
   chat: chatRouter,
   // مكتبة الأدمن — kept as two separate top-level namespaces (not nested
   // under one "admin" router) so the admin-only surface (adminMaterials) and
