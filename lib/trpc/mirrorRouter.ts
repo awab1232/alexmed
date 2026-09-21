@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
+  createMirrorTextJob,
   deleteMirrorJob,
   getMirrorBatchForUser,
   getMirrorJobForUser,
@@ -8,13 +9,87 @@ import {
   resetMirrorBatchForRetry,
   resetMirrorJobFailedPagesForRetry,
 } from "../db-mirror";
+import { seedMirrorGeneration } from "../mirror-dispatch";
+import { splitTextIntoPages, validateQuestionText } from "../mirror-text";
 import { publishMessage } from "../queue/client";
+import { assertJobCreationAllowed, RateLimitedError } from "../queue/rateLimit";
 import { protectedProcedure, router } from "./trpc";
 
 export const mirrorRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     return listMirrorJobsForUser(ctx.user.id);
   }),
+
+  // Pasted question text instead of an uploaded PDF. There is nothing to
+  // extract, so the job goes straight to generation through the same batch
+  // pipeline (and produces the same cards) as a PDF. `target` decides where the
+  // cards land: a brand-new file, or an addition to one of the student's
+  // existing files — added as its own separate job, never merged into or
+  // regenerating the file's earlier cards.
+  submitText: protectedProcedure
+    .input(
+      z.object({
+        // Generous raw cap so normalisation (not the schema) decides the
+        // user-facing limit message.
+        text: z.string().max(200_000),
+        depth: z.enum(["quick", "balanced", "detailed"]).default("balanced"),
+        target: z.discriminatedUnion("mode", [
+          z.object({
+            mode: z.literal("new"),
+            title: z.string().trim().max(120).optional(),
+          }),
+          z.object({
+            mode: z.literal("append"),
+            deckId: z.string().uuid(),
+            title: z.string().trim().max(120).optional(),
+          }),
+        ]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const validation = validateQuestionText(input.text);
+      if (!validation.ok) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
+      }
+
+      try {
+        await assertJobCreationAllowed(ctx.user.id, "mirror");
+      } catch (error) {
+        if (error instanceof RateLimitedError) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
+
+      const created = await createMirrorTextJob(ctx.user.id, {
+        title: input.target.title || null,
+        depth: input.depth,
+        pages: splitTextIntoPages(validation.text),
+        deckId: input.target.mode === "append" ? input.target.deckId : null,
+      });
+      if (!created) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "لم نجد هذا الملف. اختر ملفًا آخر.",
+        });
+      }
+
+      // started=false means the queue refused the batches; they are already
+      // marked failed, so the job page offers "إعادة المحاولة" for them.
+      const started = await seedMirrorGeneration(
+        created.job.id,
+        created.batches
+      );
+      return {
+        jobId: created.job.id,
+        deckId: created.deck.id,
+        batchCount: created.batches.length,
+        started,
+      };
+    }),
 
   get: protectedProcedure
     .input(z.object({ id: z.string() }))

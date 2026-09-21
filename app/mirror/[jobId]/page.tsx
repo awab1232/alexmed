@@ -102,8 +102,8 @@ export default function MirrorJobPage() {
           </Link>
           <h1>{job.fileName}</h1>
           <p>
-            {job.pageCount} صفحة · {batches.length} دفعة · {completeCount}/
-            {batches.length} مكتملة
+            {job.sourceType !== "text" && `${job.pageCount} صفحة · `}
+            {batches.length} دفعة · {completeCount}/{batches.length} مكتملة
           </p>
         </div>
       </div>

@@ -374,6 +374,110 @@ export async function finalizeMirrorJobExtraction(
   });
 }
 
+type DbTransaction = Parameters<
+  Parameters<NonNullable<ReturnType<typeof getDb>>["transaction"]>[0]
+>[0];
+
+// Pasted-text counterpart of createMirrorJobShell + finalizeMirrorJobExtraction:
+// there is nothing to extract or OCR, so the job, its deck and its batches are
+// created together in one transaction and generation can start immediately.
+// With `deckId` the cards are ADDED to that existing deck as their own job —
+// kept separate from the deck's earlier cards (each card carries its job id,
+// see completeBatchGeneration) rather than merged or regenerated — otherwise a
+// new deck is created. Returns null when `deckId` isn't one of the user's.
+//
+// `existingTx` lets a caller run this inside a transaction it owns (used to
+// exercise the real code path and roll it back); normally it opens its own.
+export async function createMirrorTextJob(
+  userId: string,
+  input: {
+    title: string | null;
+    depth: string;
+    pages: MirrorPageText[];
+    deckId: string | null;
+  },
+  existingTx?: DbTransaction
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
+  const groups = splitMirrorPages(input.pages);
+
+  const run = async (tx: DbTransaction) => {
+    let deck: typeof decks.$inferSelect;
+    let label: string;
+    if (input.deckId) {
+      const [existing] = await tx
+        .select()
+        .from(decks)
+        .where(and(eq(decks.id, input.deckId), eq(decks.userId, userId)))
+        .limit(1);
+      if (!existing) return null;
+      deck = existing;
+      // An untitled addition is numbered after the deck's existing jobs, so a
+      // deck whose only job is the original gets "إضافة 1" first.
+      const [{ total }] = await tx
+        .select({ total: sql<number>`count(*)::int` })
+        .from(mirrorJobs)
+        .where(eq(mirrorJobs.deckId, deck.id));
+      label = input.title?.trim() || `إضافة ${Math.max(1, total)}`;
+      await tx
+        .update(decks)
+        .set({ updatedAt: new Date() })
+        .where(eq(decks.id, deck.id));
+    } else {
+      label = input.title?.trim() || "أسئلة نصية";
+      [deck] = await tx
+        .insert(decks)
+        .values({
+          userId,
+          fileName: label,
+          fileKey: null,
+          pageCount: 0,
+          depth: input.depth,
+        })
+        .returning();
+    }
+
+    const [job] = await tx
+      .insert(mirrorJobs)
+      .values({
+        userId,
+        fileName: label,
+        fileKey: "",
+        sourceType: "text",
+        pageCount: input.pages.length,
+        depth: input.depth,
+        status: "pending",
+        deckId: deck.id,
+      })
+      .returning();
+
+    const inserted = await tx
+      .insert(mirrorBatches)
+      .values(
+        groups.map((group, index) => ({
+          jobId: job.id,
+          orderIndex: index,
+          startPage: group[0].page,
+          endPage: group[group.length - 1].page,
+          pageTexts: group,
+        }))
+      )
+      .returning({
+        id: mirrorBatches.id,
+        orderIndex: mirrorBatches.orderIndex,
+      });
+
+    return {
+      job,
+      deck,
+      batches: inserted.sort((a, b) => a.orderIndex - b.orderIndex),
+    };
+  };
+  return existingTx ? run(existingTx) : db.transaction(run);
+}
+
 export async function listMirrorJobsForUser(userId: string) {
   const db = getDb();
   if (!db) return [];
@@ -657,7 +761,7 @@ export async function completeBatchGeneration(
   const db = getDb();
   if (!db) throw new Error("Database not available");
 
-  await db
+  const [completed] = await db
     .update(mirrorBatches)
     .set({
       status: "complete",
@@ -665,12 +769,16 @@ export async function completeBatchGeneration(
       errorMessage: null,
       updatedAt: new Date(),
     })
-    .where(eq(mirrorBatches.id, batchId));
+    .where(eq(mirrorBatches.id, batchId))
+    .returning({ jobId: mirrorBatches.jobId });
 
   if (generatedCards.length) {
     await db.insert(cards).values(
       generatedCards.map(card => ({
         deckId,
+        // Ties each card to the job (upload or pasted-text submission) that
+        // made it, so additions to one deck stay distinguishable.
+        jobId: completed?.jobId ?? null,
         question: card.question,
         questionArabic: card.questionArabic,
         answer: card.answer,

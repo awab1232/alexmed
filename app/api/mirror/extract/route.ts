@@ -5,6 +5,7 @@ import {
   updateMirrorJobExtractionProgress,
   type MirrorPageText,
 } from "@/lib/db-mirror";
+import { GENERATE_WINDOW_SIZE } from "@/lib/mirror-dispatch";
 import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
 import { publishMessage } from "@/lib/queue/client";
@@ -19,11 +20,6 @@ import { PDFParse } from "pdf-parse";
 // the publish below — keeps each invocation's AI-call volume bounded and
 // progress checkpointed no matter how many pages the file needs OCR'd.
 const OCR_BATCH_SIZE = 12;
-
-// How many generation batches are ever "in flight" (published to QStash but
-// not yet complete/failed) for one job at a time — see the comment at the
-// publish call below for why this replaces publishing every batch up front.
-export const GENERATE_WINDOW_SIZE = 4;
 
 // Step 1 of the مِرآة pipeline, background half: upload-and-plan creates a
 // bare job (status "extracting") and publishes one extract_mirror_job

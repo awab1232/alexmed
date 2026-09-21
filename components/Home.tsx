@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleAlert,
+  ClipboardPaste,
   Download,
   FileText,
   KeyRound,
@@ -19,6 +20,7 @@ import {
   Library,
   Lightbulb,
   Loader2,
+  Plus,
   RotateCcw,
   ScanText,
   ShieldCheck,
@@ -31,6 +33,7 @@ import {
 import { trpc } from "@/lib/trpc-client";
 import BottomNav from "@/components/BottomNav";
 import { MarkableText, MarkingSurface } from "@/components/CardMarks";
+import MirrorTextInput from "@/components/MirrorTextInput";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
 type Card = {
@@ -53,6 +56,9 @@ type Card = {
   // getDeckWithCards), never re-fetched or duplicated in storage. null for
   // a card with no associated figure or for any non-مِرآة deck.
   imageUrl?: string | null;
+  // Which section of the deck (its original upload, or a later pasted-text
+  // addition) this card belongs to — see lib/deck-sections.ts.
+  sectionId?: string;
 };
 
 type View = "upload" | "cards" | "library";
@@ -126,6 +132,12 @@ export default function Home() {
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [speakingTarget, setSpeakingTarget] = useState<string | null>(null);
+  // Upload screen: PDF file vs pasted question text. textTargetDeckId
+  // preselects a file as the destination when the student came from that
+  // file's "إضافة أسئلة" button.
+  const [inputMode, setInputMode] = useState<"pdf" | "text">("pdf");
+  const [textTargetDeckId, setTextTargetDeckId] = useState<string | null>(null);
+  const [sectionFilter, setSectionFilter] = useState("all");
 
   const utils = trpc.useUtils();
   const decksQuery = trpc.decks.list.useQuery(undefined, {
@@ -169,6 +181,8 @@ export default function Home() {
   const isLive = !!jobStatus && !TERMINAL_JOB_STATUSES.has(jobStatus);
   const liveJobId = deckQuery.data?.job?.id ?? null;
   const failedBatchCount = deckQuery.data?.job?.failedBatchCount ?? 0;
+  const sections = deckQuery.data?.sections ?? [];
+  const sectionById = new Map(sections.map(section => [section.id, section]));
 
   // Merges newly-arrived cards onto the end of local state (by id, so
   // existing cards — and the student's activeCard position — are never
@@ -230,10 +244,30 @@ export default function Home() {
       `${card.question} ${card.questionArabic} ${card.answer} ${card.keyIdea} ${card.keyword}`.toLowerCase();
     return (
       (!query.trim() || haystack.includes(query.toLowerCase())) &&
-      (!onlyReview || card.status === "needs_review")
+      (!onlyReview || card.status === "needs_review") &&
+      (sectionFilter === "all" || card.sectionId === sectionFilter)
     );
   });
   const selectedCard = visibleCards[activeCard] ?? visibleCards[0];
+
+  // Where a card came from, for its label: a real page for an uploaded PDF,
+  // but for a pasted-text section the page number is only an internal chunk
+  // counter, so its section's name is shown instead.
+  function cardOrigin(card: Card) {
+    const section = card.sectionId ? sectionById.get(card.sectionId) : null;
+    return section?.sourceType === "text"
+      ? { short: section.label, tag: section.label }
+      : { short: `صفحة ${card.sourcePage}`, tag: `PAGE ${card.sourcePage}` };
+  }
+
+  // Sends the student to the paste-text form with `deckId` preselected as the
+  // destination (they are still shown the new-file / add-to-file choice).
+  function startAddingTo(deckId: string | null) {
+    setTextTargetDeckId(deckId);
+    setInputMode("text");
+    setError("");
+    setView("upload");
+  }
   const progress = pageCount
     ? Math.min(100, Math.round((processedPages / pageCount) * 100))
     : 0;
@@ -339,6 +373,7 @@ export default function Home() {
     setWarning("");
     setQuery("");
     setOnlyReview(false);
+    setSectionFilter("all");
     setActiveCard(0);
     setShowAnswer(false);
   }
@@ -359,6 +394,7 @@ export default function Home() {
     setView("cards");
     setQuery("");
     setOnlyReview(false);
+    setSectionFilter("all");
     setActiveCard(0);
     setShowAnswer(false);
   }
@@ -560,169 +596,204 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="workspace-grid">
-              <div className="upload-card panel-card">
-                <div className="panel-heading">
-                  <div>
-                    <span className="section-kicker">01 / UPLOAD</span>
-                    <h2>ابدأ بملف الأسئلة</h2>
-                  </div>
-                  <FileText size={23} className="heading-icon" />
-                </div>
-                <div
-                  className={dragActive ? "drop-zone drag-active" : "drop-zone"}
-                  onDragOver={event => {
-                    event.preventDefault();
-                    setDragActive(true);
-                  }}
-                  onDragLeave={() => setDragActive(false)}
-                  onDrop={event => {
-                    event.preventDefault();
-                    setDragActive(false);
-                    chooseFile(event.dataTransfer.files?.[0]);
-                  }}
-                  onClick={() => inputRef.current?.click()}
-                >
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    hidden
-                    onChange={event => chooseFile(event.target.files?.[0])}
-                  />
-                  <div className="upload-icon">
-                    <Upload size={23} />
-                  </div>
-                  <strong>{file ? file.name : "اسحب ملف PDF هنا"}</strong>
-                  <span>
-                    {file
-                      ? `${formatBytes(file.size)} · جاهز للتحليل`
-                      : "أو اضغط لاختيار الملف من جهازك"}
-                  </span>
-                  {!file && (
-                    <small>
-                      حد أقصى {UPLOAD_MAX_MB}MB · يدعم الملفات الكبيرة والدفعات
-                      المتعددة وPDF المصوّر عبر OCR
-                    </small>
-                  )}
-                </div>
-                {file && (
-                  <div className="selected-file">
-                    <div className="selected-file-icon">
-                      <FileText size={18} />
-                    </div>
+            <div
+              className="input-mode-tabs"
+              role="group"
+              aria-label="طريقة إدخال الأسئلة"
+            >
+              <button
+                type="button"
+                className="input-mode-tab"
+                aria-pressed={inputMode === "pdf"}
+                onClick={() => setInputMode("pdf")}
+              >
+                <FileText size={16} /> ملف PDF
+              </button>
+              <button
+                type="button"
+                className="input-mode-tab"
+                aria-pressed={inputMode === "text"}
+                onClick={() => setInputMode("text")}
+              >
+                <ClipboardPaste size={16} /> نص أسئلة
+              </button>
+            </div>
+
+            {inputMode === "text" ? (
+              <MirrorTextInput
+                key={textTargetDeckId ?? "none"}
+                depth={depth}
+                depthOptions={depthOptions}
+                onDepthChange={setDepth}
+                initialDeckId={textTargetDeckId}
+              />
+            ) : (
+              <div className="workspace-grid">
+                <div className="upload-card panel-card">
+                  <div className="panel-heading">
                     <div>
-                      <strong>{file.name}</strong>
-                      <span>{formatBytes(file.size)} · PDF</span>
+                      <span className="section-kicker">01 / UPLOAD</span>
+                      <h2>ابدأ بملف الأسئلة</h2>
                     </div>
-                    <button
-                      type="button"
-                      aria-label="إزالة الملف"
-                      onClick={event => {
-                        event.stopPropagation();
-                        setFile(null);
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
+                    <FileText size={23} className="heading-icon" />
                   </div>
-                )}
-                {error && (
-                  <div className="inline-alert error">
-                    <CircleAlert size={16} />
-                    {error}
-                  </div>
-                )}
-                {warning && (
-                  <div className="inline-alert warning">
-                    <CircleAlert size={16} />
-                    {warning}
-                  </div>
-                )}
-                {stage === "extracting" && (
                   <div
-                    className="live-progress"
-                    role="status"
-                    aria-live="polite"
+                    className={
+                      dragActive ? "drop-zone drag-active" : "drop-zone"
+                    }
+                    onDragOver={event => {
+                      event.preventDefault();
+                      setDragActive(true);
+                    }}
+                    onDragLeave={() => setDragActive(false)}
+                    onDrop={event => {
+                      event.preventDefault();
+                      setDragActive(false);
+                      chooseFile(event.dataTransfer.files?.[0]);
+                    }}
+                    onClick={() => inputRef.current?.click()}
                   >
-                    <div className="progress-heading">
-                      <div className="progress-orbit">
-                        <ScanText size={17} />
+                    <input
+                      ref={inputRef}
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      hidden
+                      onChange={event => chooseFile(event.target.files?.[0])}
+                    />
+                    <div className="upload-icon">
+                      <Upload size={23} />
+                    </div>
+                    <strong>{file ? file.name : "اسحب ملف PDF هنا"}</strong>
+                    <span>
+                      {file
+                        ? `${formatBytes(file.size)} · جاهز للتحليل`
+                        : "أو اضغط لاختيار الملف من جهازك"}
+                    </span>
+                    {!file && (
+                      <small>
+                        حد أقصى {UPLOAD_MAX_MB}MB · يدعم الملفات الكبيرة
+                        والدفعات المتعددة وPDF المصوّر عبر OCR
+                      </small>
+                    )}
+                  </div>
+                  {file && (
+                    <div className="selected-file">
+                      <div className="selected-file-icon">
+                        <FileText size={18} />
                       </div>
                       <div>
-                        <strong>نرفع الملف ونجهّزه للتوليد</strong>
-                        <span>
-                          هتنقل تلقائيًا لصفحة التقدّم فور اكتمال الرفع — تقدر
-                          تسكّر الصفحة وترجع بعدين من أي جهاز.
-                        </span>
+                        <strong>{file.name}</strong>
+                        <span>{formatBytes(file.size)} · PDF</span>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="إزالة الملف"
+                        onClick={event => {
+                          event.stopPropagation();
+                          setFile(null);
+                        }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+                  {error && (
+                    <div className="inline-alert error">
+                      <CircleAlert size={16} />
+                      {error}
+                    </div>
+                  )}
+                  {warning && (
+                    <div className="inline-alert warning">
+                      <CircleAlert size={16} />
+                      {warning}
+                    </div>
+                  )}
+                  {stage === "extracting" && (
+                    <div
+                      className="live-progress"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="progress-heading">
+                        <div className="progress-orbit">
+                          <ScanText size={17} />
+                        </div>
+                        <div>
+                          <strong>نرفع الملف ونجهّزه للتوليد</strong>
+                          <span>
+                            هتنقل تلقائيًا لصفحة التقدّم فور اكتمال الرفع — تقدر
+                            تسكّر الصفحة وترجع بعدين من أي جهاز.
+                          </span>
+                        </div>
+                      </div>
+                      <div className="progress-dots">
+                        <span /> <span /> <span />
                       </div>
                     </div>
-                    <div className="progress-dots">
-                      <span /> <span /> <span />
+                  )}
+                </div>
+
+                <div className="settings-card panel-card">
+                  <div className="panel-heading">
+                    <div>
+                      <span className="section-kicker">02 / STYLE</span>
+                      <h2>شكل البطاقة</h2>
+                    </div>
+                    <Sparkles size={23} className="heading-icon" />
+                  </div>
+                  <p className="setting-description">
+                    اختر مستوى الشرح المناسب لوقت مذاكرتك.
+                  </p>
+                  <div className="depth-options">
+                    {depthOptions.map(option => (
+                      <button
+                        type="button"
+                        key={option.value}
+                        className={
+                          depth === option.value
+                            ? "depth-option selected"
+                            : "depth-option"
+                        }
+                        onClick={() => setDepth(option.value)}
+                      >
+                        <span className="radio-dot" />
+                        <span>
+                          <strong>{option.label}</strong>
+                          <small>{option.caption}</small>
+                        </span>
+                        {option.value === "balanced" && (
+                          <b className="recommended">موصى به</b>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="language-note">
+                    <Languages size={17} />
+                    <div>
+                      <strong>كل شيء بلغتين</strong>
+                      <span>English first · الترجمة العربية بجانبه</span>
                     </div>
                   </div>
-                )}
+                  <button
+                    type="button"
+                    className="primary-button"
+                    disabled={!file || stage === "extracting"}
+                    onClick={startProcessing}
+                  >
+                    {stage === "extracting" ? (
+                      <>
+                        <Loader2 size={18} className="spin" /> جاري الرفع...
+                      </>
+                    ) : (
+                      <>
+                        حوّل إلى بطاقات <ArrowUp size={18} />
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-
-              <div className="settings-card panel-card">
-                <div className="panel-heading">
-                  <div>
-                    <span className="section-kicker">02 / STYLE</span>
-                    <h2>شكل البطاقة</h2>
-                  </div>
-                  <Sparkles size={23} className="heading-icon" />
-                </div>
-                <p className="setting-description">
-                  اختر مستوى الشرح المناسب لوقت مذاكرتك.
-                </p>
-                <div className="depth-options">
-                  {depthOptions.map(option => (
-                    <button
-                      type="button"
-                      key={option.value}
-                      className={
-                        depth === option.value
-                          ? "depth-option selected"
-                          : "depth-option"
-                      }
-                      onClick={() => setDepth(option.value)}
-                    >
-                      <span className="radio-dot" />
-                      <span>
-                        <strong>{option.label}</strong>
-                        <small>{option.caption}</small>
-                      </span>
-                      {option.value === "balanced" && (
-                        <b className="recommended">موصى به</b>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <div className="language-note">
-                  <Languages size={17} />
-                  <div>
-                    <strong>كل شيء بلغتين</strong>
-                    <span>English first · الترجمة العربية بجانبه</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="primary-button"
-                  disabled={!file || stage === "extracting"}
-                  onClick={startProcessing}
-                >
-                  {stage === "extracting" ? (
-                    <>
-                      <Loader2 size={18} className="spin" /> جاري الرفع...
-                    </>
-                  ) : (
-                    <>
-                      حوّل إلى بطاقات <ArrowUp size={18} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+            )}
             <p className="disclaimer">
               <ShieldCheck size={15} /> أداة مساعدة للمذاكرة وليست بديلًا عن
               مرجع المادة أو توجيهًا طبيًا. راجع البطاقات ذات العلامة الصفراء.
@@ -741,7 +812,8 @@ export default function Home() {
                   بطاقاتك <em>تتكلم.</em>
                 </h1>
                 <p>
-                  {currentFileName || "ملف الأسئلة"} · {pageCount} صفحة ·{" "}
+                  {currentFileName || "ملف الأسئلة"} ·{" "}
+                  {pageCount > 0 && `${pageCount} صفحة · `}
                   {cards.length} بطاقة مولّدة
                 </p>
               </div>
@@ -753,6 +825,14 @@ export default function Home() {
                   disabled={!cards.length}
                 >
                   <Download size={16} /> تصدير CSV
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => startAddingTo(openDeckId)}
+                  disabled={!openDeckId}
+                >
+                  <Plus size={16} /> إضافة أسئلة
                 </button>
                 <button type="button" className="ghost-button" onClick={reset}>
                   <RotateCcw size={16} /> ملف جديد
@@ -785,15 +865,21 @@ export default function Home() {
                 <strong>{cards.length}</strong>
                 <small>بطاقة قابلة للمراجعة</small>
               </div>
-              <div className="stat-card">
-                <span>تغطية الصفحات</span>
-                <strong>
-                  {processedPages}/{pageCount}
-                </strong>
-                <small>
-                  {pageCount ? `${progress}% من الملف` : "بانتظار الملف"}
-                </small>
-              </div>
+              {pageCount > 0 ? (
+                <div className="stat-card">
+                  <span>تغطية الصفحات</span>
+                  <strong>
+                    {processedPages}/{pageCount}
+                  </strong>
+                  <small>{progress}% من الملف</small>
+                </div>
+              ) : (
+                <div className="stat-card">
+                  <span>المجموعات</span>
+                  <strong>{Math.max(1, sections.length)}</strong>
+                  <small>مجموعة أسئلة في هذا الملف</small>
+                </div>
+              )}
               <div className="stat-card accent">
                 <span>تحتاج تدقيقًا</span>
                 <strong>
@@ -802,6 +888,38 @@ export default function Home() {
                 <small>أسئلة ناقصة أو غير واضحة</small>
               </div>
             </div>
+            {sections.length > 1 && (
+              <div
+                className="section-chips"
+                role="group"
+                aria-label="مجموعات الأسئلة في الملف"
+              >
+                {[
+                  { id: "all", label: "الكل", cardCount: cards.length },
+                  ...sections,
+                ].map(section => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    className={
+                      sectionFilter === section.id
+                        ? "filter-button active"
+                        : "filter-button"
+                    }
+                    onClick={() => {
+                      setSectionFilter(section.id);
+                      setActiveCard(0);
+                      setShowAnswer(false);
+                    }}
+                  >
+                    {section.label}
+                    <span className="section-chip-count">
+                      {section.cardCount}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="cards-toolbar">
               <div className="search-box">
                 <span>⌕</span>
@@ -908,7 +1026,7 @@ export default function Home() {
                       <span className="list-copy">
                         <strong>{card.questionArabic || card.question}</strong>
                         <small>
-                          صفحة {card.sourcePage} ·{" "}
+                          {cardOrigin(card).short} ·{" "}
                           {card.keywordArabic || card.keyword}
                         </small>
                       </span>
@@ -949,132 +1067,132 @@ export default function Home() {
                     </span>
                   </div>
                   <MarkingSurface cardId={selectedCard.id}>
-                  <article className="flashcard">
-                    <div className="flashcard-topline">
-                      <span className="card-tag">
-                        QUESTION · PAGE {selectedCard.sourcePage}
-                      </span>
-                      <span className="card-confidence">
-                        {selectedCard.confidence} confidence
-                      </span>
-                    </div>
-                    <div className="question-block">
-                      {selectedCard.imageUrl && (
-                        <img
-                          src={selectedCard.imageUrl}
-                          alt=""
-                          style={{
-                            display: "block",
-                            width: "100%",
-                            maxWidth: 420,
-                            borderRadius: 10,
-                            marginBottom: 12,
-                            border: "1px solid #e4ded5",
-                          }}
-                        />
-                      )}
-                      <span className="micro-label">السؤال / QUESTION</span>
-                      <h2>
-                        <MarkableText
-                          field="questionArabic"
-                          text={selectedCard.questionArabic}
-                        />
-                      </h2>
-                      <p>
-                        <MarkableText
-                          field="question"
-                          text={selectedCard.question}
-                        />
-                      </p>
-                    </div>
-                    <div
-                      className={
-                        showAnswer ? "answer-block revealed" : "answer-block"
-                      }
-                    >
-                      {showAnswer ? (
-                        <>
-                          <span className="micro-label">
-                            الإجابة والشرح / ANSWER & WHY
-                          </span>
-                          <div className="answer-pair">
-                            <strong>
-                              <MarkableText
-                                field="answerArabic"
-                                text={selectedCard.answerArabic}
-                              />
-                            </strong>
-                            <span>
-                              <MarkableText
-                                field="answer"
-                                text={selectedCard.answer}
-                              />
+                    <article className="flashcard">
+                      <div className="flashcard-topline">
+                        <span className="card-tag">
+                          QUESTION · {cardOrigin(selectedCard).tag}
+                        </span>
+                        <span className="card-confidence">
+                          {selectedCard.confidence} confidence
+                        </span>
+                      </div>
+                      <div className="question-block">
+                        {selectedCard.imageUrl && (
+                          <img
+                            src={selectedCard.imageUrl}
+                            alt=""
+                            style={{
+                              display: "block",
+                              width: "100%",
+                              maxWidth: 420,
+                              borderRadius: 10,
+                              marginBottom: 12,
+                              border: "1px solid #e4ded5",
+                            }}
+                          />
+                        )}
+                        <span className="micro-label">السؤال / QUESTION</span>
+                        <h2>
+                          <MarkableText
+                            field="questionArabic"
+                            text={selectedCard.questionArabic}
+                          />
+                        </h2>
+                        <p>
+                          <MarkableText
+                            field="question"
+                            text={selectedCard.question}
+                          />
+                        </p>
+                      </div>
+                      <div
+                        className={
+                          showAnswer ? "answer-block revealed" : "answer-block"
+                        }
+                      >
+                        {showAnswer ? (
+                          <>
+                            <span className="micro-label">
+                              الإجابة والشرح / ANSWER & WHY
                             </span>
-                          </div>
-                          <div className="explanation-pair">
-                            <p>
-                              <MarkableText
-                                field="explanationArabic"
-                                text={selectedCard.explanationArabic}
-                              />
-                            </p>
-                            <p>
-                              <MarkableText
-                                field="explanation"
-                                text={selectedCard.explanation}
-                              />
-                            </p>
-                          </div>
-                          <div className="concept-grid">
-                            <div>
-                              <span>
-                                <Lightbulb size={14} /> الفكرة الأساسية
-                              </span>
+                            <div className="answer-pair">
                               <strong>
                                 <MarkableText
-                                  field="keyIdeaArabic"
-                                  text={selectedCard.keyIdeaArabic}
+                                  field="answerArabic"
+                                  text={selectedCard.answerArabic}
                                 />
                               </strong>
-                              <small>
-                                <MarkableText
-                                  field="keyIdea"
-                                  text={selectedCard.keyIdea}
-                                />
-                              </small>
-                            </div>
-                            <div>
                               <span>
-                                <KeyRound size={14} /> الكلمة المفتاحية
+                                <MarkableText
+                                  field="answer"
+                                  text={selectedCard.answer}
+                                />
                               </span>
-                              <strong>
-                                <MarkableText
-                                  field="keywordArabic"
-                                  text={selectedCard.keywordArabic}
-                                />
-                              </strong>
-                              <small>
-                                <MarkableText
-                                  field="keyword"
-                                  text={selectedCard.keyword}
-                                />
-                              </small>
                             </div>
-                          </div>
-                        </>
-                      ) : (
-                        <button
-                          className="reveal-button"
-                          type="button"
-                          onClick={() => setShowAnswer(true)}
-                        >
-                          <span className="reveal-icon">?</span>
-                          <strong>اظهر الإجابة والشرح</strong>
-                          <small>Reveal answer & explanation</small>
-                        </button>
-                      )}
-                    </div>
-                  </article>
+                            <div className="explanation-pair">
+                              <p>
+                                <MarkableText
+                                  field="explanationArabic"
+                                  text={selectedCard.explanationArabic}
+                                />
+                              </p>
+                              <p>
+                                <MarkableText
+                                  field="explanation"
+                                  text={selectedCard.explanation}
+                                />
+                              </p>
+                            </div>
+                            <div className="concept-grid">
+                              <div>
+                                <span>
+                                  <Lightbulb size={14} /> الفكرة الأساسية
+                                </span>
+                                <strong>
+                                  <MarkableText
+                                    field="keyIdeaArabic"
+                                    text={selectedCard.keyIdeaArabic}
+                                  />
+                                </strong>
+                                <small>
+                                  <MarkableText
+                                    field="keyIdea"
+                                    text={selectedCard.keyIdea}
+                                  />
+                                </small>
+                              </div>
+                              <div>
+                                <span>
+                                  <KeyRound size={14} /> الكلمة المفتاحية
+                                </span>
+                                <strong>
+                                  <MarkableText
+                                    field="keywordArabic"
+                                    text={selectedCard.keywordArabic}
+                                  />
+                                </strong>
+                                <small>
+                                  <MarkableText
+                                    field="keyword"
+                                    text={selectedCard.keyword}
+                                  />
+                                </small>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <button
+                            className="reveal-button"
+                            type="button"
+                            onClick={() => setShowAnswer(true)}
+                          >
+                            <span className="reveal-icon">?</span>
+                            <strong>اظهر الإجابة والشرح</strong>
+                            <small>Reveal answer & explanation</small>
+                          </button>
+                        )}
+                      </div>
+                    </article>
                   </MarkingSurface>
                   <div className="card-navigation">
                     <button type="button" onClick={() => goToCard(-1)}>
@@ -1151,7 +1269,8 @@ export default function Home() {
                         <span className="content-type-badge">ملف أسئلة</span>
                       </strong>
                       <span>
-                        {deck.pageCount} صفحة · {deck.cardCount} بطاقة ·{" "}
+                        {deck.pageCount > 0 && `${deck.pageCount} صفحة · `}
+                        {deck.cardCount} بطاقة ·{" "}
                         {new Date(deck.createdAt).toLocaleDateString("ar")}
                       </span>
                     </div>
@@ -1180,6 +1299,15 @@ export default function Home() {
                         onClick={() => openDeck(deck.id)}
                       >
                         فتح
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        aria-label="إضافة أسئلة لهذا الملف"
+                        title="إضافة أسئلة لهذا الملف"
+                        onClick={() => startAddingTo(deck.id)}
+                      >
+                        <Plus size={16} />
                       </button>
                       <button
                         type="button"

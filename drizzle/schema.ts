@@ -193,6 +193,14 @@ export const cards = pgTable(
     sourcePage: integer("sourcePage").notNull(),
     status: cardStatusEnum("status").notNull(),
     confidence: cardConfidenceEnum("confidence").notNull(),
+    // Which مِرآة job (one upload or one pasted-text submission) produced this
+    // card, so a deck can hold several separate additions and the UI can show
+    // and filter them apart. Null for cards created before this column existed
+    // (treated as the deck's original job) and for decks made by
+    // createDeckWithCards; set null if the job row is later deleted.
+    jobId: uuid("jobId").references(() => mirrorJobs.id, {
+      onDelete: "set null",
+    }),
     // SRS (SM-2-style) scheduling fields — same shape/defaults as كتبي's
     // bookCards below, so lib/srs.ts's applySrsRating() works unmodified for
     // either table. dueAt defaults to now() so a freshly generated card is
@@ -213,6 +221,7 @@ export const cards = pgTable(
       table.sourcePage
     ),
     dueAtIdx: index("cards_due_at_idx").on(table.dueAt),
+    jobIdx: index("cards_job_id_idx").on(table.jobId),
   })
 );
 
@@ -347,8 +356,15 @@ export const mirrorJobs = pgTable(
     userId: uuid("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    // For a pasted-text job this is the section's display name (the new
+    // file's title, or the label of an addition to an existing file).
     fileName: text("fileName").notNull(),
+    // Empty string for a pasted-text job — there is no stored file.
     fileKey: text("fileKey").notNull(),
+    // "file" = an uploaded PDF (extract → OCR → generate); "text" = pasted
+    // question text, which skips extraction and images entirely and starts
+    // straight at generation (see lib/db-mirror.ts's createMirrorTextJob).
+    sourceType: text("sourceType").default("file").notNull(),
     pageCount: integer("pageCount").default(0).notNull(),
     depth: text("depth").default("balanced").notNull(),
     status: mirrorJobStatusEnum("status").default("pending").notNull(),

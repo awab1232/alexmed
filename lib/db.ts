@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -13,6 +13,14 @@ import {
 } from "../drizzle/schema";
 import { storageGet } from "./storage";
 import type { GeneratedCard } from "./pdf-cards";
+import {
+  buildDeckSections,
+  pickDeckJob,
+  sectionIdForCard,
+  sortCardsBySection,
+  totalFailedBatches,
+  type DeckJobInfo,
+} from "./deck-sections";
 import { associateImagesWithQuestions } from "./question-file-analysis";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -230,27 +238,59 @@ export async function getDeckWithCards(userId: string, deckId: string) {
     .where(eq(cards.deckId, deckId))
     .orderBy(cards.sourcePage);
 
-  const [job] = await db
-    .select({ id: mirrorJobs.id, status: mirrorJobs.status })
+  // A deck can have several jobs: its original upload plus any later
+  // pasted-text additions (see lib/deck-sections.ts). Each card is grouped
+  // under the job that made it.
+  const jobRows = await db
+    .select({
+      id: mirrorJobs.id,
+      status: mirrorJobs.status,
+      fileName: mirrorJobs.fileName,
+      sourceType: mirrorJobs.sourceType,
+      createdAt: mirrorJobs.createdAt,
+    })
     .from(mirrorJobs)
     .where(eq(mirrorJobs.deckId, deckId))
-    .limit(1);
+    .orderBy(mirrorJobs.createdAt);
 
-  let failedBatchCount = 0;
+  const failedRows = jobRows.length
+    ? await db
+        .select({ jobId: mirrorBatches.jobId, c: count() })
+        .from(mirrorBatches)
+        .where(
+          and(
+            inArray(
+              mirrorBatches.jobId,
+              jobRows.map(row => row.id)
+            ),
+            eq(mirrorBatches.status, "failed")
+          )
+        )
+        .groupBy(mirrorBatches.jobId)
+    : [];
+  const failedByJob = new Map(
+    failedRows.map(row => [row.jobId, Number(row.c)])
+  );
+  const jobs: DeckJobInfo[] = jobRows.map(row => ({
+    ...row,
+    failedBatchCount: failedByJob.get(row.id) ?? 0,
+  }));
+
+  const sections = buildDeckSections(jobs, deckCards);
+  const sectionedCards = deckCards.map(card => ({
+    ...card,
+    sectionId: sectionIdForCard(card, jobs),
+  }));
+
   // Multimodal مِرآة — computed live from mirrorPageImages rather than a
   // persisted card<->image join, since cards arrive progressively across
   // many separately-timed batches (see drizzle/schema.ts's mirrorPageImages
-  // comment for the full rationale).
+  // comment for the full rationale). Only an uploaded-PDF job has page
+  // images, and they may only attach to that job's OWN cards: a pasted-text
+  // addition's cards use chunk numbers as sourcePage, which would otherwise
+  // collide with the PDF's real page numbers.
   const imageByCardId = new Map<string, string>();
-  if (job) {
-    const [row] = await db
-      .select({ c: count() })
-      .from(mirrorBatches)
-      .where(
-        and(eq(mirrorBatches.jobId, job.id), eq(mirrorBatches.status, "failed"))
-      );
-    failedBatchCount = Number(row?.c ?? 0);
-
+  for (const job of jobs.filter(job => job.sourceType !== "text")) {
     const pageImages = await db
       .select({
         id: mirrorPageImages.id,
@@ -277,7 +317,9 @@ export async function getDeckWithCards(userId: string, deckId: string) {
       // question text after it belongs to the next page's questions).
       const relations = associateImagesWithQuestions(
         pageImages,
-        deckCards.map(card => ({ id: card.id, sourcePage: card.sourcePage }))
+        sectionedCards
+          .filter(card => card.sectionId === job.id)
+          .map(card => ({ id: card.id, sourcePage: card.sourcePage }))
       );
       for (const relation of relations) {
         const url = urlByImageId.get(relation.imageId);
@@ -286,13 +328,28 @@ export async function getDeckWithCards(userId: string, deckId: string) {
     }
   }
 
+  // The job the review UI polls and reports on — see pickDeckJob. Its
+  // failedBatchCount is the deck-wide total so the warning banner reflects
+  // every section, not only the job that happens to be picked.
+  const activeJob = pickDeckJob(jobs);
+
   return {
     deck,
-    cards: deckCards.map(card => ({
-      ...card,
-      imageUrl: imageByCardId.get(card.id) ?? null,
-    })),
-    job: job ? { ...job, failedBatchCount } : null,
+    cards: sortCardsBySection(
+      sectionedCards.map(card => ({
+        ...card,
+        imageUrl: imageByCardId.get(card.id) ?? null,
+      })),
+      sections
+    ),
+    sections,
+    job: activeJob
+      ? {
+          id: activeJob.id,
+          status: activeJob.status,
+          failedBatchCount: totalFailedBatches(jobs),
+        }
+      : null,
   };
 }
 
