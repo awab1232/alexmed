@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -17,10 +16,8 @@ import {
   RotateCcw,
   Sparkles,
   Workflow,
-  X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
-import PdfViewer from "@/components/PdfViewer";
 
 // Background analysis now happens entirely server-side, driven by Upstash
 // QStash workers (see app/api/books/analyze-chapter/route.ts) — this page's
@@ -79,7 +76,6 @@ function StageRow({
 export default function BookDetailPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
-  const [showPdfViewer, setShowPdfViewer] = useState(false);
   const utils = trpc.useUtils();
   const bookQuery = trpc.books.get.useQuery(
     { id: bookId },
@@ -345,12 +341,11 @@ export default function BookDetailPage() {
         )}
       </div>
 
-      {/* File overview (learnra-style bottom card) — opening the real PDF is
-          now a deliberate action instead of an always-mounted panel: besides
-          matching the requested layout, mounting PdfViewer only once the
-          student clicks this button guarantees it mounts into a fully laid
-          out, definitely-visible container, which is what the "blank white
-          page" failure mode above was actually caused by. */}
+      {/* File overview (learnra-style bottom card) — "عرض الملف" opens a
+          dedicated read page (app/books/[bookId]/read) that embeds the
+          browser's own native PDF viewer, instead of a custom in-page
+          renderer: real text selection/copy/search/print, plus (in
+          Chromium) the browser's own built-in highlight/note tools. */}
       {book.fileKey && (
         <div className="study-tools-panel file-overview-panel">
           <div className="panel-heading">
@@ -367,30 +362,10 @@ export default function BookDetailPage() {
                 </span>
               </div>
             </div>
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => setShowPdfViewer(true)}
-            >
+            <Link href={`/books/${bookId}/read`} className="primary-button">
               <Eye size={16} /> عرض الملف
-            </button>
+            </Link>
           </div>
-        </div>
-      )}
-
-      {showPdfViewer && book.fileKey && (
-        <div className="pdf-viewer-modal">
-          <button
-            type="button"
-            className="pdf-viewer-modal-close"
-            onClick={() => setShowPdfViewer(false)}
-          >
-            <X size={16} /> إغلاق
-          </button>
-          <PdfViewer
-            src={`/api/files/${book.fileKey}`}
-            fileName={book.fileName}
-          />
         </div>
       )}
 
