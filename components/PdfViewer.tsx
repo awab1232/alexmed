@@ -621,45 +621,10 @@ export default function PdfViewer({
         // returns the same singleton context, so our setTransform above
         // still applies to whatever pdf.js renders into). `canvasContext` is
         // now only a deprecated back-compat param, and its own type says the
-        // canvas must be null when it's used — passing both together (the
-        // previous code did) is invalid, and was the actual cause of every
-        // page failing to render.
+        // canvas must be null when it's used — passing both together (an
+        // earlier version of this code did) is invalid.
         const task = page.render({ viewport, canvas });
         renderTasksRef.current.set(pageNumber, task);
-
-        // Text layer — real, positioned DOM spans over the canvas, giving
-        // native selection (which تضليل capture above reads) and copy/
-        // search for free. `--total-scale-factor` isn't provided by any
-        // ancestor here (we don't use pdf.js's own PDFPageView chrome), so
-        // it's set to 1: our viewport already encodes the real render scale
-        // directly in CSS-pixel units, same as the canvas above.
-        //
-        // Deliberately isolated in its own try/catch: this is secondary
-        // (selection/highlight support), and must never be able to fail the
-        // page's actual visible content — a text-layer problem should lose
-        // only text selection, never turn a perfectly good render into
-        // "تعذر عرض هذه الصفحة".
-        try {
-          const textLayerEl = textLayerElsRef.current.get(pageNumber);
-          if (textLayerEl) {
-            textLayerEl.replaceChildren();
-            textLayerEl.style.setProperty("--total-scale-factor", "1");
-            textLayerEl.style.width = `${Math.floor(viewport.width)}px`;
-            textLayerEl.style.height = `${Math.floor(viewport.height)}px`;
-            const textLayer = new pdfjs.TextLayer({
-              textContentSource: page.streamTextContent(),
-              container: textLayerEl,
-              viewport,
-            });
-            textLayerInstancesRef.current.set(pageNumber, textLayer);
-            textLayer.render().catch(() => {
-              // A cancelled text-layer render throws too — harmless.
-            });
-          }
-        } catch {
-          // Text layer failed to even start — the canvas render below still
-          // proceeds untouched.
-        }
 
         // A render that never settles (a stalled cross-origin fetch, a
         // worker that silently dropped the request) used to leave this page
@@ -682,6 +647,50 @@ export default function PdfViewer({
           next.delete(pageNumber);
           return next;
         });
+
+        // Text layer — real, positioned DOM spans over the canvas, giving
+        // native selection (which تضليل capture above reads) and copy/
+        // search for free. `--total-scale-factor` isn't provided by any
+        // ancestor here (we don't use pdf.js's own PDFPageView chrome), so
+        // it's set to 1: our viewport already encodes the real render scale
+        // directly in CSS-pixel units, same as the canvas above.
+        //
+        // Deliberately started only AFTER the canvas render above has fully
+        // settled, not concurrently with it: this same `page` proxy talks to
+        // the pdf.js worker over postMessage, and firing streamTextContent()
+        // and render() at the same time on one page was the actual cause of
+        // every page hanging until the timeout above — canvas rendering
+        // genuinely never resolved while a concurrent text-content request
+        // was in flight on the same page. Sequencing them fixes that, and
+        // costs nothing visible (canvas paints first regardless; the text
+        // layer only affects selection, not what's on screen).
+        //
+        // Also isolated in its own try/catch: text layer is secondary
+        // (selection/highlight support) and must never fail the page's
+        // actual visible content — a text-layer problem should lose only
+        // text selection, never turn an already-successful render into
+        // "تعذر عرض هذه الصفحة".
+        try {
+          const textLayerEl = textLayerElsRef.current.get(pageNumber);
+          if (textLayerEl) {
+            textLayerEl.replaceChildren();
+            textLayerEl.style.setProperty("--total-scale-factor", "1");
+            textLayerEl.style.width = `${Math.floor(viewport.width)}px`;
+            textLayerEl.style.height = `${Math.floor(viewport.height)}px`;
+            const textLayer = new pdfjs.TextLayer({
+              textContentSource: page.streamTextContent(),
+              container: textLayerEl,
+              viewport,
+            });
+            textLayerInstancesRef.current.set(pageNumber, textLayer);
+            textLayer.render().catch(() => {
+              // A cancelled text-layer render throws too — harmless.
+            });
+          }
+        } catch {
+          // Text layer failed to even start — the canvas above already
+          // rendered successfully regardless.
+        }
       } catch (renderError) {
         // A render superseded by a newer one (scale changed mid-flight, or
         // this same page re-requested) throws "RenderingCancelledException"
