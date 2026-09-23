@@ -62,6 +62,12 @@ export default function PdfViewer({
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchMatches, setSearchMatches] = useState<SearchMatch[]>([]);
+  // Pages whose render genuinely failed (network error, timeout — never a
+  // render superseded by a newer scale change, see renderPage's isCancelled
+  // check) so the page can show a real "تعذر عرض هذه الصفحة" + retry state
+  // instead of silently staying blank forever with no indication anything
+  // went wrong.
+  const [failedPages, setFailedPages] = useState<Set<number>>(new Set());
   const [searchMatchIndex, setSearchMatchIndex] = useState(0);
   // Distinct from searchQuery so the "no results" message only shows for a
   // query that was actually searched, not for every keystroke typed after.
@@ -108,11 +114,27 @@ export default function PdfViewer({
     // and rendering on real-world PDFs that don't embed their own font —
     // without them, pdf.js silently mis-renders/truncates text using
     // non-embedded standard fonts (verified against a real test file).
+    //
+    // disableStream/disableRange/disableAutoFetch: `src` is our own
+    // same-origin /api/files/[key] route, which 307-redirects to a signed,
+    // cross-origin storage URL — pdf.js's default network layer follows that
+    // redirect and keeps issuing progressive Range requests against the
+    // (now cross-origin) target. A presigned storage URL frequently doesn't
+    // answer those Range requests with the CORS headers browsers require,
+    // so the initial small fetch (enough to read the page count) succeeds
+    // while every later per-page byte-range fetch a canvas render needs
+    // silently fails — the exact "page count/thumbnails show, every canvas
+    // stays blank white, no error anywhere" symptom this was built to fix.
+    // Disabling streaming makes pdf.js fetch the whole file once up front
+    // instead, which works the same as any other cross-origin resource.
     const loadingTask = pdfjs.getDocument({
       url: src,
       standardFontDataUrl: "/standard_fonts/",
       cMapUrl: "/cmaps/",
       cMapPacked: true,
+      disableStream: true,
+      disableRange: true,
+      disableAutoFetch: true,
     });
     loadingTask.promise.then(
       pdf => {
@@ -183,6 +205,7 @@ export default function PdfViewer({
       if (state.rendering) return;
       state.rendering = true;
 
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
       try {
         const page = state.proxy ?? (await doc.getPage(pageNumber));
         state.proxy = page;
@@ -202,12 +225,42 @@ export default function PdfViewer({
 
         const task = page.render({ canvasContext: context, viewport, canvas });
         renderTasksRef.current.set(pageNumber, task);
-        await task.promise;
+        // A render that never settles (a stalled cross-origin fetch, a
+        // worker that silently dropped the request) used to leave this page
+        // blank forever with `rendering` stuck true, since neither the catch
+        // nor the finally below ever ran — this bounds it so a genuinely
+        // stuck page becomes a visible, retryable failure instead.
+        await Promise.race([
+          task.promise,
+          new Promise<never>((_resolve, reject) => {
+            timeoutId = setTimeout(() => {
+              task.cancel();
+              reject(new Error("RenderTimeout"));
+            }, 20000);
+          }),
+        ]);
         state.rendered = true;
-      } catch {
-        // A cancelled render (scale changed mid-flight) throws — expected,
-        // the next renderPage call for this page supersedes it.
+        setFailedPages(prev => {
+          if (!prev.has(pageNumber)) return prev;
+          const next = new Set(prev);
+          next.delete(pageNumber);
+          return next;
+        });
+      } catch (renderError) {
+        // A render superseded by a newer one (scale changed mid-flight, or
+        // this same page re-requested) throws "RenderingCancelledException"
+        // — expected, not a real failure, so it never marks the page failed.
+        const isCancelled =
+          renderError instanceof Error &&
+          renderError.name === "RenderingCancelledException";
+        if (!isCancelled) {
+          state.rendered = false;
+          setFailedPages(prev =>
+            prev.has(pageNumber) ? prev : new Set(prev).add(pageNumber)
+          );
+        }
       } finally {
+        if (timeoutId) clearTimeout(timeoutId);
         state.rendering = false;
       }
     },
@@ -554,6 +607,18 @@ export default function PdfViewer({
               className="pdf-viewer-page"
             >
               <canvas ref={setCanvasRef(pageNumber)} />
+              {failedPages.has(pageNumber) && (
+                <div className="pdf-viewer-page-error">
+                  <CircleAlert size={18} />
+                  <span>تعذر عرض هذه الصفحة</span>
+                  <button
+                    type="button"
+                    onClick={() => renderPage(pageNumber, scale)}
+                  >
+                    إعادة المحاولة
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

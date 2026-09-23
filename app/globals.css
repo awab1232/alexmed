@@ -849,6 +849,7 @@ h1 em {
   max-height: calc(100vh - 52px);
 }
 .pdf-viewer-page {
+  position: relative;
   box-shadow: 0 8px 24px rgba(32, 44, 50, 0.12);
   background: #fff;
   min-height: 200px;
@@ -857,6 +858,28 @@ h1 em {
 .pdf-viewer-page canvas {
   display: block;
   max-width: 100%;
+}
+.pdf-viewer-page-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 253, 249, 0.94);
+  color: #974d49;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pdf-viewer-page-error button {
+  padding: 6px 14px;
+  border: 1px solid #e0dad1;
+  border-radius: 8px;
+  background: #fffdf9;
+  color: #263940;
+  font-size: 12px;
+  cursor: pointer;
 }
 @media (max-width: 780px) {
   .pdf-viewer-pages {
