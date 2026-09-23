@@ -113,3 +113,17 @@ temp/
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
 .project-config.json
+
+# Android (Capacitor) native project — build output only, not the source/
+# config; was previously untracked with nothing stopping a `git add -A` from
+# committing hundreds of MB of Gradle build artifacts.
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/*.iml
+android/**/*.iml
+
+# Local scratch/test files — never meant to be committed.
+.scratch/

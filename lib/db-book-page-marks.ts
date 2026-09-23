@@ -26,7 +26,9 @@ export async function listBookPageMarks(
       strokes: bookPageMarks.strokes,
     })
     .from(bookPageMarks)
-    .where(and(eq(bookPageMarks.bookId, bookId), eq(bookPageMarks.userId, userId)));
+    .where(
+      and(eq(bookPageMarks.bookId, bookId), eq(bookPageMarks.userId, userId))
+    );
 
   return new Map(
     rows.map(row => [
@@ -77,7 +79,11 @@ export async function saveBookPageMarks(
       strokes: marks.strokes,
     })
     .onConflictDoUpdate({
-      target: [bookPageMarks.userId, bookPageMarks.bookId, bookPageMarks.pageNumber],
+      target: [
+        bookPageMarks.userId,
+        bookPageMarks.bookId,
+        bookPageMarks.pageNumber,
+      ],
       set: {
         highlights: marks.highlights,
         strokes: marks.strokes,

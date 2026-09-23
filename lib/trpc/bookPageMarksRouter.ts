@@ -58,7 +58,12 @@ export const bookPageMarksRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { bookId, pageNumber, ...marks } = input;
-      const ok = await saveBookPageMarks(ctx.user.id, bookId, pageNumber, marks);
+      const ok = await saveBookPageMarks(
+        ctx.user.id,
+        bookId,
+        pageNumber,
+        marks
+      );
       if (!ok) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
       }

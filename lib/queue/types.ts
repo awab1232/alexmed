@@ -95,3 +95,14 @@ export function getJobCreationRateLimitMax(): number {
 export function getJobCreationRateLimitWindowMinutes(): number {
   return readIntEnv("JOB_CREATION_RATE_LIMIT_WINDOW_MINUTES", 10);
 }
+
+// اسألني (chatRouter.ask) — each message is a real LLM call, unlike a plain
+// page view, so it gets its own (more generous) limit rather than sharing
+// the upload-job one above.
+export function getChatRateLimitMax(): number {
+  return readIntEnv("CHAT_RATE_LIMIT_MAX", 30);
+}
+
+export function getChatRateLimitWindowMinutes(): number {
+  return readIntEnv("CHAT_RATE_LIMIT_WINDOW_MINUTES", 10);
+}

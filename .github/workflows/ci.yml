@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Type-only check — no DATABASE_URL/secrets needed, same as running it
+      # locally: schema.ts and every getDb()-backed module compile without a
+      # live connection.
+      - name: Typecheck
+        run: pnpm run check
+
+      # Reads/writes throughout lib/db-*.ts return safe defaults when
+      # getDb() finds no DATABASE_URL, so the full suite runs green with zero
+      # secrets configured — never point this at the real (production)
+      # Supabase database.
+      - name: Test
+        run: pnpm test

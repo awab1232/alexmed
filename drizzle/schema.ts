@@ -62,6 +62,30 @@ export const users = pgTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// One row per failed Credentials sign-in attempt — see
+// lib/auth-rate-limit.ts, checked before bcrypt.compare in lib/auth.ts's
+// authorize(). Nothing else reads these rows; a window naturally "clears"
+// once old rows age out of the rate-limit query's time range, so there is
+// deliberately no cleanup job. Keyed by the submitted email alone (not a
+// real FK to users — an attempt against an email with no account must still
+// count, or the limit would leak which emails exist).
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    email: varchar("email", { length: 320 }).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    emailCreatedIdx: index("login_attempts_email_created_at_idx").on(
+      table.email,
+      table.createdAt
+    ),
+  })
+);
+
 // --- @auth/drizzle-adapter tables (Google OAuth account linking) ---
 // Session strategy stays "jwt" (see lib/auth.ts) so `sessions` is never
 // actually read/written by Auth.js today, but the adapter's TypeScript

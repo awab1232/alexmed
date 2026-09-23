@@ -9,7 +9,11 @@ import {
 } from "./pdf-marks";
 
 function makeHighlight(id: string): PdfHighlight {
-  return { id, color: "#fde68a", rects: [{ x: 0, y: 0, width: 0.2, height: 0.02 }] };
+  return {
+    id,
+    color: "#fde68a",
+    rects: [{ x: 0, y: 0, width: 0.2, height: 0.02 }],
+  };
 }
 
 describe("emptyPageMarks / isEmptyPageMarks", () => {
@@ -38,7 +42,11 @@ describe("addPdfHighlight", () => {
   });
 
   it("drops a highlight with no rects", () => {
-    const result = addPdfHighlight([], { id: "a", color: "#fde68a", rects: [] });
+    const result = addPdfHighlight([], {
+      id: "a",
+      color: "#fde68a",
+      rects: [],
+    });
     expect(result).toHaveLength(0);
   });
 
@@ -52,7 +60,10 @@ describe("addPdfHighlight", () => {
 
   it("keeps two overlapping highlights in different colours (unlike card highlights)", () => {
     const first = addPdfHighlight([], makeHighlight("a"));
-    const second = addPdfHighlight(first, { ...makeHighlight("b"), color: "#bfdbfe" });
+    const second = addPdfHighlight(first, {
+      ...makeHighlight("b"),
+      color: "#bfdbfe",
+    });
     expect(second).toHaveLength(2);
   });
 });

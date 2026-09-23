@@ -9,6 +9,8 @@ import { useState } from "react";
 
 const SUSPENDED_MESSAGE_AR =
   "حسابك معلّق حاليًا. تواصل مع الدعم إذا كنت تظن أن هذا خطأ.";
+const TOO_MANY_ATTEMPTS_MESSAGE_AR =
+  "محاولات دخول كثيرة على هذا البريد. حاول بعد شوي.";
 
 export default function LoginForm({
   googleEnabled,
@@ -51,7 +53,9 @@ export default function LoginForm({
       setError(
         result.code === "account_suspended"
           ? SUSPENDED_MESSAGE_AR
-          : "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+          : result.code === "too_many_attempts"
+            ? TOO_MANY_ATTEMPTS_MESSAGE_AR
+            : "البريد الإلكتروني أو كلمة المرور غير صحيحة."
       );
       return;
     }

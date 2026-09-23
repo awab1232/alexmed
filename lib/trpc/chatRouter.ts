@@ -19,6 +19,10 @@ import {
   searchChapterPages,
   searchSubjectPages,
 } from "../rag";
+import {
+  assertChatMessageAllowed,
+  ChatRateLimitedError,
+} from "../queue/rateLimit";
 import { protectedProcedure, router } from "./trpc";
 
 const targetSchema = z.discriminatedUnion("scope", [
@@ -61,6 +65,18 @@ export const chatRouter = router({
       z.object({ sessionId: z.string(), question: z.string().min(1).max(2000) })
     )
     .mutation(async ({ ctx, input }) => {
+      try {
+        await assertChatMessageAllowed(ctx.user.id);
+      } catch (error) {
+        if (error instanceof ChatRateLimitedError) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: error.message,
+          });
+        }
+        throw error;
+      }
+
       const session = await getChatSessionForUser(ctx.user.id, input.sessionId);
       if (!session) {
         throw new TRPCError({

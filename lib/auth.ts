@@ -10,12 +10,24 @@ import {
   verificationTokens,
 } from "../drizzle/schema";
 import { getUserByEmail, requireDb, touchLastSignedIn } from "./db";
+import {
+  LoginRateLimitedError,
+  assertLoginAllowed,
+  recordFailedLogin,
+} from "./auth-rate-limit";
 
 // Distinct error code (rather than the generic "CredentialsSignin" from
 // returning null) so LoginForm can show "حسابك معلّق" instead of "بيانات
 // الدخول غير صحيحة" — a suspended student didn't mistype their password.
 class AccountSuspendedError extends CredentialsSignin {
   code = "account_suspended";
+}
+
+// Same distinct-code pattern as AccountSuspendedError above — see
+// lib/auth-rate-limit.ts for why this exists at all (no throttling
+// previously existed on login attempts).
+class TooManyAttemptsError extends CredentialsSignin {
+  code = "too_many_attempts";
 }
 
 // Google only appears once real credentials are supplied — keeps this app
@@ -57,13 +69,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           typeof credentials?.password === "string" ? credentials.password : "";
         if (!email || !password) return null;
 
+        try {
+          await assertLoginAllowed(email);
+        } catch (error) {
+          if (error instanceof LoginRateLimitedError) {
+            throw new TooManyAttemptsError();
+          }
+          throw error;
+        }
+
         const user = await getUserByEmail(email);
-        if (!user) return null;
+        if (!user) {
+          await recordFailedLogin(email);
+          return null;
+        }
         // Google-only accounts have no password to compare against.
-        if (!user.passwordHash) return null;
+        if (!user.passwordHash) {
+          await recordFailedLogin(email);
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          await recordFailedLogin(email);
+          return null;
+        }
 
         if (user.suspendedAt) throw new AccountSuspendedError();
 

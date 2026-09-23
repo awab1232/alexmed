@@ -36,6 +36,14 @@ export function capChunks(chunks: RetrievedChunk[]): RetrievedChunk[] {
   return kept;
 }
 
+// ⚠️ getPageChunk/searchChapterPages/searchBookPages/searchSubjectPages below
+// take a bare id and do NOT check ownership themselves — they trust the
+// caller already verified it. Currently safe: chatRouter.ask is the only
+// caller, and it only ever passes ids sourced from a chatSessions row that
+// getOrCreateChatSession() already checked via ownsTarget() before creating.
+// A future direct caller of these functions MUST do its own ownership check
+// first — don't assume "it takes an id" means it's already scoped to a user.
+
 // scope="page" never searches — the one page IS the context, in full.
 export async function getPageChunk(pageId: string): Promise<RetrievedChunk[]> {
   const db = getDb();
