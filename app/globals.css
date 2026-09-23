@@ -767,36 +767,95 @@ h1 em {
   font-size: 12px;
   color: #8a9493;
 }
-/* Dedicated PDF read page (app/books/[bookId]/read/page.tsx). */
+/* Dedicated PDF read page (app/books/[bookId]/read/page.tsx) — full-screen
+   like the iOS PDF viewer: a fixed shell over the whole viewport (above
+   BottomNav's z-index 20), pages edge-to-edge underneath floating bars. */
 .pdf-reader-page {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: calc(100vh - 32px);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  height: 100vh;
+  height: 100dvh;
+  background: #e4e1dc;
 }
 /* Real PDF.js viewer (components/PdfViewer.tsx) — fills the reader page. */
 .pdf-viewer {
+  position: relative;
   display: flex;
-  flex: 1;
   flex-direction: column;
-  border: 1px solid #e0dad1;
-  border-radius: 15px;
-  background: #ece6dc;
+  height: 100%;
+  background: #e4e1dc;
   overflow: hidden;
 }
-.pdf-viewer:fullscreen {
-  border-radius: 0;
-  height: 100vh;
+.pdf-viewer-top,
+.pdf-viewer-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  background: rgba(255, 253, 249, 0.94);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: transform 0.22s ease;
 }
-.pdf-viewer-toolbar {
+.pdf-viewer-top {
+  top: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  border-bottom: 1px solid #e0dad1;
+}
+.pdf-viewer-bottom {
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid #e0dad1;
+}
+.pdf-viewer.chrome-hidden .pdf-viewer-top {
+  transform: translateY(-100%);
+}
+.pdf-viewer.chrome-hidden .pdf-viewer-bottom {
+  transform: translateY(100%);
+}
+.pdf-viewer-topbar {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 10px;
+}
+.pdf-viewer-back {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: #d9773f;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.pdf-viewer-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #263940;
+}
+.pdf-viewer-bottombar {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 12px;
-  background: #fffdf9;
-  border-bottom: 1px solid #e0dad1;
+  height: 58px;
+  padding: 0 12px;
+}
+.pdf-viewer-tool-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  padding: 8px 12px 0;
 }
 .pdf-viewer-toolbar-group {
   display: flex;
@@ -807,11 +866,11 @@ h1 em {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid #e0dad1;
-  border-radius: 8px;
-  background: #fffdf9;
+  width: 38px;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
   color: #263940;
   cursor: pointer;
 }
@@ -832,16 +891,20 @@ h1 em {
   gap: 4px;
   white-space: nowrap;
 }
+.pdf-viewer-page-indicator {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+/* 16px: anything smaller makes iOS Safari auto-zoom the page on focus. */
 .pdf-viewer-page-indicator input {
-  width: 42px;
+  width: 44px;
   text-align: center;
-  padding: 4px;
-  font-size: 12px;
+  padding: 3px 4px;
+  font-size: 16px;
 }
 .pdf-viewer-search {
-  padding: 10px 12px;
-  background: #fffdf9;
-  border-bottom: 1px solid #e0dad1;
+  padding: 8px 12px 10px;
+  border-top: 1px solid #e0dad1;
 }
 .pdf-viewer-search form {
   display: flex;
@@ -849,6 +912,7 @@ h1 em {
 }
 .pdf-viewer-search input {
   flex: 1;
+  font-size: 16px;
 }
 .pdf-viewer-search-results {
   margin-top: 8px;
@@ -874,21 +938,29 @@ h1 em {
   cursor: pointer;
   font-size: 12px;
 }
+/* Pages scroll under the floating bars: top/bottom padding keeps page 1 and
+   the last page clear of them; 6px sides ≈ edge-to-edge (matches the
+   fit-width math in PdfViewer). */
 .pdf-viewer-pages {
-  overflow-y: auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
   flex: 1;
-  padding: 18px;
+  padding: calc(60px + env(safe-area-inset-top, 0px)) 6px
+    calc(70px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 8px;
 }
+/* margin auto (not align-items: center) so a zoomed-in page wider than the
+   screen can still be scrolled to both edges. */
 .pdf-viewer-page {
   position: relative;
-  box-shadow: 0 8px 24px rgba(32, 44, 50, 0.12);
+  flex-shrink: 0;
+  margin: 0 auto;
+  box-shadow: 0 1px 6px rgba(32, 44, 50, 0.16);
   background: #fff;
   min-height: 200px;
-  max-width: 100%;
 }
 .pdf-viewer-page canvas {
   display: block;
@@ -924,14 +996,6 @@ h1 em {
   color: #263940;
   font-size: 12px;
   cursor: pointer;
-}
-@media (max-width: 780px) {
-  .pdf-viewer-pages {
-    padding: 10px;
-  }
-  .pdf-viewer-toolbar {
-    justify-content: center;
-  }
 }
 
 /* pdf.js text layer — enables real, native text selection over each PDF page
@@ -1048,11 +1112,10 @@ h1 em {
 }
 .pdf-mark-hint {
   margin: 0;
-  padding: 8px 12px;
+  width: 100%;
+  text-align: center;
   font-size: 12px;
   color: #8a9493;
-  background: #fffdf9;
-  border-bottom: 1px solid #e0dad1;
 }
 .panel-heading {
   display: flex;

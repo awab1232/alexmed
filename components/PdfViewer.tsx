@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -16,8 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Maximize,
-  Minimize,
   Minus,
   MousePointer2,
   PenLine,
@@ -26,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
+import Link from "next/link";
 import { trpc } from "@/lib/trpc-client";
 import {
   appendPoint,
@@ -253,10 +253,12 @@ export default function PdfViewer({
   bookId,
   src,
   fileName,
+  backHref,
 }: {
   bookId: string;
   src: string;
   fileName?: string;
+  backHref: string;
 }) {
   const [pdfjs, setPdfjs] = useState<typeof import("pdfjs-dist") | null>(null);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
@@ -267,7 +269,10 @@ export default function PdfViewer({
   const [pageInput, setPageInput] = useState("1");
   const [scale, setScale] = useState(1);
   const [fitWidthScale, setFitWidthScale] = useState(1);
-  const [fullscreen, setFullscreen] = useState(false);
+  // Tapping a page (in browse mode) hides the top/bottom bars so the page
+  // gets the whole screen, like the iOS PDF viewer; tapping again brings
+  // them back.
+  const [chromeHidden, setChromeHidden] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -583,7 +588,9 @@ export default function PdfViewer({
       const page = await doc!.getPage(1);
       if (cancelled) return;
       const unscaledWidth = page.getViewport({ scale: 1 }).width;
-      const available = el.clientWidth - 24;
+      // Edge-to-edge on phones (only the pages' own 6px side padding), capped
+      // on wide screens so a desktop page isn't absurdly large at 100%.
+      const available = Math.min(el.clientWidth - 12, 900);
       const next = Math.max(0.4, available / unscaledWidth);
       setFitWidthScale(next);
       setScale(current => (current === 1 ? next : current));
@@ -895,22 +902,16 @@ export default function PdfViewer({
     scrollToPage(searchMatches[next].page);
   }
 
-  async function toggleFullscreen() {
-    if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      await containerRef.current.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
-    }
+  // The Fullscreen API doesn't exist for elements on iPhone Safari, so the
+  // reader is full-screen by layout instead (a fixed full-viewport shell, see
+  // .pdf-reader-page) and "more room" means hiding the bars on tap.
+  function handlePagesClick(event: ReactMouseEvent<HTMLDivElement>) {
+    if (tool !== "none") return;
+    if ((event.target as HTMLElement).closest("button, a, input")) return;
+    // A tap that ends a text selection shouldn't also toggle the bars.
+    if (window.getSelection()?.toString()) return;
+    setChromeHidden(hidden => !hidden);
   }
-
-  useEffect(() => {
-    function handleChange() {
-      setFullscreen(!!document.fullscreenElement);
-    }
-    document.addEventListener("fullscreenchange", handleChange);
-    return () => document.removeEventListener("fullscreenchange", handleChange);
-  }, []);
 
   const zoomPercent = useMemo(
     () => Math.round((scale / fitWidthScale) * 100),
@@ -918,19 +919,23 @@ export default function PdfViewer({
   );
 
   return (
-    <div ref={containerRef} className="pdf-viewer">
-      <div className="pdf-viewer-toolbar">
-        <div className="pdf-viewer-toolbar-group">
-          <button
-            type="button"
-            className="pdf-viewer-btn"
-            disabled={currentPage <= 1}
-            onClick={() => scrollToPage(Math.max(1, currentPage - 1))}
-            aria-label="الصفحة السابقة"
-          >
-            <ChevronRight size={16} />
-          </button>
-          <span className="pdf-viewer-page-indicator">
+    <div
+      ref={containerRef}
+      className={chromeHidden ? "pdf-viewer chrome-hidden" : "pdf-viewer"}
+    >
+      {/* Top bar: back, file name, page counter, search — floats over the
+          pages (like the iOS PDF viewer) and slides away on tap. */}
+      <div className="pdf-viewer-top">
+        <div className="pdf-viewer-topbar">
+          <Link href={backHref} className="pdf-viewer-back">
+            <ChevronRight size={22} />
+            <span>رجوع</span>
+          </Link>
+          <span className="pdf-viewer-title" title={fileName}>
+            {fileName}
+          </span>
+          {/* dir=ltr so it reads "5 / 26", not the RTL-flipped "26 / 5". */}
+          <span className="pdf-viewer-page-indicator" dir="ltr">
             <input
               value={pageInput}
               onChange={event => setPageInput(event.target.value)}
@@ -941,130 +946,8 @@ export default function PdfViewer({
               inputMode="numeric"
               aria-label="رقم الصفحة"
             />
-            <span> / {numPages || "—"}</span>
+            <span>/ {numPages || "—"}</span>
           </span>
-          <button
-            type="button"
-            className="pdf-viewer-btn"
-            disabled={currentPage >= numPages}
-            onClick={() => scrollToPage(Math.min(numPages, currentPage + 1))}
-            aria-label="الصفحة التالية"
-          >
-            <ChevronLeft size={16} />
-          </button>
-        </div>
-
-        <div className="pdf-viewer-toolbar-group">
-          <button
-            type="button"
-            className={
-              tool === "none" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
-            }
-            onClick={() => setTool("none")}
-            aria-label="تصفّح"
-            aria-pressed={tool === "none"}
-          >
-            <MousePointer2 size={16} />
-          </button>
-          <button
-            type="button"
-            className={
-              tool === "highlight" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
-            }
-            onClick={() => setTool(tool === "highlight" ? "none" : "highlight")}
-            aria-label="تضليل"
-            aria-pressed={tool === "highlight"}
-          >
-            <Highlighter size={16} />
-          </button>
-          {tool === "highlight" && (
-            <span className="pdf-mark-colors">
-              {HIGHLIGHT_COLORS.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={
-                    highlightColor === option.value
-                      ? "pdf-mark-color selected"
-                      : "pdf-mark-color"
-                  }
-                  style={{ background: option.value }}
-                  aria-label={option.label}
-                  onClick={() => setHighlightColor(option.value)}
-                />
-              ))}
-            </span>
-          )}
-          <button
-            type="button"
-            className={
-              tool === "pen" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
-            }
-            onClick={() => setTool(tool === "pen" ? "none" : "pen")}
-            aria-label="قلم"
-            aria-pressed={tool === "pen"}
-          >
-            <PenLine size={16} />
-          </button>
-          {tool === "pen" && (
-            <span className="pdf-mark-colors">
-              {PEN_COLORS.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={
-                    penColor === option.value
-                      ? "pdf-mark-color selected"
-                      : "pdf-mark-color"
-                  }
-                  style={{ background: option.value }}
-                  aria-label={option.label}
-                  onClick={() => setPenColor(option.value)}
-                />
-              ))}
-            </span>
-          )}
-          <button
-            type="button"
-            className={
-              tool === "eraser" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
-            }
-            onClick={() => setTool(tool === "eraser" ? "none" : "eraser")}
-            aria-label="ممحاة"
-            aria-pressed={tool === "eraser"}
-          >
-            <Eraser size={16} />
-          </button>
-          {saveState !== "idle" && (
-            <span className="pdf-mark-save-state">
-              {saveState === "saving" && <Loader2 size={13} className="spin" />}
-              {saveState === "saved" && <Check size={13} />}
-              {saveState === "error" && <CircleAlert size={13} />}
-            </span>
-          )}
-        </div>
-
-        <div className="pdf-viewer-toolbar-group">
-          <button
-            type="button"
-            className="pdf-viewer-btn"
-            onClick={() => zoomBy(-SCALE_STEP)}
-            aria-label="تصغير"
-          >
-            <Minus size={16} />
-          </button>
-          <span className="pdf-viewer-zoom-indicator">{zoomPercent}%</span>
-          <button
-            type="button"
-            className="pdf-viewer-btn"
-            onClick={() => zoomBy(SCALE_STEP)}
-            aria-label="تكبير"
-          >
-            <Plus size={16} />
-          </button>
-        </div>
-
-        <div className="pdf-viewer-toolbar-group">
           <button
             type="button"
             className={searchOpen ? "pdf-viewer-btn active" : "pdf-viewer-btn"}
@@ -1072,90 +955,78 @@ export default function PdfViewer({
             aria-label="البحث في الملف"
             aria-pressed={searchOpen}
           >
-            <Search size={16} />
-          </button>
-          <button
-            type="button"
-            className="pdf-viewer-btn"
-            onClick={toggleFullscreen}
-            aria-label={fullscreen ? "إنهاء ملء الشاشة" : "ملء الشاشة"}
-          >
-            {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+            <Search size={18} />
           </button>
         </div>
-      </div>
 
-      {tool !== "none" && TOOL_HINTS[tool] && (
-        <p className="pdf-mark-hint">{TOOL_HINTS[tool]}</p>
-      )}
-
-      {searchOpen && (
-        <div className="pdf-viewer-search">
-          <form
-            onSubmit={event => {
-              event.preventDefault();
-              runSearch();
-            }}
-          >
-            <input
-              value={searchQuery}
-              onChange={event => setSearchQuery(event.target.value)}
-              placeholder="ابحث داخل الملف..."
-              autoFocus
-            />
-            <button type="submit" disabled={searching}>
-              {searching ? <Loader2 size={14} className="spin" /> : "بحث"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchOpen(false);
-                setSearchMatches([]);
-                setSearchQuery("");
-                setLastSearchedQuery(null);
+        {searchOpen && (
+          <div className="pdf-viewer-search">
+            <form
+              onSubmit={event => {
+                event.preventDefault();
+                runSearch();
               }}
-              aria-label="إغلاق البحث"
             >
-              <X size={14} />
-            </button>
-          </form>
-          {!searching &&
-            lastSearchedQuery === searchQuery.trim() &&
-            !!lastSearchedQuery && (
-              <div className="pdf-viewer-search-results">
-                {searchMatches.length ? (
-                  <>
-                    <div className="pdf-viewer-search-nav">
-                      <button type="button" onClick={() => goToMatch(-1)}>
-                        <ChevronRight size={14} />
+              <input
+                value={searchQuery}
+                onChange={event => setSearchQuery(event.target.value)}
+                placeholder="ابحث داخل الملف..."
+                autoFocus
+              />
+              <button type="submit" disabled={searching}>
+                {searching ? <Loader2 size={14} className="spin" /> : "بحث"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchOpen(false);
+                  setSearchMatches([]);
+                  setSearchQuery("");
+                  setLastSearchedQuery(null);
+                }}
+                aria-label="إغلاق البحث"
+              >
+                <X size={14} />
+              </button>
+            </form>
+            {!searching &&
+              lastSearchedQuery === searchQuery.trim() &&
+              !!lastSearchedQuery && (
+                <div className="pdf-viewer-search-results">
+                  {searchMatches.length ? (
+                    <>
+                      <div className="pdf-viewer-search-nav">
+                        <button type="button" onClick={() => goToMatch(-1)}>
+                          <ChevronRight size={14} />
+                        </button>
+                        <span>
+                          {searchMatchIndex + 1} / {searchMatches.length}
+                        </span>
+                        <button type="button" onClick={() => goToMatch(1)}>
+                          <ChevronLeft size={14} />
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        className="pdf-viewer-search-match"
+                        onClick={() =>
+                          scrollToPage(searchMatches[searchMatchIndex].page)
+                        }
+                      >
+                        <strong>
+                          صفحة {searchMatches[searchMatchIndex].page}
+                        </strong>
+                        <span>{searchMatches[searchMatchIndex].snippet}</span>
                       </button>
-                      <span>
-                        {searchMatchIndex + 1} / {searchMatches.length}
-                      </span>
-                      <button type="button" onClick={() => goToMatch(1)}>
-                        <ChevronLeft size={14} />
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      className="pdf-viewer-search-match"
-                      onClick={() =>
-                        scrollToPage(searchMatches[searchMatchIndex].page)
-                      }
-                    >
-                      <strong>
-                        صفحة {searchMatches[searchMatchIndex].page}
-                      </strong>
-                      <span>{searchMatches[searchMatchIndex].snippet}</span>
-                    </button>
-                  </>
-                ) : (
-                  <p>لا نتائج مطابقة.</p>
-                )}
-              </div>
-            )}
-        </div>
-      )}
+                    </>
+                  ) : (
+                    <p>لا نتائج مطابقة.</p>
+                  )}
+                </div>
+              )}
+          </div>
+        )}
+      </div>
 
       {error ? (
         <div className="empty-state">
@@ -1168,7 +1039,11 @@ export default function PdfViewer({
           <h3>جاري تحميل {fileName || "الملف"}...</h3>
         </div>
       ) : (
-        <div ref={scrollRef} className="pdf-viewer-pages">
+        <div
+          ref={scrollRef}
+          className="pdf-viewer-pages"
+          onClick={handlePagesClick}
+        >
           {Array.from({ length: numPages }, (_, i) => i + 1).map(pageNumber => (
             <div
               key={pageNumber}
@@ -1208,6 +1083,133 @@ export default function PdfViewer({
           ))}
         </div>
       )}
+
+      {/* Bottom bar: marking tools + zoom, iOS-style at the thumb's reach. */}
+      <div className="pdf-viewer-bottom">
+        {tool !== "none" && (
+          <div className="pdf-viewer-tool-options">
+            {TOOL_HINTS[tool] && (
+              <p className="pdf-mark-hint">{TOOL_HINTS[tool]}</p>
+            )}
+            {tool === "highlight" && (
+              <span className="pdf-mark-colors">
+                {HIGHLIGHT_COLORS.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={
+                      highlightColor === option.value
+                        ? "pdf-mark-color selected"
+                        : "pdf-mark-color"
+                    }
+                    style={{ background: option.value }}
+                    aria-label={option.label}
+                    onClick={() => setHighlightColor(option.value)}
+                  />
+                ))}
+              </span>
+            )}
+            {tool === "pen" && (
+              <span className="pdf-mark-colors">
+                {PEN_COLORS.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={
+                      penColor === option.value
+                        ? "pdf-mark-color selected"
+                        : "pdf-mark-color"
+                    }
+                    style={{ background: option.value }}
+                    aria-label={option.label}
+                    onClick={() => setPenColor(option.value)}
+                  />
+                ))}
+              </span>
+            )}
+          </div>
+        )}
+        <div className="pdf-viewer-bottombar">
+          <div className="pdf-viewer-toolbar-group">
+            <button
+              type="button"
+              className={
+                tool === "none" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
+              }
+              onClick={() => setTool("none")}
+              aria-label="تصفّح"
+              aria-pressed={tool === "none"}
+            >
+              <MousePointer2 size={18} />
+            </button>
+            <button
+              type="button"
+              className={
+                tool === "highlight"
+                  ? "pdf-viewer-btn active"
+                  : "pdf-viewer-btn"
+              }
+              onClick={() =>
+                setTool(tool === "highlight" ? "none" : "highlight")
+              }
+              aria-label="تضليل"
+              aria-pressed={tool === "highlight"}
+            >
+              <Highlighter size={18} />
+            </button>
+            <button
+              type="button"
+              className={
+                tool === "pen" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
+              }
+              onClick={() => setTool(tool === "pen" ? "none" : "pen")}
+              aria-label="قلم"
+              aria-pressed={tool === "pen"}
+            >
+              <PenLine size={18} />
+            </button>
+            <button
+              type="button"
+              className={
+                tool === "eraser" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
+              }
+              onClick={() => setTool(tool === "eraser" ? "none" : "eraser")}
+              aria-label="ممحاة"
+              aria-pressed={tool === "eraser"}
+            >
+              <Eraser size={18} />
+            </button>
+            {saveState !== "idle" && (
+              <span className="pdf-mark-save-state">
+                {saveState === "saving" && (
+                  <Loader2 size={13} className="spin" />
+                )}
+                {saveState === "saved" && <Check size={13} />}
+                {saveState === "error" && <CircleAlert size={13} />}
+              </span>
+            )}
+          </div>
+          <div className="pdf-viewer-toolbar-group">
+            <button
+              type="button"
+              className="pdf-viewer-btn"
+              onClick={() => zoomBy(-SCALE_STEP)}
+              aria-label="تصغير"
+            >
+              <Minus size={18} />
+            </button>
+            <span className="pdf-viewer-zoom-indicator">{zoomPercent}%</span>
+            <button
+              type="button"
+              className="pdf-viewer-btn"
+              onClick={() => zoomBy(SCALE_STEP)}
+              aria-label="تكبير"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

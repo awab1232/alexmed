@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CircleAlert, Loader2 } from "lucide-react";
@@ -15,6 +16,15 @@ export default function BookReadPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
   const bookQuery = trpc.books.get.useQuery({ id: bookId });
+
+  // The page underneath the fixed reader shouldn't scroll/rubber-band.
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
 
   if (bookQuery.isLoading) {
     return (
@@ -46,24 +56,16 @@ export default function BookReadPage() {
     );
   }
 
+  // Full-screen reader, like opening a PDF on the iPhone: a fixed shell over
+  // the whole viewport (covering BottomNav); back/title/page count live in
+  // PdfViewer's own top bar.
   return (
     <section className="pdf-reader-page">
-      <div className="cards-header">
-        <div>
-          <Link
-            href={`/books/${bookId}`}
-            className="eyebrow"
-            style={{ marginBottom: 8 }}
-          >
-            <span className="eyebrow-dot" /> ‹ رجوع
-          </Link>
-          <h1>{book.fileName}</h1>
-        </div>
-      </div>
       <PdfViewer
         bookId={bookId}
         src={`/api/files/${book.fileKey}`}
         fileName={book.fileName}
+        backHref={`/books/${bookId}`}
       />
     </section>
   );
