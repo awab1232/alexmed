@@ -11,7 +11,7 @@ import {
   Upload as UploadIcon,
   X,
 } from "lucide-react";
-import { trpc } from "@/lib/trpc-client";
+import SubjectPicker from "@/components/SubjectPicker";
 
 type Stage = "idle" | "uploading" | "planning";
 type FileKind = "study_book" | "question_file";
@@ -91,7 +91,6 @@ export default function BookUploadPage() {
   const [subjectId, setSubjectId] = useState(
     () => searchParams.get("subjectId") ?? ""
   );
-  const subjectsQuery = trpc.subjects.list.useQuery();
 
   function chooseFile(nextFile: File | undefined) {
     setError("");
@@ -108,7 +107,7 @@ export default function BookUploadPage() {
   }
 
   async function startProcessing() {
-    if (!file || !fileKind) return;
+    if (!file || !fileKind || !subjectId) return;
     setError("");
     setUploadProgress(0);
     setStage("uploading");
@@ -145,6 +144,7 @@ export default function BookUploadPage() {
             body: JSON.stringify({
               key: uploadUrlData.key,
               fileName: file.name,
+              subjectId,
             }),
           }
         );
@@ -310,15 +310,8 @@ export default function BookUploadPage() {
           )}
 
           {file && stage === "idle" && fileKind === "study_book" && (
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                flexWrap: "wrap",
-                marginTop: 14,
-              }}
-            >
-              <label style={{ flex: "1 1 160px" }}>
+            <div style={{ marginTop: 14 }}>
+              <label>
                 <span
                   style={{ display: "block", fontSize: 12, marginBottom: 4 }}
                 >
@@ -336,25 +329,6 @@ export default function BookUploadPage() {
                   ))}
                 </select>
               </label>
-              <label style={{ flex: "1 1 160px" }}>
-                <span
-                  style={{ display: "block", fontSize: 12, marginBottom: 4 }}
-                >
-                  المادة (اختياري)
-                </span>
-                <select
-                  value={subjectId}
-                  onChange={event => setSubjectId(event.target.value)}
-                  style={{ width: "100%" }}
-                >
-                  <option value="">بدون مادة</option>
-                  {(subjectsQuery.data ?? []).map(subject => (
-                    <option key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </div>
           )}
 
@@ -363,6 +337,12 @@ export default function BookUploadPage() {
               <ClipboardList size={16} />
               سيتم استخراج الأسئلة الموجودة فعليًا في الملف — لن يتم توليد أسئلة
               جديدة بالذكاء الاصطناعي.
+            </div>
+          )}
+
+          {file && stage === "idle" && fileKind && (
+            <div style={{ marginTop: 14 }}>
+              <SubjectPicker value={subjectId} onChange={setSubjectId} />
             </div>
           )}
 
@@ -409,7 +389,7 @@ export default function BookUploadPage() {
               type="button"
               className="primary-button"
               style={{ marginTop: 18 }}
-              disabled={!file}
+              disabled={!file || !subjectId}
               onClick={startProcessing}
             >
               {fileKind === "question_file"

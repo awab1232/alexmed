@@ -278,26 +278,12 @@ export async function POST(request: Request) {
 
     const { chapters } = await finalizeBookExtraction(bookId, finalPages);
 
-    try {
-      await Promise.all(
-        chapters.map(chapter =>
-          publishMessage({
-            type: "analyze_book_chapter",
-            chapterId: chapter.id,
-            bookId,
-          })
-        )
-      );
-    } catch (publishError) {
-      console.error(
-        "[Books] Failed to enqueue chapters after extraction",
-        publishError
-      );
-      return NextResponse.json(
-        { error: "تعذر بدء تحليل الفصول." },
-        { status: 502 }
-      );
-    }
+    // Chapter analysis (explanation + terms + flashcards + mcqs + summary)
+    // is no longer auto-enqueued here — the student decides when to spend
+    // that generation, from the "ماذا تريد أن تفعل بهذا الملف؟" dashboard on
+    // the book page (see booksRouter.startChapterAnalysis). Chapters stay
+    // "pending" until then; the PDF itself (book.fileKey + book_pages, both
+    // already written above) is readable immediately regardless.
 
     // Kicks off the page-visual pipeline (images/diagrams/tables) — entirely
     // independent of chapter analysis above, never blocks/delays it. A

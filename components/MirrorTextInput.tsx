@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import SubjectPicker from "@/components/SubjectPicker";
 import {
   MIRROR_TEXT_MAX_CHARS,
   MIRROR_TEXT_MIN_CHARS,
@@ -57,6 +58,7 @@ export default function MirrorTextInput({
   const [deckId, setDeckId] = useState(initialDeckId ?? "");
   const [title, setTitle] = useState("");
   const [additionTitle, setAdditionTitle] = useState("");
+  const [subjectId, setSubjectId] = useState("");
   const [error, setError] = useState("");
   const draftLoaded = useRef(false);
 
@@ -70,7 +72,7 @@ export default function MirrorTextInput({
     !submit.isPending &&
     normalized.length >= MIRROR_TEXT_MIN_CHARS &&
     !overLimit &&
-    (destination === "new" || !!effectiveDeckId);
+    (destination === "new" ? !!subjectId : !!effectiveDeckId);
 
   // Restore an unsent draft (a long paste shouldn't be lost to a refresh or
   // an accidental navigation) and keep it saved as the student edits.
@@ -117,7 +119,11 @@ export default function MirrorTextInput({
         depth: depth as Depth,
         target:
           destination === "new"
-            ? { mode: "new", title: title.trim() || undefined }
+            ? {
+                mode: "new",
+                title: title.trim() || undefined,
+                subjectId,
+              }
             : {
                 mode: "append",
                 deckId: effectiveDeckId,
@@ -243,6 +249,7 @@ export default function MirrorTextInput({
                 onChange={event => setTitle(event.target.value)}
                 placeholder="مثال: أسئلة الفصل الثالث"
               />
+              <SubjectPicker value={subjectId} onChange={setSubjectId} />
             </div>
           )}
         </div>

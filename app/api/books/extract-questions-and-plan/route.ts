@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { createQuestionFileShell } from "@/lib/db-question-files";
+import { getSubjectForUser } from "@/lib/db-subjects";
 import { publishMessage } from "@/lib/queue/client";
 import {
   assertJobCreationAllowed,
@@ -31,9 +32,11 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     key?: string;
     fileName?: string;
+    subjectId?: string;
   };
   const key = typeof body.key === "string" ? body.key : "";
   const fileName = typeof body.fileName === "string" ? body.fileName : "";
+  const subjectId = typeof body.subjectId === "string" ? body.subjectId : "";
 
   if (!key) {
     return NextResponse.json({ error: "ارفع ملف PDF أولًا." }, { status: 400 });
@@ -44,10 +47,21 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  if (!subjectId) {
+    return NextResponse.json(
+      { error: "اختر مجلدًا لهذا الملف أولًا." },
+      { status: 400 }
+    );
+  }
+  const owned = await getSubjectForUser(session.user.id, subjectId);
+  if (!owned) {
+    return NextResponse.json({ error: "المجلد غير موجود." }, { status: 400 });
+  }
 
   const book = await createQuestionFileShell(session.user.id, {
     fileName,
     fileKey: key,
+    subjectId,
   });
 
   try {

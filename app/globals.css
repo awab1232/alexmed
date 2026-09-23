@@ -699,6 +699,42 @@ h1 em {
   transform: translateY(-2px);
   box-shadow: 0 10px 22px rgba(47, 55, 51, 0.08);
 }
+/* Mandatory-choice study-tools dashboard states — not-yet-generated
+   ("locked", awaiting the student's own "ابدأ" click), currently generating
+   (shared progress %, all four cards move together), and ready (real link +
+   real count, same look the cards always had). */
+.study-tool-card small {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a9493;
+}
+.study-tool-card.is-locked {
+  background: #f4f0e8;
+}
+.study-tool-card.is-locked svg:first-child {
+  opacity: 0.45;
+}
+.study-tool-card.is-generating {
+  background: #f4f0e8;
+  cursor: default;
+}
+.study-tool-card.is-generating:hover {
+  transform: none;
+  box-shadow: none;
+}
+.study-tool-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.study-tools-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 2px 0;
+  font-size: 11px;
+  color: #9a9186;
+}
 
 /* Real PDF.js viewer (PR13) */
 .pdf-viewer {
@@ -2242,6 +2278,52 @@ h1 em {
   background: #fff;
   color: var(--foreground);
   font-size: 13px;
+}
+/* Mandatory-folder-on-upload picker (components/SubjectPicker.tsx) — used
+   inline by every upload flow (مِرآة PDF, مِرآة pasted text, كتبي). */
+.subject-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0;
+}
+.subject-picker-label {
+  color: #526068;
+  font-size: 12px;
+  font-weight: 600;
+}
+.subject-picker-row,
+.subject-picker-create-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.subject-picker-row select {
+  flex: 1 1 180px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--foreground);
+  font-size: 13px;
+}
+.subject-picker-create-row input {
+  flex: 1 1 180px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--foreground);
+  font-size: 13px;
+}
+.subject-picker-error {
+  margin: 0;
+  color: #c0392b;
+  font-size: 12px;
+}
+.subject-picker-hint {
+  color: #b08a3e;
+  font-size: 11px;
 }
 .section-chips {
   display: flex;

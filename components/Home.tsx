@@ -34,6 +34,7 @@ import { trpc } from "@/lib/trpc-client";
 import BottomNav from "@/components/BottomNav";
 import { MarkableText, MarkingSurface } from "@/components/CardMarks";
 import MirrorTextInput from "@/components/MirrorTextInput";
+import SubjectPicker from "@/components/SubjectPicker";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
 type Card = {
@@ -138,6 +139,9 @@ export default function Home() {
   const [inputMode, setInputMode] = useState<"pdf" | "text">("pdf");
   const [textTargetDeckId, setTextTargetDeckId] = useState<string | null>(null);
   const [sectionFilter, setSectionFilter] = useState("all");
+  // Mandatory-folder-on-upload (PDF tab only — MirrorTextInput owns its own
+  // subject choice for the "new" destination it submits).
+  const [subjectId, setSubjectId] = useState("");
 
   const utils = trpc.useUtils();
   const decksQuery = trpc.decks.list.useQuery(undefined, {
@@ -305,7 +309,7 @@ export default function Home() {
   // /mirror/[jobId] page, which drives batch generation the same way
   // app/books/[bookId]/page.tsx drives chapter analysis.
   async function startProcessing() {
-    if (!file) return;
+    if (!file || !subjectId) return;
     setError("");
     setWarning("");
     setStage("extracting");
@@ -341,6 +345,7 @@ export default function Home() {
           key: uploadData.key,
           fileName: file.name,
           depth,
+          subjectId,
         }),
       });
       const planned = await planResponse.json();
@@ -376,6 +381,7 @@ export default function Home() {
     setSectionFilter("all");
     setActiveCard(0);
     setShowAnswer(false);
+    setSubjectId("");
   }
 
   // Just switches into the deck's live view — deckQuery (above) does the
@@ -775,10 +781,11 @@ export default function Home() {
                       <span>English first · الترجمة العربية بجانبه</span>
                     </div>
                   </div>
+                  <SubjectPicker value={subjectId} onChange={setSubjectId} />
                   <button
                     type="button"
                     className="primary-button"
-                    disabled={!file || stage === "extracting"}
+                    disabled={!file || !subjectId || stage === "extracting"}
                     onClick={startProcessing}
                   >
                     {stage === "extracting" ? (

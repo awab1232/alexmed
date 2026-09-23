@@ -3,7 +3,18 @@
 // pattern: getDb() singleton, ownership-scoped queries via and(eq(id,...),
 // eq(userId,...)), read functions return safe empty defaults, write
 // functions throw when the DB isn't configured.
-import { and, asc, count, desc, eq, inArray, lte, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  lte,
+  lt,
+  or,
+  sql,
+} from "drizzle-orm";
 import { deleteObjects } from "./storage";
 import {
   bookCards,
@@ -425,7 +436,26 @@ export async function getBookForUser(userId: string, bookId: string) {
     .where(eq(bookChapters.bookId, bookId))
     .orderBy(asc(bookChapters.orderIndex));
 
-  return { book, chapters };
+  // Real totals across every complete chapter — the study-tools dashboard
+  // (app/books/[bookId]/page.tsx) shows these on the بطاقات/اختبار cards
+  // instead of just the first chapter's counts.
+  const [cardTotal] = await db
+    .select({ total: count() })
+    .from(bookCards)
+    .innerJoin(bookChapters, eq(bookCards.chapterId, bookChapters.id))
+    .where(eq(bookChapters.bookId, bookId));
+  const [mcqTotal] = await db
+    .select({ total: count() })
+    .from(bookMcqs)
+    .innerJoin(bookChapters, eq(bookMcqs.chapterId, bookChapters.id))
+    .where(eq(bookChapters.bookId, bookId));
+
+  return {
+    book,
+    chapters,
+    totalCards: cardTotal?.total ?? 0,
+    totalMcqs: mcqTotal?.total ?? 0,
+  };
 }
 
 // PR18 — real, minimal data for the book's mind map: just titles/keyPoints/

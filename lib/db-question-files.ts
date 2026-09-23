@@ -20,7 +20,7 @@ import type { ExtractedQuestionInput } from "./question-extraction";
 
 export async function createQuestionFileShell(
   userId: string,
-  input: { fileName: string; fileKey: string }
+  input: { fileName: string; fileKey: string; subjectId: string }
 ): Promise<Book> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
@@ -33,6 +33,7 @@ export async function createQuestionFileShell(
       fileKey: input.fileKey,
       sourceType: "question_file",
       status: "extracting",
+      subjectId: input.subjectId,
     })
     .returning();
   return book;

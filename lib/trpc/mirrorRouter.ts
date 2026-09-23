@@ -9,6 +9,7 @@ import {
   resetMirrorBatchForRetry,
   resetMirrorJobFailedPagesForRetry,
 } from "../db-mirror";
+import { getSubjectForUser } from "../db-subjects";
 import { seedMirrorGeneration } from "../mirror-dispatch";
 import { splitTextIntoPages, validateQuestionText } from "../mirror-text";
 import { publishMessage } from "../queue/client";
@@ -37,6 +38,9 @@ export const mirrorRouter = router({
           z.object({
             mode: z.literal("new"),
             title: z.string().trim().max(120).optional(),
+            // Mandatory-folder-on-upload — a brand-new file always needs a
+            // destination folder; an append doesn't (the deck already has one).
+            subjectId: z.string().uuid(),
           }),
           z.object({
             mode: z.literal("append"),
@@ -64,11 +68,27 @@ export const mirrorRouter = router({
         throw error;
       }
 
+      let subjectId: string | null = null;
+      if (input.target.mode === "new") {
+        const owned = await getSubjectForUser(
+          ctx.user.id,
+          input.target.subjectId
+        );
+        if (!owned) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "المجلد غير موجود.",
+          });
+        }
+        subjectId = input.target.subjectId;
+      }
+
       const created = await createMirrorTextJob(ctx.user.id, {
         title: input.target.title || null,
         depth: input.depth,
         pages: splitTextIntoPages(validation.text),
         deckId: input.target.mode === "append" ? input.target.deckId : null,
+        subjectId,
       });
       if (!created) {
         throw new TRPCError({

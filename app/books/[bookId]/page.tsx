@@ -9,8 +9,10 @@ import {
   ClipboardList,
   Layers3,
   Loader2,
+  Lock,
   NotebookText,
   RotateCcw,
+  Sparkles,
   Workflow,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
@@ -97,6 +99,12 @@ export default function BookDetailPage() {
       utils.books.listPages.invalidate({ bookId });
     },
   });
+  // Student's explicit "ابدأ" click on any of the four study-tools cards —
+  // see lib/trpc/booksRouter.ts's startChapterAnalysis for why any one card
+  // starts the same shared generation for all four.
+  const startAnalysis = trpc.books.startChapterAnalysis.useMutation({
+    onSuccess: () => utils.books.get.invalidate({ id: bookId }),
+  });
   const subjectsQuery = trpc.subjects.list.useQuery();
   const setSubject = trpc.books.setSubject.useMutation({
     onSuccess: () => utils.books.get.invalidate({ id: bookId }),
@@ -161,21 +169,23 @@ export default function BookDetailPage() {
     );
   }
 
-  const { book, chapters } = bookQuery.data;
+  const { book, chapters, totalCards, totalMcqs } = bookQuery.data;
   const completeCount = chapters.filter(c => c.status === "complete").length;
   const failedChapters = chapters.filter(c => c.status === "failed");
   const isExtracting = book.status === "extracting";
-  const isAnalyzing =
-    !isExtracting &&
-    book.status !== "complete" &&
-    book.status !== "partial_failed" &&
-    book.status !== "failed";
-  // "Chapter phase done" = every chapter reached a terminal state
-  // (complete or failed) — same rollup rule finalizeBookIfDone itself uses
-  // server-side (see lib/db-books.ts's computeBookRollupStatus), so this
-  // never disagrees with what actually decided book.status.
+  const hasChapters = chapters.length > 0;
+  // Nobody has clicked "ابدأ" on any of the four study-tools cards yet —
+  // generation no longer starts automatically after extraction (see
+  // app/api/books/extract/route.ts), so every chapter genuinely stays
+  // "pending" until startChapterAnalysis is called.
+  const chaptersNotStarted =
+    hasChapters && chapters.every(c => c.status === "pending");
+  // "Chapter phase done" = every chapter reached a terminal state (complete
+  // or failed) — same rollup rule finalizeBookIfDone itself uses server-side
+  // (see lib/db-books.ts's computeBookRollupStatus).
   const chaptersPhaseDone =
-    !isExtracting && chapters.length > 0 && !isAnalyzing;
+    hasChapters &&
+    chapters.every(c => c.status === "complete" || c.status === "failed");
   const pipelineReady =
     chaptersPhaseDone &&
     !failedChapters.length &&
@@ -184,6 +194,9 @@ export default function BookDetailPage() {
   // destination (per-chapter tabs already exist), not a placeholder. A
   // book-wide session across all chapters is PR14/PR15's job.
   const firstCompleteChapter = chapters.find(c => c.status === "complete");
+  const analysisProgressPercent = hasChapters
+    ? Math.round((completeCount / chapters.length) * 100)
+    : 0;
 
   return (
     <section className="cards-view">
@@ -233,45 +246,109 @@ export default function BookDetailPage() {
         />
       )}
 
-      {/* Study Tools (PR12) — reuses existing bookCards/bookMcqs/
-          bookChapters.explanationAr+keyPoints via the chapter reader's own
-          tabs (?tool= preselects one). No new AI generation here. */}
+      {/* Study Tools (PR12, reshaped for the mandatory-choice gate) — reuses
+          existing bookCards/bookMcqs/bookChapters.explanationAr+keyPoints via
+          the chapter reader's own tabs (?tool= preselects one). No chapter is
+          analyzed until the student picks one of these four cards; see
+          lib/trpc/booksRouter.ts's startChapterAnalysis. */}
       <div className="study-tools-panel">
         <div className="panel-heading">
           <h2>ماذا تريد أن تفعل بهذا الملف؟</h2>
         </div>
-        {!firstCompleteChapter ? (
+        {!hasChapters ? (
           <p style={{ fontSize: 13, color: "#8a9493" }}>
-            الأدوات ستكون متاحة بعد اكتمال تحليل أول فصل.
+            الأدوات ستكون متاحة بعد اكتمال قراءة صفحات الملف.
           </p>
         ) : (
-          <div className="study-tools-grid">
-            <Link
-              href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=cards`}
-              className="study-tool-card"
-            >
-              <Layers3 size={22} />
-              <span>بطاقات</span>
-            </Link>
-            <Link
-              href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=mcqs`}
-              className="study-tool-card"
-            >
-              <ClipboardList size={22} />
-              <span>اختبارات</span>
-            </Link>
-            <Link
-              href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=explanation`}
-              className="study-tool-card"
-            >
-              <NotebookText size={22} />
-              <span>ملخص</span>
-            </Link>
-            <Link href={`/books/${bookId}/mindmap`} className="study-tool-card">
-              <Workflow size={22} />
-              <span>خريطة ذهنية</span>
-            </Link>
-          </div>
+          <>
+            <div className="study-tools-grid">
+              {[
+                {
+                  icon: Layers3,
+                  label: "بطاقات",
+                  detail: `${totalCards} بطاقة`,
+                },
+                {
+                  icon: ClipboardList,
+                  label: "اختبار",
+                  detail: `${totalMcqs} سؤال`,
+                },
+                { icon: Workflow, label: "خريطة ذهنية", detail: undefined },
+                { icon: NotebookText, label: "ملخص", detail: undefined },
+              ].map(({ icon: Icon, label, detail }) => {
+                const state = chaptersNotStarted
+                  ? "locked"
+                  : !chaptersPhaseDone
+                    ? "generating"
+                    : "ready";
+                return (
+                  <div key={label} className={`study-tool-card is-${state}`}>
+                    <Icon size={22} />
+                    <span>{label}</span>
+                    {state === "ready" && detail && <small>{detail}</small>}
+                    {state === "locked" && (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={startAnalysis.isPending}
+                        onClick={() => startAnalysis.mutate({ bookId })}
+                      >
+                        {startAnalysis.isPending ? (
+                          <Loader2 size={14} className="spin" />
+                        ) : (
+                          <Sparkles size={14} />
+                        )}
+                        ابدأ
+                      </button>
+                    )}
+                    {state === "generating" && (
+                      <small className="study-tool-progress">
+                        <Loader2 size={13} className="spin" /> قيد التوليد…{" "}
+                        {analysisProgressPercent}%
+                      </small>
+                    )}
+                    {state === "ready" &&
+                      firstCompleteChapter &&
+                      (label === "بطاقات" ? (
+                        <Link
+                          href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=cards`}
+                          className="secondary-button"
+                        >
+                          ابدأ المراجعة
+                        </Link>
+                      ) : label === "اختبار" ? (
+                        <Link
+                          href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=mcqs`}
+                          className="secondary-button"
+                        >
+                          اختبر نفسك
+                        </Link>
+                      ) : label === "ملخص" ? (
+                        <Link
+                          href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=explanation`}
+                          className="secondary-button"
+                        >
+                          عرض
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/books/${bookId}/mindmap`}
+                          className="secondary-button"
+                        >
+                          عرض
+                        </Link>
+                      ))}
+                  </div>
+                );
+              })}
+            </div>
+            {chaptersNotStarted && (
+              <p className="study-tools-note">
+                <Lock size={12} /> التوليد يجهّز البطاقات والاختبار والملخص
+                والخريطة الذهنية معًا لنفس الملف — اضغط أي بطاقة للبدء.
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -348,7 +425,7 @@ export default function BookDetailPage() {
           <StageRow
             label="تحليل الفصول (الشرح، البطاقات، الأسئلة)"
             status={
-              isExtracting
+              isExtracting || chaptersNotStarted
                 ? "pending"
                 : chaptersPhaseDone
                   ? failedChapters.length
@@ -357,9 +434,11 @@ export default function BookDetailPage() {
                   : "active"
             }
             detail={
-              chapters.length
-                ? `${completeCount}/${chapters.length} فصل`
-                : undefined
+              chaptersNotStarted
+                ? "بانتظار اختيارك"
+                : chapters.length
+                  ? `${completeCount}/${chapters.length} فصل`
+                  : undefined
             }
           />
           <StageRow

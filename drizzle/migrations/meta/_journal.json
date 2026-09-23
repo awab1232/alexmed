@@ -204,6 +204,13 @@
       "when": 1790024996963,
       "tag": "0028_mirror_text_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790166878979,
+      "tag": "0029_violet_ghost_rider",
+      "breakpoints": true
     }
   ]
 }

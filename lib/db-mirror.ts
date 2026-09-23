@@ -82,7 +82,7 @@ function splitMirrorPages(pages: MirrorPageText[]): MirrorPageGroup[] {
 // drizzle/schema.ts's mirrorJobStatusEnum comment for why "extracting" exists.
 export async function createMirrorJobShell(
   userId: string,
-  input: { fileName: string; fileKey: string; depth: string }
+  input: { fileName: string; fileKey: string; depth: string; subjectId: string }
 ): Promise<MirrorJob> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
@@ -94,6 +94,7 @@ export async function createMirrorJobShell(
       fileName: input.fileName,
       fileKey: input.fileKey,
       depth: input.depth,
+      subjectId: input.subjectId,
       status: "extracting",
     })
     .returning();
@@ -324,6 +325,7 @@ export async function finalizeMirrorJobExtraction(
         fileKey: job.fileKey,
         pageCount: job.pageCount,
         depth: job.depth,
+        subjectId: job.subjectId,
       })
       .returning();
 
@@ -395,6 +397,9 @@ export async function createMirrorTextJob(
     depth: string;
     pages: MirrorPageText[];
     deckId: string | null;
+    // Only used (and required by the caller) when deckId is null — an
+    // addition to an existing deck already has its own subject.
+    subjectId: string | null;
   },
   existingTx?: DbTransaction
 ) {
@@ -435,6 +440,7 @@ export async function createMirrorTextJob(
           fileKey: null,
           pageCount: 0,
           depth: input.depth,
+          subjectId: input.subjectId,
         })
         .returning();
     }
@@ -450,6 +456,7 @@ export async function createMirrorTextJob(
         depth: input.depth,
         status: "pending",
         deckId: deck.id,
+        subjectId: deck.subjectId,
       })
       .returning();
 

@@ -67,6 +67,37 @@ export const booksRouter = router({
       return result;
     }),
 
+  // Student's explicit "ابدأ التوليد" choice from the study-tools dashboard
+  // (app/books/[bookId]/page.tsx) — nothing analyzes a chapter until this is
+  // called (see app/api/books/extract/route.ts, which used to auto-enqueue
+  // this and no longer does). Idempotent: only chapters still "pending" get
+  // (re-)published, so a second click (or two cards clicked back to back)
+  // never double-queues an already-started/complete chapter.
+  startChapterAnalysis: protectedProcedure
+    .input(z.object({ bookId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await getBookForUser(ctx.user.id, input.bookId);
+      if (!result) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
+      }
+      const pending = result.chapters.filter(
+        chapter => chapter.status === "pending"
+      );
+      if (!pending.length) {
+        return { started: false } as const;
+      }
+      await Promise.all(
+        pending.map(chapter =>
+          publishMessage({
+            type: "analyze_book_chapter",
+            chapterId: chapter.id,
+            bookId: input.bookId,
+          })
+        )
+      );
+      return { started: true } as const;
+    }),
+
   getMindMap: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

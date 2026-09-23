@@ -361,6 +361,16 @@ export const mirrorJobs = pgTable(
     fileName: text("fileName").notNull(),
     // Empty string for a pasted-text job — there is no stored file.
     fileKey: text("fileKey").notNull(),
+    // Mandatory-folder-on-upload (see components/SubjectPicker.tsx): chosen
+    // at upload time, before extraction even starts, then copied onto the
+    // real `decks` row once finalizeMirrorJobExtraction() creates it — a PDF
+    // job's deck isn't created until extraction finishes, so the choice has
+    // to be staged here in the meantime. Nullable only for pre-existing jobs
+    // from before this column existed; every new job is required to set it
+    // server-side (see app/api/mirror/upload-and-plan).
+    subjectId: uuid("subjectId").references(() => subjects.id, {
+      onDelete: "set null",
+    }),
     // "file" = an uploaded PDF (extract → OCR → generate); "text" = pasted
     // question text, which skips extraction and images entirely and starts
     // straight at generation (see lib/db-mirror.ts's createMirrorTextJob).

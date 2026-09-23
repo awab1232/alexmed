@@ -69,18 +69,18 @@ export async function POST(request: Request) {
       ? (body.profile as Parameters<typeof createBookShell>[1]["profile"])
       : undefined;
 
-  let subjectId: string | undefined;
-  if (typeof body.subjectId === "string" && body.subjectId) {
-    // Ownership check — a student can only file a new book under a subject
-    // that's actually theirs, never someone else's subject id.
-    const owned = await getSubjectForUser(session.user.id, body.subjectId);
-    if (!owned) {
-      return NextResponse.json(
-        { error: "المادة غير موجودة." },
-        { status: 400 }
-      );
-    }
-    subjectId = body.subjectId;
+  // Mandatory-folder-on-upload — every new book must be filed under a
+  // subject/folder the student actually owns, chosen at upload time.
+  const subjectId = typeof body.subjectId === "string" ? body.subjectId : "";
+  if (!subjectId) {
+    return NextResponse.json(
+      { error: "اختر مجلدًا لهذا الملف أولًا." },
+      { status: 400 }
+    );
+  }
+  const owned = await getSubjectForUser(session.user.id, subjectId);
+  if (!owned) {
+    return NextResponse.json({ error: "المادة غير موجودة." }, { status: 400 });
   }
 
   const book = await createBookShell(session.user.id, {
