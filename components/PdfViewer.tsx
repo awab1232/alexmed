@@ -280,9 +280,7 @@ export default function PdfViewer({
   // name/message + how long it took to fail) instead of just a boolean —
   // three earlier blind fixes for "every page fails" each turned out wrong,
   // so this exists to stop guessing and show the actual failure reason.
-  const [pageErrors, setPageErrors] = useState<Map<number, string>>(
-    new Map()
-  );
+  const [pageErrors, setPageErrors] = useState<Map<number, string>>(new Map());
 
   // تضليل/قلم/ممحاة toolbar state.
   const [tool, setTool] = useState<Tool>("none");
@@ -487,13 +485,18 @@ export default function PdfViewer({
 
   // pdfjs-dist touches DOM/worker APIs that don't exist during SSR — loaded
   // once, client-side only, worker wired to the static copy in public/
-  // (see public/pdf.worker.min.mjs) rather than a webpack asset URL, since
-  // that's the one wiring approach that behaves the same across bundlers.
+  // (see public/pdf.worker.legacy.min.mjs) rather than a webpack asset URL,
+  // since that's the one wiring approach that behaves the same across bundlers.
+  // The *legacy* build is required: the modern one calls
+  // Map.prototype.getOrInsertComputed, which iOS Safari doesn't have, so every
+  // page failed there. The legacy build (main + worker) bundles the polyfills.
+  // Refresh the worker copy from
+  // node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs on every upgrade.
   useEffect(() => {
     let cancelled = false;
-    import("pdfjs-dist").then(mod => {
+    import("pdfjs-dist/legacy/build/pdf.mjs").then(mod => {
       if (cancelled) return;
-      mod.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+      mod.GlobalWorkerOptions.workerSrc = "/pdf.worker.legacy.min.mjs";
       setPdfjs(mod);
     });
     return () => {
