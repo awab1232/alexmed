@@ -276,7 +276,13 @@ export default function PdfViewer({
   const [lastSearchedQuery, setLastSearchedQuery] = useState<string | null>(
     null
   );
-  const [failedPages, setFailedPages] = useState<Set<number>>(new Set());
+  // Keyed by page number → a real, human-readable diagnostic string (error
+  // name/message + how long it took to fail) instead of just a boolean —
+  // three earlier blind fixes for "every page fails" each turned out wrong,
+  // so this exists to stop guessing and show the actual failure reason.
+  const [pageErrors, setPageErrors] = useState<Map<number, string>>(
+    new Map()
+  );
 
   // تضليل/قلم/ممحاة toolbar state.
   const [tool, setTool] = useState<Tool>("none");
@@ -502,7 +508,7 @@ export default function PdfViewer({
     setError("");
     setDoc(null);
     setNumPages(0);
-    setFailedPages(new Set());
+    setPageErrors(new Map());
     pageStatesRef.current.clear();
     canvasElsRef.current.clear();
     textLayerElsRef.current.clear();
@@ -543,9 +549,15 @@ export default function PdfViewer({
         setPageInput("1");
         setLoading(false);
       },
-      () => {
+      loadError => {
         if (cancelled) return;
-        setError("تعذر تحميل ملف PDF. تحقق من اتصالك وحاول مرة أخرى.");
+        const detail =
+          loadError instanceof Error
+            ? `${loadError.name}: ${loadError.message}`
+            : String(loadError);
+        setError(
+          `تعذر تحميل ملف PDF. تحقق من اتصالك وحاول مرة أخرى. (${detail})`
+        );
         setLoading(false);
       }
     );
@@ -596,6 +608,7 @@ export default function PdfViewer({
       }
       if (state.rendering) return;
       state.rendering = true;
+      const startedAt = Date.now();
 
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       try {
@@ -641,9 +654,9 @@ export default function PdfViewer({
           }),
         ]);
         state.rendered = true;
-        setFailedPages(prev => {
+        setPageErrors(prev => {
           if (!prev.has(pageNumber)) return prev;
-          const next = new Set(prev);
+          const next = new Map(prev);
           next.delete(pageNumber);
           return next;
         });
@@ -700,9 +713,16 @@ export default function PdfViewer({
           renderError.name === "RenderingCancelledException";
         if (!isCancelled) {
           state.rendered = false;
-          setFailedPages(prev =>
-            prev.has(pageNumber) ? prev : new Set(prev).add(pageNumber)
-          );
+          const elapsedMs = Date.now() - startedAt;
+          const detail =
+            renderError instanceof Error
+              ? `${renderError.name}: ${renderError.message}`
+              : String(renderError);
+          setPageErrors(prev => {
+            const next = new Map(prev);
+            next.set(pageNumber, `${detail} — بعد ${elapsedMs}ms`);
+            return next;
+          });
         }
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
@@ -1162,10 +1182,17 @@ export default function PdfViewer({
                 marks={marksByPage.get(pageNumber) ?? emptyPageMarks()}
                 onUpdate={change => updateRef.current(pageNumber, change)}
               />
-              {failedPages.has(pageNumber) && (
+              {pageErrors.has(pageNumber) && (
                 <div className="pdf-viewer-page-error">
                   <CircleAlert size={18} />
                   <span>تعذر عرض هذه الصفحة</span>
+                  {/* Real diagnostic text (error name/message + elapsed
+                      time) instead of just a generic message — three blind
+                      guesses in a row at the cause were wrong, this is here
+                      so the next report carries actual evidence. */}
+                  <small className="pdf-viewer-page-error-detail">
+                    {pageErrors.get(pageNumber)}
+                  </small>
                   <button
                     type="button"
                     onClick={() => renderPage(pageNumber, scale)}

@@ -906,6 +906,15 @@ h1 em {
   color: #974d49;
   font-size: 12px;
   font-weight: 600;
+  padding: 12px;
+  text-align: center;
+}
+.pdf-viewer-page-error-detail {
+  direction: ltr;
+  font-weight: 400;
+  font-size: 10px;
+  color: #8a5a56;
+  word-break: break-word;
 }
 .pdf-viewer-page-error button {
   padding: 6px 14px;
