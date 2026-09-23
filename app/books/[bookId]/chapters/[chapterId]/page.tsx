@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -25,6 +25,9 @@ import { trpc } from "@/lib/trpc-client";
 import { findSourceHighlight } from "@/lib/text-source-match";
 import BookPageViewer from "@/components/BookPageViewer";
 import McqCard from "@/components/McqCard";
+import QuizMode from "@/components/study/QuizMode";
+import FlashcardsMode from "@/components/study/FlashcardsMode";
+import SummaryMode from "@/components/study/SummaryMode";
 import {
   isSpeechRecognitionSupported,
   isSpeechSynthesisSupported,
@@ -42,6 +45,10 @@ type AssistantTab =
   | "notes"
   | "chat";
 type ChatScope = "page" | "chapter" | "book" | "subject";
+// Tabs that open a full-screen study mode (components/study/*) instead of
+// rendering inline in the assistant column.
+type StudyMode = "explanation" | "cards" | "mcqs";
+const STUDY_MODES: readonly string[] = ["explanation", "cards", "mcqs"];
 
 const CHAT_SCOPE_LABELS: Record<ChatScope, string> = {
   page: "هذه الصفحة",
@@ -199,6 +206,27 @@ export default function ChapterDetailPage() {
     }
     return focusCardId ? "cards" : "explanation";
   });
+  // Arriving from the book page's chooser (?tool=) opens the full-screen
+  // mode straight away; back from it then returns to the book page, since
+  // that's where the student came from. Tapping one of these tabs on this
+  // page opens the same mode, and back just closes it.
+  const router = useRouter();
+  const initialTool = searchParams.get("tool");
+  const openedFromToolRef = useRef(
+    !!initialTool && STUDY_MODES.includes(initialTool)
+  );
+  const [studyMode, setStudyMode] = useState<StudyMode | null>(() =>
+    initialTool && STUDY_MODES.includes(initialTool)
+      ? (initialTool as StudyMode)
+      : null
+  );
+  function closeStudyMode() {
+    if (openedFromToolRef.current) {
+      router.push(`/books/${params.bookId}`);
+      return;
+    }
+    setStudyMode(null);
+  }
   const [pageIndex, setPageIndex] = useState(0);
   const [pendingSelection, setPendingSelection] =
     useState<PendingSelection | null>(null);
@@ -432,6 +460,82 @@ export default function ChapterDetailPage() {
     );
   }
 
+  const bookTitle = (bookQuery.data?.book.fileName ?? chapter.title).replace(
+    /\.pdf$/i,
+    ""
+  );
+  if (studyMode === "mcqs") {
+    return (
+      <QuizMode
+        title={bookTitle}
+        subtitle={chapter.title}
+        chapterId={chapter.id}
+        mcqs={mcqs.map(mcq => ({
+          id: mcq.id,
+          questionEn: mcq.questionEn,
+          choices: mcq.choices as string[],
+          correctIndex: mcq.correctIndex,
+          explanationEn: mcq.explanationEn,
+          validationStatus: mcq.validationStatus,
+          validationNote: mcq.validationNote,
+        }))}
+        onBack={closeStudyMode}
+        onSubmit={(mcqId, selectedIndex) =>
+          submitMcqAttempt.mutateAsync({ mcqId, selectedIndex })
+        }
+        onGenerate={() => generateMcqs.mutate({ chapterId: chapter.id })}
+        generating={generateMcqs.isPending}
+      />
+    );
+  }
+  if (studyMode === "cards") {
+    return (
+      <FlashcardsMode
+        title={bookTitle}
+        subtitle={chapter.title}
+        chapterId={chapter.id}
+        bookId={params.bookId}
+        cards={cards.map(card => ({
+          id: card.id,
+          questionEn: card.questionEn,
+          questionAr: card.questionAr,
+          answerEn: card.answerEn,
+          answerAr: card.answerAr,
+          relatedTermEn: card.relatedTermEn,
+          relatedTermAr: terms.find(
+            term => term.en.toLowerCase() === card.relatedTermEn?.toLowerCase()
+          )?.ar,
+          sourcePage: card.sourcePage,
+        }))}
+        onBack={closeStudyMode}
+        onRate={(cardId, rating) => rateCard.mutate({ cardId, rating })}
+        onGenerate={() => generateFlashcards.mutate({ chapterId: chapter.id })}
+        generating={generateFlashcards.isPending}
+      />
+    );
+  }
+  if (studyMode === "explanation") {
+    return (
+      <SummaryMode
+        bookTitle={bookTitle}
+        chapter={{
+          id: chapter.id,
+          title: chapter.title,
+          chapterSummary: chapter.chapterSummary,
+          explanationEn: chapter.explanationEn,
+          explanationAr: chapter.explanationAr,
+          keyPoints: chapter.keyPoints,
+          medicalNotePages: chapter.medicalNotePages,
+        }}
+        onBack={closeStudyMode}
+        onComposeNotes={() =>
+          generateMedicalNotePages.mutate({ chapterId: chapter.id })
+        }
+        composing={generateMedicalNotePages.isPending}
+      />
+    );
+  }
+
   const pageCardsAndMcqs = currentPage
     ? {
         cards: cards.filter(card => card.sourcePage === currentPage.pageNumber),
@@ -639,7 +743,12 @@ export default function ChapterDetailPage() {
                     : "filter-button"
                 }
                 aria-pressed={assistantTab === t.id}
-                onClick={() => setAssistantTab(t.id)}
+                onClick={() => {
+                  setAssistantTab(t.id);
+                  if (STUDY_MODES.includes(t.id)) {
+                    setStudyMode(t.id as StudyMode);
+                  }
+                }}
               >
                 {t.label}
               </button>
