@@ -309,6 +309,57 @@ export type InsertCardRow = typeof cards.$inferInsert;
 export type CardReviewEvent = typeof cardReviewEvents.$inferSelect;
 export type CardMarksRow = typeof cardMarks.$inferSelect;
 
+// كتبي's counterpart to cardMarks above — same تضليل/قلم feature, applied to
+// a book's own PDF pages (see lib/pdf-marks.ts) instead of a مِرآة flashcard.
+// A highlight here is a set of rects (from the browser's own selection
+// getClientRects()) rather than a character range, since PDF text lives in
+// pdf.js's own positioned text-layer spans, not one known string per field —
+// storing rects is also just how PDF highlight annotations normally work.
+export const bookPageMarks = pgTable(
+  "book_page_marks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    pageNumber: integer("pageNumber").notNull(),
+    highlights: jsonb("highlights")
+      .$type<
+        {
+          id: string;
+          color: string;
+          rects: { x: number; y: number; width: number; height: number }[];
+        }[]
+      >()
+      .default([])
+      .notNull(),
+    strokes: jsonb("strokes")
+      .$type<
+        {
+          id: string;
+          color: string;
+          width: number;
+          points: [number, number][];
+        }[]
+      >()
+      .default([])
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userBookPageUnique: uniqueIndex(
+      "book_page_marks_user_id_book_id_page_number_idx"
+    ).on(table.userId, table.bookId, table.pageNumber),
+  })
+);
+
+export type BookPageMarksRow = typeof bookPageMarks.$inferSelect;
+
 // ── مِرآة generation jobs — a server-side, resumable staging area for the
 // upload→extract→OCR→generate pipeline, replacing browser localStorage as
 // the source of truth (Item D of the reliability plan). Mirrors كتبي's

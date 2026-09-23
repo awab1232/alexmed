@@ -774,12 +774,276 @@ h1 em {
   gap: 12px;
   height: calc(100vh - 32px);
 }
-.pdf-reader-frame {
+/* Real PDF.js viewer (components/PdfViewer.tsx) — fills the reader page. */
+.pdf-viewer {
+  display: flex;
   flex: 1;
-  width: 100%;
+  flex-direction: column;
   border: 1px solid #e0dad1;
   border-radius: 15px;
   background: #ece6dc;
+  overflow: hidden;
+}
+.pdf-viewer:fullscreen {
+  border-radius: 0;
+  height: 100vh;
+}
+.pdf-viewer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fffdf9;
+  border-bottom: 1px solid #e0dad1;
+}
+.pdf-viewer-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pdf-viewer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e0dad1;
+  border-radius: 8px;
+  background: #fffdf9;
+  color: #263940;
+  cursor: pointer;
+}
+.pdf-viewer-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pdf-viewer-btn.active {
+  background: #f1e4d8;
+  border-color: #d8ad84;
+}
+.pdf-viewer-page-indicator,
+.pdf-viewer-zoom-indicator {
+  font-size: 12px;
+  color: #526366;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.pdf-viewer-page-indicator input {
+  width: 42px;
+  text-align: center;
+  padding: 4px;
+  font-size: 12px;
+}
+.pdf-viewer-search {
+  padding: 10px 12px;
+  background: #fffdf9;
+  border-bottom: 1px solid #e0dad1;
+}
+.pdf-viewer-search form {
+  display: flex;
+  gap: 8px;
+}
+.pdf-viewer-search input {
+  flex: 1;
+}
+.pdf-viewer-search-results {
+  margin-top: 8px;
+}
+.pdf-viewer-search-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #526366;
+  margin-bottom: 6px;
+}
+.pdf-viewer-search-match {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: right;
+  padding: 8px 10px;
+  border: 1px solid #e0dad1;
+  border-radius: 8px;
+  background: #f9f5ee;
+  cursor: pointer;
+  font-size: 12px;
+}
+.pdf-viewer-pages {
+  overflow-y: auto;
+  flex: 1;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.pdf-viewer-page {
+  position: relative;
+  box-shadow: 0 8px 24px rgba(32, 44, 50, 0.12);
+  background: #fff;
+  min-height: 200px;
+  max-width: 100%;
+}
+.pdf-viewer-page canvas {
+  display: block;
+  max-width: 100%;
+}
+.pdf-viewer-page-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 253, 249, 0.94);
+  color: #974d49;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pdf-viewer-page-error button {
+  padding: 6px 14px;
+  border: 1px solid #e0dad1;
+  border-radius: 8px;
+  background: #fffdf9;
+  color: #263940;
+  font-size: 12px;
+  cursor: pointer;
+}
+@media (max-width: 780px) {
+  .pdf-viewer-pages {
+    padding: 10px;
+  }
+  .pdf-viewer-toolbar {
+    justify-content: center;
+  }
+}
+
+/* pdf.js text layer — enables real, native text selection over each PDF page
+   canvas (adapted, flattened to this file's non-nested style, from
+   pdfjs-dist's own web/pdf_viewer.css — kept minimal: no annotation-editor
+   "highlight" styles, since our own highlight marks are plain rects drawn by
+   PageMarkOverlay below, not pdf.js's own editor layer). */
+.textLayer {
+  position: absolute;
+  inset: 0 auto auto 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  transform-origin: 0 0;
+  z-index: 1;
+  --min-font-size: 1;
+  --text-scale-factor: calc(
+    var(--total-scale-factor, 1) * var(--min-font-size)
+  );
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer span,
+.textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+    scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent {
+  display: contents;
+}
+.textLayer span[role="img"] {
+  user-select: none;
+  cursor: default;
+}
+.textLayer ::selection {
+  background: rgba(0, 100, 255, 0.3);
+}
+.textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+.textLayer.selecting .endOfContent {
+  top: 0;
+}
+
+/* تضليل/قلم/ممحاة overlay per page (components/PdfViewer.tsx's
+   PageMarkOverlay) — same visual language as مِرآة's card marks
+   (.card-mark), applied over a PDF page instead of card text. */
+.pdf-mark-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.pdf-mark-overlay.is-active {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+.pdf-mark {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.38;
+  mix-blend-mode: multiply;
+  border-radius: 2px;
+}
+.pdf-mark.erasable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.pdf-mark-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pdf-mark-colors {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 4px;
+}
+.pdf-mark-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.pdf-mark-color.selected {
+  border-color: #263940;
+}
+.pdf-mark-save-state {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 4px;
+  color: #8a9493;
+}
+.pdf-mark-hint {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #8a9493;
+  background: #fffdf9;
+  border-bottom: 1px solid #e0dad1;
 }
 .panel-heading {
   display: flex;

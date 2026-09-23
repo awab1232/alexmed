@@ -4,14 +4,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import PdfViewer from "@/components/PdfViewer";
 
-// Dedicated PDF read page — a real "open the file" experience via the
-// browser's own native PDF viewer (<iframe> pointed straight at the signed
-// file URL) instead of a custom in-page canvas renderer. This sidesteps the
-// custom renderer's blank-page/CORS-range-request failure modes entirely
-// and gets real text selection, copy, search, print and (in Chromium) the
-// browser's own built-in highlight/note tools for free — none of which the
-// custom renderer had. See app/books/[bookId]/page.tsx's "عرض الملف" button.
+// Dedicated PDF read page — a real "open the file" experience: back button
+// up top, the actual original PDF underneath, rendered by our own pdf.js
+// viewer with a real تضليل/قلم/ممحاة layer on every page (see
+// components/PdfViewer.tsx and lib/pdf-marks.ts). See
+// app/books/[bookId]/page.tsx's "عرض الملف" button.
 export default function BookReadPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
@@ -61,10 +60,10 @@ export default function BookReadPage() {
           <h1>{book.fileName}</h1>
         </div>
       </div>
-      <iframe
+      <PdfViewer
+        bookId={bookId}
         src={`/api/files/${book.fileKey}`}
-        title={book.fileName}
-        className="pdf-reader-frame"
+        fileName={book.fileName}
       />
     </section>
   );

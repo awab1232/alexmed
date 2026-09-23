@@ -6,6 +6,7 @@ import { adminMaterialsRouter } from "./adminMaterialsRouter";
 import { adminUsersRouter } from "./adminUsersRouter";
 import { annotationsRouter } from "./annotationsRouter";
 import { booksRouter } from "./booksRouter";
+import { bookPageMarksRouter } from "./bookPageMarksRouter";
 import { cardMarksRouter } from "./cardMarksRouter";
 import { chatRouter } from "./chatRouter";
 import { decksRouter } from "./decksRouter";
@@ -44,6 +45,7 @@ export const appRouter = router({
   }),
   decks: decksRouter,
   books: booksRouter,
+  bookPageMarks: bookPageMarksRouter,
   mirror: mirrorRouter,
   subjects: subjectsRouter,
   questionFiles: questionFilesRouter,

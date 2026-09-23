@@ -211,6 +211,13 @@
       "when": 1790166878979,
       "tag": "0029_violet_ghost_rider",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790186458364,
+      "tag": "0030_magical_malcolm_colcord",
+      "breakpoints": true
     }
   ]
 }
