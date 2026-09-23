@@ -127,3 +127,11 @@ android/**/*.iml
 
 # Local scratch/test files — never meant to be committed.
 .scratch/
+
+# Android release signing — the keystore IS the app's identity on Google
+# Play; losing it means never being able to publish an update under the
+# same app again, and leaking it means anyone could sign a fake update.
+# Never committed. Back this up somewhere safe OUTSIDE this repo.
+android/keystore.properties
+android/app/*.keystore
+android/app/*.jks
