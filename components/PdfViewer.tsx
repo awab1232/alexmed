@@ -205,7 +205,9 @@ function PageMarkOverlay({
   return (
     <div
       ref={rootRef}
-      className={interactive ? "pdf-mark-overlay is-active" : "pdf-mark-overlay"}
+      className={
+        interactive ? "pdf-mark-overlay is-active" : "pdf-mark-overlay"
+      }
     >
       {marks.highlights.map(highlight =>
         highlight.rects.map((rect, index) => (
@@ -614,7 +616,15 @@ export default function PdfViewer({
         if (!context) return;
         context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 
-        const task = page.render({ canvasContext: context, viewport, canvas });
+        // pdfjs-dist 6.x renders from `canvas` alone (it derives its own 2D
+        // context internally — HTMLCanvasElement.getContext("2d") always
+        // returns the same singleton context, so our setTransform above
+        // still applies to whatever pdf.js renders into). `canvasContext` is
+        // now only a deprecated back-compat param, and its own type says the
+        // canvas must be null when it's used — passing both together (the
+        // previous code did) is invalid, and was the actual cause of every
+        // page failing to render.
+        const task = page.render({ viewport, canvas });
         renderTasksRef.current.set(pageNumber, task);
 
         // Text layer — real, positioned DOM spans over the canvas, giving
@@ -623,22 +633,32 @@ export default function PdfViewer({
         // ancestor here (we don't use pdf.js's own PDFPageView chrome), so
         // it's set to 1: our viewport already encodes the real render scale
         // directly in CSS-pixel units, same as the canvas above.
-        const textLayerEl = textLayerElsRef.current.get(pageNumber);
-        if (textLayerEl) {
-          textLayerEl.replaceChildren();
-          textLayerEl.style.setProperty("--total-scale-factor", "1");
-          textLayerEl.style.width = `${Math.floor(viewport.width)}px`;
-          textLayerEl.style.height = `${Math.floor(viewport.height)}px`;
-          const textLayer = new pdfjs.TextLayer({
-            textContentSource: page.streamTextContent(),
-            container: textLayerEl,
-            viewport,
-          });
-          textLayerInstancesRef.current.set(pageNumber, textLayer);
-          textLayer.render().catch(() => {
-            // A cancelled text-layer render throws too — harmless, same as
-            // the canvas render task below.
-          });
+        //
+        // Deliberately isolated in its own try/catch: this is secondary
+        // (selection/highlight support), and must never be able to fail the
+        // page's actual visible content — a text-layer problem should lose
+        // only text selection, never turn a perfectly good render into
+        // "تعذر عرض هذه الصفحة".
+        try {
+          const textLayerEl = textLayerElsRef.current.get(pageNumber);
+          if (textLayerEl) {
+            textLayerEl.replaceChildren();
+            textLayerEl.style.setProperty("--total-scale-factor", "1");
+            textLayerEl.style.width = `${Math.floor(viewport.width)}px`;
+            textLayerEl.style.height = `${Math.floor(viewport.height)}px`;
+            const textLayer = new pdfjs.TextLayer({
+              textContentSource: page.streamTextContent(),
+              container: textLayerEl,
+              viewport,
+            });
+            textLayerInstancesRef.current.set(pageNumber, textLayer);
+            textLayer.render().catch(() => {
+              // A cancelled text-layer render throws too — harmless.
+            });
+          }
+        } catch {
+          // Text layer failed to even start — the canvas render below still
+          // proceeds untouched.
         }
 
         // A render that never settles (a stalled cross-origin fetch, a
@@ -905,7 +925,9 @@ export default function PdfViewer({
         <div className="pdf-viewer-toolbar-group">
           <button
             type="button"
-            className={tool === "none" ? "pdf-viewer-btn active" : "pdf-viewer-btn"}
+            className={
+              tool === "none" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
+            }
             onClick={() => setTool("none")}
             aria-label="تصفّح"
             aria-pressed={tool === "none"}
@@ -943,7 +965,9 @@ export default function PdfViewer({
           )}
           <button
             type="button"
-            className={tool === "pen" ? "pdf-viewer-btn active" : "pdf-viewer-btn"}
+            className={
+              tool === "pen" ? "pdf-viewer-btn active" : "pdf-viewer-btn"
+            }
             onClick={() => setTool(tool === "pen" ? "none" : "pen")}
             aria-label="قلم"
             aria-pressed={tool === "pen"}
