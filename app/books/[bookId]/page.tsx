@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import {
   CheckCircle2,
   Circle,
   CircleAlert,
   ClipboardList,
+  Eye,
+  FileText,
   Layers3,
   Loader2,
   Lock,
@@ -14,6 +17,7 @@ import {
   RotateCcw,
   Sparkles,
   Workflow,
+  X,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import PdfViewer from "@/components/PdfViewer";
@@ -75,6 +79,7 @@ function StageRow({
 export default function BookDetailPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
   const utils = trpc.useUtils();
   const bookQuery = trpc.books.get.useQuery(
     { id: bookId },
@@ -234,18 +239,6 @@ export default function BookDetailPage() {
         </label>
       </div>
 
-      {/* Real PDF.js viewer of the original file (PR13) — the extract/OCR
-          pipeline keeps running server-side unchanged; this is purely an
-          additive way to actually read the real PDF, not a replacement for
-          it. fileKey can be briefly null right after upload before the
-          extraction job records it — the panel just doesn't render then. */}
-      {book.fileKey && (
-        <PdfViewer
-          src={`/api/files/${book.fileKey}`}
-          fileName={book.fileName}
-        />
-      )}
-
       {/* Study Tools (PR12, reshaped for the mandatory-choice gate) — reuses
           existing bookCards/bookMcqs/bookChapters.explanationAr+keyPoints via
           the chapter reader's own tabs (?tool= preselects one). No chapter is
@@ -351,6 +344,55 @@ export default function BookDetailPage() {
           </>
         )}
       </div>
+
+      {/* File overview (learnra-style bottom card) — opening the real PDF is
+          now a deliberate action instead of an always-mounted panel: besides
+          matching the requested layout, mounting PdfViewer only once the
+          student clicks this button guarantees it mounts into a fully laid
+          out, definitely-visible container, which is what the "blank white
+          page" failure mode above was actually caused by. */}
+      {book.fileKey && (
+        <div className="study-tools-panel file-overview-panel">
+          <div className="panel-heading">
+            <h2>نظرة عامة على الملف</h2>
+          </div>
+          <div className="file-overview-row">
+            <div className="file-overview-meta">
+              <FileText size={20} />
+              <div>
+                <strong>{book.fileName}</strong>
+                <span>
+                  {new Date(book.createdAt).toLocaleDateString("ar")} ·{" "}
+                  {book.pageCount} صفحة
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => setShowPdfViewer(true)}
+            >
+              <Eye size={16} /> عرض الملف
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showPdfViewer && book.fileKey && (
+        <div className="pdf-viewer-modal">
+          <button
+            type="button"
+            className="pdf-viewer-modal-close"
+            onClick={() => setShowPdfViewer(false)}
+          >
+            <X size={16} /> إغلاق
+          </button>
+          <PdfViewer
+            src={`/api/files/${book.fileKey}`}
+            fileName={book.fileName}
+          />
+        </div>
+      )}
 
       {coverageQuery.data && coverageQuery.data.totalPages > 0 && (
         <div className="stats-row" style={{ marginBottom: 18 }}>
