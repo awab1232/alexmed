@@ -4566,27 +4566,7 @@ h1 em {
   border-top: 1px solid #e3ded6;
 }
 
-/* PDF reader "اسأل AI" on selected text (components/pdf/SelectionAssistant.tsx).
-   The pill floats above the reader's bottom tool bar. */
-.selection-ai-pill {
-  position: fixed;
-  left: 50%;
-  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-  z-index: 55;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  border: 0;
-  border-radius: 999px;
-  background: #2d6cb5;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 8px 20px rgba(45, 108, 181, 0.35);
-  transform: translateX(-50%);
-  cursor: pointer;
-}
+/* PDF reader "اسأل AI" sheet (components/pdf/SelectionAssistant.tsx). */
 .selection-ai-quote {
   margin: 0;
   padding: 10px 12px;
@@ -4605,4 +4585,44 @@ h1 em {
 }
 .study-sheet-head strong svg {
   vertical-align: -3px;
+}
+/* The reader's always-visible "اسأل AI" button, centered in the bottom bar
+   (replaces the old selection-only floating pill). */
+.pdf-viewer-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #2d6cb5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(45, 108, 181, 0.3);
+  cursor: pointer;
+}
+.pdf-viewer-ai-btn.has-selection {
+  background: #d9773f;
+  box-shadow: 0 4px 12px rgba(217, 119, 63, 0.35);
+}
+@media (max-width: 400px) {
+  .pdf-viewer-bottombar {
+    padding: 0 8px;
+    gap: 4px;
+  }
+  .pdf-viewer-bottombar .pdf-viewer-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .pdf-viewer-ai-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  /* Room for the AI button: the +/- zoom buttons stay, the % label goes. */
+  .pdf-viewer-bottombar .pdf-viewer-zoom-indicator {
+    display: none;
+  }
 }

@@ -1140,12 +1140,6 @@ export default function PdfViewer({
         </div>
       )}
 
-      <SelectionAssistant
-        bookId={bookId}
-        fileName={fileName}
-        selection={aiSelection}
-      />
-
       {/* Bottom bar: marking tools + zoom, iOS-style at the thumb's reach. */}
       <div className="pdf-viewer-bottom">
         {tool !== "none" && (
@@ -1251,6 +1245,15 @@ export default function PdfViewer({
               </span>
             )}
           </div>
+          {/* The AI assistant sits in the middle of the bar so it's always
+              visible: with a text selection it asks about that text,
+              otherwise about the current page. */}
+          <SelectionAssistant
+            bookId={bookId}
+            fileName={fileName}
+            selection={aiSelection}
+            currentPage={currentPage}
+          />
           <div className="pdf-viewer-toolbar-group">
             <button
               type="button"

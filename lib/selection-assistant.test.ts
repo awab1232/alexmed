@@ -50,3 +50,18 @@ describe("selection assistant", () => {
     );
   });
 });
+
+describe("selection assistant — whole page (no selection)", () => {
+  it("targets the page itself when nothing is selected", () => {
+    const messages = buildSelectionAssistantMessages({
+      fileName: "x.pdf",
+      pageNumber: 7,
+      pageText: "Page seven content.",
+      selectedText: "",
+      action: "summarize",
+    });
+    expect(String(messages[1].content)).not.toContain("Selected text");
+    expect(String(messages[1].content)).toContain("Page seven content.");
+    expect(String(messages.at(-1)!.content)).toContain("this page");
+  });
+});

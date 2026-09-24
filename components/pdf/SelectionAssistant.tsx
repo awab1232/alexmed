@@ -16,6 +16,12 @@ const QUICK_ACTIONS: { action: Exclude<Action, "ask">; label: string }[] = [
   { action: "summarize", label: "لخّص" },
 ];
 
+// Same actions, worded for the whole page (no selection).
+const PAGE_ACTION_LABELS: Partial<Record<Action, string>> = {
+  explain: "اشرح الصفحة",
+  summarize: "لخّص الصفحة",
+};
+
 // "اسأل AI" for text the student selects in the PDF reader: a floating pill
 // while a selection exists, then a bottom sheet with quick actions, a free
 // question field, and follow-ups — answered by the fast text model
@@ -26,10 +32,13 @@ export default function SelectionAssistant({
   bookId,
   fileName,
   selection,
+  currentPage,
 }: {
   bookId: string;
   fileName?: string;
   selection: PdfTextSelection | null;
+  // Page the student is looking at — the subject when nothing is selected.
+  currentPage: number;
 }) {
   // The selection is copied when the sheet opens: tapping inside the sheet
   // clears the page selection, but the conversation stays about this text.
@@ -52,9 +61,10 @@ export default function SelectionAssistant({
   // Never leave a stream running after the sheet closes / unmounts.
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  // Always available from the reader's toolbar: with a text selection it's
+  // about that text, otherwise about the whole current page.
   function open() {
-    if (!selection) return;
-    setActive(selection);
+    setActive(selection ?? { text: "", pageNumber: currentPage });
     setTurns([]);
     setInput("");
     setError("");
@@ -136,17 +146,18 @@ export default function SelectionAssistant({
 
   return (
     <>
-      {selection && !active && (
-        <button
-          type="button"
-          className="selection-ai-pill"
-          // Keep the text selected while tapping the pill.
-          onPointerDown={event => event.preventDefault()}
-          onClick={open}
-        >
-          <Sparkles size={16} /> اسأل AI
-        </button>
-      )}
+      <button
+        type="button"
+        className={
+          selection ? "pdf-viewer-ai-btn has-selection" : "pdf-viewer-ai-btn"
+        }
+        // Keep the text selected while tapping the button.
+        onPointerDown={event => event.preventDefault()}
+        onClick={open}
+        aria-label={selection ? "اسأل AI عن النص المحدد" : "اسأل AI عن الصفحة"}
+      >
+        <Sparkles size={16} /> {selection ? "اسأل عن التحديد" : "اسأل AI"}
+      </button>
 
       {active && (
         <div className="study-sheet-backdrop" onClick={close}>
@@ -164,23 +175,30 @@ export default function SelectionAssistant({
             </div>
             <div className="study-ai-messages">
               <blockquote className="selection-ai-quote" dir="auto">
-                {active.text.length > 400
-                  ? `${active.text.slice(0, 400)}…`
-                  : active.text}
+                {!active.text
+                  ? `الصفحة ${active.pageNumber} كاملة — حدّد نصاً قبل الضغط لتسأل عنه وحده.`
+                  : active.text.length > 400
+                    ? `${active.text.slice(0, 400)}…`
+                    : active.text}
               </blockquote>
               {!turns.length && (
                 <div className="selection-ai-actions">
-                  {QUICK_ACTIONS.map(item => (
-                    <button
-                      type="button"
-                      key={item.action}
-                      className="quiz-pill"
-                      disabled={busy}
-                      onClick={() => send(item.action, item.label)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                  {QUICK_ACTIONS.map(item => {
+                    const label = active.text
+                      ? item.label
+                      : (PAGE_ACTION_LABELS[item.action] ?? item.label);
+                    return (
+                      <button
+                        type="button"
+                        key={item.action}
+                        className="quiz-pill"
+                        disabled={busy}
+                        onClick={() => send(item.action, label)}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               {turns.map((turn, index) =>

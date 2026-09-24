@@ -24,7 +24,8 @@ export const maxDuration = 120;
 const bodySchema = z.object({
   bookId: z.string(),
   pageNumber: z.number().int().positive(),
-  selectedText: z.string().trim().min(1).max(4000),
+  // Empty = ask about the whole current page (toolbar button, no selection).
+  selectedText: z.string().trim().max(4000).default(""),
   action: z.enum(["explain", "arabic", "exam", "summarize", "ask"]),
   question: z.string().max(1000).optional(),
   fileName: z.string().max(200).optional(),
