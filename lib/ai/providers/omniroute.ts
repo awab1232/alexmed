@@ -34,6 +34,10 @@ function parseRetryAfterMs(response: Response): number | undefined {
 // against the same model (see below) — the multi-candidate loop in
 // generateText() is what moves on to a different model, not this retry.
 const REQUEST_TIMEOUT_MS = 120_000;
+// generateText() streams (see collectStreamedResponse): the whole
+// generation — up to 16k tokens for a chapter analysis — must fit in one
+// attempt, and a stream only takes as long as the model actually writes.
+const STREAMED_GENERATION_TIMEOUT_MS = 240_000;
 const RETRY_MAX_RETRIES = 1; // conservative — see file header.
 const RETRY_DELAY_MS = 500;
 
@@ -81,14 +85,15 @@ function describeStatus(status: number): string {
 
 async function fetchWithTimeout(
   url: string,
-  init: RequestInit
+  init: RequestInit,
+  timeoutMs = REQUEST_TIMEOUT_MS
 ): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
     try {
       const response = await fetch(url, {
         ...init,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       // Only retry network-shaped failures via 5xx; never 429 (see header).
       if (response.ok || response.status < 500) return response;
@@ -305,6 +310,70 @@ function parseGenerateResponse(raw: {
   };
 }
 
+// Same recovery rules as lib/pdf-cards.ts's parseJsonResponse: the whole
+// answer (fences stripped) or its outermost {...} block must parse, and be
+// a non-empty object. Exported for tests.
+export function containsJsonObject(content: string): boolean {
+  const text = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+  const candidates = [text];
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start !== -1 && end > start) candidates.push(text.slice(start, end + 1));
+  return candidates.some(candidate => {
+    try {
+      const parsed = JSON.parse(candidate);
+      return (
+        !!parsed && typeof parsed === "object" && Object.keys(parsed).length > 0
+      );
+    } catch {
+      return false;
+    }
+  });
+}
+
+// Assembles a streamed chat completion into the same GenerateResult a
+// non-streamed call returns. A gateway/provider that ignores `stream` and
+// answers with plain JSON is handled too. Exported for tests.
+export async function collectStreamedResponse(
+  response: Response,
+  model: string
+): Promise<GenerateResult> {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/event-stream")) {
+    const text = await response.text();
+    try {
+      return parseGenerateResponse(
+        JSON.parse(text) as Parameters<typeof parseGenerateResponse>[0]
+      );
+    } catch {
+      // Some gateways send SSE frames without the SSE content type.
+      if (!text.includes("data:")) throw new Error("Unreadable response body");
+      return collectStreamedResponse(
+        new Response(text, {
+          headers: { "content-type": "text/event-stream" },
+        }),
+        model
+      );
+    }
+  }
+  if (!response.body) throw new Error("Stream response had no body");
+  let content = "";
+  for await (const chunk of parseOpenAiSseStream(response.body)) {
+    content += chunk.delta;
+  }
+  if (!content.trim()) throw new Error("Stream finished with no content");
+  return {
+    id: `stream-${Date.now()}`,
+    created: Math.floor(Date.now() / 1000),
+    model,
+    content,
+    finishReason: "stop",
+  };
+}
+
 async function generateText(params: GenerateParams): Promise<GenerateResult> {
   const apiKey = requireApiKey();
   const primaryModel = await resolveModel(params);
@@ -337,8 +406,15 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
         {
           method: "POST",
           headers: headers(apiKey),
-          body: JSON.stringify(buildPayload(model, params, false)),
-        }
+          // Streamed even though callers want one complete result:
+          // OmniRoute cancels a non-streamed request whose response hasn't
+          // STARTED within 30s (DIRECT_RESPONSE_START_TIMEOUT, observed
+          // 2026-09-24) — and a non-streamed long generation (chapter
+          // analysis, notes) sends nothing until it's completely written.
+          // A stream starts within seconds, so long generations finish.
+          body: JSON.stringify(buildPayload(model, params, true)),
+        },
+        STREAMED_GENERATION_TIMEOUT_MS
       );
     } catch (error) {
       if (isLastCandidate) throw error;
@@ -350,9 +426,30 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
     }
 
     if (response.ok) {
-      return parseGenerateResponse(
-        (await response.json()) as Parameters<typeof parseGenerateResponse>[0]
-      );
+      try {
+        const result = await collectStreamedResponse(response, model);
+        // A JSON request answered without any parseable JSON (observed with
+        // reasoning models writing their chain-of-thought into the answer)
+        // is a failed attempt too — try the next model. The last candidate's
+        // answer is still returned as-is, exactly as before this check.
+        if (
+          params.responseFormat &&
+          !isLastCandidate &&
+          !containsJsonObject(result.content)
+        ) {
+          throw new Error("JSON was requested but the answer contains none");
+        }
+        return result;
+      } catch (error) {
+        // Cut off mid-stream, or finished with no content at all — the
+        // same "this model failed" as an error status: move on.
+        if (isLastCandidate) throw error;
+        console.warn(
+          `[AI][omniroute] ${model} stream failed, trying next fallback model`,
+          error
+        );
+        continue;
+      }
     }
 
     // Server-log only (never sent to the client, never the API key) — the

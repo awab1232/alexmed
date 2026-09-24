@@ -65,6 +65,16 @@ export type ChunkedResult<T> = {
 // not to trip provider rate limits or the per-user queue budget.
 const CHUNK_CONCURRENCY = 3;
 
+// Output budgets include room for "thinking": the gateway's models are
+// reasoning models (nemotron-3, glm-5.3, gemini-2.5), and their hidden
+// reasoning counts against max_tokens — observed live 2026-09-24, a 5000-token
+// mind-map budget ran out before any JSON was written, on every model.
+// max_tokens is a ceiling, not a cost: short answers still stop early.
+const REASONING_HEADROOM_TOKENS = 6000;
+function generationBudget(answerTokens: number): number {
+  return Math.min(16000, REASONING_HEADROOM_TOKENS + 1500 + answerTokens);
+}
+
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
@@ -207,7 +217,7 @@ export async function generateChapterFlashcardsCovered(
     pages,
     async (chunkPages, chunk, { targetCount, mustCover }) => {
       const response = await llm({
-        max_tokens: Math.min(8000, 1200 + targetCount * 450),
+        max_tokens: generationBudget(targetCount * 450),
         messages: buildChapterFlashcardsMessages(title, chunkPages, {
           targetCount,
           pageTypes,
@@ -250,7 +260,7 @@ export async function generateChapterMcqsCovered(
     pages,
     async (chunkPages, chunk, { targetCount, mustCover }) => {
       const response = await llm({
-        max_tokens: Math.min(8000, 1200 + targetCount * 500),
+        max_tokens: generationBudget(targetCount * 500),
         messages: buildChapterMcqsMessages(title, chunkPages, {
           targetCount,
           pageTypes,
@@ -290,7 +300,7 @@ export async function generateChapterNotesCovered(
         s => s.pageStart <= chunk.pageEnd && s.pageEnd >= chunk.pageStart
       );
       const response = await llm({
-        max_tokens: 7000,
+        max_tokens: REASONING_HEADROOM_TOKENS + 7000,
         messages: buildMedicalNoteComposerMessages({
           ...input,
           // Per part: its own analysis summary instead of re-sending the
@@ -360,7 +370,7 @@ export async function generateChapterMindMapCovered(
 
   async function attempt(mustCover?: { pageStart: number; pageEnd: number }[]) {
     const response = await llm({
-      max_tokens: 5000,
+      max_tokens: REASONING_HEADROOM_TOKENS + 5000,
       messages: buildMindMapSectionsMessages(
         args.title,
         args.explanationEn,

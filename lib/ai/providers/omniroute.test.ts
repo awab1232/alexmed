@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { candidateModels, omnirouteProvider } from "./omniroute";
+import {
+  candidateModels,
+  collectStreamedResponse,
+  containsJsonObject,
+  omnirouteProvider,
+} from "./omniroute";
 
 const ENV_KEYS = [
   "OMNIROUTE_API_KEY",
@@ -127,5 +132,125 @@ describe("OmniRoute vision model chain", () => {
       messages: imageMessages,
     });
     expect(requestedModels[0]).toBe("gemini/explicit");
+  });
+});
+
+// generateText streams internally: OmniRoute cancels a non-streamed request
+// whose response hasn't started within 30s, which every long generation hits.
+describe("OmniRoute streamed generation", () => {
+  function sse(...deltas: string[]) {
+    const body =
+      deltas
+        .map(
+          d =>
+            `data: ${JSON.stringify({ choices: [{ delta: { content: d } }] })}\n\n`
+        )
+        .join("") + "data: [DONE]\n\n";
+    return new Response(body, {
+      status: 200,
+      headers: { "content-type": "text/event-stream" },
+    });
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    delete process.env.OMNIROUTE_FALLBACK_MODELS;
+  });
+
+  it("assembles SSE deltas into one complete result", async () => {
+    const result = await collectStreamedResponse(
+      sse('{"flash', 'cards":', "[]}"),
+      "m"
+    );
+    expect(result.content).toBe('{"flashcards":[]}');
+    expect(result.model).toBe("m");
+  });
+
+  it("still accepts a plain JSON (non-streamed) answer", async () => {
+    const res = new Response(
+      JSON.stringify({
+        id: "1",
+        created: 0,
+        model: "m",
+        choices: [
+          {
+            message: { role: "assistant", content: "hi" },
+            finish_reason: "stop",
+          },
+        ],
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+    expect((await collectStreamedResponse(res, "m")).content).toBe("hi");
+  });
+
+  it("requests stream:true, and an empty stream falls through to the next model", async () => {
+    process.env.OMNIROUTE_API_KEY = "k";
+    process.env.OMNIROUTE_BASE_URL = "https://omni.test/v1";
+    process.env.OMNIROUTE_FALLBACK_MODELS = "model-b";
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const bodies: { model: string; stream: boolean }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const body = JSON.parse(String(init.body));
+        bodies.push({ model: body.model, stream: body.stream });
+        return body.model === "model-a" ? sse() : sse("answer from b");
+      })
+    );
+    const result = await omnirouteProvider.generateText({
+      model: "model-a",
+      messages: [{ role: "user", content: "hi" }],
+    });
+    expect(result.content).toBe("answer from b");
+    expect(bodies.map(b => b.model)).toEqual(["model-a", "model-b"]);
+    expect(bodies.every(b => b.stream === true)).toBe(true);
+  });
+});
+
+describe("OmniRoute JSON answers from reasoning models", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    delete process.env.OMNIROUTE_FALLBACK_MODELS;
+  });
+
+  it("recognizes real JSON, fenced JSON and JSON after prose", () => {
+    expect(containsJsonObject('{"a":1}')).toBe(true);
+    expect(containsJsonObject('```json\n{"a":1}\n```')).toBe(true);
+    expect(containsJsonObject('Sure:\n{"a":[1,2]}')).toBe(true);
+    expect(containsJsonObject("We need to organize the sections...")).toBe(
+      false
+    );
+    expect(containsJsonObject("{}")).toBe(false);
+  });
+
+  it("a JSON request answered with reasoning prose moves to the next model", async () => {
+    process.env.OMNIROUTE_API_KEY = "k";
+    process.env.OMNIROUTE_BASE_URL = "https://omni.test/v1";
+    process.env.OMNIROUTE_FALLBACK_MODELS = "model-b";
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const tried: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const model = JSON.parse(String(init.body)).model as string;
+        tried.push(model);
+        const content =
+          model === "model-a" ? "We need to think first..." : '{"ok":true}';
+        return new Response(
+          `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`,
+          { status: 200, headers: { "content-type": "text/event-stream" } }
+        );
+      })
+    );
+    const result = await omnirouteProvider.generateText({
+      model: "model-a",
+      messages: [{ role: "user", content: "json please" }],
+      responseFormat: { type: "json_object" },
+    });
+    expect(tried).toEqual(["model-a", "model-b"]);
+    expect(result.content).toBe('{"ok":true}');
   });
 });

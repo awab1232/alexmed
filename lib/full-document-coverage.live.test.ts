@@ -163,21 +163,75 @@ describe.skipIf(!live)("LIVE full-document coverage — 40-page PDF", () => {
           chapterPages,
           invokeLLM
         );
-        const mindMap = await generateChapterMindMapCovered(
-          {
-            title: chapter.title,
-            explanationEn: merged.explanationEn,
-            explanationAr: merged.explanationAr,
-            keyPoints: merged.keyPoints,
-            terms: merged.medicalTerms,
-            flashcards: cards.items,
-            mcqs: mcqs.items,
-            validPages: chapterPages.map(p => p.page),
-            summarySections: sections,
-          },
-          chapterPages,
-          invokeLLM
-        );
+        // Mind map: a failure is recorded (with what the model actually
+        // answered) instead of aborting the whole run — in production it's
+        // a separate worker and never blocks the chapter either.
+        const mindMapProbe: { promptChars: number; answer: string }[] = [];
+        const probingLlm: typeof invokeLLM = async params => {
+          const promptChars = params.messages
+            .map(m => (typeof m.content === "string" ? m.content.length : 0))
+            .reduce((a, b) => a + b, 0);
+          try {
+            const response = await invokeLLM(params);
+            mindMapProbe.push({
+              promptChars,
+              answer: (response.choices[0]?.message.content ?? "").slice(
+                0,
+                600
+              ),
+            });
+            return response;
+          } catch (error) {
+            mindMapProbe.push({
+              promptChars,
+              answer: `THREW: ${(error as Error).message}`,
+            });
+            throw error;
+          }
+        };
+        let mindMap: Awaited<ReturnType<typeof generateChapterMindMapCovered>>;
+        try {
+          mindMap = await generateChapterMindMapCovered(
+            {
+              title: chapter.title,
+              explanationEn: merged.explanationEn,
+              explanationAr: merged.explanationAr,
+              keyPoints: merged.keyPoints,
+              terms: merged.medicalTerms,
+              flashcards: cards.items,
+              mcqs: mcqs.items,
+              validPages: chapterPages.map(p => p.page),
+              summarySections: sections,
+            },
+            chapterPages,
+            probingLlm
+          );
+        } catch (error) {
+          mindMap = {
+            items: [],
+            coverage: {
+              kind: "mindmap",
+              itemCount: 0,
+              totalChunks: 1,
+              requiredChunks: ["chunk-1"],
+              coveredChunks: [],
+              uncoveredChunks: ["chunk-1"],
+              coveredPages: [],
+              chunkCoveragePercent: 0,
+              status: "FAILED",
+              reasons: [(error as Error).message],
+            },
+            chunks: [],
+            pageTypes: {},
+            errors: [(error as Error).message],
+          };
+        }
+        if (process.env.LIVE_REPORT_PATH) {
+          writeFileSync(
+            `${process.env.LIVE_REPORT_PATH}.mindmap-${chapter.startPage}.json`,
+            JSON.stringify(mindMapProbe, null, 2)
+          );
+        }
 
         all.summaries.push(chapterSummary);
         all.explanations.push(merged.explanationEn, ...merged.keyPoints);
@@ -277,6 +331,6 @@ describe.skipIf(!live)("LIVE full-document coverage — 40-page PDF", () => {
         all.cards.filter(c => c.sourcePage <= 3).length
       );
     },
-    30 * 60 * 1000
+    Number(process.env.LIVE_TIMEOUT_MS ?? 60 * 60 * 1000)
   );
 });
