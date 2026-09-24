@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Eye,
   FileText,
+  Flame,
   Layers3,
   Loader2,
   Lock,
@@ -128,6 +129,8 @@ export default function BookDetailPage() {
     return () => clearInterval(timer);
   }, [analysisInFlight, bookId, resumeMutate]);
   const subjectsQuery = trpc.subjects.list.useQuery();
+  // 🔥 Exam Focus tile status (its own pipeline — see exam-focus/page.tsx).
+  const { data: examFocusDeck } = trpc.examFocus.get.useQuery({ bookId });
   const setSubject = trpc.books.setSubject.useMutation({
     onSuccess: () => utils.books.get.invalidate({ id: bookId }),
   });
@@ -274,17 +277,17 @@ export default function BookDetailPage() {
             <div className="study-tools-grid">
               {[
                 {
-                  icon: Layers3,
-                  label: "بطاقات",
-                  detail: `${totalCards} بطاقة`,
-                },
-                {
                   icon: ClipboardList,
                   label: "اختبار",
                   detail: `${totalMcqs} سؤال`,
                 },
-                { icon: Workflow, label: "خريطة ذهنية", detail: undefined },
+                {
+                  icon: Layers3,
+                  label: "بطاقات",
+                  detail: `${totalCards} بطاقة`,
+                },
                 { icon: NotebookText, label: "ملخص", detail: undefined },
+                { icon: Workflow, label: "خريطة ذهنية", detail: undefined },
                 // Quizlet-style match game over this file's own cards
                 // (app/books/[bookId]/match).
                 {
@@ -292,77 +295,107 @@ export default function BookDetailPage() {
                   label: "لعبة المطابقة",
                   detail: "طابق السؤال بجوابه",
                 },
-              ].map(({ icon: Icon, label, detail }) => {
+              ].map(({ icon: Icon, label, detail }, toolIndex) => {
+                // 🔥 Exam Focus sits third (after اختبار/بطاقات). It has its
+                // own whole-file pipeline, independent of chapter analysis,
+                // so it's always openable once the pages are read.
+                const examFocusTile =
+                  toolIndex === 2 ? (
+                    <Link
+                      key="exam-focus"
+                      href={`/books/${bookId}/exam-focus`}
+                      className="study-tool-card is-exam-focus"
+                    >
+                      <span className="ef-tile-new">جديد</span>
+                      <Flame size={22} aria-hidden="true" />
+                      <span>🔥 Exam Focus</span>
+                      <small>
+                        {examFocusDeck?.deck.status === "complete" ||
+                        examFocusDeck?.deck.status === "partial_failed"
+                          ? `${examFocusDeck.deck.totalCards} بطاقة high-yield`
+                          : examFocusDeck?.deck.status === "processing" ||
+                              examFocusDeck?.deck.status === "finalizing"
+                            ? "قيد التحليل…"
+                            : "أهم معلومات الامتحان"}
+                      </small>
+                      <span className="secondary-button">
+                        {examFocusDeck ? "افتح 🔥" : "ابدأ 🔥"}
+                      </span>
+                    </Link>
+                  ) : null;
                 const state = chaptersNotStarted
                   ? "locked"
                   : !chaptersPhaseDone
                     ? "generating"
                     : "ready";
                 return (
-                  <div key={label} className={`study-tool-card is-${state}`}>
-                    <Icon size={22} />
-                    <span>{label}</span>
-                    {state === "ready" && detail && <small>{detail}</small>}
-                    {state === "locked" && (
-                      <button
-                        type="button"
-                        className="secondary-button"
-                        disabled={startAnalysis.isPending}
-                        onClick={() => startAnalysis.mutate({ bookId })}
-                      >
-                        {startAnalysis.isPending ? (
-                          <Loader2 size={14} className="spin" />
+                  <Fragment key={label}>
+                    {examFocusTile}
+                    <div className={`study-tool-card is-${state}`}>
+                      <Icon size={22} />
+                      <span>{label}</span>
+                      {state === "ready" && detail && <small>{detail}</small>}
+                      {state === "locked" && (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          disabled={startAnalysis.isPending}
+                          onClick={() => startAnalysis.mutate({ bookId })}
+                        >
+                          {startAnalysis.isPending ? (
+                            <Loader2 size={14} className="spin" />
+                          ) : (
+                            <Sparkles size={14} />
+                          )}
+                          ابدأ
+                        </button>
+                      )}
+                      {state === "generating" && (
+                        <small className="study-tool-progress">
+                          <Loader2 size={13} className="spin" /> قيد التوليد…{" "}
+                          {analysisProgressPercent}%
+                        </small>
+                      )}
+                      {state === "ready" &&
+                        firstCompleteChapter &&
+                        (label === "بطاقات" ? (
+                          <Link
+                            href={`/books/${bookId}/study?tool=cards`}
+                            className="secondary-button"
+                          >
+                            ابدأ المراجعة
+                          </Link>
+                        ) : label === "اختبار" ? (
+                          <Link
+                            href={`/books/${bookId}/study?tool=mcqs`}
+                            className="secondary-button"
+                          >
+                            اختبر نفسك
+                          </Link>
+                        ) : label === "ملخص" ? (
+                          <Link
+                            href={`/books/${bookId}/study?tool=explanation`}
+                            className="secondary-button"
+                          >
+                            عرض
+                          </Link>
+                        ) : label === "لعبة المطابقة" ? (
+                          <Link
+                            href={`/books/${bookId}/match`}
+                            className="secondary-button"
+                          >
+                            العب 🎮
+                          </Link>
                         ) : (
-                          <Sparkles size={14} />
-                        )}
-                        ابدأ
-                      </button>
-                    )}
-                    {state === "generating" && (
-                      <small className="study-tool-progress">
-                        <Loader2 size={13} className="spin" /> قيد التوليد…{" "}
-                        {analysisProgressPercent}%
-                      </small>
-                    )}
-                    {state === "ready" &&
-                      firstCompleteChapter &&
-                      (label === "بطاقات" ? (
-                        <Link
-                          href={`/books/${bookId}/study?tool=cards`}
-                          className="secondary-button"
-                        >
-                          ابدأ المراجعة
-                        </Link>
-                      ) : label === "اختبار" ? (
-                        <Link
-                          href={`/books/${bookId}/study?tool=mcqs`}
-                          className="secondary-button"
-                        >
-                          اختبر نفسك
-                        </Link>
-                      ) : label === "ملخص" ? (
-                        <Link
-                          href={`/books/${bookId}/study?tool=explanation`}
-                          className="secondary-button"
-                        >
-                          عرض
-                        </Link>
-                      ) : label === "لعبة المطابقة" ? (
-                        <Link
-                          href={`/books/${bookId}/match`}
-                          className="secondary-button"
-                        >
-                          العب 🎮
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/books/${bookId}/mindmap`}
-                          className="secondary-button"
-                        >
-                          عرض
-                        </Link>
-                      ))}
-                  </div>
+                          <Link
+                            href={`/books/${bookId}/mindmap`}
+                            className="secondary-button"
+                          >
+                            عرض
+                          </Link>
+                        ))}
+                    </div>
+                  </Fragment>
                 );
               })}
             </div>

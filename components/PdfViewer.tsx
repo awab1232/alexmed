@@ -257,11 +257,13 @@ export default function PdfViewer({
   src,
   fileName,
   backHref,
+  initialPage,
 }: {
   bookId: string;
   src: string;
   fileName?: string;
   backHref: string;
+  initialPage?: number;
 }) {
   const [pdfjs, setPdfjs] = useState<typeof import("pdfjs-dist") | null>(null);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
@@ -911,6 +913,22 @@ export default function PdfViewer({
     renderPage(1, scale);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, numPages]);
+
+  // Deep link to a page (?page=N — e.g. an Exam Focus card's "📖 p. 42"):
+  // once the document's page placeholders exist, jump there.
+  useEffect(() => {
+    if (!doc || !initialPage || initialPage < 2 || initialPage > numPages) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      renderPage(initialPage, scale);
+      wrapperElsRef.current
+        .get(initialPage)
+        ?.scrollIntoView({ block: "start" });
+    }, 150);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, numPages, initialPage]);
 
   function scrollToPage(pageNumber: number) {
     const el = wrapperElsRef.current.get(pageNumber);

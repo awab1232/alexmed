@@ -18,6 +18,7 @@ import type {
   ChapterCoverageManifest,
   PageType,
 } from "../lib/document-coverage";
+import type { ExamFocusCoverage, ExamFocusFact } from "../lib/exam-focus";
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 
@@ -1815,3 +1816,130 @@ export const chatMessages = pgTable(
 
 export type ChatSession = typeof chatSessions.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+
+// ── 🔥 Exam Focus — swipeable high-yield cards built from the WHOLE file
+// (lib/exam-focus.ts, app/api/books/exam-focus/*). One deck per book; the
+// book is split into units (every page in exactly one unit), each unit is
+// its own retryable queue job, and the finalize job turns all units' facts
+// into the deduplicated, ordered cards below.
+export const examFocusDeckStatusEnum = pgEnum("exam_focus_deck_status", [
+  "processing",
+  "finalizing",
+  "complete",
+  "partial_failed",
+  "failed",
+]);
+
+export const examFocusUnitStatusEnum = pgEnum("exam_focus_unit_status", [
+  "pending",
+  "processing",
+  "retrying",
+  "complete",
+  "failed",
+]);
+
+export const examFocusDecks = pgTable(
+  "exam_focus_decks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: examFocusDeckStatusEnum("status").default("processing").notNull(),
+    totalPages: integer("totalPages").default(0).notNull(),
+    totalUnits: integer("totalUnits").default(0).notNull(),
+    totalCards: integer("totalCards").default(0).notNull(),
+    // Finalize's verdict (validateExamFocusCoverage) — pages/units covered,
+    // failed ranges, duplicates removed. Null until finalized.
+    coverage: jsonb("coverage").$type<ExamFocusCoverage>(),
+    errorMessage: text("errorMessage"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    completedAt: timestamp("completedAt", { withTimezone: true }),
+  },
+  table => ({
+    // One deck per book: a second "start" (double tap, two tabs) can never
+    // create a duplicate generation.
+    bookUnique: uniqueIndex("exam_focus_decks_book_id_idx").on(table.bookId),
+  })
+);
+
+export const examFocusUnits = pgTable(
+  "exam_focus_units",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    deckId: uuid("deckId")
+      .notNull()
+      .references(() => examFocusDecks.id, { onDelete: "cascade" }),
+    unitIndex: integer("unitIndex").notNull(),
+    pageStart: integer("pageStart").notNull(),
+    pageEnd: integer("pageEnd").notNull(),
+    // The unit's own slice of page text (+ figure descriptions), fixed at
+    // plan time — every retry re-runs exactly the same input.
+    pageTexts: jsonb("pageTexts")
+      .$type<{ page: number; text: string }[]>()
+      .notNull(),
+    status: examFocusUnitStatusEnum("status").default("pending").notNull(),
+    attemptCount: integer("attemptCount").default(0).notNull(),
+    lastStartedAt: timestamp("lastStartedAt", { withTimezone: true }),
+    facts: jsonb("facts").$type<ExamFocusFact[]>(),
+    declaredEmptyPages: jsonb("declaredEmptyPages").$type<number[]>(),
+    errorMessage: text("errorMessage"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    deckUnitUnique: uniqueIndex("exam_focus_units_deck_id_unit_index_idx").on(
+      table.deckId,
+      table.unitIndex
+    ),
+  })
+);
+
+export const examFocusCards = pgTable(
+  "exam_focus_cards",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    deckId: uuid("deckId")
+      .notNull()
+      .references(() => examFocusDecks.id, { onDelete: "cascade" }),
+    orderIndex: integer("orderIndex").notNull(),
+    category: text("category").notNull(),
+    topic: text("topic").default("").notNull(),
+    title: text("title").notNull(),
+    points: jsonb("points").$type<string[]>().notNull(),
+    highlightLabel: text("highlightLabel").default("").notNull(),
+    highlightText: text("highlightText").default("").notNull(),
+    // Source ambiguity/contradiction the model flagged instead of guessing.
+    flag: text("flag").default("").notNull(),
+    sourcePages: jsonb("sourcePages").$type<number[]>().notNull(),
+    unitIndex: integer("unitIndex").notNull(),
+    // Lower-cased title/topic/points/highlight — what deck search matches.
+    searchText: text("searchText").notNull(),
+    bookmarked: boolean("bookmarked").default(false).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    deckOrderIdx: index("exam_focus_cards_deck_id_order_idx").on(
+      table.deckId,
+      table.orderIndex
+    ),
+  })
+);
+
+export type ExamFocusDeck = typeof examFocusDecks.$inferSelect;
+export type ExamFocusUnit = typeof examFocusUnits.$inferSelect;
+export type ExamFocusCard = typeof examFocusCards.$inferSelect;

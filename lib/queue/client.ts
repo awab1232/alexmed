@@ -7,6 +7,7 @@ import type { QueueMessage } from "./types";
 import {
   getAdminMaterialsQueueConcurrency,
   getBooksVisualQueueConcurrency,
+  getExamFocusQueueConcurrency,
   getMirrorImagesQueueConcurrency,
   getQuestionFilesEnrichmentQueueConcurrency,
   getQueueGlobalConcurrency,
@@ -70,6 +71,10 @@ function resolveDestination(message: QueueMessage): string {
       return `${base}/api/books/generate-question-content`;
     case "extract_mirror_images":
       return `${base}/api/mirror/extract-images`;
+    case "extract_exam_focus_unit":
+      return `${base}/api/books/exam-focus/extract-unit`;
+    case "finalize_exam_focus":
+      return `${base}/api/books/exam-focus/finalize`;
   }
 }
 
@@ -146,6 +151,18 @@ function defaultFlowControl(message: QueueMessage): FlowControl {
         key: "mirror-images-pipeline",
         parallelism: getMirrorImagesQueueConcurrency(),
       };
+    // One shared key across every student's Exam Focus units — caps the
+    // total AI calls this feature makes at once, however many students
+    // start at the same time.
+    case "extract_exam_focus_unit":
+      return {
+        key: "exam-focus-pipeline",
+        parallelism: getExamFocusQueueConcurrency(),
+      };
+    // No AI call (pure dedupe/order/validate) — per-deck so two finalize
+    // deliveries for the same deck never overlap.
+    case "finalize_exam_focus":
+      return { key: `exam-focus-finalize-${message.deckId}`, parallelism: 1 };
   }
 }
 

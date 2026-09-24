@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { CircleAlert, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import PdfViewer from "@/components/PdfViewer";
@@ -16,6 +16,14 @@ export default function BookReadPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
   const bookQuery = trpc.books.get.useQuery({ id: bookId });
+  // ?page=N opens the reader at that page; ?from=exam-focus returns there
+  // (an Exam Focus card's source link) instead of the book page.
+  const searchParams = useSearchParams();
+  const initialPage = Number(searchParams.get("page")) || undefined;
+  const backHref =
+    searchParams.get("from") === "exam-focus"
+      ? `/books/${bookId}/exam-focus`
+      : `/books/${bookId}`;
 
   // The page underneath the fixed reader shouldn't scroll/rubber-band.
   useEffect(() => {
@@ -65,7 +73,8 @@ export default function BookReadPage() {
         bookId={bookId}
         src={`/api/files/${book.fileKey}`}
         fileName={book.fileName}
-        backHref={`/books/${bookId}`}
+        backHref={backHref}
+        initialPage={initialPage}
       />
     </section>
   );

@@ -34,7 +34,11 @@ export type QueueMessage =
   | { type: "generate_question_file_content"; bookId: string }
   // Multimodal مِرآة — best-effort, additive background pass alongside
   // batch generation (see app/api/mirror/extract-images/route.ts).
-  | { type: "extract_mirror_images"; jobId: string };
+  | { type: "extract_mirror_images"; jobId: string }
+  // 🔥 Exam Focus (lib/exam-focus.ts) — one message per unit (a page range
+  // of the whole file), then one finalize once every unit is settled.
+  | { type: "extract_exam_focus_unit"; unitId: string; deckId: string }
+  | { type: "finalize_exam_focus"; deckId: string };
 
 function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -54,6 +58,17 @@ export function getQueueGlobalConcurrency(): number {
 
 export function getQueuePerUserConcurrency(): number {
   return readIntEnv("QUEUE_PER_USER_CONCURRENCY", 2);
+}
+
+// 🔥 Exam Focus — how many unit extractions run at once across ALL
+// students (one shared Flow Control key), and per student (checked inside
+// the worker) so one huge textbook can't take every slot.
+export function getExamFocusQueueConcurrency(): number {
+  return readIntEnv("EXAM_FOCUS_QUEUE_CONCURRENCY", 6);
+}
+
+export function getExamFocusPerUserConcurrency(): number {
+  return readIntEnv("EXAM_FOCUS_PER_USER_CONCURRENCY", 3);
 }
 
 // مكتبة الأدمن gets its own, separate concurrency budget/Flow Control key
