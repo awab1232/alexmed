@@ -25,7 +25,9 @@ vi.mock("@/lib/llm", async importOriginal => {
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { claimBookChapter } from "@/lib/queue/claim";
 import { publishMessage } from "@/lib/queue/client";
+import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
 import {
+  markBookChapterRetrying,
   completeChapterAnalysis,
   getChapterById,
   hasPendingChapterVisualAnalysis,
@@ -45,6 +47,12 @@ const mockSaveProgress = saveChapterSubChunkProgress as unknown as ReturnType<
   typeof vi.fn
 >;
 const mockPublish = publishMessage as unknown as ReturnType<typeof vi.fn>;
+const mockThrottled = isUserConcurrencyExceeded as unknown as ReturnType<
+  typeof vi.fn
+>;
+const mockRetrying = markBookChapterRetrying as unknown as ReturnType<
+  typeof vi.fn
+>;
 const mockHasPendingVisuals =
   hasPendingChapterVisualAnalysis as unknown as ReturnType<typeof vi.fn>;
 
@@ -81,6 +89,65 @@ describe("POST /api/books/analyze-chapter", () => {
     mockSaveProgress.mockReset();
     mockPublish.mockReset().mockResolvedValue(undefined);
     mockHasPendingVisuals.mockReset().mockResolvedValue(false);
+    mockThrottled.mockReset().mockResolvedValue(false);
+    mockRetrying.mockReset();
+  });
+
+  const oneChapter = {
+    id: "c1",
+    bookId: "b1",
+    userId: "u1",
+    title: "Chapter 1",
+    startPage: 1,
+    endPage: 1,
+    pageTexts: [{ page: 1, text: "some chapter text" }],
+  };
+
+  // Real bug: a 3-part book — parts 2-3 hit the per-user slot limit while
+  // part 1 ran, QStash's ~2-minute redelivery budget ran out on 429s, and
+  // they sat "جارٍ التحليل" forever with no message left.
+  it("waits for a free slot with its own delayed message instead of a 429", async () => {
+    mockVerify.mockResolvedValue(true);
+    mockGetChapter.mockResolvedValue(oneChapter);
+    mockThrottled.mockResolvedValue(true);
+
+    const response = await POST(request({ chapterId: "c1" }));
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).status).toBe("throttled");
+    expect(mockClaim).not.toHaveBeenCalled();
+    expect(mockPublish).toHaveBeenCalledWith(
+      { type: "analyze_book_chapter", chapterId: "c1", bookId: "b1" },
+      { delay: 20 }
+    );
+  });
+
+  it("schedules its own backed-off retry after a failed attempt", async () => {
+    mockVerify.mockResolvedValue(true);
+    mockGetChapter.mockResolvedValue(oneChapter);
+    mockClaim.mockResolvedValue({ id: "c1", bookId: "b1", attemptCount: 2 });
+    mockInvoke.mockRejectedValue(new Error("provider down"));
+
+    const response = await POST(request({ chapterId: "c1" }));
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).status).toBe("retry_scheduled");
+    expect(mockRetrying).toHaveBeenCalledTimes(1);
+    expect(mockPublish).toHaveBeenCalledWith(
+      { type: "analyze_book_chapter", chapterId: "c1", bookId: "b1" },
+      { delay: 30 }
+    );
+  });
+
+  it("falls back to QStash's retry when scheduling its own fails", async () => {
+    mockVerify.mockResolvedValue(true);
+    mockGetChapter.mockResolvedValue(oneChapter);
+    mockClaim.mockResolvedValue({ id: "c1", bookId: "b1", attemptCount: 1 });
+    mockInvoke.mockRejectedValue(new Error("provider down"));
+    mockPublish.mockRejectedValue(new Error("qstash down"));
+
+    const response = await POST(request({ chapterId: "c1" }));
+    expect(response.status).toBe(502);
   });
 
   // The actual bug a real book hit: page-visual analysis can legitimately

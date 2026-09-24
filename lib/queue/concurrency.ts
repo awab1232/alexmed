@@ -5,7 +5,7 @@
 // deliveries are *in flight*, while this counts how many rows are actually
 // *processing* in our own DB — a useful second signal if Flow Control is
 // ever misconfigured, disabled, or its semantics don't perfectly match ours.
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, gte } from "drizzle-orm";
 import {
   adminMaterialBatches,
   adminMaterials,
@@ -15,6 +15,7 @@ import {
   mirrorJobs,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
+import { staleBookChapterProcessingCutoff } from "./claim";
 import {
   getAdminMaterialsQueueConcurrency,
   getQueueGlobalConcurrency,
@@ -83,12 +84,18 @@ export async function countProcessingForUser(
     return Number(row?.c ?? 0);
   }
 
+  // An abandoned "processing" chapter (worker killed mid-run, see
+  // claimBookChapter) must not hold one of the student's slots forever.
   const [row] = await db
     .select({ c: count() })
     .from(bookChapters)
     .innerJoin(books, eq(books.id, bookChapters.bookId))
     .where(
-      and(eq(bookChapters.status, "processing"), eq(books.userId, userId))
+      and(
+        eq(bookChapters.status, "processing"),
+        eq(books.userId, userId),
+        gte(bookChapters.lastStartedAt, staleBookChapterProcessingCutoff())
+      )
     );
   return Number(row?.c ?? 0);
 }

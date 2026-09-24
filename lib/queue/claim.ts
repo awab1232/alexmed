@@ -6,7 +6,7 @@
 // to build workers on top of — a duplicate/retried delivery that arrives
 // while the first attempt is still in flight (or already finished) always
 // finds nothing left to claim.
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
 import {
   adminMaterialBatches,
   bookChapters,
@@ -81,6 +81,16 @@ export type ClaimedBookChapter = {
   attemptCount: number;
 };
 
+// A chapter can sit in "processing" forever when its worker dies mid-run (a
+// Railway redeploy/restart kills the in-flight request): QStash's redelivery
+// then finds it "already_processing" and stops. After this long it's treated
+// as abandoned and claimable again — far beyond a real chapter run.
+export const STALE_BOOK_CHAPTER_PROCESSING_MS = 20 * 60 * 1000;
+
+export function staleBookChapterProcessingCutoff(now = Date.now()): Date {
+  return new Date(now - STALE_BOOK_CHAPTER_PROCESSING_MS);
+}
+
 export async function claimBookChapter(
   chapterId: string
 ): Promise<ClaimedBookChapter | null> {
@@ -97,7 +107,13 @@ export async function claimBookChapter(
     .where(
       and(
         eq(bookChapters.id, chapterId),
-        inArray(bookChapters.status, CLAIMABLE_BOOK_CHAPTER_STATUSES)
+        or(
+          inArray(bookChapters.status, CLAIMABLE_BOOK_CHAPTER_STATUSES),
+          and(
+            eq(bookChapters.status, "processing"),
+            lt(bookChapters.lastStartedAt, staleBookChapterProcessingCutoff())
+          )
+        )
       )
     )
     .returning({

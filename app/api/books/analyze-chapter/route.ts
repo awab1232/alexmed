@@ -53,6 +53,17 @@ export const maxDuration = 60;
 // often transient provider errors worth spacing out): this isn't a failure
 // at all, just "not ready yet", so a steady poll is the right shape.
 const WAITING_FOR_VISUALS_RETRY_DELAY_SECONDS = 30;
+// Same steady re-check while the student's other chapters hold every
+// per-user slot (QUEUE_PER_USER_CONCURRENCY).
+const WAITING_FOR_SLOT_RETRY_DELAY_SECONDS = 20;
+
+// Backoff for a failed attempt that still has budget left — the same
+// 10s/30s/90s shape as QStash's own schedule (lib/queue/client.ts), but
+// published by the worker itself so the retry can't be lost (see
+// scheduleRetry below).
+function retryDelaySeconds(attemptCount: number) {
+  return Math.min(10 * 3 ** Math.max(0, attemptCount - 1), 300);
+}
 
 // The كتبي worker (QStash queue migration): analyzes exactly ONE chapter
 // (internally sub-chunked if it's long, resumably — see subChunkResults),
@@ -115,11 +126,16 @@ export async function POST(request: Request) {
     // Per-user concurrency backstop, checked BEFORE claiming — so one
     // student's book can't monopolize capacity. The row stays claimable
     // (nothing mutated), QStash redelivers later per its own backoff.
+    // Self-scheduled like the visuals wait above, NOT a 429: QStash's
+    // redelivery budget (~2 minutes) is shorter than a sibling chapter's
+    // run, so relying on it left later chapters "pending" forever with no
+    // message left to ever pick them up.
     if (await isUserConcurrencyExceeded(chapter.userId, "books")) {
-      return NextResponse.json(
-        { chapterId, status: "throttled" },
-        { status: 429 }
+      await publishMessage(
+        { type: "analyze_book_chapter", chapterId, bookId: chapter.bookId },
+        { delay: WAITING_FOR_SLOT_RETRY_DELAY_SECONDS }
       );
+      return NextResponse.json({ chapterId, status: "throttled" });
     }
 
     claimed = await claimBookChapter(chapterId);
@@ -152,7 +168,26 @@ export async function POST(request: Request) {
       });
     }
     await markBookChapterRetrying(chapterId, errorMessage);
-    return NextResponse.json({ error: errorMessage }, { status: httpStatus });
+    // The worker schedules its own next attempt instead of answering with
+    // an error for QStash to retry: QStash's delivery budget is also spent
+    // by throttled/duplicate deliveries, and a long run can outlive the
+    // HTTP connection QStash is waiting on — either way the chapter was
+    // left "retrying" with nothing queued to ever run it again. Only if
+    // this publish itself fails do we fall back to QStash's retry.
+    try {
+      await publishMessage(
+        { type: "analyze_book_chapter", chapterId, bookId: chapter!.bookId },
+        { delay: retryDelaySeconds(claimed!.attemptCount) }
+      );
+      return NextResponse.json({
+        chapterId,
+        status: "retry_scheduled",
+        error: errorMessage,
+      });
+    } catch (publishError) {
+      console.error("[Books] Failed to schedule chapter retry", publishError);
+      return NextResponse.json({ error: errorMessage }, { status: httpStatus });
+    }
   }
 
   if (!pages.length) {
@@ -307,21 +342,9 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("[Books] Chapter analysis failed", error);
     if (error instanceof AiRateLimitError) {
-      if (claimed.attemptCount >= maxAttempts) {
-        await markBookChapterFailedTerminal(
-          chapterId,
-          "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
-        );
-        await finalizeBookIfDone(chapter.bookId);
-        return NextResponse.json({ chapterId, status: "failed" });
-      }
-      await markBookChapterRetrying(
-        chapterId,
-        "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي."
-      );
-      return NextResponse.json(
-        { error: "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي." },
-        { status: 429 }
+      return await retryOrFail(
+        "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي.",
+        429
       );
     }
     return await retryOrFail("تعذر تحليل هذا الفصل.", 502);

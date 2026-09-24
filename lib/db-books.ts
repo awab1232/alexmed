@@ -687,6 +687,62 @@ export async function getChapterById(
     : null;
 }
 
+// How long a started-but-unfinished chapter may go without any status
+// change before it's considered stalled (its queue message was lost). Every
+// live waiting loop touches updatedAt at least every ~30s, and an active
+// run is covered by the processing check below.
+export const STALLED_BOOK_CHAPTER_MS = 3 * 60 * 1000;
+
+// Chapters of a book whose analysis was already started but that nothing
+// will ever pick up again: "pending"/"retrying" untouched for
+// STALLED_BOOK_CHAPTER_MS, or "processing" past the abandoned-worker cutoff.
+// Returns [] until the student has started analysis (every chapter still
+// "pending" means they haven't chosen to yet). Re-publishing these is safe
+// because claimBookChapter is atomic.
+export async function listStalledBookChaptersForUser(
+  userId: string,
+  bookId: string,
+  processingCutoff: Date,
+  now = Date.now()
+): Promise<{ id: string }[]> {
+  const db = getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: bookChapters.id,
+      status: bookChapters.status,
+      updatedAt: bookChapters.updatedAt,
+      lastStartedAt: bookChapters.lastStartedAt,
+    })
+    .from(bookChapters)
+    .innerJoin(books, eq(books.id, bookChapters.bookId))
+    .where(and(eq(bookChapters.bookId, bookId), eq(books.userId, userId)));
+  return pickStalledBookChapters(rows, processingCutoff, now);
+}
+
+export function pickStalledBookChapters(
+  rows: {
+    id: string;
+    status: string;
+    updatedAt: Date | null;
+    lastStartedAt: Date | null;
+  }[],
+  processingCutoff: Date,
+  now = Date.now()
+): { id: string }[] {
+  if (rows.every(row => row.status === "pending")) return [];
+  const idleBefore = now - STALLED_BOOK_CHAPTER_MS;
+  return rows
+    .filter(row =>
+      row.status === "processing"
+        ? !!row.lastStartedAt && row.lastStartedAt < processingCutoff
+        : (row.status === "pending" || row.status === "retrying") &&
+          !!row.updatedAt &&
+          row.updatedAt.getTime() < idleBefore
+    )
+    .map(row => ({ id: row.id }));
+}
+
 // Resets a failed chapter back to "pending" for a fresh retry budget — used
 // by the retryChapter tRPC mutation.
 export async function resetBookChapterForRetry(chapterId: string) {

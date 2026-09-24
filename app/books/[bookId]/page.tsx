@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -107,6 +108,25 @@ export default function BookDetailPage() {
   const startAnalysis = trpc.books.startChapterAnalysis.useMutation({
     onSuccess: () => utils.books.get.invalidate({ id: bookId }),
   });
+  // Safety net while an already-started analysis is unfinished: every
+  // minute, asks the server to re-queue any chapter that stopped moving (a
+  // lost queue message or a worker killed mid-run). The server decides
+  // what's actually stalled, so this never double-runs a healthy chapter.
+  const resumeAnalysis = trpc.books.resumeChapterAnalysis.useMutation();
+  const chapterStatuses = bookQuery.data?.chapters.map(c => c.status) ?? [];
+  const analysisInFlight =
+    chapterStatuses.some(status => status !== "pending") &&
+    chapterStatuses.some(
+      status =>
+        status === "pending" || status === "processing" || status === "retrying"
+    );
+  const { mutate: resumeMutate } = resumeAnalysis;
+  useEffect(() => {
+    if (!analysisInFlight) return;
+    resumeMutate({ bookId });
+    const timer = setInterval(() => resumeMutate({ bookId }), 60_000);
+    return () => clearInterval(timer);
+  }, [analysisInFlight, bookId, resumeMutate]);
   const subjectsQuery = trpc.subjects.list.useQuery();
   const setSubject = trpc.books.setSubject.useMutation({
     onSuccess: () => utils.books.get.invalidate({ id: bookId }),

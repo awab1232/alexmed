@@ -19,6 +19,7 @@ import {
   listBooksForUser,
   listBookPagesForUser,
   listMcqsForUser,
+  listStalledBookChaptersForUser,
   rateBookCard,
   resetBookChapterForRetry,
   resetBookExtractionForRetry,
@@ -50,6 +51,7 @@ import {
   parseMcqValidation,
 } from "../book-analysis";
 import { invokeLLM } from "../llm";
+import { staleBookChapterProcessingCutoff } from "../queue/claim";
 import { publishMessage } from "../queue/client";
 import { protectedProcedure, router } from "./trpc";
 
@@ -97,6 +99,32 @@ export const booksRouter = router({
         )
       );
       return { started: true } as const;
+    }),
+
+  // Self-healing for a started analysis whose chapters stopped moving (a
+  // lost queue message, or a worker killed by a redeploy mid-run) — the
+  // book page calls this periodically while chapters are unfinished.
+  // Re-publishes only genuinely stalled chapters (see
+  // listStalledBookChaptersForUser); a duplicate delivery is harmless since
+  // claimBookChapter is atomic.
+  resumeChapterAnalysis: protectedProcedure
+    .input(z.object({ bookId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const stalled = await listStalledBookChaptersForUser(
+        ctx.user.id,
+        input.bookId,
+        staleBookChapterProcessingCutoff()
+      );
+      await Promise.all(
+        stalled.map(chapter =>
+          publishMessage({
+            type: "analyze_book_chapter",
+            chapterId: chapter.id,
+            bookId: input.bookId,
+          })
+        )
+      );
+      return { resumed: stalled.length };
     }),
 
   // The whole file's study content (every chapter's cards/MCQs/summaries)
