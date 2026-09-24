@@ -4731,3 +4731,74 @@ h1 em {
     border-radius: 16px;
   }
 }
+
+/* Match game (app/books/[bookId]/match) — Quizlet-style 3×4 tile grid. */
+.match-hint {
+  margin: 0 0 10px;
+  text-align: center;
+  color: #65716f;
+  font-size: 13px;
+}
+.match-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.match-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 118px;
+  padding: 8px;
+  border: 1.5px solid #e7e3dc;
+  border-radius: 10px;
+  background: #fff;
+  color: #1f2b2f;
+  font-size: 15px;
+  line-height: 1.35;
+  text-align: center;
+  word-break: break-word;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.25s,
+    transform 0.25s;
+}
+.match-tile.is-selected {
+  border-color: #6b7be0;
+  background: #d9ddfb;
+}
+.match-tile.is-wrong {
+  border-color: #e5484d;
+  background: #fdecec;
+  animation: match-shake 0.3s;
+}
+.match-tile.is-matched {
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+}
+@keyframes match-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+.match-best {
+  margin: 14px 0 0;
+  text-align: center;
+  color: #8a9493;
+  font-size: 13px;
+}
+@media (min-width: 780px) {
+  .match-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

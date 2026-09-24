@@ -12,6 +12,7 @@ import {
   Layers3,
   Loader2,
   Lock,
+  Gamepad2,
   NotebookText,
   RotateCcw,
   Sparkles,
@@ -264,6 +265,13 @@ export default function BookDetailPage() {
                 },
                 { icon: Workflow, label: "خريطة ذهنية", detail: undefined },
                 { icon: NotebookText, label: "ملخص", detail: undefined },
+                // Quizlet-style match game over this file's own cards
+                // (app/books/[bookId]/match).
+                {
+                  icon: Gamepad2,
+                  label: "لعبة المطابقة",
+                  detail: "طابق السؤال بجوابه",
+                },
               ].map(({ icon: Icon, label, detail }) => {
                 const state = chaptersNotStarted
                   ? "locked"
@@ -318,6 +326,13 @@ export default function BookDetailPage() {
                           className="secondary-button"
                         >
                           عرض
+                        </Link>
+                      ) : label === "لعبة المطابقة" ? (
+                        <Link
+                          href={`/books/${bookId}/match`}
+                          className="secondary-button"
+                        >
+                          العب 🎮
                         </Link>
                       ) : (
                         <Link
