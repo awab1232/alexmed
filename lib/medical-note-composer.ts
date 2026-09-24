@@ -171,10 +171,13 @@ export function parseMedicalNotePages(
   const valid = new Set(validPages);
   return parsed.pages.map(page => ({
     ...page,
-    sourcePages: page.sourcePages.filter(p => valid.has(p)),
+    // Number(): some models return page numbers as strings ("35").
+    sourcePages: (page.sourcePages ?? []).map(Number).filter(p => valid.has(p)),
     blocks: page.blocks.map(block => ({
       ...block,
-      sourcePages: block.sourcePages.filter(p => valid.has(p)),
+      sourcePages: (block.sourcePages ?? [])
+        .map(Number)
+        .filter(p => valid.has(p)),
     })),
   }));
 }

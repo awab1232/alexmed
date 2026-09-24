@@ -596,7 +596,10 @@ export function parseMindMapSections(
     ...section,
     // Defensive intersection (see comment above) — never trust the model's
     // own page numbers as-is, only what this chapter can actually prove.
-    sourcePages: section.sourcePages.filter(page => validPageSet.has(page)),
+    // Number(): some models return page numbers as strings ("35").
+    sourcePages: (section.sourcePages ?? [])
+      .map(Number)
+      .filter(page => validPageSet.has(page)),
   }));
 }
 

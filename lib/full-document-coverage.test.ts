@@ -553,3 +553,49 @@ describe("full-document coverage — 40-page PDF (pages 1–3 metadata)", () => 
     expect(partial.failedPages).toEqual([38]);
   });
 });
+
+describe("page numbers returned as strings", () => {
+  it('keeps cards whose sourcePage is "35" (string), normalized to 35', async () => {
+    const pages = [
+      { page: 35, text: "Karvellin syndrome is treated with Oxetrazine." },
+      { page: 36, text: "Doruvian nephritis shows Mirelle bodies." },
+    ];
+    const llm: Llm = async () => ({
+      id: "x",
+      created: 0,
+      model: "m",
+      choices: [
+        {
+          index: 0,
+          finish_reason: "stop",
+          message: {
+            role: "assistant",
+            content: JSON.stringify({
+              flashcards: [
+                {
+                  questionEn: "Q35",
+                  questionAr: "",
+                  answerEn: "Oxetrazine",
+                  answerAr: "",
+                  relatedTermEn: "",
+                  sourcePage: "35",
+                },
+                {
+                  questionEn: "Q36",
+                  questionAr: "",
+                  answerEn: "Mirelle",
+                  answerAr: "",
+                  relatedTermEn: "",
+                  sourcePage: "36",
+                },
+              ],
+            }),
+          },
+        },
+      ],
+    });
+    const result = await generateChapterFlashcardsCovered("T", pages, llm);
+    expect(result.items.map(c => c.sourcePage)).toEqual([35, 36]);
+    expect(result.coverage.status).toBe("COMPLETE");
+  });
+});

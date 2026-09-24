@@ -115,7 +115,10 @@ function groundToChunk<T extends { sourcePage: number }>(
 ): T[] {
   const pages = new Set(chunk.pages);
   return items.flatMap(item => {
-    if (pages.has(item.sourcePage)) return [item];
+    // Some models (gpt-5.6-luna, observed 2026-09-24) write the page number
+    // as a string ("35") despite the integer schema — normalize, never drop.
+    const sourcePage = Number(item.sourcePage);
+    if (pages.has(sourcePage)) return [{ ...item, sourcePage }];
     if (chunk.pages.length === 1)
       return [{ ...item, sourcePage: chunk.pages[0] }];
     return [];

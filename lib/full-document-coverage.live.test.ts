@@ -73,7 +73,12 @@ describe.skipIf(!live)("LIVE full-document coverage — 40-page PDF", () => {
       expect(extraction.status).toBe("COMPLETE");
 
       // 2. Chapters exactly as finalizeBookExtraction splits them
-      const { chapters, method } = detectChapters(pages);
+      const detected = detectChapters(pages);
+      const method = detected.method;
+      // LIVE_FROM_PAGE=33 re-runs only the chapters from that page on (e.g.
+      // after a network drop mid-run) — the late-page facts all live there.
+      const fromPage = Number(process.env.LIVE_FROM_PAGE ?? 1);
+      const chapters = detected.chapters.filter(c => c.endPage >= fromPage);
 
       const report: Record<string, unknown>[] = [];
       const all = {
