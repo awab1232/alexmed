@@ -14,6 +14,10 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import type { GeneratedCard } from "../lib/pdf-cards";
+import type {
+  ChapterCoverageManifest,
+  PageType,
+} from "../lib/document-coverage";
 
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 
@@ -853,6 +857,15 @@ export const bookChapters = pgTable(
     explanationEn: text("explanationEn"),
     keyPoints: jsonb("keyPoints").$type<string[]>(),
     chapterSummary: text("chapterSummary"),
+    // Full-document coverage manifest (lib/document-coverage.ts's
+    // ChapterCoverageManifest): pages extracted/failed, page types, the
+    // chunks every page was placed into, and — per generated output
+    // (summary/flashcards/mcqs/mindmap/notes) — which chunks actually
+    // produced it plus the COMPLETE/PARTIAL/FAILED Quality Gate verdict.
+    // Nullable/additive: chapters analyzed before this existed simply have
+    // no manifest until their next generation step writes one.
+    coverageManifest:
+      jsonb("coverageManifest").$type<ChapterCoverageManifest>(),
     // AI Medical Note Composer output: source-grounded, page-ready medical
     // notes (definition, features, diagnosis, management, red flags, etc.).
     // Kept additive to the existing chapter analysis so cards/MCQs remain
@@ -1017,6 +1030,10 @@ export const bookPages = pgTable(
     hasImages: boolean("hasImages").default(false).notNull(),
     hasTables: boolean("hasTables").default(false).notNull(),
     hasDiagrams: boolean("hasDiagrams").default(false).notNull(),
+    // metadata | educational_content | mixed | unknown — classification
+    // ONLY (lib/document-coverage.ts's classifyPageType), never used to drop
+    // a page from processing. Null for pages extracted before it existed.
+    pageType: text("pageType").$type<PageType>(),
     errorMessage: text("errorMessage"),
     attemptCount: integer("attemptCount").default(0).notNull(),
     createdAt: timestamp("createdAt", { withTimezone: true })

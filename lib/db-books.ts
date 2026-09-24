@@ -33,6 +33,10 @@ import {
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { detectChapters } from "./book-chapters";
+import {
+  classifyPageType,
+  type ChapterCoverageManifest,
+} from "./document-coverage";
 import type {
   BookChapterAnalysis,
   ChapterMindMapSection,
@@ -176,6 +180,9 @@ export async function upsertBookPageText(
 ) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
+  // Classification label only (never used to skip a page) — recomputed on
+  // every text write so an OCR retry that finally reads the page relabels it.
+  const pageType = classifyPageType(update.text);
   await db
     .insert(bookPages)
     .values({
@@ -185,6 +192,7 @@ export async function upsertBookPageText(
       extractedText: update.text,
       textStatus: update.textStatus,
       textErrorMessage: update.errorMessage ?? null,
+      pageType,
       visualStatus: "pending",
     })
     .onConflictDoUpdate({
@@ -193,6 +201,7 @@ export async function upsertBookPageText(
         extractedText: update.text,
         textStatus: update.textStatus,
         textErrorMessage: update.errorMessage ?? null,
+        pageType,
         ...(update.chapterId !== undefined
           ? { chapterId: update.chapterId }
           : {}),
@@ -2036,4 +2045,229 @@ export async function getWeakPointsForUser(userId: string) {
       lastAttemptedAt: new Date(row.lastAttemptedAt),
     }))
   );
+}
+
+// ── Full-document coverage manifest ─────────────────────────────────────
+// Per-chapter manifest (see lib/document-coverage.ts) — written by chapter
+// analysis and by each on-demand generator, each adding its own output's
+// Quality Gate verdict on top of the previous manifest.
+export async function saveChapterCoverageManifest(
+  chapterId: string,
+  manifest: ChapterCoverageManifest
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  await db
+    .update(bookChapters)
+    .set({ coverageManifest: manifest, updatedAt: new Date() })
+    .where(eq(bookChapters.id, chapterId));
+}
+
+// Everything a student-facing "study the WHOLE file" view needs in one
+// read: every chapter (in order) with its cards, MCQs, terms and summary
+// fields, plus the book-level processing manifest rolled up from the
+// per-page rows and per-chapter manifests.
+export async function getBookStudyContentForUser(
+  userId: string,
+  bookId: string
+) {
+  const db = getDb();
+  if (!db) return null;
+  const [book] = await db
+    .select()
+    .from(books)
+    .where(
+      and(
+        eq(books.id, bookId),
+        eq(books.userId, userId),
+        eq(books.sourceType, "study_book")
+      )
+    )
+    .limit(1);
+  if (!book) return null;
+
+  const chapters = await db
+    .select()
+    .from(bookChapters)
+    .where(eq(bookChapters.bookId, bookId))
+    .orderBy(asc(bookChapters.orderIndex));
+  const chapterIds = chapters.map(chapter => chapter.id);
+
+  const [cards, mcqs, terms, pages] = chapterIds.length
+    ? await Promise.all([
+        db
+          .select()
+          .from(bookCards)
+          .where(inArray(bookCards.chapterId, chapterIds))
+          .orderBy(asc(bookCards.sourcePage)),
+        db
+          .select()
+          .from(bookMcqs)
+          .where(inArray(bookMcqs.chapterId, chapterIds))
+          .orderBy(asc(bookMcqs.sourcePage)),
+        db
+          .select()
+          .from(bookTerms)
+          .where(inArray(bookTerms.chapterId, chapterIds)),
+        db
+          .select({
+            pageNumber: bookPages.pageNumber,
+            textStatus: bookPages.textStatus,
+            visualStatus: bookPages.visualStatus,
+            pageType: bookPages.pageType,
+          })
+          .from(bookPages)
+          .where(eq(bookPages.bookId, bookId))
+          .orderBy(asc(bookPages.pageNumber)),
+      ])
+    : [[], [], [], []];
+
+  return {
+    book: { id: book.id, fileName: book.fileName, pageCount: book.pageCount },
+    chapters: chapters.map(chapter => ({
+      id: chapter.id,
+      orderIndex: chapter.orderIndex,
+      title: chapter.title,
+      startPage: chapter.startPage,
+      endPage: chapter.endPage,
+      status: chapter.status,
+      chapterSummary: chapter.chapterSummary,
+      explanationEn: chapter.explanationEn,
+      explanationAr: chapter.explanationAr,
+      keyPoints: chapter.keyPoints,
+      medicalNotePages: chapter.medicalNotePages,
+      coverageManifest: chapter.coverageManifest,
+    })),
+    cards,
+    mcqs,
+    terms,
+    manifest: buildBookProcessingManifest(
+      book.pageCount,
+      pages,
+      chapters.map(chapter => ({
+        id: chapter.id,
+        status: chapter.status,
+        manifest: chapter.coverageManifest,
+      })),
+      { cards: cards.length, mcqs: mcqs.length }
+    ),
+  };
+}
+
+export type BookProcessingManifest = {
+  totalPages: number;
+  extractedPages: number;
+  failedPages: number[];
+  pageTypeCounts: Record<string, number>;
+  totalChapters: number;
+  analyzedChapters: number;
+  totalChunks: number;
+  analyzedChunks: number;
+  generatedFlashcards: number;
+  generatedMcqs: number;
+  outputs: Record<
+    string,
+    {
+      chaptersGenerated: number;
+      coveredChunks: number;
+      requiredChunks: number;
+      status: "COMPLETE" | "PARTIAL" | "FAILED" | "NOT_GENERATED";
+    }
+  >;
+  status: "COMPLETE" | "PARTIAL" | "FAILED" | "PROCESSING";
+};
+
+// Pure roll-up (exported for tests): the book is COMPLETE only when every
+// page was extracted, every chapter analyzed, and every generated output
+// passed its chunk-coverage gate in every chapter it was generated for.
+export function buildBookProcessingManifest(
+  totalPages: number,
+  pages: { pageNumber: number; textStatus: string; pageType: string | null }[],
+  chapters: {
+    id: string;
+    status: string;
+    manifest: ChapterCoverageManifest | null;
+  }[],
+  counts: { cards: number; mcqs: number }
+): BookProcessingManifest {
+  const failedPages = pages
+    .filter(page => page.textStatus === "failed")
+    .map(page => page.pageNumber);
+  const extractedPages = pages.filter(
+    page => page.textStatus === "complete"
+  ).length;
+  const pageTypeCounts: Record<string, number> = {};
+  for (const page of pages) {
+    const key = page.pageType ?? "unclassified";
+    pageTypeCounts[key] = (pageTypeCounts[key] ?? 0) + 1;
+  }
+  const manifests = chapters
+    .map(chapter => chapter.manifest)
+    .filter((m): m is ChapterCoverageManifest => !!m);
+  const totalChunks = manifests.reduce((sum, m) => sum + m.chunks.length, 0);
+  const analyzedChunks = manifests.reduce(
+    (sum, m) => sum + (m.chunksAnalyzed ?? 0),
+    0
+  );
+
+  const outputs: BookProcessingManifest["outputs"] = {};
+  for (const kind of ["summary", "flashcards", "mcqs", "mindmap", "notes"]) {
+    const perChapter = manifests
+      .map(m => m.outputs[kind as keyof typeof m.outputs])
+      .filter(Boolean);
+    const statuses = perChapter.map(o => o!.status);
+    outputs[kind] = {
+      chaptersGenerated: perChapter.length,
+      coveredChunks: perChapter.reduce(
+        (sum, o) => sum + o!.coveredChunks.length,
+        0
+      ),
+      requiredChunks: perChapter.reduce(
+        (sum, o) => sum + o!.requiredChunks.length,
+        0
+      ),
+      status: !perChapter.length
+        ? "NOT_GENERATED"
+        : statuses.includes("FAILED")
+          ? "FAILED"
+          : statuses.includes("PARTIAL") || perChapter.length < chapters.length
+            ? "PARTIAL"
+            : "COMPLETE",
+    };
+  }
+
+  const analyzedChapters = chapters.filter(
+    chapter => chapter.status === "complete"
+  ).length;
+  const stillRunning = chapters.some(chapter =>
+    ["processing", "retrying"].includes(chapter.status)
+  );
+  const anyOutputFailed = Object.values(outputs).some(
+    o => o.status === "FAILED"
+  );
+  const status: BookProcessingManifest["status"] = stillRunning
+    ? "PROCESSING"
+    : anyOutputFailed || (totalPages > 0 && extractedPages === 0)
+      ? "FAILED"
+      : failedPages.length ||
+          extractedPages < totalPages ||
+          analyzedChapters < chapters.length ||
+          Object.values(outputs).some(o => o.status === "PARTIAL")
+        ? "PARTIAL"
+        : "COMPLETE";
+
+  return {
+    totalPages,
+    extractedPages,
+    failedPages,
+    pageTypeCounts,
+    totalChapters: chapters.length,
+    analyzedChapters,
+    totalChunks,
+    analyzedChunks,
+    generatedFlashcards: counts.cards,
+    generatedMcqs: counts.mcqs,
+    outputs,
+    status,
+  };
 }

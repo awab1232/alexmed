@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { ocrPages } from "@/lib/pdf-ocr";
+import { OCR_PAGES_PER_BATCH, ocrPages, splitOcrBatch } from "@/lib/pdf-ocr";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
 // Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
@@ -25,9 +25,17 @@ export async function POST(request: Request) {
     pages?: number[];
   };
   const fileUrl = typeof body.fileUrl === "string" ? body.fileUrl : "";
-  const pageNumbers = Array.isArray(body.pages)
-    ? body.pages.filter(page => Number.isInteger(page) && page > 0).slice(0, 4)
+  const requestedPages = Array.isArray(body.pages)
+    ? body.pages.filter(page => Number.isInteger(page) && page > 0)
     : [];
+  // One bounded batch per request (vision OCR is slow/expensive per page),
+  // but the rest is returned explicitly as `remainingPages` for the caller
+  // to request next — never silently dropped (this used to keep only the
+  // first 4 pages and discard the others without telling anyone).
+  const { batch: pageNumbers, remaining: remainingPages } = splitOcrBatch(
+    requestedPages,
+    OCR_PAGES_PER_BATCH
+  );
 
   if (!fileUrl || !pageNumbers.length) {
     return NextResponse.json(
@@ -47,7 +55,7 @@ export async function POST(request: Request) {
     parser = new PDFParse({ url: signedGetUrl, CanvasFactory });
     const { pages, failedPages } = await ocrPages(parser, pageNumbers);
 
-    return NextResponse.json({ pages, failedPages });
+    return NextResponse.json({ pages, failedPages, remainingPages });
   } catch (error) {
     console.error("[PDF OCR] Failed", error);
     return NextResponse.json(

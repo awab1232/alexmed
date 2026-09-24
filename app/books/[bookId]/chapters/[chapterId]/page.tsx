@@ -469,7 +469,7 @@ export default function ChapterDetailPage() {
       <QuizMode
         title={bookTitle}
         subtitle={chapter.title}
-        chapterId={chapter.id}
+        aiTarget={{ scope: "chapter", chapterId: chapter.id }}
         mcqs={mcqs.map(mcq => ({
           id: mcq.id,
           questionEn: mcq.questionEn,
@@ -493,7 +493,7 @@ export default function ChapterDetailPage() {
       <FlashcardsMode
         title={bookTitle}
         subtitle={chapter.title}
-        chapterId={chapter.id}
+        aiTarget={{ scope: "chapter", chapterId: chapter.id }}
         bookId={params.bookId}
         cards={cards.map(card => ({
           id: card.id,
@@ -518,20 +518,28 @@ export default function ChapterDetailPage() {
     return (
       <SummaryMode
         bookTitle={bookTitle}
-        chapter={{
-          id: chapter.id,
-          title: chapter.title,
-          chapterSummary: chapter.chapterSummary,
-          explanationEn: chapter.explanationEn,
-          explanationAr: chapter.explanationAr,
-          keyPoints: chapter.keyPoints,
-          medicalNotePages: chapter.medicalNotePages,
-        }}
+        chapters={[
+          {
+            id: chapter.id,
+            title: chapter.title,
+            startPage: chapter.startPage,
+            endPage: chapter.endPage,
+            chapterSummary: chapter.chapterSummary,
+            explanationEn: chapter.explanationEn,
+            explanationAr: chapter.explanationAr,
+            keyPoints: chapter.keyPoints,
+            medicalNotePages: chapter.medicalNotePages,
+            summarySections: chapter.coverageManifest?.summarySections,
+          },
+        ]}
+        aiTarget={{ scope: "chapter", chapterId: chapter.id }}
         onBack={closeStudyMode}
-        onComposeNotes={() =>
-          generateMedicalNotePages.mutate({ chapterId: chapter.id })
+        onComposeNotes={chapterId =>
+          generateMedicalNotePages.mutate({ chapterId })
         }
-        composing={generateMedicalNotePages.isPending}
+        composingChapterId={
+          generateMedicalNotePages.isPending ? chapter.id : null
+        }
       />
     );
   }

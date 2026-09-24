@@ -14,6 +14,7 @@ export default function StudyShell({
   actions,
   children,
   footer,
+  notice,
 }: {
   title: string;
   subtitle?: string;
@@ -21,6 +22,8 @@ export default function StudyShell({
   actions?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  // e.g. a coverage warning ("PARTIAL: 3/5 parts") shown under the header.
+  notice?: ReactNode;
 }) {
   // The page underneath shouldn't scroll/rubber-band behind the shell.
   useEffect(() => {
@@ -48,6 +51,7 @@ export default function StudyShell({
         </div>
         <div className="study-shell-actions">{actions}</div>
       </header>
+      {notice && <div className="study-shell-notice">{notice}</div>}
       <div className="study-shell-body">{children}</div>
       {footer && <div className="study-shell-footer">{footer}</div>}
     </div>

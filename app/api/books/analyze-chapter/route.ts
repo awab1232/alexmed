@@ -13,12 +13,18 @@ import {
   type BookPageInput,
 } from "@/lib/book-analysis";
 import { AiRateLimitError } from "@/lib/ai/types";
+import { summaryCoverageFromSections } from "@/lib/chapter-generation";
+import {
+  buildChapterManifest,
+  type SummarySection,
+} from "@/lib/document-coverage";
 import {
   completeChapterAnalysis,
   finalizeBookIfDone,
   getChapterById,
   markBookChapterFailedTerminal,
   markBookChapterRetrying,
+  saveChapterCoverageManifest,
   saveChapterSubChunkProgress,
 } from "@/lib/db-books";
 import {
@@ -214,11 +220,32 @@ export async function POST(request: Request) {
         mcq.sourcePage >= chapter.startPage && mcq.sourcePage <= chapter.endPage
     );
 
+    // Hierarchical summary with provable coverage: one summary per
+    // sub-chunk (each tagged with its real page range), ALL of them fed to
+    // the global merge — never just the first. The per-part sections are
+    // also kept in the manifest (summarySections) as sourced summary
+    // sections.
+    const summarySections: SummarySection[] = subChunks.map((chunk, i) => ({
+      chunkId: `chunk-${i + 1}`,
+      pageStart: Math.min(...chunk.map(page => page.page)),
+      pageEnd: Math.max(...chunk.map(page => page.page)),
+      summary: subChunkResults[i]?.chapterSummary ?? "",
+    }));
+    if (subChunkResults.length !== subChunks.length) {
+      throw new Error(
+        `Only ${subChunkResults.length}/${subChunks.length} sub-chunks were analyzed.`
+      );
+    }
+
     let chapterSummary = merged.summaries[0] ?? "";
     if (merged.summaries.length > 1) {
       const summaryResponse = await invokeLLM({
         max_tokens: SUMMARY_MERGE_MAX_TOKENS,
-        messages: buildSummaryMergeMessages(merged.summaries, merged.keyPoints),
+        messages: buildSummaryMergeMessages(
+          merged.summaries,
+          merged.keyPoints,
+          summarySections
+        ),
         response_format: summaryMergeResponseSchema,
       });
       chapterSummary = parseSummaryMerge(
@@ -235,6 +262,26 @@ export async function POST(request: Request) {
       cards: flashcards,
       mcqs,
     });
+    // Manifest + summary Quality Gate. Recorded, never blocking: the
+    // chapter's content is saved either way, but a PARTIAL/FAILED verdict is
+    // stored and shown instead of claiming a complete summary.
+    try {
+      const summaryCoverage = summaryCoverageFromSections(
+        pages,
+        summarySections
+      );
+      await saveChapterCoverageManifest(
+        chapterId,
+        buildChapterManifest(pages, chapter.coverageManifest ?? null, {
+          chunksAnalyzed: subChunkResults.length,
+          summarySections,
+          output: summaryCoverage,
+        })
+      );
+    } catch (manifestError) {
+      console.error("[Books] Failed to save coverage manifest", manifestError);
+    }
+
     await finalizeBookIfDone(chapter.bookId);
 
     // Audit Phase 6 — kicks off the chapter's hierarchical mind-map

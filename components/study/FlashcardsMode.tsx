@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CircleCheck,
   CircleHelp,
@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import StudyShell from "./StudyShell";
-import StudyAiSheet, { type AiRequest } from "./StudyAiSheet";
+import StudyAiSheet, { type AiRequest, type AiTarget } from "./StudyAiSheet";
 
 export type StudyCard = {
   id: string;
@@ -52,7 +52,8 @@ function formatElapsed(ms: number) {
 export default function FlashcardsMode({
   title,
   subtitle,
-  chapterId,
+  aiTarget,
+  notice,
   bookId,
   cards,
   onBack,
@@ -62,7 +63,8 @@ export default function FlashcardsMode({
 }: {
   title: string;
   subtitle?: string;
-  chapterId: string;
+  aiTarget: AiTarget;
+  notice?: ReactNode;
   bookId: string;
   cards: StudyCard[];
   onBack: () => void;
@@ -135,7 +137,12 @@ export default function FlashcardsMode({
 
   if (!cards.length) {
     return (
-      <StudyShell title={title} subtitle={subtitle} onBack={onBack}>
+      <StudyShell
+        title={title}
+        subtitle={subtitle}
+        onBack={onBack}
+        notice={notice}
+      >
         <div className="study-empty">
           <Sparkles size={28} />
           <h3>لا توجد بطاقات لهذا الجزء بعد</h3>
@@ -170,6 +177,7 @@ export default function FlashcardsMode({
       title={title}
       subtitle={subtitle}
       onBack={onBack}
+      notice={notice}
       footer={
         !finished &&
         (flipped ? (
@@ -401,7 +409,7 @@ export default function FlashcardsMode({
       )}
 
       <StudyAiSheet
-        chapterId={chapterId}
+        target={aiTarget}
         open={aiOpen}
         onClose={() => setAiOpen(false)}
         request={aiRequest}

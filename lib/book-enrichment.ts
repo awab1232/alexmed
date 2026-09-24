@@ -16,6 +16,12 @@
 // race between the automatic trigger and a manual click, or QStash's
 // at-least-once delivery — never re-pays for or overwrites a completed
 // result.
+//
+// Full-document coverage: flashcards, MCQs, notes and the mind map are
+// generated chunk by chunk over EVERY page of the chapter
+// (lib/chapter-generation.ts), and each one's Quality Gate verdict is
+// written into the chapter's coverage manifest — see
+// lib/document-coverage.ts.
 import {
   getChapterById,
   getChapterCardCount,
@@ -25,21 +31,13 @@ import {
   getChapterVisualAssets,
   insertBookCards,
   insertBookMcqs,
+  saveChapterCoverageManifest,
   saveChapterMindMapSections,
   saveChapterMedicalNotePages,
   saveChapterVisualInsights,
 } from "./db-books";
 import {
-  buildChapterFlashcardsMessages,
-  buildChapterMcqsMessages,
-  buildMindMapSectionsMessages,
   buildVisualInsightsMessages,
-  chapterFlashcardsResponseSchema,
-  chapterMcqsResponseSchema,
-  mindMapSectionsResponseSchema,
-  parseChapterFlashcards,
-  parseChapterMcqs,
-  parseMindMapSections,
   parseVisualInsights,
   visualInsightsResponseSchema,
   type ChapterFlashcard,
@@ -47,12 +45,52 @@ import {
   type ChapterMindMapSection,
 } from "./book-analysis";
 import {
-  buildMedicalNoteComposerMessages,
-  medicalNotePagesResponseSchema,
-  parseMedicalNotePages,
-  type MedicalNotePage,
-} from "./medical-note-composer";
+  generateChapterFlashcardsCovered,
+  generateChapterMcqsCovered,
+  generateChapterMindMapCovered,
+  generateChapterNotesCovered,
+} from "./chapter-generation";
+import { buildChapterManifest, type OutputCoverage } from "./document-coverage";
+import type { MedicalNotePage } from "./medical-note-composer";
 import { invokeLLM } from "./llm";
+
+type LoadedChapter = NonNullable<Awaited<ReturnType<typeof getChapterById>>>;
+
+// Adds one output's coverage verdict to the chapter manifest. Never throws
+// into the caller: the generated content is already saved, the manifest is
+// observability on top of it.
+async function recordCoverage(
+  chapter: LoadedChapter,
+  output: OutputCoverage,
+  errors: string[] = []
+) {
+  try {
+    // Re-read so two generators finishing close together don't overwrite
+    // each other's entries with a stale copy.
+    const fresh = await getChapterById(chapter.id);
+    await saveChapterCoverageManifest(
+      chapter.id,
+      buildChapterManifest(
+        chapter.pageTexts ?? [],
+        fresh?.coverageManifest ?? chapter.coverageManifest ?? null,
+        {
+          output,
+          ...(errors.length ? { errors } : {}),
+        }
+      )
+    );
+  } catch (error) {
+    console.error("[Books] Failed to record coverage manifest", error);
+  }
+}
+
+function logGate(chapterId: string, output: OutputCoverage) {
+  if (output.status !== "COMPLETE") {
+    console.warn(
+      `[Books][coverage] ${output.kind} for chapter ${chapterId}: ${output.status} — ${output.reasons.join(" ")}`
+    );
+  }
+}
 
 export async function generateAndSaveMindMapSections(
   chapterId: string
@@ -80,26 +118,25 @@ export async function generateAndSaveMindMapSections(
     { length: chapter.endPage - chapter.startPage + 1 },
     (_, i) => chapter.startPage + i
   );
-  const response = await invokeLLM({
-    max_tokens: 3500,
-    messages: buildMindMapSectionsMessages(
-      chapter.title,
-      chapter.explanationEn ?? "",
-      chapter.explanationAr ?? "",
-      chapter.keyPoints ?? [],
+  const result = await generateChapterMindMapCovered(
+    {
+      title: chapter.title,
+      explanationEn: chapter.explanationEn ?? "",
+      explanationAr: chapter.explanationAr ?? "",
+      keyPoints: chapter.keyPoints ?? [],
       terms,
-      studySignals.flashcards,
-      studySignals.mcqs,
-      validPages
-    ),
-    response_format: mindMapSectionsResponseSchema,
-  });
-  const sections = parseMindMapSections(
-    response.choices[0]?.message.content,
-    validPages
+      flashcards: studySignals.flashcards,
+      mcqs: studySignals.mcqs,
+      validPages,
+      summarySections: chapter.coverageManifest?.summarySections,
+    },
+    chapter.pageTexts ?? [],
+    invokeLLM
   );
-  await saveChapterMindMapSections(chapter.id, sections);
-  return sections;
+  await saveChapterMindMapSections(chapter.id, result.items);
+  logGate(chapter.id, result.coverage);
+  await recordCoverage(chapter, result.coverage, result.errors);
+  return result.items;
 }
 
 export async function generateAndSaveVisualInsights(
@@ -140,16 +177,20 @@ export async function generateAndSaveChapterFlashcards(
   if ((await getChapterCardCount(chapterId)) > 0) return null;
   if (!chapter.pageTexts?.length) return [];
 
-  const response = await invokeLLM({
-    max_tokens: 3000,
-    messages: buildChapterFlashcardsMessages(chapter.title, chapter.pageTexts),
-    response_format: chapterFlashcardsResponseSchema,
-  });
-  const flashcards = parseChapterFlashcards(
-    response.choices[0]?.message.content
+  const result = await generateChapterFlashcardsCovered(
+    chapter.title,
+    chapter.pageTexts,
+    invokeLLM
   );
-  await insertBookCards(chapter.id, chapter.userId, flashcards);
-  return flashcards;
+  // Every chunk failing (provider down) is a real failure — surface it so
+  // the student can retry, instead of saving zero cards as "done".
+  if (!result.items.length && result.errors.length) {
+    throw new Error(result.errors[0]);
+  }
+  await insertBookCards(chapter.id, chapter.userId, result.items);
+  logGate(chapter.id, result.coverage);
+  await recordCoverage(chapter, result.coverage, result.errors);
+  return result.items;
 }
 
 export async function generateAndSaveChapterMcqs(
@@ -160,14 +201,18 @@ export async function generateAndSaveChapterMcqs(
   if ((await getChapterMcqCount(chapterId)) > 0) return null;
   if (!chapter.pageTexts?.length) return [];
 
-  const response = await invokeLLM({
-    max_tokens: 3000,
-    messages: buildChapterMcqsMessages(chapter.title, chapter.pageTexts),
-    response_format: chapterMcqsResponseSchema,
-  });
-  const mcqs = parseChapterMcqs(response.choices[0]?.message.content);
-  await insertBookMcqs(chapter.id, mcqs);
-  return mcqs;
+  const result = await generateChapterMcqsCovered(
+    chapter.title,
+    chapter.pageTexts,
+    invokeLLM
+  );
+  if (!result.items.length && result.errors.length) {
+    throw new Error(result.errors[0]);
+  }
+  await insertBookMcqs(chapter.id, result.items);
+  logGate(chapter.id, result.coverage);
+  await recordCoverage(chapter, result.coverage, result.errors);
+  return result.items;
 }
 
 export async function generateAndSaveMedicalNotePages(
@@ -180,31 +225,28 @@ export async function generateAndSaveMedicalNotePages(
 
   const terms = await getChapterTerms(chapter.id);
   const visuals = await getChapterVisualAssets(chapter.id);
-  const validPages = Array.from(
-    { length: chapter.endPage - chapter.startPage + 1 },
-    (_, i) => chapter.startPage + i
-  );
-  const response = await invokeLLM({
-    max_tokens: 7000,
-    messages: buildMedicalNoteComposerMessages({
+  const result = await generateChapterNotesCovered(
+    {
       title: chapter.title,
       explanationEn: chapter.explanationEn ?? "",
       explanationAr: chapter.explanationAr ?? "",
       summary: chapter.chapterSummary ?? "",
       keyPoints: chapter.keyPoints ?? [],
       terms,
-      pages: (chapter.pageTexts ?? []).map(page => ({
-        page: page.page,
-        text: page.text,
-      })),
       visuals,
-    }),
-    response_format: medicalNotePagesResponseSchema,
-  });
-  const pages = parseMedicalNotePages(
-    response.choices[0]?.message.content,
-    validPages
+    },
+    (chapter.pageTexts ?? []).map(page => ({
+      page: page.page,
+      text: page.text,
+    })),
+    chapter.coverageManifest?.summarySections,
+    invokeLLM
   );
-  await saveChapterMedicalNotePages(chapter.id, pages);
-  return pages;
+  if (!result.items.length && result.errors.length) {
+    throw new Error(result.errors[0]);
+  }
+  await saveChapterMedicalNotePages(chapter.id, result.items);
+  logGate(chapter.id, result.coverage);
+  await recordCoverage(chapter, result.coverage, result.errors);
+  return result.items;
 }

@@ -7,6 +7,7 @@ import {
   getBookCardForUser,
   getBookForUser,
   getBookMindMapForUser,
+  getBookStudyContentForUser,
   getBookPageOwnedByUser,
   getBookStatsForUser,
   getChapterContentForUser,
@@ -96,6 +97,23 @@ export const booksRouter = router({
         )
       );
       return { started: true } as const;
+    }),
+
+  // The whole file's study content (every chapter's cards/MCQs/summaries)
+  // plus the book-level processing manifest — backs /books/[id]/study, so
+  // the book page's بطاقات/اختبار/ملخص open the ENTIRE document instead of
+  // only its first chapter.
+  getStudyContent: protectedProcedure
+    .input(z.object({ bookId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const result = await getBookStudyContentForUser(
+        ctx.user.id,
+        input.bookId
+      );
+      if (!result) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
+      }
+      return result;
     }),
 
   getMindMap: protectedProcedure

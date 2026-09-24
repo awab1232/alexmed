@@ -6,6 +6,12 @@ import { trpc } from "@/lib/trpc-client";
 
 export type AiRequest = { question: string; id: number };
 
+// Which RAG scope the chat searches — one chapter, or the whole book (the
+// book-wide study page, so answers can come from any page of the file).
+export type AiTarget =
+  | { scope: "chapter"; chapterId: string }
+  | { scope: "book"; bookId: string };
+
 // Bottom sheet onto the existing chapter-scoped RAG chat (lib/trpc/
 // chatRouter.ts) — the same session the chapter page's "اسألني" tab uses,
 // so nothing new server-side: answers stay grounded in this chapter's pages.
@@ -13,12 +19,12 @@ export type AiRequest = { question: string; id: number };
 // (e.g. the quiz's "اطلب من الذكاء الاصطناعي" field); its `id` changes per
 // request so asking the same text twice still sends twice.
 export default function StudyAiSheet({
-  chapterId,
+  target,
   open,
   onClose,
   request,
 }: {
-  chapterId: string;
+  target: AiTarget;
   open: boolean;
   onClose: () => void;
   request?: AiRequest | null;
@@ -44,9 +50,9 @@ export default function StudyAiSheet({
 
   useEffect(() => {
     if (!open || sessionId || getOrCreateSession.isPending) return;
-    getOrCreateSession.mutate({ scope: "chapter", chapterId });
+    getOrCreateSession.mutate(target);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, chapterId, sessionId]);
+  }, [open, sessionId]);
 
   useEffect(() => {
     if (!open || !sessionId || !request) return;

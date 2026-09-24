@@ -300,21 +300,21 @@ export default function BookDetailPage() {
                       firstCompleteChapter &&
                       (label === "بطاقات" ? (
                         <Link
-                          href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=cards`}
+                          href={`/books/${bookId}/study?tool=cards`}
                           className="secondary-button"
                         >
                           ابدأ المراجعة
                         </Link>
                       ) : label === "اختبار" ? (
                         <Link
-                          href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=mcqs`}
+                          href={`/books/${bookId}/study?tool=mcqs`}
                           className="secondary-button"
                         >
                           اختبر نفسك
                         </Link>
                       ) : label === "ملخص" ? (
                         <Link
-                          href={`/books/${bookId}/chapters/${firstCompleteChapter.id}?tool=explanation`}
+                          href={`/books/${bookId}/study?tool=explanation`}
                           className="secondary-button"
                         >
                           عرض

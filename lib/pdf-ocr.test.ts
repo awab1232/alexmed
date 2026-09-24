@@ -15,7 +15,7 @@ vi.mock("./nemotron-ocr", () => ({
 import { getScreenshotUnderLimit } from "./pdf-screenshot";
 import { invokeLLM } from "./llm";
 import { isNemotronOcrConfigured, nemotronOcrPage } from "./nemotron-ocr";
-import { ocrPages } from "./pdf-ocr";
+import { ocrPages, splitOcrBatch } from "./pdf-ocr";
 
 const mockScreenshot = getScreenshotUnderLimit as unknown as ReturnType<
   typeof vi.fn
@@ -119,5 +119,35 @@ describe("ocrPages", () => {
       { page: 1, text: "", hasText: false, ocr: true },
     ]);
     expect(result.failedPages).toEqual([]);
+  });
+});
+
+// Full-document coverage: OCR used to silently keep only the first 12 pages
+// passed in (and /api/pdf/ocr only the first 4) — every page must now be
+// either processed or explicitly handed back as remaining.
+describe("OCR never silently drops pages", () => {
+  beforeEach(() => {
+    mockScreenshot.mockReset().mockResolvedValue({
+      dataUrl: "data:image/png;base64,AAAA",
+      width: 1800,
+      height: 2400,
+    });
+    mockInvoke.mockReset().mockResolvedValue(chatResponse(true, "text"));
+    mockNemotronConfigured.mockReset().mockReturnValue(false);
+  });
+
+  it("OCRs all 40 pages it is given, not just the first 12", async () => {
+    const pages = Array.from({ length: 40 }, (_, i) => i + 1);
+    const result = await ocrPages({} as never, pages);
+    expect(result.pages.map(page => page.page)).toEqual(pages);
+    expect(mockInvoke).toHaveBeenCalledTimes(40);
+  });
+
+  it("splitOcrBatch puts every page in exactly one of batch/remaining", () => {
+    const pages = Array.from({ length: 40 }, (_, i) => i + 1);
+    const { batch, remaining } = splitOcrBatch(pages, 12);
+    expect(batch).toEqual(pages.slice(0, 12));
+    expect([...batch, ...remaining]).toEqual(pages);
+    expect(splitOcrBatch([3, 7], 12)).toEqual({ batch: [3, 7], remaining: [] });
   });
 });

@@ -6,6 +6,66 @@
 // rest of the app: the active provider (OmniRoute) owns model selection.
 import type { Message } from "./llm";
 import { parseJsonResponse } from "./pdf-cards";
+import type { PageType } from "./document-coverage";
+
+// Optional, per-chunk generation context (lib/chapter-generation.ts). When
+// omitted every builder below behaves exactly as before.
+export type ChunkGenerationOptions = {
+  // Proportional to the chunk's real content (targetItemCount), not fixed.
+  targetCount?: number;
+  // Labels shown next to each PDF PAGE marker — classification only; a
+  // metadata page is still sent in full.
+  pageTypes?: Record<number, PageType>;
+  // e.g. "part 3 of 5, pages 17–24" — tells the model this is one slice of
+  // a larger document so it covers THIS slice instead of summarizing it.
+  partLabel?: string;
+  // Coverage retry: the previous attempt produced nothing from these pages.
+  mustCover?: boolean;
+};
+
+function renderSourcePages(
+  pages: BookPageInput[],
+  pageTypes?: Record<number, PageType>
+): string {
+  return pages
+    .map(page => {
+      const type = pageTypes?.[page.page];
+      const label = type ? ` [${type}]` : "";
+      return `\n===== PDF PAGE ${page.page}${label} =====\n${page.text}`;
+    })
+    .join("\n");
+}
+
+function chunkInstructions(
+  kind: "flashcards" | "questions",
+  options?: ChunkGenerationOptions
+): string[] {
+  if (!options) return [];
+  const lines: string[] = [];
+  if (options.partLabel) {
+    lines.push(
+      `This text is ${options.partLabel} of a larger document. Cover THIS part completely — every other part is processed separately.`
+    );
+  }
+  if (options.targetCount) {
+    lines.push(
+      `Aim for about ${options.targetCount} ${kind}, spread across all the pages given (more for dense clinical content, fewer for thin pages) — never concentrate them on the first page.`
+    );
+  }
+  if (options.pageTypes) {
+    lines.push(
+      "Pages marked [metadata] hold course/author/objective information: only write " +
+        kind +
+        " from them if they contain real subject content. Pages marked [educational_content] or [mixed] are the priority."
+    );
+  }
+  if (options.mustCover) {
+    lines.push(
+      `A previous attempt produced nothing from these pages. You MUST produce at least one item per page that contains real subject content.`
+    );
+  }
+  return lines;
+}
 
 // PR2: drives which framing buildChapterAnalysisMessages uses below — see
 // that function's comment. Deliberately does NOT change the JSON schema's
@@ -304,17 +364,28 @@ export function buildChapterAnalysisMessages(
 // a single sub-chunk.
 export function buildSummaryMergeMessages(
   summaries: string[],
-  keyPoints: string[]
+  keyPoints: string[],
+  // Optional page range per partial summary (same order) — lets the merge
+  // see that the partials span the whole chapter, first page to last.
+  ranges?: { pageStart: number; pageEnd: number }[]
 ): Message[] {
+  const label = (i: number) =>
+    ranges?.[i]
+      ? `(${i + 1}, pages ${ranges[i].pageStart}–${ranges[i].pageEnd})`
+      : `(${i + 1})`;
   return [
     {
       role: "system",
       content:
-        "You merge partial chapter summaries into ONE coherent English-first summary of the whole chapter, 3-5 concise sentences, followed by one short Arabic support paragraph. Preserve distinct facts and do not drop important details. Return JSON only, matching the given schema.",
+        "You merge partial chapter summaries into ONE coherent English-first summary of the whole chapter, 3-5 concise sentences, followed by one short Arabic support paragraph. Preserve distinct facts and do not drop important details." +
+        (ranges?.length
+          ? " The partials cover consecutive page ranges of the whole chapter: the merged summary must reflect ALL of them — the last part as much as the first — and must not dwell on introductory/author/objective material."
+          : "") +
+        " Return JSON only, matching the given schema.",
     },
     {
       role: "user",
-      content: `Partial summaries:\n${summaries.map((summary, i) => `(${i + 1}) ${summary}`).join("\n")}\n\nKey points:\n${keyPoints.map(point => `- ${point}`).join("\n")}`,
+      content: `Partial summaries:\n${summaries.map((summary, i) => `${label(i)} ${summary}`).join("\n")}\n\nKey points:\n${keyPoints.map(point => `- ${point}`).join("\n")}`,
     },
   ];
 }
@@ -462,8 +533,23 @@ export function buildMindMapSectionsMessages(
   terms: { ar: string; en: string }[],
   flashcards: { questionEn: string; answerEn: string; sourcePage: number }[],
   mcqs: { questionEn: string; explanationEn: string; sourcePage: number }[],
-  validPages: number[]
+  validPages: number[],
+  // Optional full-document structure (lib/chapter-generation.ts): one entry
+  // per chunk with its page range and its own analysis summary, so the map
+  // is organized over EVERY part of the chapter, not whatever the merged
+  // explanation happens to emphasize.
+  parts?: { pageStart: number; pageEnd: number; summary: string }[],
+  mustCoverParts?: { pageStart: number; pageEnd: number }[]
 ): Message[] {
+  const partLines = parts?.length
+    ? [
+        `The chapter is made of ${parts.length} parts. Every part MUST be represented by at least one section whose sourcePages include pages from that part:`,
+        ...parts.map(
+          (part, i) =>
+            `Part ${i + 1} (pages ${part.pageStart}–${part.pageEnd}): ${part.summary}`
+        ),
+      ].join("\n")
+    : "";
   return [
     {
       role: "system",
@@ -471,6 +557,13 @@ export function buildMindMapSectionsMessages(
         `You organize an already-written chapter into a complete, hierarchical study mind map: a few real Sections, each with concepts, English explanation, Arabic support, high-yield exam points, and linked recall prompts.`,
         `Use ONLY the content given below — do not add any fact, term, card idea, or page number that isn't already present in it. Do not merge away distinct facts just to make the map shorter.`,
         `Every section's sourcePages must be a subset of this chapter's real pages: ${validPages.join(", ")}.`,
+        ...(mustCoverParts?.length
+          ? [
+              `A previous attempt left these page ranges without any section — add sections for them: ${mustCoverParts
+                .map(part => `${part.pageStart}–${part.pageEnd}`)
+                .join(", ")}.`,
+            ]
+          : []),
         "Return JSON only.",
       ].join("\n"),
     },
@@ -478,6 +571,7 @@ export function buildMindMapSectionsMessages(
       role: "user",
       content: [
         `Chapter: "${chapterTitle}"`,
+        ...(partLines ? [partLines] : []),
         `English explanation:\n${explanationEn}`,
         `Explanation:\n${explanationAr}`,
         `Key points:\n${keyPoints.map(point => `- ${point}`).join("\n")}`,
@@ -785,11 +879,10 @@ export const chapterFlashcardsResponseSchema = {
 
 export function buildChapterFlashcardsMessages(
   chapterTitle: string,
-  pages: BookPageInput[]
+  pages: BookPageInput[],
+  options?: ChunkGenerationOptions
 ): Message[] {
-  const source = pages
-    .map(page => `\n===== PDF PAGE ${page.page} =====\n${page.text}`)
-    .join("\n");
+  const source = renderSourcePages(pages, options?.pageTypes);
   return [
     {
       role: "system",
@@ -799,6 +892,7 @@ export function buildChapterFlashcardsMessages(
         "Keep the English term visible in the English fields. In Arabic fields, give the meaning naturally without damaging the English wording. A term card should make the relationship explicit: English term first in the study experience, Arabic meaning as support.",
         "Do not make every card a simple definition and do not create filler cards. Prefer one testable idea per card, include threshold, duration, and classification details exactly when present, and create application cards from clinical scenarios only when the source supports the answer.",
         "Cover the material thoroughly — do not skip sections. Every flashcard must cite the real PDF page number (sourcePage) it came from, using the PDF PAGE markers below.",
+        ...chunkInstructions("flashcards", options),
         "Do not invent facts not present in the source text.",
         "Return JSON only.",
       ].join("\n"),
@@ -870,17 +964,17 @@ export const chapterMcqsResponseSchema = {
 
 export function buildChapterMcqsMessages(
   chapterTitle: string,
-  pages: BookPageInput[]
+  pages: BookPageInput[],
+  options?: ChunkGenerationOptions
 ): Message[] {
-  const source = pages
-    .map(page => `\n===== PDF PAGE ${page.page} =====\n${page.text}`)
-    .join("\n");
+  const source = renderSourcePages(pages, options?.pageTypes);
   return [
     {
       role: "system",
       content: [
         `You write 4-option multiple-choice questions covering a chapter titled "${chapterTitle}".`,
         "Cover the material thoroughly — do not skip sections. Every question's sourcePage must cite the real PDF page number it came from, using the PDF PAGE markers below.",
+        ...chunkInstructions("questions", options),
         "Do not invent facts not present in the source text.",
         "Return JSON only.",
       ].join("\n"),

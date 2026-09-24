@@ -26,20 +26,36 @@ export type OcrResult = {
   failedPages: number[];
 };
 
-// Caps each call regardless of what the caller passes — matches the
-// screenshot+vision-model cost per page, kept identical to the limit each
-// extract route enforces (OCR_BATCH_SIZE).
-const MAX_PAGES_PER_CALL = 12;
+// Pages per OCR request for callers that batch (the extract workers use the
+// same size as their OCR_BATCH_SIZE and self-chain for the rest).
+export const OCR_PAGES_PER_BATCH = 12;
 
+// Splits requested pages into the batch to OCR now and the explicit rest —
+// every requested page lands in exactly one of the two, in order.
+export function splitOcrBatch(
+  pageNumbers: number[],
+  batchSize: number
+): { batch: number[]; remaining: number[] } {
+  if (batchSize <= 0) throw new Error("batchSize must be positive");
+  return {
+    batch: pageNumbers.slice(0, batchSize),
+    remaining: pageNumbers.slice(batchSize),
+  };
+}
+
+// OCRs EVERY page it is given — batching is the caller's job. This used to
+// silently keep only the first 12 pages passed in, which meant any caller
+// passing more lost the rest of the document with no failure recorded;
+// full-document coverage requires a page to be either processed or
+// reported failed, never dropped.
 export async function ocrPages(
   parser: PDFParse,
   pageNumbers: number[]
 ): Promise<OcrResult> {
-  const capped = pageNumbers.slice(0, MAX_PAGES_PER_CALL);
   const pages: OcrPage[] = [];
   const failedPages: number[] = [];
 
-  for (const pageNumber of capped) {
+  for (const pageNumber of pageNumbers) {
     try {
       const screenshot = await getScreenshotUnderLimit(parser, pageNumber);
       const imageUrl = screenshot?.dataUrl;

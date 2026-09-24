@@ -225,6 +225,13 @@
       "when": 1790189994033,
       "tag": "0031_zippy_jean_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790210329024,
+      "tag": "0032_full_document_coverage",
+      "breakpoints": true
     }
   ]
 }

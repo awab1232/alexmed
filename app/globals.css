@@ -4530,3 +4530,38 @@ h1 em {
   box-shadow: 0 8px 20px rgba(45, 108, 181, 0.35);
   cursor: pointer;
 }
+
+/* Full-document coverage line under a study mode's header (app/books/
+   [bookId]/study) — real read/analyzed/generated counts, amber whenever
+   anything is short of complete. */
+.study-shell-notice {
+  flex-shrink: 0;
+  padding: 0 16px 8px;
+}
+.study-coverage {
+  display: block;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: #e9f6ee;
+  color: #2c7a4b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.study-coverage.is-warn {
+  background: #fdf2e2;
+  color: #9a5b0e;
+}
+.quiz-source {
+  color: #8a9493;
+  font-weight: 400;
+}
+.summary-doc-range {
+  margin-inline-start: 8px;
+  color: #8a9493;
+  font: 400 12px "Inter", sans-serif;
+}
+.summary-doc-divider {
+  margin: 28px 0 8px;
+  border: 0;
+  border-top: 1px solid #e3ded6;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Check,
   ChevronsRight,
@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import StudyShell from "./StudyShell";
-import StudyAiSheet, { type AiRequest } from "./StudyAiSheet";
+import StudyAiSheet, { type AiRequest, type AiTarget } from "./StudyAiSheet";
 import type { McqSubmitResult } from "@/components/McqCard";
 
 export type QuizMcq = {
@@ -25,6 +25,9 @@ export type QuizMcq = {
   explanationEn: string;
   validationStatus?: string;
   validationNote?: string | null;
+  // Real PDF page the question was generated from — shown so every
+  // question is traceable to its source (full-document coverage).
+  sourcePage?: number;
 };
 
 type Answer = { selected: number } & McqSubmitResult;
@@ -39,7 +42,8 @@ const LETTERS = ["A", "B", "C", "D", "E", "F"];
 export default function QuizMode({
   title,
   subtitle,
-  chapterId,
+  aiTarget,
+  notice,
   mcqs,
   onBack,
   onSubmit,
@@ -48,7 +52,8 @@ export default function QuizMode({
 }: {
   title: string;
   subtitle?: string;
-  chapterId: string;
+  aiTarget: AiTarget;
+  notice?: ReactNode;
   mcqs: QuizMcq[];
   onBack: () => void;
   onSubmit: (mcqId: string, selectedIndex: number) => Promise<McqSubmitResult>;
@@ -144,7 +149,12 @@ export default function QuizMode({
 
   if (!mcqs.length) {
     return (
-      <StudyShell title={title} subtitle={subtitle} onBack={onBack}>
+      <StudyShell
+        title={title}
+        subtitle={subtitle}
+        onBack={onBack}
+        notice={notice}
+      >
         <div className="study-empty">
           <Sparkles size={28} />
           <h3>لا يوجد اختبار لهذا الجزء بعد</h3>
@@ -174,6 +184,7 @@ export default function QuizMode({
       title={title}
       subtitle={subtitle}
       onBack={onBack}
+      notice={notice}
       footer={
         !finished && (
           <>
@@ -301,6 +312,12 @@ export default function QuizMode({
             <div className="quiz-meta">
               <span>
                 السؤال {index + 1} من {mcqs.length}
+                {mcq.sourcePage !== undefined && (
+                  <small className="quiz-source">
+                    {" "}
+                    · صفحة {mcq.sourcePage}
+                  </small>
+                )}
               </span>
               <span className="quiz-score">
                 <Star size={15} /> النتيجة: {score}
@@ -375,7 +392,7 @@ export default function QuizMode({
       )}
 
       <StudyAiSheet
-        chapterId={chapterId}
+        target={aiTarget}
         open={aiOpen}
         onClose={() => setAiOpen(false)}
         request={aiRequest}
