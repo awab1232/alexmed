@@ -211,6 +211,16 @@ async function fetchModels(): Promise<ModelInfo[]> {
 // actually exists rather than inventing an id — preferring a vision-capable
 // one when the request includes an image.
 async function resolveModel(params: GenerateParams): Promise<string> {
+  // An image request goes to the vision model when one is configured —
+  // unless the caller explicitly asked for some OTHER model than the text
+  // default (call sites pass the resolved default, which isn't a real
+  // choice; see generateText's comment below).
+  if (hasImageContent(params.messages) && omniRouteConfig.visionModel) {
+    const requested = params.model?.trim();
+    if (!requested || requested === omniRouteConfig.defaultModel) {
+      return omniRouteConfig.visionModel;
+    }
+  }
   if (params.model?.trim()) return params.model.trim();
   if (omniRouteConfig.defaultModel) return omniRouteConfig.defaultModel;
 
@@ -226,6 +236,22 @@ async function resolveModel(params: GenerateParams): Promise<string> {
     ? models.find(model => model.supportsImages)
     : undefined;
   return (match ?? models[0]).id;
+}
+
+// Ordered models to try: the resolved primary, then the matching fallback
+// chain — image requests use OMNIROUTE_VISION_FALLBACK_MODELS when set
+// (falling back to text-only models would just fail again, or worse,
+// "succeed" by answering that no image was provided), text requests use
+// OMNIROUTE_FALLBACK_MODELS. Exported for tests.
+export function candidateModels(
+  primaryModel: string,
+  needsVision: boolean
+): string[] {
+  const chain =
+    needsVision && omniRouteConfig.visionFallbackModels.length
+      ? omniRouteConfig.visionFallbackModels
+      : omniRouteConfig.fallbackModels;
+  return [primaryModel, ...chain.filter(model => model !== primaryModel)];
 }
 
 function buildPayload(model: string, params: GenerateParams, stream: boolean) {
@@ -294,10 +320,10 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
   // distribution: e.g. a free provider first, a paid/quota-limited one only
   // as last resort. (An earlier version shuffled this for load spreading;
   // that's what a fixed order gives up in exchange for honoring priority.)
-  const candidates = [
+  const candidates = candidateModels(
     primaryModel,
-    ...omniRouteConfig.fallbackModels.filter(m => m !== primaryModel),
-  ];
+    hasImageContent(params.messages)
+  );
 
   let lastFailure: Response | undefined;
   for (let i = 0; i < candidates.length; i++) {

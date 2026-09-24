@@ -43,6 +43,11 @@ export type {
 // than this file inventing a model id it can't verify exists.
 function resolveDefaultModel(kind: "text" | "vision"): string {
   if (resolveProvider() === "omniroute") {
+    // Image call sites (OCR, page visuals, question images) get their own
+    // model when OMNIROUTE_VISION_MODEL is set — see lib/ai/config.ts.
+    if (kind === "vision" && omniRouteConfig.visionModel) {
+      return omniRouteConfig.visionModel;
+    }
     return omniRouteConfig.defaultModel ?? "";
   }
   return kind === "vision"

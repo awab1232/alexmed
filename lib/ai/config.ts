@@ -41,12 +41,28 @@ export const omniRouteConfig = {
   // credentials for vision requests, so falling back to another "auto/*"
   // alias wouldn't help; these need to be concrete provider/model ids.
   get fallbackModels() {
-    return (process.env.OMNIROUTE_FALLBACK_MODELS ?? "")
-      .split(",")
-      .map(model => model.trim())
-      .filter(Boolean);
+    return parseModelList(process.env.OMNIROUTE_FALLBACK_MODELS);
+  },
+  // Separate chain for requests that carry an image (OCR, page-visual
+  // analysis, question-image classification). Many strong text models are
+  // text-only — measured 2026-09-24: grok-cli/*, nemotron-3-super, glm-5.3
+  // and gpt-oss-20b all ignore or reject images — so letting the text
+  // default also serve images makes OCR fail (or silently read nothing).
+  // Unset = today's behavior (images use the text chain).
+  get visionModel() {
+    return process.env.OMNIROUTE_VISION_MODEL?.trim() || undefined;
+  },
+  get visionFallbackModels() {
+    return parseModelList(process.env.OMNIROUTE_VISION_FALLBACK_MODELS);
   },
 };
+
+function parseModelList(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map(model => model.trim())
+    .filter(Boolean);
+}
 
 export const openRouterConfig = {
   get apiKey() {
