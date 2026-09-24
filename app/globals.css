@@ -4802,3 +4802,22 @@ h1 em {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* مِرآة card: English leads (bigger, LTR) with Arabic below (smaller, RTL). */
+.question-block h2[dir="ltr"],
+.answer-pair strong[dir="ltr"],
+.explanation-pair p[dir="ltr"],
+.concept-grid strong[dir="ltr"] {
+  text-align: left;
+  letter-spacing: normal;
+}
+.question-block p[dir="rtl"],
+.answer-pair span[dir="rtl"],
+.explanation-pair p[dir="rtl"],
+.concept-grid small[dir="rtl"] {
+  text-align: right;
+  font-family: "Noto Sans Arabic", "Inter", sans-serif;
+}
+.explanation-pair p[dir="ltr"]:first-child {
+  text-align: left;
+}

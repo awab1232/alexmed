@@ -1031,7 +1031,9 @@ export default function Home() {
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <span className="list-copy">
-                        <strong>{card.questionArabic || card.question}</strong>
+                        <strong dir="auto">
+                          {card.question || card.questionArabic}
+                        </strong>
                         <small>
                           {cardOrigin(card).short} ·{" "}
                           {card.keywordArabic || card.keyword}
@@ -1098,17 +1100,17 @@ export default function Home() {
                             }}
                           />
                         )}
-                        <span className="micro-label">السؤال / QUESTION</span>
-                        <h2>
-                          <MarkableText
-                            field="questionArabic"
-                            text={selectedCard.questionArabic}
-                          />
-                        </h2>
-                        <p>
+                        <span className="micro-label">QUESTION / السؤال</span>
+                        <h2 dir="ltr">
                           <MarkableText
                             field="question"
                             text={selectedCard.question}
+                          />
+                        </h2>
+                        <p dir="rtl">
+                          <MarkableText
+                            field="questionArabic"
+                            text={selectedCard.questionArabic}
                           />
                         </p>
                       </div>
@@ -1123,30 +1125,30 @@ export default function Home() {
                               الإجابة والشرح / ANSWER & WHY
                             </span>
                             <div className="answer-pair">
-                              <strong>
-                                <MarkableText
-                                  field="answerArabic"
-                                  text={selectedCard.answerArabic}
-                                />
-                              </strong>
-                              <span>
+                              <strong dir="ltr">
                                 <MarkableText
                                   field="answer"
                                   text={selectedCard.answer}
                                 />
+                              </strong>
+                              <span dir="rtl">
+                                <MarkableText
+                                  field="answerArabic"
+                                  text={selectedCard.answerArabic}
+                                />
                               </span>
                             </div>
                             <div className="explanation-pair">
-                              <p>
-                                <MarkableText
-                                  field="explanationArabic"
-                                  text={selectedCard.explanationArabic}
-                                />
-                              </p>
-                              <p>
+                              <p dir="ltr">
                                 <MarkableText
                                   field="explanation"
                                   text={selectedCard.explanation}
+                                />
+                              </p>
+                              <p dir="rtl">
+                                <MarkableText
+                                  field="explanationArabic"
+                                  text={selectedCard.explanationArabic}
                                 />
                               </p>
                             </div>
@@ -1155,16 +1157,16 @@ export default function Home() {
                                 <span>
                                   <Lightbulb size={14} /> الفكرة الأساسية
                                 </span>
-                                <strong>
-                                  <MarkableText
-                                    field="keyIdeaArabic"
-                                    text={selectedCard.keyIdeaArabic}
-                                  />
-                                </strong>
-                                <small>
+                                <strong dir="ltr">
                                   <MarkableText
                                     field="keyIdea"
                                     text={selectedCard.keyIdea}
+                                  />
+                                </strong>
+                                <small dir="rtl">
+                                  <MarkableText
+                                    field="keyIdeaArabic"
+                                    text={selectedCard.keyIdeaArabic}
                                   />
                                 </small>
                               </div>
@@ -1172,16 +1174,16 @@ export default function Home() {
                                 <span>
                                   <KeyRound size={14} /> الكلمة المفتاحية
                                 </span>
-                                <strong>
-                                  <MarkableText
-                                    field="keywordArabic"
-                                    text={selectedCard.keywordArabic}
-                                  />
-                                </strong>
-                                <small>
+                                <strong dir="ltr">
                                   <MarkableText
                                     field="keyword"
                                     text={selectedCard.keyword}
+                                  />
+                                </strong>
+                                <small dir="rtl">
+                                  <MarkableText
+                                    field="keywordArabic"
+                                    text={selectedCard.keywordArabic}
                                   />
                                 </small>
                               </div>
