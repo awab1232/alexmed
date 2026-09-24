@@ -55,6 +55,14 @@ export const omniRouteConfig = {
   get visionFallbackModels() {
     return parseModelList(process.env.OMNIROUTE_VISION_FALLBACK_MODELS);
   },
+  // Fast, cheap text model for short interactive answers (the PDF reader's
+  // "اسأل AI" on selected text) — e.g. grok-cli/grok-4.6: fast and free but
+  // text-only and slow on very long generations, so it's NOT the default
+  // for chapter analysis. Its failures still fall back through
+  // OMNIROUTE_FALLBACK_MODELS. Unset = the default model.
+  get fastTextModel() {
+    return process.env.OMNIROUTE_FAST_TEXT_MODEL?.trim() || undefined;
+  },
 };
 
 function parseModelList(value: string | undefined): string[] {

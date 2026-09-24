@@ -57,6 +57,11 @@ function resolveDefaultModel(kind: "text" | "vision"): string {
 
 export const DEFAULT_TEXT_MODEL = resolveDefaultModel("text");
 export const DEFAULT_VISION_MODEL = resolveDefaultModel("vision");
+// Short interactive answers (see omniRouteConfig.fastTextModel).
+export const FAST_TEXT_MODEL =
+  resolveProvider() === "omniroute" && omniRouteConfig.fastTextModel
+    ? omniRouteConfig.fastTextModel
+    : DEFAULT_TEXT_MODEL;
 
 export type InvokeParams = {
   messages: Message[];

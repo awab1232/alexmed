@@ -26,6 +26,9 @@ import {
 } from "lucide-react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import Link from "next/link";
+import SelectionAssistant, {
+  type PdfTextSelection,
+} from "./pdf/SelectionAssistant";
 import { trpc } from "@/lib/trpc-client";
 import {
   appendPoint,
@@ -487,6 +490,59 @@ export default function PdfViewer({
       document.removeEventListener("selectionchange", onSelectionChange);
     };
   }, [tool, highlightColor]);
+
+  // "اسأل AI" (components/pdf/SelectionAssistant.tsx): in browse mode a
+  // finished text selection inside a page offers the assistant. Same
+  // pointerup(mouse)/debounced selectionchange(touch) detection as the
+  // highlight tool above; the page number comes from the page wrapper.
+  const [aiSelection, setAiSelection] = useState<PdfTextSelection | null>(null);
+  useEffect(() => {
+    if (tool !== "none") {
+      setAiSelection(null);
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let lastPointerType = "mouse";
+    const read = () => {
+      const selection = window.getSelection();
+      const text = selection?.toString().replace(/\s+/g, " ").trim() ?? "";
+      if (!selection || selection.isCollapsed || text.length < 2) {
+        setAiSelection(null);
+        return;
+      }
+      const anchor = selection.anchorNode;
+      const element =
+        anchor instanceof Element ? anchor : (anchor?.parentElement ?? null);
+      const pageEl = element?.closest<HTMLElement>("[data-page-number]");
+      const pageNumber = Number(pageEl?.dataset.pageNumber);
+      if (!pageEl || !Number.isFinite(pageNumber)) {
+        setAiSelection(null);
+        return;
+      }
+      setAiSelection({ text, pageNumber });
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      lastPointerType = event.pointerType;
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerType !== "touch") setTimeout(read, 0);
+    };
+    const onSelectionChange = () => {
+      clearTimeout(timer);
+      // Touch selections settle slowly (handles are dragged); mouse ones
+      // are read on pointerup, but a cleared selection must hide the pill.
+      timer = setTimeout(read, lastPointerType === "touch" ? 500 : 150);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("selectionchange", onSelectionChange);
+    };
+  }, [tool]);
 
   // pdfjs-dist touches DOM/worker APIs that don't exist during SSR — loaded
   // once, client-side only, worker wired to the static copy in public/
@@ -1083,6 +1139,12 @@ export default function PdfViewer({
           ))}
         </div>
       )}
+
+      <SelectionAssistant
+        bookId={bookId}
+        fileName={fileName}
+        selection={aiSelection}
+      />
 
       {/* Bottom bar: marking tools + zoom, iOS-style at the thumb's reach. */}
       <div className="pdf-viewer-bottom">
