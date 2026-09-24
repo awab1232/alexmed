@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getBookPageForUser } from "@/lib/db-books";
-import { streamText } from "@/lib/ai/gateway";
-import { FAST_TEXT_MODEL, invokeLLM } from "@/lib/llm";
+import { streamFastAnswer } from "@/lib/fast-answer-stream";
 import {
   allowSelectionAssistantRequest,
   buildSelectionAssistantMessages,
@@ -79,55 +78,5 @@ export async function POST(request: Request) {
     history: input.history,
   });
 
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      let wrote = false;
-      try {
-        for await (const chunk of streamText({
-          messages,
-          model: FAST_TEXT_MODEL || undefined,
-          maxTokens: 2500,
-        })) {
-          if (chunk.delta) {
-            wrote = true;
-            controller.enqueue(encoder.encode(chunk.delta));
-          }
-        }
-        if (!wrote) throw new Error("empty stream");
-      } catch (error) {
-        if (wrote) {
-          // Cut off mid-answer: keep what was written, say so honestly.
-          controller.enqueue(encoder.encode("\n\n(انقطع الرد، حاول مرة أخرى)"));
-        } else {
-          console.warn(
-            "[ask-selection] fast model failed, using the regular chain",
-            error
-          );
-          try {
-            const response = await invokeLLM({ messages, max_tokens: 2500 });
-            const answer = response.choices[0]?.message.content?.trim();
-            controller.enqueue(
-              encoder.encode(answer || "لم يصل رد من المساعد، حاول مرة أخرى.")
-            );
-          } catch (fallbackError) {
-            console.error("[ask-selection] all models failed", fallbackError);
-            controller.enqueue(
-              encoder.encode("تعذر الوصول للمساعد الآن، حاول بعد قليل.")
-            );
-          }
-        }
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      "X-Accel-Buffering": "no",
-    },
-  });
+  return streamFastAnswer(messages, { logTag: "ask-selection" });
 }

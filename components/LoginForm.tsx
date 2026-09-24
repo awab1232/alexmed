@@ -60,13 +60,13 @@ export default function LoginForm({
       return;
     }
 
-    router.push("/");
+    router.push("/subjects");
     router.refresh();
   }
 
   async function handleGoogle() {
     setGoogleLoading(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: "/subjects" });
   }
 
   return (

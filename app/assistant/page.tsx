@@ -1,339 +1,217 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { BookOpen, FolderKanban, Loader2, Send, Sparkles } from "lucide-react";
-import { trpc } from "@/lib/trpc-client";
-import type { ChatTarget } from "@/lib/db-chat";
+import { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Loader2, RotateCcw, Send, Sparkles } from "lucide-react";
 
-const EXAMPLE_PROMPTS = [
-  "اشرح لي هذا الموضوع",
-  "ما أهم النقاط للامتحان؟",
-  "اختبرني في هذا",
-  "اربط لي هذه المعلومات",
+type Turn = { role: "user" | "assistant"; content: string };
+
+// Shown as tappable chips on an empty chat — anything goes, these are just
+// friendly starters.
+const STARTERS = [
+  "اشرح لي فكرة صعبة بطريقة بسيطة 🧠",
+  "ساعدني أنظّم خطة دراسة لهذا الأسبوع 📅",
+  "اختبرني بأسئلة سريعة في موضوع 📝",
+  "عندي امتحان قريب وأنا متوتر 😟",
+  "أعطني طريقة لحفظ معلومة بسهولة ✨",
+  "أحتاج شوية تحفيز 💪",
 ];
 
-// Real chat UI over the existing RAG pipeline (lib/rag.ts, lib/db-chat.ts,
-// chatRouter.ts) — PR17 builds no new retrieval/AI logic, only this surface.
-// Context (chapter/book/subject) arrives automatically via BottomNav's
-// resolveAssistantHref when the student was already inside one; with no
-// context, the student picks a real folder/book below.
+const STORAGE_KEY = "mirror-assistant-chat-v1";
+// Sent back as context each turn (server caps at 16 turns).
+const HISTORY_TURNS = 16;
+
+// The general مساعد AI: a friendly, encouraging study buddy for ANY question
+// (POST /api/assistant/chat, streamed). Replaces the old folder/file-scoped
+// RAG chat here — asking about a specific file now lives in the PDF reader's
+// "اسأل AI" button. The conversation is kept in this browser (localStorage)
+// so leaving and coming back doesn't lose it.
 export default function AssistantPage() {
-  const searchParams = useSearchParams();
-  const urlScope = searchParams.get("scope");
-  const urlId =
-    searchParams.get("bookId") ||
-    searchParams.get("subjectId") ||
-    searchParams.get("chapterId");
-
-  const [target, setTarget] = useState<ChatTarget | null>(() =>
-    toTarget(urlScope, searchParams)
-  );
-  useEffect(() => {
-    setTarget(toTarget(urlScope, searchParams));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlScope, urlId]);
-
-  const subjectsQuery = trpc.subjects.list.useQuery(undefined, {
-    enabled: !target,
-  });
-  const booksQuery = trpc.books.list.useQuery(undefined, { enabled: !target });
-
-  if (!target) {
-    return (
-      <section className="upload-view">
-        <div className="cards-header">
-          <div>
-            <div className="eyebrow">
-              <span className="eyebrow-dot" /> مساعد AI
-            </div>
-            <h1>
-              كيف <em>أساعدك في الدراسة؟</em>
-            </h1>
-            <p>اختر مجلدًا أو ملفًا لتبدأ محادثة حوله.</p>
-          </div>
-        </div>
-
-        {!!subjectsQuery.data?.length && (
-          <>
-            <span
-              className="section-kicker"
-              style={{ display: "block", marginBottom: 8 }}
-            >
-              مجلداتي
-            </span>
-            <div className="library-grid" style={{ marginBottom: 22 }}>
-              {subjectsQuery.data.map(subject => (
-                <button
-                  key={subject.id}
-                  type="button"
-                  className="library-item"
-                  style={{
-                    cursor: "pointer",
-                    textAlign: "right",
-                    width: "100%",
-                  }}
-                  onClick={() =>
-                    setTarget({ scope: "subject", subjectId: subject.id })
-                  }
-                >
-                  <div className="library-item-icon">
-                    <FolderKanban size={18} />
-                  </div>
-                  <div className="library-item-meta">
-                    <strong>{subject.name}</strong>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {!!booksQuery.data?.length && (
-          <>
-            <span
-              className="section-kicker"
-              style={{ display: "block", marginBottom: 8 }}
-            >
-              ملفاتي
-            </span>
-            <div className="library-grid">
-              {booksQuery.data.map(book => (
-                <button
-                  key={book.id}
-                  type="button"
-                  className="library-item"
-                  style={{
-                    cursor: "pointer",
-                    textAlign: "right",
-                    width: "100%",
-                  }}
-                  onClick={() => setTarget({ scope: "book", bookId: book.id })}
-                >
-                  <div className="library-item-icon">
-                    <BookOpen size={18} />
-                  </div>
-                  <div className="library-item-meta">
-                    <strong>{book.fileName}</strong>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {!subjectsQuery.data?.length &&
-          !booksQuery.data?.length &&
-          !subjectsQuery.isLoading && (
-            <div className="empty-state">
-              <Sparkles size={28} />
-              <h3>ارفع ملفًا أولًا</h3>
-              <p>سيظهر هنا حتى تسأل المساعد عنه.</p>
-              <Link
-                href="/books/upload"
-                className="primary-button"
-                style={{ marginTop: 14, width: "auto", padding: "0 22px" }}
-              >
-                رفع ملف
-              </Link>
-            </div>
-          )}
-      </section>
-    );
-  }
-
-  return (
-    <AssistantChat target={target} onChangeTarget={() => setTarget(null)} />
-  );
-}
-
-function toTarget(
-  scope: string | null,
-  searchParams: URLSearchParams
-): ChatTarget | null {
-  if (scope === "book") {
-    const bookId = searchParams.get("bookId");
-    return bookId ? { scope: "book", bookId } : null;
-  }
-  if (scope === "subject") {
-    const subjectId = searchParams.get("subjectId");
-    return subjectId ? { scope: "subject", subjectId } : null;
-  }
-  if (scope === "chapter") {
-    const chapterId = searchParams.get("chapterId");
-    return chapterId ? { scope: "chapter", chapterId } : null;
-  }
-  return null;
-}
-
-function AssistantChat({
-  target,
-  onChangeTarget,
-}: {
-  target: ChatTarget;
-  onChangeTarget: () => void;
-}) {
-  const utils = trpc.useUtils();
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const firstName = session?.user?.name?.split(" ")[0];
+  const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState("");
-
-  const getOrCreateSession = trpc.chat.getOrCreateSession.useMutation({
-    onSuccess: session => setSessionId(session.id),
-  });
-  useEffect(() => {
-    setSessionId(null);
-    getOrCreateSession.mutate(target);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(target)]);
-
-  const messagesQuery = trpc.chat.listMessages.useQuery(
-    { sessionId: sessionId ?? "" },
-    { enabled: !!sessionId }
+  const [status, setStatus] = useState<"idle" | "waiting" | "streaming">(
+    "idle"
   );
-  const askChat = trpc.chat.ask.useMutation({
-    onSuccess: () => {
-      setInput("");
-      messagesQuery.refetch();
-    },
-  });
-  const createNoteFromMessage = trpc.chat.createNoteFromMessage.useMutation();
-  const createCardFromMessage = trpc.chat.createCardFromMessage.useMutation();
+  const [error, setError] = useState("");
+  const endRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const busy = status !== "idle";
 
-  const contextLabel = useContextLabel(target);
+  // Restore / persist the conversation (per browser; best-effort only).
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+      if (Array.isArray(saved)) setTurns(saved.slice(-60));
+    } catch {
+      // Private mode / blocked storage — just start fresh.
+    }
+  }, []);
+  useEffect(() => {
+    if (busy) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(turns.slice(-60)));
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [turns, busy]);
 
-  function send(question: string) {
-    if (!sessionId || !question.trim() || askChat.isPending) return;
-    askChat.mutate({ sessionId, question: question.trim() });
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [turns, status]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  async function send(text: string) {
+    const message = text.trim();
+    if (!message || busy) return;
+    const history = turns
+      .filter(turn => turn.content)
+      .slice(-HISTORY_TURNS)
+      .map(turn => ({ ...turn, content: turn.content.slice(0, 8000) }));
+    setTurns(current => [...current, { role: "user", content: message }]);
+    setInput("");
+    setError("");
+    setStatus("waiting");
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      const response = await fetch("/api/assistant/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history }),
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(body?.error || "تعذر الوصول للمساعد، حاول مرة أخرى 🙏");
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let answer = "";
+      setTurns(current => [...current, { role: "assistant", content: "" }]);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        answer += decoder.decode(value, { stream: true });
+        setStatus("streaming");
+        const textSoFar = answer;
+        setTurns(current => [
+          ...current.slice(0, -1),
+          { role: "assistant", content: textSoFar },
+        ]);
+      }
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      // Drop the unanswered question (and any empty bubble) so a retry
+      // doesn't duplicate it.
+      setTurns(current => {
+        const trimmed = [...current];
+        while (
+          trimmed.length &&
+          trimmed[trimmed.length - 1].role === "assistant" &&
+          !trimmed[trimmed.length - 1].content
+        ) {
+          trimmed.pop();
+        }
+        if (trimmed[trimmed.length - 1]?.content === message) trimmed.pop();
+        return trimmed;
+      });
+      setInput(message);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "تعذر الوصول للمساعد، حاول مرة أخرى 🙏"
+      );
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+      setStatus("idle");
+    }
+  }
+
+  function newChat() {
+    abortRef.current?.abort();
+    setTurns([]);
+    setError("");
+    setStatus("idle");
   }
 
   return (
-    <section className="cards-view">
-      <div className="cards-header">
-        <div>
-          <div className="eyebrow">
-            <span className="eyebrow-dot" /> مساعد AI
-          </div>
-          <h1>
-            {contextLabel ? (
-              <>
-                تسأل عن <em>{contextLabel}</em>
-              </>
-            ) : (
-              <em>جاري التحميل...</em>
-            )}
-          </h1>
+    <section className="assistant-chat">
+      <header className="assistant-chat-header">
+        <div className="assistant-chat-avatar">
+          <Sparkles size={22} />
         </div>
-        <div className="header-actions">
+        <div className="assistant-chat-title">
+          <strong>مساعدك الدراسي</strong>
+          <small>اسألني أي شيء — أنا هنا لأساعدك 😊</small>
+        </div>
+        {!!turns.length && (
           <button
             type="button"
-            className="secondary-button"
-            onClick={onChangeTarget}
+            className="assistant-chat-new"
+            onClick={newChat}
+            aria-label="محادثة جديدة"
           >
-            تغيير السياق
+            <RotateCcw size={16} /> جديدة
           </button>
-        </div>
-      </div>
+        )}
+      </header>
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          maxHeight: 440,
-          overflowY: "auto",
-          marginBottom: 14,
-        }}
-      >
-        {!sessionId || messagesQuery.isLoading ? (
-          <p style={{ fontSize: 12, color: "#8d9895" }}>جاري التحضير...</p>
-        ) : !messagesQuery.data?.length ? (
-          <p style={{ fontSize: 12, color: "#8d9895" }}>
-            اسأل عن {contextLabel || "هذا"} أي سؤال يخطر ببالك.
-          </p>
-        ) : (
-          messagesQuery.data.map(message => (
-            <div
-              key={message.id}
-              className="panel-card"
-              style={{
-                background: message.role === "user" ? "#eef3f2" : "#fff",
-                alignSelf: message.role === "user" ? "flex-end" : "flex-start",
-                maxWidth: "90%",
-              }}
-            >
-              <p style={{ whiteSpace: "pre-line" }}>{message.content}</p>
-              {!!message.citedPages?.length && (
-                <p style={{ fontSize: 11, color: "#8a9493", marginTop: 6 }}>
-                  المصدر:{" "}
-                  {message.citedPages
-                    .map(cite => `صفحة ${cite.pageNumber}`)
-                    .join("، ")}
-                </p>
-              )}
-              {message.role === "assistant" && !!message.citedPages?.length && (
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    disabled={createNoteFromMessage.isPending}
-                    onClick={() =>
-                      createNoteFromMessage.mutate({ messageId: message.id })
-                    }
-                  >
-                    حوّل لملاحظة
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    disabled={createCardFromMessage.isPending}
-                    onClick={() =>
-                      createCardFromMessage.mutate({ messageId: message.id })
-                    }
-                  >
-                    أنشئ بطاقة
-                  </button>
-                </div>
-              )}
+      <div className="assistant-chat-messages">
+        {!turns.length && (
+          <div className="assistant-chat-welcome">
+            <p className="assistant-chat-hello">
+              أهلاً{firstName ? ` ${firstName}` : ""}! 👋✨
+            </p>
+            <p>
+              أنا مساعدك الدراسي. اسألني عن أي شيء: شرح، أسئلة، خطة دراسة، أو
+              حتى لو محتاج تشجيع 💪
+            </p>
+            <div className="assistant-chat-starters">
+              {STARTERS.map(starter => (
+                <button
+                  type="button"
+                  key={starter}
+                  className="quiz-pill"
+                  onClick={() => send(starter)}
+                >
+                  {starter}
+                </button>
+              ))}
             </div>
-          ))
-        )}
-        {askChat.isPending && (
-          <p style={{ fontSize: 12, color: "#8d9895" }}>
-            <Loader2 size={12} className="spin" /> جاري التفكير...
-          </p>
-        )}
-        {askChat.isError && (
-          <div className="inline-alert error">
-            تعذر الحصول على إجابة الآن. حاول مرة أخرى بعد قليل.
           </div>
         )}
+
+        {turns.map((turn, index) =>
+          !turn.content ? null : (
+            <div
+              key={index}
+              dir="auto"
+              className={
+                turn.role === "user"
+                  ? "study-ai-message is-user"
+                  : "study-ai-message"
+              }
+            >
+              {turn.content}
+            </div>
+          )
+        )}
+        {status === "waiting" && (
+          <div className="study-ai-status">
+            <Loader2 size={16} className="spin" /> يفكّر... 🤔
+          </div>
+        )}
+        {error && <p className="study-ai-error">{error}</p>}
+        <div ref={endRef} />
       </div>
 
-      {!messagesQuery.data?.length && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            marginBottom: 12,
-          }}
-        >
-          {EXAMPLE_PROMPTS.map(prompt => (
-            <button
-              key={prompt}
-              type="button"
-              className="filter-button"
-              onClick={() => send(prompt)}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      )}
-
       <form
-        style={{ display: "flex", gap: 8 }}
+        className="study-ai-form assistant-chat-form"
         onSubmit={event => {
           event.preventDefault();
           send(input);
@@ -342,40 +220,16 @@ function AssistantChat({
         <input
           value={input}
           onChange={event => setInput(event.target.value)}
-          placeholder="اكتب سؤالك..."
-          style={{ flex: 1 }}
-          disabled={!sessionId || askChat.isPending}
+          placeholder="اكتب سؤالك هنا..."
         />
         <button
           type="submit"
-          className="primary-button"
-          style={{ width: "auto", padding: "0 18px" }}
-          disabled={!sessionId || !input.trim() || askChat.isPending}
+          disabled={!input.trim() || busy}
           aria-label="إرسال"
         >
-          <Send size={16} />
+          <Send size={18} />
         </button>
       </form>
     </section>
   );
-}
-
-function useContextLabel(target: ChatTarget): string {
-  const bookQuery = trpc.books.get.useQuery(
-    { id: target.scope === "book" ? target.bookId : "" },
-    { enabled: target.scope === "book" }
-  );
-  const subjectQuery = trpc.subjects.get.useQuery(
-    { id: target.scope === "subject" ? target.subjectId : "" },
-    { enabled: target.scope === "subject" }
-  );
-  const chapterQuery = trpc.books.getChapter.useQuery(
-    { id: target.scope === "chapter" ? target.chapterId : "" },
-    { enabled: target.scope === "chapter" }
-  );
-
-  if (target.scope === "book") return bookQuery.data?.book.fileName ?? "";
-  if (target.scope === "subject") return subjectQuery.data?.name ?? "";
-  if (target.scope === "chapter") return chapterQuery.data?.chapter.title ?? "";
-  return "";
 }

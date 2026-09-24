@@ -4631,3 +4631,103 @@ h1 em {
   font: 700 15px "Inter", sans-serif;
   color: #2d6cb5;
 }
+
+/* General مساعد AI chat (app/assistant/page.tsx) — fills the screen above
+   the bottom nav: header, scrolling messages, input pinned at the bottom. */
+.assistant-chat {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 150px);
+  height: calc(100dvh - 150px);
+  max-width: 760px;
+  margin: 0 auto;
+  border: 1px solid #e7e3dc;
+  border-radius: 20px;
+  background: #fff;
+  overflow: hidden;
+}
+.assistant-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee9e1;
+  background: #fbfaf7;
+}
+.assistant-chat-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d6cb5, #d9773f);
+  color: #fff;
+  flex-shrink: 0;
+}
+.assistant-chat-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.assistant-chat-title strong {
+  font-size: 16px;
+}
+.assistant-chat-title small {
+  color: #8a9493;
+  font-size: 12px;
+}
+.assistant-chat-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border: 1px solid #e3ded6;
+  border-radius: 999px;
+  background: #fff;
+  color: #3c4a4e;
+  font-size: 13px;
+  cursor: pointer;
+}
+.assistant-chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+.assistant-chat-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: auto 0;
+  text-align: center;
+  color: #3c4a4e;
+}
+.assistant-chat-welcome p {
+  margin: 0;
+  line-height: 1.7;
+}
+.assistant-chat-hello {
+  font-size: 22px;
+  font-weight: 800;
+}
+.assistant-chat-starters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.assistant-chat-form {
+  flex-shrink: 0;
+}
+@media (max-width: 780px) {
+  .assistant-chat {
+    height: calc(100dvh - 130px);
+    border-radius: 16px;
+  }
+}

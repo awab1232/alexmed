@@ -6,13 +6,9 @@ import { signOut, useSession } from "next-auth/react";
 import {
   BarChart3,
   BookOpen,
-  ClipboardList,
   GraduationCap,
-  LayoutDashboard,
   LogOut,
-  RotateCcw,
   Settings,
-  TriangleAlert,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
@@ -20,17 +16,12 @@ import { trpc } from "@/lib/trpc-client";
 // lives at "/", unchanged) now that Bottom Nav's "🏠" points at "/subjects"
 // (ملفاتي) as of PR10 — plus every other page AppSidebar used to expose, so
 // removing the persistent sidebar never strands an existing feature.
+// لوحة اليوم / المراجعة اليومية / اختباراتي / ملفات الأسئلة / نقاط الضعف
+// were removed from this menu at the owner's request (2026-09-24). Their
+// pages still exist (direct links / other entry points keep working); they
+// just aren't offered here anymore.
 const QUICK_LINKS = [
   { href: "/?view=library", label: "مِرآة", icon: BookOpen },
-  { href: "/today", label: "لوحة اليوم", icon: LayoutDashboard },
-  { href: "/review", label: "المراجعة اليومية", icon: RotateCcw },
-  { href: "/books/quizzes", label: "اختباراتي", icon: ClipboardList },
-  {
-    href: "/books/question-files",
-    label: "ملفات الأسئلة",
-    icon: ClipboardList,
-  },
-  { href: "/books/weak-points", label: "نقاط الضعف", icon: TriangleAlert },
   { href: "/books/stats", label: "إحصائياتي", icon: BarChart3 },
   { href: "/materials", label: "مكتبة الأدمن", icon: GraduationCap },
 ] as const;

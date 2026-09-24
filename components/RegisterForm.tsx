@@ -51,7 +51,7 @@ export default function RegisterForm({
         return;
       }
 
-      router.push("/");
+      router.push("/subjects");
       router.refresh();
     } catch {
       setError("حدث خطأ غير متوقع.");
@@ -61,7 +61,7 @@ export default function RegisterForm({
 
   async function handleGoogle() {
     setGoogleLoading(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: "/subjects" });
   }
 
   return (
