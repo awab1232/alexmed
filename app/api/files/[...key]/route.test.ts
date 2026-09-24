@@ -60,3 +60,61 @@ describe("GET /api/files/[...key]", () => {
     );
   });
 });
+
+// ?stream=1: same-origin byte-range proxy for the PDF reader (storage sends
+// no CORS headers on Range responses, so the browser can't range-request it).
+describe("GET /api/files/[...key]?stream=1", () => {
+  beforeEach(() => {
+    mockAuth.mockReset();
+    mockAllowed.mockReset();
+    mockAuth.mockResolvedValue({ user: { id: "u1", email: "a@example.com" } });
+  });
+
+  function streamRequest(key: string[], range?: string) {
+    return GET(
+      new Request(`http://localhost/api/files/${key.join("/")}?stream=1`, {
+        headers: range ? { Range: range } : undefined,
+      }),
+      { params: Promise.resolve({ key }) }
+    );
+  }
+
+  it("forwards the Range header and returns 206 with range headers", async () => {
+    mockAllowed.mockResolvedValue(true);
+    const fetchMock = vi.fn(
+      async () =>
+        new Response("x".repeat(1024), {
+          status: 206,
+          headers: {
+            "content-type": "application/pdf",
+            "content-length": "1024",
+            "content-range": "bytes 0-1023/50853984",
+          },
+        })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await streamRequest(
+      ["study-pdfs", "a.pdf"],
+      "bytes=0-1023"
+    );
+    expect(response.status).toBe(206);
+    expect(response.headers.get("accept-ranges")).toBe("bytes");
+    expect(response.headers.get("content-range")).toBe("bytes 0-1023/50853984");
+    expect(response.headers.get("content-length")).toBe("1024");
+    const init = (
+      fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    )[1];
+    expect((init.headers as Record<string, string>).Range).toBe("bytes=0-1023");
+    vi.unstubAllGlobals();
+  });
+
+  it("still enforces ownership before streaming anything", async () => {
+    mockAllowed.mockResolvedValue(false);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await streamRequest(["study-pdfs", "someone-else.pdf"]);
+    expect(response.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});

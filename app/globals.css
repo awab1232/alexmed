@@ -4626,3 +4626,8 @@ h1 em {
     display: none;
   }
 }
+.pdf-viewer-load-percent {
+  margin: 4px 0 0;
+  font: 700 15px "Inter", sans-serif;
+  color: #2d6cb5;
+}

@@ -267,6 +267,9 @@ export default function PdfViewer({
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Download progress while opening the document (null until pdf.js knows
+  // the total size) — a large file must never look silently stuck.
+  const [loadPercent, setLoadPercent] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageInput, setPageInput] = useState("1");
@@ -569,6 +572,7 @@ export default function PdfViewer({
     if (!pdfjs) return;
     let cancelled = false;
     setLoading(true);
+    setLoadPercent(null);
     setError("");
     setDoc(null);
     setNumPages(0);
@@ -595,15 +599,32 @@ export default function PdfViewer({
     // stays blank white, no error anywhere" symptom this was built to fix.
     // Disabling streaming makes pdf.js fetch the whole file once up front
     // instead, which works the same as any other cross-origin resource.
+    //
+    // Update: the range problem is now solved by making the requests
+    // same-origin — `?stream=1` makes /api/files proxy the bytes (with Range
+    // support) instead of redirecting to storage. pdf.js fetches only what it
+    // needs, so page 1 of a 50MB scanned PDF shows in seconds instead of
+    // after downloading the whole file (which looked stuck on mobile).
+    const streamUrl = `${src}${src.includes("?") ? "&" : "?"}stream=1`;
     const loadingTask = pdfjs.getDocument({
-      url: src,
+      url: streamUrl,
       standardFontDataUrl: "/standard_fonts/",
       cMapUrl: "/cmaps/",
       cMapPacked: true,
       disableStream: true,
-      disableRange: true,
       disableAutoFetch: true,
+      rangeChunkSize: 512 * 1024,
     });
+    loadingTask.onProgress = ({
+      loaded,
+      total,
+    }: {
+      loaded: number;
+      total?: number;
+    }) => {
+      if (cancelled || !total) return;
+      setLoadPercent(Math.min(99, Math.round((loaded / total) * 100)));
+    };
     loadingTask.promise.then(
       pdf => {
         if (cancelled) return;
@@ -1093,6 +1114,9 @@ export default function PdfViewer({
         <div className="empty-state">
           <Loader2 size={28} className="spin" />
           <h3>جاري تحميل {fileName || "الملف"}...</h3>
+          {loadPercent !== null && (
+            <p className="pdf-viewer-load-percent">{loadPercent}%</p>
+          )}
         </div>
       ) : (
         <div
