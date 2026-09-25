@@ -72,9 +72,7 @@ describe("Math Challenge generator", () => {
     const mid = Array.from({ length: 10 }, (_, i) =>
       generateMathStage(15, createRng(i), 10)
     ).flat();
-    const missing = mid.filter(
-      q => q.instruction === "Find the missing number"
-    );
+    const missing = mid.filter(q => q.instruction === "أوجد الرقم الناقص");
     expect(missing.length).toBeGreaterThan(10);
   });
 

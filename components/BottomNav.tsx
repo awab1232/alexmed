@@ -3,7 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Home, ListChecks, Plus, Sparkles, User } from "lucide-react";
+import {
+  BookOpen,
+  FolderPlus,
+  Gamepad2,
+  Home,
+  ListChecks,
+  Plus,
+  Sparkles,
+  User,
+} from "lucide-react";
 
 // Replaces AppSidebar as the persistent student-facing navigation (PR9).
 // AppSidebar.tsx is intentionally left in place (unused by student pages
@@ -15,8 +24,11 @@ import { BookOpen, Home, ListChecks, Plus, Sparkles, User } from "lucide-react";
 // "🏠 الرئيسية" points at "/subjects" as of PR10 (the "ملفاتي" folders
 // view — see app/subjects/page.tsx). مِرآة itself is unaffected and still
 // lives at "/", reachable via app/account/page.tsx's quick links.
+// RTL order: الرئيسية + ألعاب sit to the right of the + button and مساعد AI
+// + حسابي to its left, so the bar is balanced two-and-two.
 const ITEMS = [
   { href: "/subjects", label: "الرئيسية", icon: Home },
+  { href: "/games", label: "ألعاب", icon: Gamepad2 },
   { href: "/books/upload", label: "إضافة", icon: Plus },
   { href: "/assistant", label: "مساعد AI", icon: Sparkles },
   { href: "/account", label: "حسابي", icon: User },
@@ -58,6 +70,14 @@ const UPLOAD_CHOICES = [
     title: "ملف أسئلة",
     description: "حوّل ملف أسئلة إلى بطاقات مذاكرة سريعة.",
     icon: ListChecks,
+  },
+  // The home page's former "إنشاء مجلد" button lives here now (one place
+  // for every "add" action); app/subjects/page.tsx opens its form on ?new=1.
+  {
+    href: "/subjects?new=1",
+    title: "مجلد جديد",
+    description: "نظّم ملفاتك حسب المادة.",
+    icon: FolderPlus,
   },
 ] as const;
 
@@ -127,11 +147,11 @@ export default function BottomNav() {
             className="upload-chooser-sheet"
             role="dialog"
             aria-modal="true"
-            aria-label="ماذا تريد أن ترفع؟"
+            aria-label="ماذا تريد أن تضيف؟"
             onClick={event => event.stopPropagation()}
           >
             <div className="upload-chooser-handle" />
-            <h2>ماذا تريد أن ترفع؟</h2>
+            <h2>ماذا تريد أن تضيف؟</h2>
             {UPLOAD_CHOICES.map(choice => {
               const Icon = choice.icon;
               return (

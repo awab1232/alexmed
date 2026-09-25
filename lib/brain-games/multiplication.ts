@@ -51,7 +51,7 @@ export function generateMultiplicationStage(
     questions.push({
       id: `mul-${stage}-${questions.length}`,
       prompt: `${left} × ${right} = ?`,
-      instruction: "Solve",
+      instruction: "احسب",
       options,
       correctIndex,
       timeLimitMs: tier.timeLimitMs,

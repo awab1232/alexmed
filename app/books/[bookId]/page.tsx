@@ -425,7 +425,7 @@ export default function BookDetailPage() {
               <div>
                 <strong>{book.fileName}</strong>
                 <span>
-                  {new Date(book.createdAt).toLocaleDateString("ar")} ·{" "}
+                  {new Date(book.createdAt).toLocaleDateString("ar-u-nu-latn")} ·{" "}
                   {book.pageCount} صفحة
                 </span>
               </div>

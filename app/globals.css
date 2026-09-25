@@ -6328,3 +6328,69 @@ h1 em {
   background: linear-gradient(90deg, #efeae2 25%, #f7f3ec 50%, #efeae2 75%);
   background-size: 200% 100%;
 }
+
+/* ── Brain Games: compact level header ("12/100") instead of a full-page
+   stage grid — arrows step through unlocked levels. ── */
+.bg-level {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 16px 0 4px;
+}
+.bg-level-step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+.bg-level-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.bg-level-step:focus-visible {
+  outline: 3px solid #7c5cff;
+  outline-offset: 2px;
+}
+.bg-level-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 130px;
+}
+.bg-level-value small {
+  opacity: 0.75;
+  font-size: 12px;
+}
+.bg-level-value strong {
+  font-size: 34px;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.bg-level-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+  font-size: 12px;
+}
+.bg-stats.is-light {
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 0 16px;
+}
+.bg-stats.is-light div {
+  border: 1px solid #e7e1d7;
+  background: #fffdfa;
+  color: #1f2b2f;
+  text-align: center;
+}
+.dark .bg-stats.is-light div {
+  border-color: #2e393c;
+  background: #1d2528;
+  color: #e6ecec;
+}

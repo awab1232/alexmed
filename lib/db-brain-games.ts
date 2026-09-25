@@ -187,7 +187,7 @@ export async function startStageSession(
 ): Promise<PublicSession> {
   const game = BRAIN_GAMES[gameId];
   if (!Number.isInteger(stage) || stage < 1 || stage > game.totalStages) {
-    throw new BrainGameError("STAGE_LOCKED", "هذه المرحلة غير موجودة.");
+    throw new BrainGameError("STAGE_LOCKED", "هذا المستوى غير موجود.");
   }
   const db = requireDb();
   return db.transaction(async tx => {
@@ -195,7 +195,7 @@ export async function startStageSession(
     if (stage > progress.highestUnlockedStage) {
       throw new BrainGameError(
         "STAGE_LOCKED",
-        `أنهِ المرحلة ${progress.highestUnlockedStage} أولًا لفتح هذه المرحلة.`
+        `أنهِ المستوى ${progress.highestUnlockedStage} أولًا لفتح هذا المستوى.`
       );
     }
     // One live attempt per game: starting again closes older ones (their
@@ -288,7 +288,7 @@ function assertOpen(session: SessionRow) {
   if (session.expiresAt.getTime() < Date.now()) {
     throw new BrainGameError(
       "SESSION_EXPIRED",
-      "انتهت صلاحية هذه الجلسة، ابدأ المرحلة من جديد."
+      "انتهت صلاحية هذه الجلسة، ابدأ المستوى من جديد."
     );
   }
 }
@@ -540,7 +540,7 @@ export async function takeSudokuHint(
     if (session.hintsUsed >= payload.maxHints) {
       throw new BrainGameError(
         "NO_HINTS_LEFT",
-        "استخدمت كل التلميحات لهذه المرحلة."
+        "استخدمت كل التلميحات لهذا المستوى."
       );
     }
     const hint = nextHint(board, payload.puzzle, payload.solution);

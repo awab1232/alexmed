@@ -106,7 +106,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const b = operand();
       return {
         prompt: `${a} + ${b} = ?`,
-        instruction: "Solve",
+        instruction: "احسب",
         answer: a + b,
         extras: [a + b + 10, a + b - 10],
       };
@@ -117,7 +117,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const [big, small] = a >= b ? [a + 1, b] : [b + 1, a];
       return {
         prompt: `${big} ${MINUS} ${small} = ?`,
-        instruction: "Solve",
+        instruction: "احسب",
         answer: big - small,
         extras: [big - small + 10, big - small - 10],
       };
@@ -129,7 +129,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const left = rng.next() < 0.5;
       return {
         prompt: left ? `? + ${known} = ${total}` : `${known} + ? = ${total}`,
-        instruction: "Find the missing number",
+        instruction: "أوجد الرقم الناقص",
         answer: missing,
         extras: [missing + 10, missing - 10],
       };
@@ -139,7 +139,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const missing = operand();
       return {
         prompt: `${result + missing} ${MINUS} ? = ${result}`,
-        instruction: "Find the missing number",
+        instruction: "أوجد الرقم الناقص",
         answer: missing,
         extras: [missing + 10, missing - 10],
       };
@@ -149,7 +149,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const result = operand();
       return {
         prompt: `? ${MINUS} ${subtrahend} = ${result}`,
-        instruction: "Find the missing number",
+        instruction: "أوجد الرقم الناقص",
         answer: subtrahend + result,
         // The classic slip: subtracting instead of adding back.
         extras: [Math.abs(result - subtrahend), subtrahend + result + 10],
@@ -161,7 +161,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const c = rng.int(lo, Math.min(a + b - 1, max));
       return {
         prompt: `${a} + ${b} ${MINUS} ${c} = ?`,
-        instruction: "Solve",
+        instruction: "احسب",
         answer: a + b - c,
         extras: [a + b - c + 10, a + b - c - 10],
       };
@@ -172,7 +172,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const c = rng.int(2, 30);
       return {
         prompt: `${a} × ${b} + ${c} = ?`,
-        instruction: "Solve",
+        instruction: "احسب",
         answer: a * b + c,
         extras: [(a + 1) * b + c, (a - 1) * b + c, a * (b + 1) + c],
       };
@@ -183,7 +183,7 @@ function build(shape: MathShape, rng: Rng, max: number): Built {
       const c = rng.int(2, Math.min(30, a * b - 1));
       return {
         prompt: `${a} × ${b} ${MINUS} ${c} = ?`,
-        instruction: "Solve",
+        instruction: "احسب",
         answer: a * b - c,
         extras: [(a + 1) * b - c, a * (b - 1) - c, a * b - c + 10],
       };

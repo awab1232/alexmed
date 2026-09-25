@@ -1,11 +1,11 @@
 "use client";
 
-import { ChevronLeft, Play, RotateCcw } from "lucide-react";
+import { ChevronRight, Play, RotateCcw } from "lucide-react";
 import type { StageResult } from "@/lib/db-brain-games";
 
 function seconds(ms: number | null) {
   if (ms === null) return "—";
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} ث`;
   const s = Math.round(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
@@ -40,78 +40,80 @@ export default function StageResultView({
       <h2>
         {passed
           ? lastStage
-            ? "كل المراحل مكتملة!"
-            : "Stage Complete"
-          : "Almost there!"}
+            ? "كل المستويات مكتملة!"
+            : `أنهيت المستوى ${result.stage}`
+          : "قربت! 💪"}
       </h2>
       {!passed && kind === "quiz" && (
         <p className="bg-result-sub">
-          {result.correct} / {result.total} — تحتاج أكثر قليلًا لفتح المرحلة
-          التالية
+          <bdi dir="ltr">
+            {result.correct}/{result.total}
+          </bdi>{" "}
+          — تحتاج أكثر قليلًا لفتح المستوى التالية
         </p>
       )}
 
       <dl className="bg-result-stats">
         <div>
-          <dt>Score</dt>
+          <dt>النتيجة</dt>
           <dd>{result.score.toLocaleString("en")}</dd>
         </div>
         {kind === "quiz" ? (
           <>
             <div>
-              <dt>Correct</dt>
+              <dt>الصحيح</dt>
               <dd>
                 {result.correct}/{result.total}
               </dd>
             </div>
             <div>
-              <dt>Accuracy</dt>
+              <dt>الدقة</dt>
               <dd>{result.accuracy}%</dd>
             </div>
             <div>
-              <dt>Fastest</dt>
+              <dt>أسرع إجابة</dt>
               <dd>{seconds(result.fastestMs)}</dd>
             </div>
           </>
         ) : (
           <>
             <div>
-              <dt>Time</dt>
+              <dt>الوقت</dt>
               <dd>{seconds(result.timeMs)}</dd>
             </div>
             <div>
-              <dt>Hints</dt>
+              <dt>التلميحات</dt>
               <dd>{result.hintsUsed ?? 0}</dd>
             </div>
           </>
         )}
         <div>
-          <dt>Best</dt>
+          <dt>أفضل نتيجة</dt>
           <dd>{result.bestScore.toLocaleString("en")}</dd>
         </div>
       </dl>
 
       {result.newBest && (
-        <p className="bg-result-best">⭐ رقم قياسي جديد لهذه المرحلة!</p>
+        <p className="bg-result-best">⭐ رقم قياسي جديد لهذا المستوى!</p>
       )}
       {result.unlockedStage && (
         <p className="bg-result-unlock">
-          🔓 Stage {result.unlockedStage} Unlocked
+          🔓 انفتح المستوى {result.unlockedStage}
         </p>
       )}
 
       <div className="bg-result-actions">
         {passed && result.nextStage && (
           <button type="button" className="bg-primary-lg" onClick={onNext}>
-            <Play size={18} aria-hidden="true" /> Next Stage
+            <Play size={18} aria-hidden="true" /> المستوى التالي
           </button>
         )}
         <button type="button" className="secondary-button" onClick={onRetry}>
           <RotateCcw size={16} aria-hidden="true" />
-          {passed ? "Retry" : "Try Again"}
+          {passed ? "أعد المحاولة" : "حاول مرة ثانية"}
         </button>
         <button type="button" className="secondary-button" onClick={onBack}>
-          <ChevronLeft size={16} aria-hidden="true" /> Back to Brain Games
+          <ChevronRight size={16} aria-hidden="true" /> العودة للألعاب
         </button>
       </div>
     </div>

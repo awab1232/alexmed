@@ -76,7 +76,7 @@ export default function PlayStagePage() {
         <div className="bg-state">
           <h2>اللعبة غير موجودة</h2>
           <Link href="/games" className="primary-button">
-            Brain Games
+            الألعاب
           </Link>
         </div>
       </section>
@@ -107,11 +107,11 @@ export default function PlayStagePage() {
     body = (
       <div className="bg-state" role="alert">
         {locked && <Lock size={28} aria-hidden="true" />}
-        <h2>{locked ? "هذه المرحلة مقفلة" : "تعذر بدء المرحلة"}</h2>
+        <h2>{locked ? "هذا المستوى مقفل" : "تعذر بدء المستوى"}</h2>
         <p>{startStage.error.message}</p>
         {locked ? (
           <button type="button" className="primary-button" onClick={back}>
-            العودة للمراحل
+            العودة للمستويات
           </button>
         ) : (
           <button
@@ -128,7 +128,7 @@ export default function PlayStagePage() {
     body = (
       <div className="bg-state" aria-live="polite">
         <Loader2 size={28} className="spin" aria-hidden="true" />
-        <p>نجهّز المرحلة {requestedStage}…</p>
+        <p>نجهّز المستوى {requestedStage}…</p>
       </div>
     );
   } else if (session.stageData.kind === "quiz") {
@@ -168,15 +168,20 @@ export default function PlayStagePage() {
           type="button"
           className="bg-icon-btn"
           onClick={back}
-          aria-label="رجوع للمراحل"
+          aria-label="رجوع للمستويات"
         >
           <ChevronRight size={22} />
         </button>
         <div>
           <strong>
-            <span aria-hidden="true">{game.emoji}</span> {game.title}
+            <span aria-hidden="true">{game.emoji}</span> {game.titleAr}
           </strong>
-          <small>Stage {session?.stage ?? requestedStage}</small>
+          <small>
+            المستوى{" "}
+            <bdi dir="ltr">
+              {session?.stage ?? requestedStage}/{game.totalStages}
+            </bdi>
+          </small>
         </div>
       </header>
       {body}

@@ -17,7 +17,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function formatLastUpdate(value: string | Date | null | undefined) {
   if (!value) return null;
-  return new Intl.DateTimeFormat("ar-EG", {
+  return new Intl.DateTimeFormat("ar-EG-u-nu-latn", {
     day: "numeric",
     month: "short",
   }).format(new Date(value));

@@ -1,20 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
-// 🧠 Brain Games home — every game with the player's real saved progress.
+// 🧠 ألعاب الذاكرة — the bottom bar's "ألعاب" tab: every game with the
+// player's real saved progress.
 export default function BrainGamesHome() {
   const overview = trpc.brainGames.overview.useQuery();
+
+  const header = (
+    <header className="bg-hero">
+      <h1>🧠 ألعاب الذاكرة</h1>
+      <p>درّب عقلك واكسر رقمك القياسي.</p>
+    </header>
+  );
 
   if (overview.isLoading) {
     return (
       <section className="bg-page" aria-busy="true">
-        <header className="bg-hero">
-          <h1>🧠 Brain Games</h1>
-          <p>Train your brain. Beat your best.</p>
-        </header>
+        {header}
         <div className="bg-grid">
           {[0, 1, 2, 3].map(i => (
             <div key={i} className="bg-card bg-skeleton" />
@@ -47,20 +52,14 @@ export default function BrainGamesHome() {
 
   return (
     <section className="bg-page">
-      <header className="bg-hero">
-        <Link href="/subjects" className="bg-back">
-          <ChevronLeft size={18} aria-hidden="true" /> الرئيسية
-        </Link>
-        <h1>🧠 Brain Games</h1>
-        <p>Train your brain. Beat your best.</p>
-      </header>
+      {header}
 
       {isNewPlayer && (
         <div className="bg-welcome">
-          <h2>🧠 Welcome to Brain Games</h2>
-          <p>Challenge your memory, speed and logic.</p>
+          <h2>أهلًا بك في ألعاب الذاكرة 🧠</h2>
+          <p>تحدَّ ذاكرتك وسرعتك وتفكيرك المنطقي.</p>
           <Link href="/games/math" className="primary-button">
-            Start your first game →
+            ابدأ أول لعبة ←
           </Link>
         </div>
       )}
@@ -76,22 +75,26 @@ export default function BrainGamesHome() {
               key={game.id}
               href={`/games/${game.id}`}
               className={`bg-card bg-card-${game.id}`}
-              aria-label={`${game.title} — Stage ${stage} of ${game.totalStages}`}
+              aria-label={`${game.titleAr} — المستوى ${stage} من ${game.totalStages}`}
             >
               <span className="bg-card-icon" aria-hidden="true">
                 {game.emoji}
               </span>
-              <strong className="bg-card-title">{game.title}</strong>
-              <span className="bg-card-tagline">{game.tagline}</span>
+              <strong className="bg-card-title">{game.titleAr}</strong>
+              <span className="bg-card-tagline">{game.taglineAr}</span>
               {progress ? (
                 <>
-                  <span className="bg-card-meta" dir="ltr">
+                  <span className="bg-card-meta">
                     <span>
-                      Stage {stage} / {game.totalStages}
+                      المستوى{" "}
+                      <bdi dir="ltr">
+                        {stage}/{game.totalStages}
+                      </bdi>
                     </span>
                     {progress.bestScore > 0 && (
                       <span>
-                        Best {progress.bestScore.toLocaleString("en")}
+                        أفضل نتيجة{" "}
+                        <bdi>{progress.bestScore.toLocaleString("en")}</bdi>
                       </span>
                     )}
                   </span>
@@ -101,14 +104,14 @@ export default function BrainGamesHome() {
                     aria-valuemin={0}
                     aria-valuemax={game.totalStages}
                     aria-valuenow={completed}
-                    aria-label="المراحل المكتملة"
+                    aria-label="المستويات المكتملة"
                   >
                     <span style={{ width: `${Math.max(2, percent)}%` }} />
                   </span>
-                  <span className="bg-card-cta">▶ Continue Stage {stage}</span>
+                  <span className="bg-card-cta">▶ تابع المستوى {stage}</span>
                 </>
               ) : (
-                <span className="bg-card-cta is-new">▶ Play Stage 1</span>
+                <span className="bg-card-cta is-new">▶ ابدأ المستوى 1</span>
               )}
             </Link>
           );

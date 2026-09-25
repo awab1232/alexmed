@@ -128,7 +128,7 @@ export default function AccountPage() {
               {PLAN_LABELS[profileQuery.data.plan] ?? profileQuery.data.plan}
             </strong>
             {profileQuery.data.planExpiresAt &&
-              ` · حتى ${new Date(profileQuery.data.planExpiresAt).toLocaleDateString("ar-EG")}`}
+              ` · حتى ${new Date(profileQuery.data.planExpiresAt).toLocaleDateString("ar-EG-u-nu-latn")}`}
           </p>
         )}
       </div>

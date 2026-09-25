@@ -19,7 +19,7 @@ const PAGE_SIZE = 25;
 
 function formatDate(value: string | Date | null) {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString("ar", {
+  return new Date(value).toLocaleDateString("ar-u-nu-latn", {
     year: "numeric",
     month: "short",
     day: "numeric",

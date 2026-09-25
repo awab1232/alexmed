@@ -14,7 +14,7 @@ const POLL_INTERVAL_MS = 5000;
 
 function formatDateTime(value: string | Date | null | undefined) {
   if (!value) return "—";
-  return new Date(value).toLocaleString("ar", {
+  return new Date(value).toLocaleString("ar-u-nu-latn", {
     year: "numeric",
     month: "short",
     day: "numeric",

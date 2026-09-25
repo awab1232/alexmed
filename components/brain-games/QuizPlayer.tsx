@@ -248,12 +248,12 @@ export default function QuizPlayer({
     const limit = Math.round((questions[0]?.timeLimitMs ?? 8000) / 1000);
     return (
       <div className="bg-ready">
-        <span className="bg-ready-stage">Stage {stage}</span>
+        <span className="bg-ready-stage">المستوى {stage}</span>
         <h2>{index > 0 ? "جاهز تكمل؟" : "جاهز؟"}</h2>
         <ul>
           <li>{questions.length} أسئلة</li>
           <li>{limit} ثوانٍ لكل سؤال</li>
-          <li>تحتاج {passCorrect} إجابات صحيحة لفتح المرحلة التالية</li>
+          <li>تحتاج {passCorrect} إجابات صحيحة لفتح المستوى التالي</li>
         </ul>
         <button type="button" className="bg-primary-lg" onClick={begin}>
           {index > 0 ? `▶ أكمل من السؤال ${index + 1}` : "▶ ابدأ"}
@@ -289,7 +289,7 @@ export default function QuizPlayer({
         </p>
         {errorKind === "expired" ? (
           <button type="button" className="primary-button" onClick={onRestart}>
-            <RotateCcw size={16} aria-hidden="true" /> ابدأ المرحلة من جديد
+            <RotateCcw size={16} aria-hidden="true" /> ابدأ المستوى من جديد
           </button>
         ) : (
           <button
@@ -315,7 +315,10 @@ export default function QuizPlayer({
     <div className="bg-quiz">
       <div className="bg-quiz-top">
         <span>
-          Q {index + 1}/{questions.length}
+          سؤال{" "}
+          <bdi dir="ltr">
+            {index + 1}/{questions.length}
+          </bdi>
         </span>
         <span aria-label={`النقاط ${liveScore}`}>⭐ {liveScore}</span>
       </div>

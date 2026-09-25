@@ -31,7 +31,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 function formatDate(value: string | Date) {
-  return new Date(value).toLocaleDateString("ar", {
+  return new Date(value).toLocaleDateString("ar-u-nu-latn", {
     year: "numeric",
     month: "short",
     day: "numeric",

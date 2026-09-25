@@ -1,19 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Check, ChevronLeft, Lock, Play, RotateCcw } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  RotateCcw,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
-import { isBrainGameId, stageState } from "@/lib/brain-games/games";
+import { isBrainGameId } from "@/lib/brain-games/games";
 
 function formatMs(ms: number | null | undefined) {
   if (ms === null || ms === undefined) return "—";
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} ث`;
   const seconds = Math.round(ms / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-// One game: saved stats, "Continue Stage N" and the stage map.
+// One game: the level as a compact "12/100" at the top (arrows step back
+// through unlocked levels to replay one), the saved stats, and Play.
 export default function BrainGamePage() {
   const { gameId } = useParams<{ gameId: string }>();
   const valid = isBrainGameId(gameId);
@@ -22,13 +30,23 @@ export default function BrainGamePage() {
     { enabled: valid }
   );
 
+  const progress = query.data?.progress ?? null;
+  const current = progress?.currentStage ?? 1;
+  const highest = progress?.highestUnlockedStage ?? 1;
+  const [selected, setSelected] = useState<number | null>(null);
+  // Follow the player's real level until they pick another one.
+  useEffect(() => {
+    setSelected(null);
+  }, [current]);
+  const stage = selected ?? current;
+
   if (!valid) {
     return (
       <section className="bg-page">
         <div className="bg-state">
           <h2>اللعبة غير موجودة</h2>
           <Link href="/games" className="primary-button">
-            العودة إلى Brain Games
+            العودة إلى الألعاب
           </Link>
         </div>
       </section>
@@ -38,12 +56,7 @@ export default function BrainGamePage() {
   if (query.isLoading) {
     return (
       <section className="bg-page" aria-busy="true">
-        <div className="bg-card bg-skeleton" style={{ height: 180 }} />
-        <div className="bg-stage-grid">
-          {Array.from({ length: 20 }, (_, i) => (
-            <span key={i} className="bg-stage bg-skeleton" />
-          ))}
-        </div>
+        <div className="bg-card bg-skeleton" style={{ height: 260 }} />
       </section>
     );
   }
@@ -66,8 +79,6 @@ export default function BrainGamePage() {
   }
 
   const game = query.data;
-  const progress = game.progress;
-  const current = progress?.currentStage ?? 1;
   const completed = progress?.completedStages.length ?? 0;
   const accuracy =
     progress && progress.totalCorrect + progress.totalWrong > 0
@@ -77,46 +88,68 @@ export default function BrainGamePage() {
             100
         )
       : null;
-  const resuming = game.activeSession?.stage === current;
+  const stageBest = progress?.stageBests[String(stage)];
+  const stageDone = progress?.completedStages.includes(stage) ?? false;
+  const resuming = game.activeSession?.stage === stage;
 
   return (
     <section className="bg-page">
       <header className="bg-hero is-game">
         <Link href="/games" className="bg-back">
-          <ChevronLeft size={18} aria-hidden="true" /> Brain Games
+          <ChevronRight size={18} aria-hidden="true" /> الألعاب
         </Link>
         <span className="bg-hero-icon" aria-hidden="true">
           {game.emoji}
         </span>
-        <h1>{game.title}</h1>
-        <p>{game.tagline}</p>
-        <div className="bg-stats" dir="ltr">
-          <div>
-            <small>Stage</small>
+        <h1>{game.titleAr}</h1>
+        <p>{game.taglineAr}</p>
+
+        <div className="bg-level" role="group" aria-label="اختيار المستوى">
+          <button
+            type="button"
+            className="bg-level-step"
+            onClick={() => setSelected(Math.max(1, stage - 1))}
+            disabled={stage <= 1}
+            aria-label="المستوى السابق"
+          >
+            <ChevronRight size={22} aria-hidden="true" />
+          </button>
+          <div className="bg-level-value" aria-live="polite">
+            <small>المستوى</small>
             <strong>
-              {current} / {game.totalStages}
+              <bdi dir="ltr">
+                {stage}/{game.totalStages}
+              </bdi>
             </strong>
+            {stageDone ? (
+              <span className="bg-level-note">
+                <Check size={13} aria-hidden="true" /> مكتمل
+                {stageBest ? ` · ${stageBest.score.toLocaleString("en")}` : ""}
+              </span>
+            ) : (
+              <span className="bg-level-note">
+                {stage === current ? "مستواك الحالي" : "مفتوح"}
+              </span>
+            )}
           </div>
-          <div>
-            <small>Best</small>
-            <strong>{(progress?.bestScore ?? 0).toLocaleString("en")}</strong>
-          </div>
-          <div>
-            <small>Accuracy</small>
-            <strong>{accuracy === null ? "—" : `${accuracy}%`}</strong>
-          </div>
-          <div>
-            <small>{game.kind === "sudoku" ? "Best time" : "Fastest"}</small>
-            <strong>{formatMs(progress?.bestTimeMs)}</strong>
-          </div>
+          <button
+            type="button"
+            className="bg-level-step"
+            onClick={() => setSelected(Math.min(highest, stage + 1))}
+            disabled={stage >= highest}
+            aria-label="المستوى التالي"
+          >
+            <ChevronLeft size={22} aria-hidden="true" />
+          </button>
         </div>
+
         <span
           className="bg-bar is-hero"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={game.totalStages}
           aria-valuenow={completed}
-          aria-label="المراحل المكتملة"
+          aria-label="المستويات المكتملة"
         >
           <span
             style={{
@@ -124,61 +157,42 @@ export default function BrainGamePage() {
             }}
           />
         </span>
+
         <Link
-          href={`/games/${game.id}/play?stage=${current}`}
+          href={`/games/${game.id}/play?stage=${stage}`}
           className="bg-continue"
         >
           <Play size={18} aria-hidden="true" />
-          {progress
-            ? `${resuming ? "Resume" : "Continue"} Stage ${current}`
-            : "Start Stage 1"}
+          {resuming
+            ? `أكمل المستوى ${stage}`
+            : stageDone
+              ? `أعد لعب المستوى ${stage}`
+              : progress
+                ? `العب المستوى ${stage}`
+                : "ابدأ المستوى 1"}
         </Link>
       </header>
 
-      <h2 className="bg-section-title">Stages</h2>
-      <ol className="bg-stage-grid" aria-label="المراحل">
-        {Array.from({ length: game.totalStages }, (_, i) => i + 1).map(
-          stage => {
-            const state = stageState(stage, progress);
-            const best = progress?.stageBests[String(stage)];
-            const label = `Stage ${stage} — ${
-              state === "locked"
-                ? "مقفلة"
-                : state === "completed"
-                  ? "مكتملة"
-                  : state === "current"
-                    ? "الحالية"
-                    : "مفتوحة"
-            }`;
-            return (
-              <li key={stage}>
-                {state === "locked" ? (
-                  <span
-                    className="bg-stage is-locked"
-                    role="img"
-                    aria-label={label}
-                  >
-                    <Lock size={12} aria-hidden="true" />
-                    {stage}
-                  </span>
-                ) : (
-                  <Link
-                    href={`/games/${game.id}/play?stage=${stage}`}
-                    className={`bg-stage is-${state}`}
-                    aria-label={label}
-                  >
-                    {state === "completed" && (
-                      <Check size={12} aria-hidden="true" />
-                    )}
-                    {stage}
-                    {best && <small>{best.score}</small>}
-                  </Link>
-                )}
-              </li>
-            );
-          }
-        )}
-      </ol>
+      <div className="bg-stats is-light">
+        <div>
+          <small>أفضل نتيجة</small>
+          <strong>
+            <bdi>{(progress?.bestScore ?? 0).toLocaleString("en")}</bdi>
+          </strong>
+        </div>
+        <div>
+          <small>الدقة</small>
+          <strong>
+            <bdi>{accuracy === null ? "—" : `${accuracy}%`}</bdi>
+          </strong>
+        </div>
+        <div>
+          <small>{game.kind === "sudoku" ? "أسرع حل" : "أسرع إجابة"}</small>
+          <strong>
+            <bdi>{formatMs(progress?.bestTimeMs)}</bdi>
+          </strong>
+        </div>
+      </div>
     </section>
   );
 }

@@ -1280,7 +1280,7 @@ export default function Home() {
                       <span>
                         {deck.pageCount > 0 && `${deck.pageCount} صفحة · `}
                         {deck.cardCount} بطاقة ·{" "}
-                        {new Date(deck.createdAt).toLocaleDateString("ar")}
+                        {new Date(deck.createdAt).toLocaleDateString("ar-u-nu-latn")}
                       </span>
                     </div>
                     <select

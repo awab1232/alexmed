@@ -51,6 +51,13 @@ function isSavedBoard(value: unknown): value is SavedBoard {
   );
 }
 
+const DIFFICULTY_AR: Record<string, string> = {
+  easy: "سهل",
+  medium: "متوسط",
+  hard: "صعب",
+  expert: "خبير",
+};
+
 function formatClock(ms: number) {
   const seconds = Math.floor(ms / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -372,7 +379,7 @@ export default function SudokuPlayer({
         <h2>انتهت هذه الجلسة</h2>
         <p>{message}</p>
         <button type="button" className="primary-button" onClick={onRestart}>
-          <RotateCcw size={16} aria-hidden="true" /> ابدأ المرحلة من جديد
+          <RotateCcw size={16} aria-hidden="true" /> ابدأ المستوى من جديد
         </button>
       </div>
     );
@@ -382,7 +389,10 @@ export default function SudokuPlayer({
     <div className="bg-sudoku">
       <div className="bg-sudoku-top">
         <span>
-          Stage {stage} · <span className="bg-diff">{difficulty}</span>
+          المستوى {stage} ·{" "}
+          <span className="bg-diff">
+            {DIFFICULTY_AR[difficulty] ?? difficulty}
+          </span>
         </span>
         <span role="timer" aria-label="الوقت">
           ⏱ {formatClock(elapsed())}

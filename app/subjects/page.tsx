@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { BookOpen, CircleAlert, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
@@ -21,9 +22,13 @@ const TYPE_LABELS: Record<string, string> = {
   custom: "مخصص",
 };
 
+// The folder search box only appears from this many folders on.
+const SEARCH_MIN_FOLDERS = 5;
+
 function formatLastUpdate(value: string | Date | null | undefined) {
   if (!value) return null;
-  return new Intl.DateTimeFormat("ar-EG", {
+  // Western digits, matching every other number in the app ("2 ملف").
+  return new Intl.DateTimeFormat("ar-EG-u-nu-latn", {
     day: "numeric",
     month: "short",
   }).format(new Date(value));
@@ -46,7 +51,13 @@ export default function SubjectsPage() {
     },
   });
 
-  const [showForm, setShowForm] = useState(false);
+  // The bottom bar's "+ → مجلد جديد" lands here with ?new=1.
+  const searchParams = useSearchParams();
+  const wantsNewFolder = searchParams.get("new") === "1";
+  const [showForm, setShowForm] = useState(wantsNewFolder);
+  useEffect(() => {
+    if (wantsNewFolder) setShowForm(true);
+  }, [wantsNewFolder]);
   const [name, setName] = useState("");
   const [type, setType] = useState("general");
   const [query, setQuery] = useState("");
@@ -68,32 +79,10 @@ export default function SubjectsPage() {
           <h1>ملفاتي</h1>
           <p>مجلداتك الدراسية — كل مجلد يجمع ملفاتك حسب المادة.</p>
         </div>
-        <div className="header-actions">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => setShowForm(value => !value)}
-          >
-            <Plus size={16} /> إنشاء مجلد
-          </button>
-        </div>
       </div>
 
-      {/* 🧠 Brain Games entry (app/games). */}
-      <Link href="/games" className="bg-home-tile">
-        <span className="bg-home-tile-icon" aria-hidden="true">
-          🧠
-        </span>
-        <span>
-          <strong>Brain Games</strong>
-          <small>Train your brain. Beat your best.</small>
-        </span>
-        <span className="bg-home-tile-go" aria-hidden="true">
-          ←
-        </span>
-      </Link>
-
-      {!!subjects.length && (
+      {/* Search only once there are enough folders to need it. */}
+      {subjects.length >= SEARCH_MIN_FOLDERS && (
         <div className="cards-toolbar">
           <div className="search-box">
             <span>⌕</span>
@@ -115,7 +104,7 @@ export default function SubjectsPage() {
             <input
               value={name}
               onChange={event => setName(event.target.value)}
-              placeholder="اسم المجلد (مثال: تشريح، رياضيات ١)"
+              placeholder="اسم المجلد (مثال: تشريح، رياضيات 1)"
               style={{ flex: "1 1 220px" }}
             />
             <select

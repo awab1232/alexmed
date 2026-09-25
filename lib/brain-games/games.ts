@@ -21,6 +21,7 @@ export type BrainGame = {
   title: string;
   titleAr: string;
   tagline: string;
+  taglineAr: string;
   totalStages: number;
   questionsPerStage: number; // quiz games only
   passCorrect: number; // quiz games: correct answers needed to pass
@@ -34,6 +35,7 @@ export const BRAIN_GAMES: Record<BrainGameId, BrainGame> = {
     title: "Math Challenge",
     titleAr: "تحدي الحساب",
     tagline: "Test your calculation speed",
+    taglineAr: "اختبر سرعتك في الحساب",
     totalStages: 100,
     questionsPerStage: 10,
     passCorrect: 8,
@@ -45,6 +47,7 @@ export const BRAIN_GAMES: Record<BrainGameId, BrainGame> = {
     title: "Multiplication",
     titleAr: "جدول الضرب",
     tagline: "How fast can you multiply?",
+    taglineAr: "قدّيش سريع بجدول الضرب؟",
     totalStages: 100,
     questionsPerStage: 10,
     passCorrect: 8,
@@ -56,6 +59,7 @@ export const BRAIN_GAMES: Record<BrainGameId, BrainGame> = {
     title: "Sudoku",
     titleAr: "سودوكو",
     tagline: "Logic. Focus. Solve.",
+    taglineAr: "منطق. تركيز. حل.",
     totalStages: 50,
     questionsPerStage: 0,
     passCorrect: 0,
@@ -67,6 +71,7 @@ export const BRAIN_GAMES: Record<BrainGameId, BrainGame> = {
     title: "General Knowledge",
     titleAr: "معلومات عامة",
     tagline: "How much do you know?",
+    taglineAr: "قدّيش بتعرف؟",
     totalStages: 100,
     questionsPerStage: 10,
     passCorrect: 7,
