@@ -79,6 +79,20 @@ export default function SubjectsPage() {
         </div>
       </div>
 
+      {/* 🧠 Brain Games entry (app/games). */}
+      <Link href="/games" className="bg-home-tile">
+        <span className="bg-home-tile-icon" aria-hidden="true">
+          🧠
+        </span>
+        <span>
+          <strong>Brain Games</strong>
+          <small>Train your brain. Beat your best.</small>
+        </span>
+        <span className="bg-home-tile-go" aria-hidden="true">
+          ←
+        </span>
+      </Link>
+
       {!!subjects.length && (
         <div className="cards-toolbar">
           <div className="search-box">

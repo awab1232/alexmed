@@ -6,6 +6,7 @@ import { adminMaterialsRouter } from "./adminMaterialsRouter";
 import { adminUsersRouter } from "./adminUsersRouter";
 import { annotationsRouter } from "./annotationsRouter";
 import { booksRouter } from "./booksRouter";
+import { brainGamesRouter } from "./brainGamesRouter";
 import { bookPageMarksRouter } from "./bookPageMarksRouter";
 import { cardMarksRouter } from "./cardMarksRouter";
 import { chatRouter } from "./chatRouter";
@@ -47,6 +48,7 @@ export const appRouter = router({
   decks: decksRouter,
   books: booksRouter,
   examFocus: examFocusRouter,
+  brainGames: brainGamesRouter,
   bookPageMarks: bookPageMarksRouter,
   mirror: mirrorRouter,
   subjects: subjectsRouter,

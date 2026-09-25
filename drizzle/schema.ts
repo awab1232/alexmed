@@ -1940,6 +1940,114 @@ export const examFocusCards = pgTable(
   })
 );
 
+// ── 🧠 Brain Games (lib/brain-games/*, lib/trpc/brainGamesRouter.ts).
+// Games themselves are a code registry (their stages are generated), so
+// only per-user state lives here: one progress row per (user, game), and
+// one session per stage attempt holding the server's copy of the stage
+// (questions + answers / puzzle + solution) — the score is always
+// recomputed from it, never taken from the client.
+export const brainGameSessionStatusEnum = pgEnum("brain_game_session_status", [
+  "active",
+  "submitted",
+  "abandoned",
+]);
+
+export type BrainGameStageBest = {
+  score: number;
+  accuracy: number;
+  timeMs: number | null;
+};
+
+export const brainGameProgress = pgTable(
+  "brain_game_progress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    gameId: text("gameId").notNull(),
+    // The stage "Continue" opens: the last one started, or the next one
+    // after a pass.
+    currentStage: integer("currentStage").default(1).notNull(),
+    highestUnlockedStage: integer("highestUnlockedStage").default(1).notNull(),
+    completedStages: jsonb("completedStages")
+      .$type<number[]>()
+      .default([])
+      .notNull(),
+    bestScore: integer("bestScore").default(0).notNull(),
+    totalScore: integer("totalScore").default(0).notNull(),
+    totalCorrect: integer("totalCorrect").default(0).notNull(),
+    totalWrong: integer("totalWrong").default(0).notNull(),
+    totalAttempts: integer("totalAttempts").default(0).notNull(),
+    // Quiz games: fastest correct answer · Sudoku: fastest solve.
+    bestTimeMs: integer("bestTimeMs"),
+    // Consecutive stages passed / best run of correct answers in a stage.
+    currentStreak: integer("currentStreak").default(0).notNull(),
+    bestStreak: integer("bestStreak").default(0).notNull(),
+    stageBests: jsonb("stageBests")
+      .$type<Record<string, BrainGameStageBest>>()
+      .default({})
+      .notNull(),
+    // Game-specific stats (e.g. recently seen question ids, hints used).
+    stats: jsonb("stats")
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    lastPlayedAt: timestamp("lastPlayedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userGameUnique: uniqueIndex("brain_game_progress_user_game_idx").on(
+      table.userId,
+      table.gameId
+    ),
+  })
+);
+
+export const brainGameSessions = pgTable(
+  "brain_game_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    gameId: text("gameId").notNull(),
+    stage: integer("stage").notNull(),
+    status: brainGameSessionStatusEnum("status").default("active").notNull(),
+    seed: integer("seed").notNull(),
+    // Server-only copy of the stage (includes the answers / solution).
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    // Resume state saved while playing (Sudoku board + notes).
+    clientState: jsonb("clientState").$type<Record<string, unknown>>(),
+    hintsUsed: integer("hintsUsed").default(0).notNull(),
+    startedAt: timestamp("startedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+    submittedAt: timestamp("submittedAt", { withTimezone: true }),
+    // Stored verdict — a repeated submit returns this instead of scoring
+    // twice.
+    result: jsonb("result").$type<Record<string, unknown>>(),
+    score: integer("score"),
+    passed: boolean("passed"),
+  },
+  table => ({
+    userGameStatusIdx: index("brain_game_sessions_user_game_status_idx").on(
+      table.userId,
+      table.gameId,
+      table.status
+    ),
+  })
+);
+
+export type BrainGameProgress = typeof brainGameProgress.$inferSelect;
+export type BrainGameSession = typeof brainGameSessions.$inferSelect;
+
 export type ExamFocusDeck = typeof examFocusDecks.$inferSelect;
 export type ExamFocusUnit = typeof examFocusUnits.$inferSelect;
 export type ExamFocusCard = typeof examFocusCards.$inferSelect;
