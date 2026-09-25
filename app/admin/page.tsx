@@ -97,7 +97,7 @@ export default function AdminOverviewPage() {
           isLoading={statsQuery.isLoading}
         />
         <StatCard
-          label="إجمالي الملفات (مِرآة)"
+          label="إجمالي الملفات (ملفات الأسئلة)"
           value={stats?.totalDecks ?? 0}
           icon={Layers3}
           isLoading={statsQuery.isLoading}

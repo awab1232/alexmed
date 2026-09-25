@@ -123,7 +123,7 @@ export default function AdminUserDetailPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-xs text-muted-foreground">الملفات (مِرآة)</p>
+            <p className="text-xs text-muted-foreground">ملفات الأسئلة</p>
             <p className="text-xl font-bold">{stats.deckCount}</p>
           </CardContent>
         </Card>

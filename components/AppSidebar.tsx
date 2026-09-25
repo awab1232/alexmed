@@ -92,7 +92,7 @@ export default function AppSidebar({
           <BookOpen size={20} strokeWidth={2.4} />
         </div>
         <div>
-          <strong>مِرآة</strong>
+          <strong>NiroLearn</strong>
           <span>study cards</span>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function AppSidebar({
       </nav>
 
       <div className="side-rule" />
-      <p className="side-label">مِرآة</p>
+      <p className="side-label">ملفات الأسئلة</p>
       <nav className="side-nav">
         <MiratNavLink
           href="/"
@@ -279,7 +279,7 @@ export default function AppSidebar({
       <nav className="mobile-sections" aria-label="أقسام التطبيق">
         <Link href="/" className={!inBooksArea ? "active" : ""}>
           <BookOpen size={16} />
-          <span>مِرآة</span>
+          <span>ملفات الأسئلة</span>
         </Link>
         <Link href="/books" className={inBooksArea ? "active" : ""}>
           <Library size={16} />

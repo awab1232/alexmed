@@ -332,7 +332,7 @@ export default function AssistantPage() {
           <Sparkles size={22} />
         </div>
         <div className="assistant-chat-title">
-          <strong>مساعد مِرآة</strong>
+          <strong>مساعد NiroLearn</strong>
           <small>اسألني أي شيء أو أرسل صورة — أنا هنا لأساعدك 😊</small>
         </div>
         {!!turns.length && (
@@ -364,9 +364,7 @@ export default function AssistantPage() {
                   key={starter}
                   className="quiz-pill"
                   onClick={() =>
-                    starter.startsWith("📸")
-                      ? openCamera()
-                      : send(starter)
+                    starter.startsWith("📸") ? openCamera() : send(starter)
                   }
                 >
                   {starter}

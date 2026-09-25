@@ -1,4 +1,4 @@
-# study-card-maker
+# NiroLearn
 
 A study app for exam prep: upload PDFs and get back bilingual (Arabic/English)
 flashcards, MCQs, chapter summaries, and mind maps — with a real PDF reader
@@ -9,7 +9,7 @@ and تضليل/قلم (highlight/pen) annotation on top.
 The app has two independent upload → generate flows, both organized into
 folders ("مواد") the student picks or creates at upload time:
 
-- **مِرآة** (`/`, `lib/db-mirror.ts`, `lib/trpc/mirrorRouter.ts`) — upload a
+- **ملفات الأسئلة** (`/`, `lib/db-mirror.ts`, `lib/trpc/mirrorRouter.ts`) — upload a
   question file (or paste question text) → get bilingual Q&A flashcards.
   Generation runs immediately in the background (QStash-driven, resumable
   across page reloads).

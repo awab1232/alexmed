@@ -69,7 +69,7 @@ export default function RegisterForm({
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-foreground mb-1">إنشاء حساب</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          انضم إلى مِرآة لحفظ مذاكرتك
+          انضم إلى NiroLearn لحفظ مذاكرتك
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -105,7 +105,7 @@ export default function AdminJobsPage() {
         </div>
       )}
 
-      <h2>مِرآة — دفعات التوليد</h2>
+      <h2>ملفات الأسئلة — دفعات التوليد</h2>
       {mirrorQuery.isLoading ? (
         <div className="empty-state">
           <Loader2 size={24} className="spin" />

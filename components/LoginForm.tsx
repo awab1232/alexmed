@@ -76,7 +76,7 @@ export default function LoginForm({
           تسجيل الدخول
         </h1>
         <p className="text-sm text-muted-foreground mb-6">
-          مرحبًا بعودتك إلى مِرآة
+          مرحبًا بعودتك إلى NiroLearn
         </p>
         {searchParams.get("deleted") === "1" && (
           <p

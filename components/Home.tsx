@@ -481,7 +481,7 @@ export default function Home() {
             </Link>
             <h1>
               {view === "upload"
-                ? "مِرآة"
+                ? "ملفات الأسئلة"
                 : view === "library"
                   ? "مكتبتي"
                   : "بطاقات المذاكرة"}
@@ -498,7 +498,7 @@ export default function Home() {
 
         {/* Replaces AppSidebar's onMiratNavigate buttons (PR9) — same three
             destinations, same state setters, navigation shape only. */}
-        <nav className="cards-toolbar" aria-label="أقسام مِرآة">
+        <nav className="cards-toolbar" aria-label="أقسام ملفات الأسئلة">
           <button
             type="button"
             className={
@@ -572,7 +572,7 @@ export default function Home() {
                   <em>يثبت بدماغك.</em>
                 </h1>
                 <p className="intro-lede">
-                  ارفع أسئلة مادتك، ومِرآة ترتّبها لك كروتًا واضحة: السؤال،
+                  ارفع أسئلة مادتك، وNiroLearn يرتّبها لك كروتًا واضحة: السؤال،
                   الجواب، الفكرة، والكلمة المفتاحية — بالعربي والإنجليزي.
                 </p>
               </div>

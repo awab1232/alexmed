@@ -24,7 +24,7 @@ import DeleteAccountSection from "@/components/DeleteAccountSection";
 // pages still exist (direct links / other entry points keep working); they
 // just aren't offered here anymore.
 const QUICK_LINKS = [
-  { href: "/?view=library", label: "مِرآة", icon: BookOpen },
+  { href: "/?view=library", label: "ملفات الأسئلة", icon: BookOpen },
   { href: "/books/stats", label: "إحصائياتي", icon: BarChart3 },
   { href: "/materials", label: "مكتبة الأدمن", icon: GraduationCap },
   { href: "/shared", label: "مشترك معي", icon: Users },

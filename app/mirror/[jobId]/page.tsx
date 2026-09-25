@@ -76,7 +76,7 @@ export default function MirrorJobPage() {
           <CircleAlert size={28} />
           <h3>تعذر العثور على هذا الملف</h3>
           <Link href="/" className="secondary-button" style={{ marginTop: 12 }}>
-            العودة لمِرآة
+            العودة لملفات الأسئلة
           </Link>
         </div>
       </section>
@@ -98,7 +98,7 @@ export default function MirrorJobPage() {
       <div className="cards-header">
         <div>
           <Link href="/" className="eyebrow" style={{ marginBottom: 8 }}>
-            <span className="eyebrow-dot" /> ‹ رجوع لمِرآة
+            <span className="eyebrow-dot" /> ‹ رجوع لملفات الأسئلة
           </Link>
           <h1>{job.fileName}</h1>
           <p>

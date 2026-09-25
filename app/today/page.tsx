@@ -155,7 +155,7 @@ export default function TodayPage() {
           </div>
           {dueCount > 0 ? (
             <>
-              <p>{dueCount} بطاقة بانتظار مراجعتك من مِرآة وكتبي معًا.</p>
+              <p>{dueCount} بطاقة بانتظار مراجعتك من ملفات الأسئلة وكتبي معًا.</p>
               <Link
                 href="/review"
                 className="primary-button"
