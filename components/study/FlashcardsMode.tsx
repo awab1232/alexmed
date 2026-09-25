@@ -9,12 +9,13 @@ import {
   Languages,
   Lightbulb,
   Loader2,
-  MessageSquare,
   RotateCcw,
   Sparkles,
   X,
 } from "lucide-react";
 import StudyShell from "./StudyShell";
+import NiroAvatar from "@/components/niro/NiroAvatar";
+import { NIRO_NAME } from "@/lib/niro";
 import StudyAiSheet, { type AiRequest, type AiTarget } from "./StudyAiSheet";
 
 export type StudyCard = {
@@ -217,9 +218,9 @@ export default function FlashcardsMode({
             </button>
             <button type="button" onClick={openChat}>
               <span className="flash-action-icon">
-                <MessageSquare size={20} />
+                <NiroAvatar size={24} expression="explaining" />
               </span>
-              محادثة
+              اسأل {NIRO_NAME}
             </button>
           </div>
         ))
@@ -404,7 +405,8 @@ export default function FlashcardsMode({
                       openChat();
                     }}
                   >
-                    <MessageSquare size={15} /> اسأل المساعد عنها
+                    <NiroAvatar size={18} expression="explaining" /> اسأل{" "}
+                    {NIRO_NAME} عنها
                   </button>
                 </>
               )}

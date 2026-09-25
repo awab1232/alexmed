@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import StudyShell from "./StudyShell";
+import { NIRO_NAME } from "@/lib/niro";
 import StudyAiSheet, { type AiRequest, type AiTarget } from "./StudyAiSheet";
 import type { McqSubmitResult } from "@/components/McqCard";
 
@@ -231,7 +232,7 @@ export default function QuizMode({
                 <input
                   value={aiInput}
                   onChange={event => setAiInput(event.target.value)}
-                  placeholder="اطلب من الذكاء الاصطناعي المساعدة"
+                  placeholder={`اسأل ${NIRO_NAME} ليش هذا الجواب صح…`}
                 />
               </form>
               <button

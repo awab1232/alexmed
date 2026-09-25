@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Check, Globe, Loader2, MessageSquare, Share } from "lucide-react";
+import { Check, Globe, Loader2, Share } from "lucide-react";
 import StudyShell from "./StudyShell";
+import NiroAvatar from "@/components/niro/NiroAvatar";
+import { NIRO_NAME } from "@/lib/niro";
 import StudyAiSheet, { type AiTarget } from "./StudyAiSheet";
 import type { MedicalNotePage } from "@/lib/medical-note-composer";
 import type { SummarySection } from "@/lib/document-coverage";
@@ -259,9 +261,9 @@ export default function SummaryMode({
         type="button"
         className="summary-chat-fab"
         onClick={() => setAiOpen(true)}
-        aria-label="اسأل المساعد"
+        aria-label={`اسأل ${NIRO_NAME} يشرحلك`}
       >
-        <MessageSquare size={26} />
+        <NiroAvatar size={40} expression="explaining" spark="glow" />
       </button>
 
       <StudyAiSheet

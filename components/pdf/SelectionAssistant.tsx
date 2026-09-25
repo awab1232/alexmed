@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, Sparkles, Square, X } from "lucide-react";
+import { Send, Square, X } from "lucide-react";
 import RichText from "@/components/assistant/RichText";
+import NiroAvatar from "@/components/niro/NiroAvatar";
+import NiroThinking from "@/components/niro/NiroThinking";
+import { NIRO_NAME, niroLine } from "@/lib/niro";
 
 export type PdfTextSelection = { text: string; pageNumber: number };
 
@@ -155,9 +158,14 @@ export default function SelectionAssistant({
         // Keep the text selected while tapping the button.
         onPointerDown={event => event.preventDefault()}
         onClick={open}
-        aria-label={selection ? "اسأل AI عن النص المحدد" : "اسأل AI عن الصفحة"}
+        aria-label={
+          selection
+            ? `اسأل ${NIRO_NAME} عن النص المحدد`
+            : `اسأل ${NIRO_NAME} عن الصفحة`
+        }
       >
-        <Sparkles size={16} /> {selection ? "اسأل عن التحديد" : "اسأل AI"}
+        <NiroAvatar size={20} expression="explaining" />{" "}
+        {selection ? `اسأل ${NIRO_NAME} عن التحديد` : `اسأل ${NIRO_NAME}`}
       </button>
 
       {active && (
@@ -167,8 +175,9 @@ export default function SelectionAssistant({
             onClick={event => event.stopPropagation()}
           >
             <div className="study-sheet-head">
-              <strong>
-                <Sparkles size={16} /> المساعد · صفحة {active.pageNumber}
+              <strong className="niro-identity">
+                <NiroAvatar size={26} expression="explaining" spark="glow" />
+                اسأل {NIRO_NAME} · صفحة {active.pageNumber}
               </strong>
               <button type="button" onClick={close} aria-label="إغلاق">
                 <X size={18} />
@@ -182,6 +191,9 @@ export default function SelectionAssistant({
                     ? `${active.text.slice(0, 400)}…`
                     : active.text}
               </blockquote>
+              {!turns.length && (
+                <p className="study-ai-empty">{niroLine("pageHelp")}</p>
+              )}
               {!turns.length && (
                 <div className="selection-ai-actions">
                   {QUICK_ACTIONS.map(item => {
@@ -200,6 +212,20 @@ export default function SelectionAssistant({
                       </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    className="quiz-pill"
+                    disabled={busy}
+                    onClick={() =>
+                      send(
+                        "ask",
+                        "شو لازم أحفظ؟",
+                        "What exactly should I memorize from this for the exam? Give the must-know facts as a short list."
+                      )
+                    }
+                  >
+                    شو لازم أحفظ؟
+                  </button>
                 </div>
               )}
               {turns.map((turn, index) =>
@@ -217,11 +243,7 @@ export default function SelectionAssistant({
                   </div>
                 )
               )}
-              {status === "waiting" && (
-                <div className="study-ai-status">
-                  <Loader2 size={16} className="spin" /> يكتب...
-                </div>
-              )}
+              {status === "waiting" && <NiroThinking />}
               {error && <p className="study-ai-error">{error}</p>}
               <div ref={listEndRef} />
             </div>

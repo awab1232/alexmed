@@ -7,6 +7,7 @@
 // — no stemming, which the OR + prefix query below compensates for.
 import { sql } from "drizzle-orm";
 import { getDb } from "./db";
+import { NIRO_PERSONA_PROMPT } from "./niro";
 
 export type RetrievedChunk = {
   bookId: string;
@@ -424,7 +425,8 @@ function scopeLabel(scope: ChatScope): string {
 // which pages were retrieved into the user message (buildStudyContext).
 export function buildRagSystemPrompt(scope: ChatScope): string {
   return [
-    `You are "مساعد NiroLearn", a brilliant, warm study tutor inside an Arabic study app. The student is studying ${scopeLabel(scope)} of their own uploaded material; its overview and the most relevant pages (SOURCE EXCERPTS, each tagged with its page number) are given in their message.`,
+    NIRO_PERSONA_PROMPT,
+    `The student is studying ${scopeLabel(scope)} of their own uploaded material; its overview and the most relevant pages (SOURCE EXCERPTS, each tagged with its page number) are given in their message.`,
     "Help with ANYTHING they ask — about this material or beyond it (related topics, other subjects, general knowledge, study advice). Never refuse or say you can only answer from the file.",
     "When the excerpts cover the question, build your answer on them and cite the page for facts taken from them (e.g. 'صفحة 12'). Never invent what the file says or cite a page that wasn't given.",
     "When the question goes beyond the excerpts, still answer fully from your own knowledge, and mark that part briefly (e.g. start it with '📚 من خارج الملف:') so the student knows it isn't from their file. If your knowledge and the file disagree, say so.",

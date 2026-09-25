@@ -6018,6 +6018,14 @@ h1 em {
 .bg-result-emoji {
   font-size: 46px;
 }
+.bg-result-niro {
+  margin: -8px auto -6px;
+}
+.bg-result-niro-line {
+  margin: 0;
+  color: #1e2a5a;
+  font-weight: 700;
+}
 .bg-result h2 {
   margin: 0;
   font-size: 24px;
@@ -7747,4 +7755,295 @@ button.sh-student:focus-visible {
   .assistant-main .assistant-chat {
     height: calc(100dvh - 78px - env(safe-area-inset-bottom));
   }
+}
+
+/* ── 🤖 Niro character system (components/niro/*) ─────────────────────── */
+.niro-character {
+  display: block;
+  overflow: hidden;
+}
+.niro-character.is-animated .niro-float {
+  animation: niro-float 5s ease-in-out infinite;
+}
+.niro-character.is-animated .niro-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: niro-blink 5.6s infinite;
+}
+.niro-character.is-animated .niro-strand {
+  transform-box: fill-box;
+  transform-origin: 30% 0%;
+  animation: niro-sway 4.4s ease-in-out infinite alternate;
+}
+.niro-character.is-animated .niro-char-spark,
+.niro-spark-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: niro-spark-pulse 2.4s ease-in-out infinite;
+}
+.niro-character.is-animated .niro-char-energy {
+  animation: niro-energy 1.1s ease-in-out infinite alternate;
+}
+.niro-character.is-animated .niro-char-zz {
+  animation: niro-zz 3s ease-in-out infinite;
+}
+.niro-spark-think {
+  animation: niro-spark-think 1.6s linear infinite;
+}
+.niro-spark-burst {
+  animation: niro-spark-burst 0.7s ease-out 1;
+}
+@keyframes niro-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes niro-blink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  95.5% {
+    transform: scaleY(0.12);
+  }
+}
+@keyframes niro-sway {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(3deg);
+  }
+}
+@keyframes niro-spark-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+}
+@keyframes niro-spark-think {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.15);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+@keyframes niro-spark-burst {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes niro-energy {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes niro-zz {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  30%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Avatar: his face in a navy circle, Spark on the rim. */
+.niro-avatar {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #3b4fae 0%, #1f2b6b 70%);
+  box-shadow: 0 0 0 1.5px rgba(34, 211, 238, 0.55);
+}
+.niro-avatar > .niro-character {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
+}
+.niro-avatar-spark {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: -4px;
+}
+
+/* "Niro is thinking" */
+.niro-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #56687a;
+  font-size: 14px;
+}
+.niro-thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.niro-thinking-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22d3ee;
+  animation: niro-dot 1.2s ease-in-out infinite;
+}
+.niro-thinking-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.niro-thinking-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes niro-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Empty / moment states */
+.niro-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+.niro-empty-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #1a2748;
+}
+
+/* Bottom nav: Niro instead of a generic AI icon */
+.student-bottom-nav-item.is-niro .niro-avatar {
+  transition: transform 0.2s ease;
+}
+.student-bottom-nav-item.is-niro.active .niro-avatar {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px #22d3ee;
+}
+
+/* "Ask Niro" identity rows in the assistants */
+.niro-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.niro-identity strong {
+  font-weight: 800;
+}
+.niro-answer-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: #1a2748;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .niro-character .niro-float,
+  .niro-character .niro-eyes,
+  .niro-character .niro-strand,
+  .niro-character .niro-char-spark,
+  .niro-character .niro-char-energy,
+  .niro-character .niro-char-zz,
+  .niro-spark-glow,
+  .niro-spark-think,
+  .niro-spark-burst,
+  .niro-thinking-dots i {
+    animation: none !important;
+  }
+}
+
+/* Niro style guide (/admin/niro) */
+.niro-guide {
+  width: 100%;
+  padding: 24px;
+  background: #fff;
+  color: #1a2748;
+  border-radius: 16px;
+}
+.niro-guide h1 {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.niro-guide h2 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 24px 0 10px;
+}
+.niro-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.niro-guide-grid figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+.niro-guide-grid figcaption {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  font-size: 12px;
+  color: #475569;
+}
+.niro-guide-grid figcaption strong {
+  color: #1a2748;
+  font-size: 14px;
+}
+.niro-guide-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
 }

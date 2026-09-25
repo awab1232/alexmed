@@ -13,6 +13,8 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
+import NiroAvatar from "@/components/niro/NiroAvatar";
+import { NIRO_NAME } from "@/lib/niro";
 
 // Replaces AppSidebar as the persistent student-facing navigation (PR9).
 // AppSidebar.tsx is intentionally left in place (unused by student pages
@@ -30,7 +32,8 @@ const ITEMS = [
   { href: "/subjects", label: "الرئيسية", icon: Home },
   { href: "/games", label: "ألعاب", icon: Gamepad2 },
   { href: "/books/upload", label: "إضافة", icon: Plus },
-  { href: "/assistant", label: "مساعد AI", icon: Sparkles },
+  // The AI tab IS Niro (lib/niro.ts): his avatar instead of a generic icon.
+  { href: "/assistant", label: NIRO_NAME, icon: Sparkles },
   { href: "/account", label: "حسابي", icon: User },
 ] as const;
 
@@ -120,18 +123,20 @@ export default function BottomNav() {
             );
           }
 
+          const isNiro = item.href === "/assistant";
           return (
             <Link
               key={item.href}
               href={href}
-              className={
-                active
-                  ? "student-bottom-nav-item active"
-                  : "student-bottom-nav-item"
-              }
+              className={`student-bottom-nav-item${isNiro ? " is-niro" : ""}${active ? " active" : ""}`}
               aria-current={active ? "page" : undefined}
+              aria-label={isNiro ? `اسأل ${NIRO_NAME}` : undefined}
             >
-              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+              {isNiro ? (
+                <NiroAvatar size={24} spark={active ? "glow" : undefined} />
+              ) : (
+                <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+              )}
               <span>{item.label}</span>
             </Link>
           );

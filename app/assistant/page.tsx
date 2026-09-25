@@ -15,6 +15,10 @@ import {
   X,
 } from "lucide-react";
 import RichText from "@/components/assistant/RichText";
+import NiroAvatar from "@/components/niro/NiroAvatar";
+import NiroEmptyState from "@/components/niro/NiroEmptyState";
+import NiroThinking from "@/components/niro/NiroThinking";
+import { NIRO_NAME, niroLine } from "@/lib/niro";
 
 // `image` (full data URL) lives only in memory for follow-ups; `thumb` is a
 // small copy kept with the saved conversation so old photos still show.
@@ -28,12 +32,12 @@ type Turn = {
 // Shown as tappable chips on an empty chat — anything goes, these are just
 // friendly starters.
 const STARTERS = [
-  "اشرح لي فكرة صعبة بطريقة بسيطة 🧠",
-  "ساعدني أنظّم خطة دراسة لهذا الأسبوع 📅",
-  "اختبرني بأسئلة سريعة في موضوع 📝",
+  "اشرحلي فكرة صعبة ببساطة 🧠",
+  "اختبرني 📝",
+  "ساعدني أحفظ معلومة ✨",
+  "أعطني تحدي 😏",
+  "شو أدرس بعدها؟ 📅",
   "📸 صوّر سؤالاً أو صفحة وأنا أحلّها لك",
-  "أعطني طريقة لحفظ معلومة بسهولة ✨",
-  "عندي امتحان قريب وأنا متوتر 😟",
 ];
 
 const STORAGE_KEY = "mirror-assistant-chat-v1";
@@ -328,12 +332,10 @@ export default function AssistantPage() {
   return (
     <section className="assistant-chat">
       <header className="assistant-chat-header">
-        <div className="assistant-chat-avatar">
-          <Sparkles size={22} />
-        </div>
+        <NiroAvatar size={40} spark="glow" />
         <div className="assistant-chat-title">
-          <strong>مساعد NiroLearn</strong>
-          <small>اسألني أي شيء أو أرسل صورة 😊</small>
+          <strong>اسأل {NIRO_NAME}</strong>
+          <small>صاحبك بالدراسة، وقت ما تحتاجه 😌</small>
         </div>
         {!!turns.length && (
           <button
@@ -350,13 +352,24 @@ export default function AssistantPage() {
       <div className="assistant-chat-messages" aria-live="polite">
         {!turns.length && (
           <div className="assistant-chat-welcome">
-            <p className="assistant-chat-hello">
-              أهلاً{firstName ? ` ${firstName}` : ""}! 👋✨
-            </p>
-            <p>
-              اسألني عن أي شيء: شرح، حل مسائل، ترجمة، كتابة، خطة دراسة… أو صوّر
-              سؤالاً أو صفحة وأنا أحلّلها لك 📸
-            </p>
+            <NiroEmptyState
+              expression="explaining"
+              size={132}
+              title={
+                <>
+                  أهلاً
+                  {firstName && (
+                    <>
+                      {" "}
+                      <bdi>{firstName}</bdi>
+                    </>
+                  )}
+                  ! أنا <bdi>{NIRO_NAME}</bdi> 👋
+                </>
+              }
+            >
+              <p>{niroLine("askAnything")}</p>
+            </NiroEmptyState>
             <div className="assistant-chat-starters">
               {STARTERS.map(starter => (
                 <button
@@ -389,6 +402,10 @@ export default function AssistantPage() {
             </div>
           ) : !turn.content ? null : (
             <div key={index} className="study-ai-message assistant-answer">
+              <div className="niro-answer-by">
+                <NiroAvatar size={22} />
+                {NIRO_NAME}
+              </div>
               <RichText text={turn.content} />
               {!(busy && index === turns.length - 1) && (
                 <button
@@ -405,10 +422,11 @@ export default function AssistantPage() {
           )
         )}
         {status === "waiting" && (
-          <div className="study-ai-status">
-            <Loader2 size={16} className="spin" />{" "}
-            {turns.at(-1)?.image ? "يحلّل الصورة... 🔍" : "يفكّر... 🤔"}
-          </div>
+          <NiroThinking
+            text={
+              turns.at(-1)?.image ? `${NIRO_NAME} يقرأ الصورة… 🔍` : undefined
+            }
+          />
         )}
         {error && <p className="study-ai-error">{error}</p>}
         <div ref={endRef} />

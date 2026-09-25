@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, Sparkles, Square, X } from "lucide-react";
+import { Loader2, Send, Square, X } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import RichText from "@/components/assistant/RichText";
+import NiroAvatar from "@/components/niro/NiroAvatar";
+import NiroThinking from "@/components/niro/NiroThinking";
+import { NIRO_NAME } from "@/lib/niro";
 
 export type AiRequest = { question: string; id: number };
 
@@ -184,12 +187,13 @@ export default function StudyAiSheet({
         className="study-sheet study-ai-sheet"
         role="dialog"
         aria-modal="true"
-        aria-label="المساعد الذكي"
+        aria-label={`اسأل ${NIRO_NAME}`}
         onClick={event => event.stopPropagation()}
       >
         <div className="study-sheet-head">
-          <strong>
-            <Sparkles size={16} /> المساعد الذكي
+          <strong className="niro-identity">
+            <NiroAvatar size={26} expression="explaining" spark="glow" />
+            اسأل {NIRO_NAME}
           </strong>
           <button type="button" onClick={onClose} aria-label="إغلاق">
             <X size={18} />
@@ -207,8 +211,8 @@ export default function StudyAiSheet({
           {sessionId && !turns.length && !busy && (
             <div className="study-ai-empty">
               <p>
-                أهلاً 👋 اسألني أي شيء عن {scopeLabel} أو حتى خارجه — شرح،
-                تلخيص، أسئلة، مقارنة… وأنا أساعدك 😊
+                أهلاً، أنا {NIRO_NAME} 👋 اسألني أي شيء عن {scopeLabel} أو حتى
+                خارجه — شرح، تلخيص، أسئلة، مقارنة… وأنا معك 😌
               </p>
               <div className="selection-ai-actions">
                 {SUGGESTIONS.map(suggestion => (
@@ -242,11 +246,7 @@ export default function StudyAiSheet({
               </div>
             )
           )}
-          {status === "waiting" && (
-            <div className="study-ai-status">
-              <Loader2 size={16} className="spin" /> يفكّر... 🤔
-            </div>
-          )}
+          {status === "waiting" && <NiroThinking />}
           {error && <p className="study-ai-error">{error}</p>}
           <div ref={listEndRef} />
         </div>

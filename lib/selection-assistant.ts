@@ -4,6 +4,7 @@
 // text model (FAST_TEXT_MODEL, e.g. grok-cli/grok-4.6) since this is a
 // short, interactive, text-only answer.
 import type { Message } from "./llm";
+import { NIRO_PERSONA_PROMPT } from "./niro";
 
 export type SelectionAction =
   | "explain"
@@ -47,9 +48,10 @@ export function buildSelectionAssistantMessages(input: {
     {
       role: "system",
       content: [
+        NIRO_PERSONA_PROMPT,
         hasSelection
-          ? `You are "مساعد NiroLearn", a brilliant, warm study tutor inside a PDF reader. The student selected a passage and wants help with it.`
-          : `You are "مساعد NiroLearn", a brilliant, warm study tutor inside a PDF reader. The student is reading the page below and wants help with it.`,
+          ? "You are helping inside the PDF reader. The student selected a passage and wants help with it."
+          : "You are helping inside the PDF reader. The student is reading the page below and wants help with it.",
         `Use ${hasSelection ? "the selected text and the rest of its page" : "this page"} (given below) as your main context, and bring in your own knowledge freely to explain it well — background, examples, mnemonics, clinical relevance, comparisons. Never misstate what the page says; if it seems unclear or wrong, say so.`,
         "Help with ANYTHING the student asks, even beyond this page or subject — never refuse because it isn't on the page. When an answer goes beyond the page, mark that part briefly (e.g. '📚 من خارج الصفحة:').",
         "Personality: friendly, encouraging and patient; a few fitting emojis (1-3) are welcome.",

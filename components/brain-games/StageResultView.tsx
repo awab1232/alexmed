@@ -2,6 +2,8 @@
 
 import { ChevronRight, Play, RotateCcw } from "lucide-react";
 import type { StageResult } from "@/lib/db-brain-games";
+import NiroCharacter from "@/components/niro/NiroCharacter";
+import { niroLine } from "@/lib/niro";
 
 function seconds(ms: number | null) {
   if (ms === null) return "—";
@@ -34,9 +36,12 @@ export default function StageResultView({
       role="status"
       aria-live="polite"
     >
-      <span className="bg-result-emoji" aria-hidden="true">
-        {passed ? (lastStage ? "🏆" : "🎉") : "💪"}
-      </span>
+      <NiroCharacter
+        className="bg-result-niro"
+        expression={passed ? "victory" : "challenge"}
+        size={128}
+        animated
+      />
       <h2>
         {passed
           ? lastStage
@@ -44,6 +49,12 @@ export default function StageResultView({
             : `أنهيت المستوى ${result.stage}`
           : "قربت! 💪"}
       </h2>
+      <p className="bg-result-niro-line">
+        {niroLine(
+          passed ? (lastStage ? "allDone" : "levelUp") : "almost",
+          result.stage
+        )}
+      </p>
       {!passed && kind === "quiz" && (
         <p className="bg-result-sub">
           <bdi dir="ltr">
