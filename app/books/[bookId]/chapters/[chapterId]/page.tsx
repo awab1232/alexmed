@@ -246,6 +246,8 @@ export default function ChapterDetailPage() {
     mcqs: [],
     pages: [],
   };
+  // 📤 Opened through an accepted share — generation stays owner-only.
+  const isSharedPack = chapterQuery.data?.access.role === "shared";
   const currentPage = pages[pageIndex];
   const summarySections = useMemo(
     () => [
@@ -483,7 +485,11 @@ export default function ChapterDetailPage() {
         onSubmit={(mcqId, selectedIndex) =>
           submitMcqAttempt.mutateAsync({ mcqId, selectedIndex })
         }
-        onGenerate={() => generateMcqs.mutate({ chapterId: chapter.id })}
+        onGenerate={
+          isSharedPack
+            ? undefined
+            : () => generateMcqs.mutate({ chapterId: chapter.id })
+        }
         generating={generateMcqs.isPending}
       />
     );
@@ -509,7 +515,11 @@ export default function ChapterDetailPage() {
         }))}
         onBack={closeStudyMode}
         onRate={(cardId, rating) => rateCard.mutate({ cardId, rating })}
-        onGenerate={() => generateFlashcards.mutate({ chapterId: chapter.id })}
+        onGenerate={
+          isSharedPack
+            ? undefined
+            : () => generateFlashcards.mutate({ chapterId: chapter.id })
+        }
         generating={generateFlashcards.isPending}
       />
     );
@@ -534,8 +544,10 @@ export default function ChapterDetailPage() {
         ]}
         aiTarget={{ scope: "chapter", chapterId: chapter.id }}
         onBack={closeStudyMode}
-        onComposeNotes={chapterId =>
-          generateMedicalNotePages.mutate({ chapterId })
+        onComposeNotes={
+          isSharedPack
+            ? undefined
+            : chapterId => generateMedicalNotePages.mutate({ chapterId })
         }
         composingChapterId={
           generateMedicalNotePages.isPending ? chapter.id : null

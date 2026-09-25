@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getBookAccess } from "@/lib/book-access";
 import { getBookPageForUser } from "@/lib/db-books";
 import { streamFastAnswer } from "@/lib/fast-answer-stream";
 import {
@@ -58,12 +59,12 @@ export async function POST(request: Request) {
       { status: 429 }
     );
   }
-  // Ownership: the page must belong to one of this user's books.
-  const found = await getBookPageForUser(
-    session.user.id,
-    input.bookId,
-    input.pageNumber
-  );
+  // Access: the page must belong to a book this user owns or holds an
+  // accepted share of (lib/book-access.ts).
+  const access = await getBookAccess(session.user.id, input.bookId);
+  const found = access
+    ? await getBookPageForUser(access.ownerId, input.bookId, input.pageNumber)
+    : null;
   if (!found) {
     return NextResponse.json({ error: "الصفحة غير موجودة." }, { status: 404 });
   }

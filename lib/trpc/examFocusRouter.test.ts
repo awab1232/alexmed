@@ -12,14 +12,20 @@ vi.mock("../db-exam-focus", () => ({
   setExamFocusCardBookmark: vi.fn(),
 }));
 vi.mock("../queue/client", () => ({ publishMessage: vi.fn() }));
+vi.mock("../book-access", () => ({
+  getBookAccess: vi.fn(),
+  getExamFocusCardAccess: vi.fn(),
+}));
 
 import { examFocusRouter } from "./examFocusRouter";
+import { getBookAccess, getExamFocusCardAccess } from "../book-access";
 import {
   createExamFocusDeck,
   deleteExamFocusDeckForUser,
   findStalledExamFocusWork,
   getBookForExamFocus,
   getBookPagesForExamFocus,
+  getExamFocusDeckForUser,
   listExamFocusCardsForUser,
   resetFailedExamFocusUnits,
   setExamFocusCardBookmark,
@@ -56,8 +62,20 @@ const thirteenPages = Array.from({ length: 13 }, (_, i) => ({
   text: `Page ${i + 1} content about chemical injury. `.repeat(8),
 }));
 
+const ownerAccess = {
+  bookId: "b1",
+  ownerId: "u1",
+  role: "owner" as const,
+  ownerName: "Owner",
+  ownerUsername: "owner",
+};
+// u1 viewing a book owned by "owner-9" through an accepted share.
+const sharedAccess = { ...ownerAccess, ownerId: "owner-9", role: "shared" };
+
 beforeEach(() => {
   vi.clearAllMocks();
+  m(getBookAccess).mockResolvedValue(ownerAccess);
+  m(getExamFocusCardAccess).mockResolvedValue(ownerAccess);
   m(getBookForExamFocus).mockResolvedValue(readyBook);
   m(getBookPagesForExamFocus).mockResolvedValue({
     pages: thirteenPages,
@@ -195,6 +213,7 @@ describe("examFocus.cards — search/filter/pagination on the persisted deck", (
     });
     expect(listExamFocusCardsForUser).toHaveBeenCalledWith({
       userId: "u1",
+      viewerId: "u1",
       bookId: "b1",
       category: "treatment",
       bookmarkedOnly: undefined,
@@ -221,10 +240,79 @@ describe("examFocus.cards — search/filter/pagination on the persisted deck", (
     ).rejects.toBeTruthy();
   });
 
-  it("bookmark is NOT_FOUND for a card that isn't the caller's", async () => {
-    m(setExamFocusCardBookmark).mockResolvedValue(false);
+  it("bookmark is NOT_FOUND for a card the caller can't access", async () => {
+    m(getExamFocusCardAccess).mockResolvedValue(null);
     await expect(
       caller().setBookmark({ cardId: "c1", bookmarked: true })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(setExamFocusCardBookmark).not.toHaveBeenCalled();
+  });
+});
+
+describe("📤 examFocus for a share recipient", () => {
+  beforeEach(() => {
+    m(getBookAccess).mockResolvedValue(sharedAccess);
+    m(getExamFocusCardAccess).mockResolvedValue(sharedAccess);
+  });
+
+  it("reads the OWNER's deck with the viewer's own bookmark scope", async () => {
+    m(getExamFocusDeckForUser).mockResolvedValue({
+      deck: { id: "d1" },
+      units: [],
+      categoryCounts: {},
+      bookmarkedCount: 0,
+    });
+    const result = await caller().get({ bookId: "b1" });
+    expect(getExamFocusDeckForUser).toHaveBeenCalledWith("owner-9", "b1", "u1");
+    expect(result?.access.role).toBe("shared");
+  });
+
+  it("explains (instead of auto-starting) when the owner has no deck", async () => {
+    m(getExamFocusDeckForUser).mockResolvedValue(null);
+    await expect(caller().get({ bookId: "b1" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
+  });
+
+  it("lists the owner's cards with the viewer's bookmarks", async () => {
+    m(listExamFocusCardsForUser).mockResolvedValue({ items: [], total: 0 });
+    await caller().cards({ bookId: "b1" });
+    expect(m(listExamFocusCardsForUser).mock.calls[0][0]).toMatchObject({
+      userId: "owner-9",
+      viewerId: "u1",
+    });
+  });
+
+  it("stores a bookmark as the viewer's own, not on the shared card", async () => {
+    await caller().setBookmark({ cardId: "c1", bookmarked: true });
+    expect(setExamFocusCardBookmark).toHaveBeenCalledWith(
+      "u1",
+      "c1",
+      true,
+      false
+    );
+  });
+
+  it.each(["start", "regenerate", "retryFailed"] as const)(
+    "%s is owner-only — no AI run, no queue message",
+    async procedure => {
+      await expect(caller()[procedure]({ bookId: "b1" })).rejects.toMatchObject(
+        { code: "FORBIDDEN" }
+      );
+      expect(createExamFocusDeck).not.toHaveBeenCalled();
+      expect(deleteExamFocusDeckForUser).not.toHaveBeenCalled();
+      expect(resetFailedExamFocusUnits).not.toHaveBeenCalled();
+      expect(publishMessage).not.toHaveBeenCalled();
+    }
+  );
+
+  it("a stranger (no accepted share) gets NOT_FOUND", async () => {
+    m(getBookAccess).mockResolvedValue(null);
+    await expect(caller().get({ bookId: "b1" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(caller().cards({ bookId: "b1" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 });

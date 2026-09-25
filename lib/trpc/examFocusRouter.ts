@@ -11,6 +11,11 @@ import {
   resetFailedExamFocusUnits,
   setExamFocusCardBookmark,
 } from "../db-exam-focus";
+import {
+  getBookAccess,
+  getExamFocusCardAccess,
+  type BookAccess,
+} from "../book-access";
 import { planExamFocusUnits, withVisualDescriptions } from "../exam-focus";
 import { EXAM_FOCUS_CATEGORIES } from "../exam-focus-categories";
 import { publishMessage } from "../queue/client";
@@ -61,17 +66,69 @@ async function startDeck(userId: string, bookId: string) {
   return { created: result.created, units: units.length };
 }
 
+// 📤 Owner OR accepted share — anything else is "not found".
+async function requireAccess(userId: string, bookId: string) {
+  const access = await getBookAccess(userId, bookId);
+  if (!access) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
+  }
+  return access;
+}
+
+// Generating / regenerating costs AI, so it stays with the file's owner: a
+// recipient only ever reads the owner's existing deck.
+async function requireOwner(userId: string, bookId: string) {
+  const access = await requireAccess(userId, bookId);
+  if (access.role !== "owner") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "التوليد متاح لصاحب الملف فقط.",
+    });
+  }
+  return access;
+}
+
+function accessInfo(access: BookAccess) {
+  return {
+    role: access.role,
+    ownerName: access.ownerName,
+    ownerUsername: access.ownerUsername,
+  };
+}
+
 export const examFocusRouter = router({
   // Deck status + per-unit progress + filter counts (null = never started).
+  // A share recipient reads the OWNER's deck (with their own bookmark
+  // count); if the owner never made one there's nothing to show — and a
+  // recipient can't start one — so that's a distinct, explained error
+  // instead of null (which the page treats as "start it").
   get: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return getExamFocusDeckForUser(ctx.user.id, input.bookId);
+      const access = await requireAccess(ctx.user.id, input.bookId);
+      const result = await getExamFocusDeckForUser(
+        access.ownerId,
+        input.bookId,
+        ctx.user.id
+      );
+      if (!result) {
+        if (access.role === "shared") {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "لم يُنشئ صاحب الملف بطاقات Exam Focus لهذا الملف بعد.",
+          });
+        }
+        return null;
+      }
+      return { ...result, access: accessInfo(access) };
     }),
 
   start: protectedProcedure
     .input(z.object({ bookId: z.string() }))
-    .mutation(async ({ ctx, input }) => startDeck(ctx.user.id, input.bookId)),
+    .mutation(async ({ ctx, input }) => {
+      await requireOwner(ctx.user.id, input.bookId);
+      return startDeck(ctx.user.id, input.bookId);
+    }),
 
   // Only on the student's explicit "إعادة التوليد" — drops the old deck
   // (cascade: units + cards) and plans the file again. Old in-flight queue
@@ -79,6 +136,7 @@ export const examFocusRouter = router({
   regenerate: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await requireOwner(ctx.user.id, input.bookId);
       const book = await getBookForExamFocus(ctx.user.id, input.bookId);
       if (!book) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
@@ -91,6 +149,7 @@ export const examFocusRouter = router({
   retryFailed: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await requireOwner(ctx.user.id, input.bookId);
       const reset = await resetFailedExamFocusUnits(ctx.user.id, input.bookId);
       if (!reset) return { retried: 0 };
       await publishUnits(reset.deckId, reset.unitIds);
@@ -131,9 +190,11 @@ export const examFocusRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      const access = await requireAccess(ctx.user.id, input.bookId);
       const offset = input.cursor ?? 0;
       const { items, total } = await listExamFocusCardsForUser({
-        userId: ctx.user.id,
+        userId: access.ownerId,
+        viewerId: ctx.user.id,
         bookId: input.bookId,
         category: input.category,
         bookmarkedOnly: input.bookmarkedOnly,
@@ -148,14 +209,16 @@ export const examFocusRouter = router({
   setBookmark: protectedProcedure
     .input(z.object({ cardId: z.string(), bookmarked: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      const ok = await setExamFocusCardBookmark(
-        ctx.user.id,
-        input.cardId,
-        input.bookmarked
-      );
-      if (!ok) {
+      const access = await getExamFocusCardAccess(ctx.user.id, input.cardId);
+      if (!access) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
       }
+      await setExamFocusCardBookmark(
+        ctx.user.id,
+        input.cardId,
+        input.bookmarked,
+        access.role === "owner"
+      );
       return { bookmarked: input.bookmarked };
     }),
 });

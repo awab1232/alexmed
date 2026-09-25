@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -51,6 +52,10 @@ export const users = pgTable("users", {
   // students' actual programs to enumerate meaningfully.
   academicYear: text("academicYear"),
   specialty: text("specialty"),
+  // Study Pack sharing — the public handle other students find you by
+  // (lib/db-sharing.ts). Stored normalised (lowercase [a-z0-9._]); null =
+  // not discoverable. Search never matches or returns email.
+  username: varchar("username", { length: 32 }).unique(),
   // Null = active. Set by an admin from the dashboard; checked at sign-in
   // (both Credentials and Google) in lib/auth.ts so a suspended account
   // genuinely cannot use the app, not just cosmetically hidden.
@@ -2051,3 +2056,182 @@ export type BrainGameSession = typeof brainGameSessions.$inferSelect;
 export type ExamFocusDeck = typeof examFocusDecks.$inferSelect;
 export type ExamFocusUnit = typeof examFocusUnits.$inferSelect;
 export type ExamFocusCard = typeof examFocusCards.$inferSelect;
+
+// ── 📤 Study Pack sharing (lib/book-access.ts, lib/db-sharing.ts). A
+// "Study Pack" is an existing كتبي book (books.sourceType = study_book)
+// with everything generated from it. Sharing never copies content: a share
+// row grants read access to the owner's own rows; every generated artifact
+// stays single-copy. Personal state lives in per-user tables below.
+export const bookShareStatusEnum = pgEnum("book_share_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "revoked",
+  "removed",
+]);
+
+export const bookShares = pgTable(
+  "book_shares",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    ownerId: uuid("ownerId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recipientId: uuid("recipientId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: bookShareStatusEnum("status").default("pending").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    respondedAt: timestamp("respondedAt", { withTimezone: true }),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    // At most one live (pending or accepted) share per book + recipient —
+    // the DB-level guard against duplicate requests / duplicate access.
+    liveUnique: uniqueIndex("book_shares_live_book_recipient_idx")
+      .on(table.bookId, table.recipientId)
+      .where(sql`${table.status} in ('pending', 'accepted')`),
+    recipientIdx: index("book_shares_recipient_status_idx").on(
+      table.recipientId,
+      table.status
+    ),
+    bookIdx: index("book_shares_book_status_idx").on(
+      table.bookId,
+      table.status
+    ),
+  })
+);
+
+// Who did what to a share, for debugging/security — ids and the event
+// name only, nothing else.
+export const bookShareEvents = pgTable(
+  "book_share_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    shareId: uuid("shareId")
+      .notNull()
+      .references(() => bookShares.id, { onDelete: "cascade" }),
+    actorId: uuid("actorId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    event: text("event").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    shareIdx: index("book_share_events_share_idx").on(table.shareId),
+  })
+);
+
+// Generic in-app notifications (type + small JSON payload), so later
+// features can add types without new tables.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    actorId: uuid("actorId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    data: jsonb("data").$type<Record<string, unknown>>().default({}).notNull(),
+    readAt: timestamp("readAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userCreatedIdx: index("notifications_user_created_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+  })
+);
+
+// A blocked user can't send the blocker share requests (either direction
+// is checked). Reporting can hang off the same pair later.
+export const userBlocks = pgTable(
+  "user_blocks",
+  {
+    blockerId: uuid("blockerId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    blockedId: uuid("blockedId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    pk: primaryKey({ columns: [table.blockerId, table.blockedId] }),
+  })
+);
+
+// A recipient's own flashcard review state for a shared book's cards. The
+// owner keeps using book_cards' own FSRS columns; a recipient's reviews go
+// here, so neither ever changes the other's progress.
+export const bookCardProgress = pgTable(
+  "book_card_progress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardId: uuid("cardId")
+      .notNull()
+      .references(() => bookCards.id, { onDelete: "cascade" }),
+    intervalDays: integer("intervalDays").default(0).notNull(),
+    dueAt: timestamp("dueAt", { withTimezone: true }).defaultNow().notNull(),
+    reviewCount: integer("reviewCount").default(0).notNull(),
+    lastRating: bookCardRatingEnum("lastRating"),
+    fsrsStability: real("fsrsStability"),
+    fsrsDifficulty: real("fsrsDifficulty"),
+    lastReviewedAt: timestamp("lastReviewedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userCardUnique: uniqueIndex("book_card_progress_user_card_idx").on(
+      table.userId,
+      table.cardId
+    ),
+  })
+);
+
+// Exam Focus "راجعها لاحقًا" bookmarks, per user (replaces the single
+// exam_focus_cards.bookmarked flag, which a shared deck can't use).
+export const examFocusBookmarks = pgTable(
+  "exam_focus_bookmarks",
+  {
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cardId: uuid("cardId")
+      .notNull()
+      .references(() => examFocusCards.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    pk: primaryKey({ columns: [table.userId, table.cardId] }),
+  })
+);
+
+export type BookShare = typeof bookShares.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;

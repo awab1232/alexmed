@@ -69,7 +69,8 @@ export default function FlashcardsMode({
   cards: StudyCard[];
   onBack: () => void;
   onRate: (cardId: string, rating: Rating) => void;
-  onGenerate: () => void;
+  // Absent for a shared (read-only) Study Pack — generation is owner-only.
+  onGenerate?: () => void;
   generating: boolean;
 }) {
   // Snapshot so a refetch mid-session (after each rating) can't reshuffle it.
@@ -146,19 +147,23 @@ export default function FlashcardsMode({
         <div className="study-empty">
           <Sparkles size={28} />
           <h3>لا توجد بطاقات لهذا الجزء بعد</h3>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={generating}
-            onClick={onGenerate}
-          >
-            {generating ? (
-              <Loader2 size={16} className="spin" />
-            ) : (
-              <Sparkles size={16} />
-            )}
-            توليد البطاقات لهذا الجزء
-          </button>
+          {onGenerate ? (
+            <button
+              type="button"
+              className="primary-button"
+              disabled={generating}
+              onClick={onGenerate}
+            >
+              {generating ? (
+                <Loader2 size={16} className="spin" />
+              ) : (
+                <Sparkles size={16} />
+              )}
+              توليد البطاقات لهذا الجزء
+            </button>
+          ) : (
+            <p>لم يولّد صاحب الملف بطاقات لهذا الجزء بعد.</p>
+          )}
         </div>
       </StudyShell>
     );

@@ -1,5 +1,12 @@
 import { and, eq } from "drizzle-orm";
-import { adminMaterials, books, decks, mirrorJobs } from "../drizzle/schema";
+import {
+  adminMaterials,
+  bookShares,
+  books,
+  decks,
+  mirrorJobs,
+} from "../drizzle/schema";
+import { getBookAccess } from "./book-access";
 import { getDb } from "./db";
 
 // Authorization for app/api/files/[...key]/route.ts — the one generic
@@ -23,6 +30,23 @@ export async function isFileKeyAccessibleToUser(
     .where(and(eq(books.fileKey, fileKey), eq(books.userId, userId)))
     .limit(1);
   if (ownedBook) return true;
+
+  // 📤 A study book's PDF is also readable by a student holding an ACCEPTED
+  // share of it (lib/book-access.ts's rule) — pending/revoked/removed
+  // shares grant nothing, so revoking immediately stops new signed URLs.
+  const [sharedBook] = await db
+    .select({ id: books.id })
+    .from(books)
+    .innerJoin(bookShares, eq(bookShares.bookId, books.id))
+    .where(
+      and(
+        eq(books.fileKey, fileKey),
+        eq(bookShares.recipientId, userId),
+        eq(bookShares.status, "accepted")
+      )
+    )
+    .limit(1);
+  if (sharedBook) return true;
 
   const [ownedDeck] = await db
     .select({ id: decks.id })
@@ -81,6 +105,13 @@ export async function isFileKeyAccessibleToUser(
       .where(and(eq(books.id, questionFileMatch[1]), eq(books.userId, userId)))
       .limit(1);
     if (ownedQuestionFileBook) return true;
+  }
+
+  // Rendered study-book pages ("book-pages/{bookId}/{n}.png", produced by
+  // app/api/books/analyze-page-visuals/route.ts): owner or accepted share.
+  const bookPageMatch = fileKey.match(/^book-pages\/([0-9a-f-]{36})\//i);
+  if (bookPageMatch && (await getBookAccess(userId, bookPageMatch[1]))) {
+    return true;
   }
 
   return false;

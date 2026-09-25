@@ -9,8 +9,10 @@ import {
   GraduationCap,
   LogOut,
   Settings,
+  Users,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import { UsernameCard } from "@/components/sharing/UsernameCard";
 
 // Real route for Bottom Nav's "👤 حسابي". Also keeps مِرآة reachable (still
 // lives at "/", unchanged) now that Bottom Nav's "🏠" points at "/subjects"
@@ -24,6 +26,7 @@ const QUICK_LINKS = [
   { href: "/?view=library", label: "مِرآة", icon: BookOpen },
   { href: "/books/stats", label: "إحصائياتي", icon: BarChart3 },
   { href: "/materials", label: "مكتبة الأدمن", icon: GraduationCap },
+  { href: "/shared", label: "مشترك معي", icon: Users },
 ] as const;
 
 const PLAN_LABELS: Record<string, string> = {
@@ -132,6 +135,9 @@ export default function AccountPage() {
           </p>
         )}
       </div>
+
+      {/* 📤 Public handle for Study Pack sharing (opt-in discoverability). */}
+      <UsernameCard />
 
       {/* PR18 — real study statistics, from lib/db-books.ts's getBookStatsForUser. */}
       {statsQuery.data && (

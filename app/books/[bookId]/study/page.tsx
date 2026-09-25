@@ -51,8 +51,13 @@ export default function BookStudyPage() {
 
   // Generate cards/MCQs for every analyzed chapter still missing them —
   // sequentially (each call is itself chunked over every page server-side).
+  // 📤 A shared Study Pack is read-only: the recipient studies what the
+  // owner already generated and never triggers generation (AI cost).
+  const isShared = data?.access.role === "shared";
+
   useEffect(() => {
     if (!data || startedRef.current || tool === "explanation") return;
+    if (data.access.role === "shared") return;
     const have = new Set(
       (tool === "cards" ? data.cards : data.mcqs).map(item => item.chapterId)
     );
@@ -198,7 +203,7 @@ export default function BookStudyPage() {
         onSubmit={(mcqId, selectedIndex) =>
           submitMcqAttempt.mutateAsync({ mcqId, selectedIndex })
         }
-        onGenerate={regenerate}
+        onGenerate={isShared ? undefined : regenerate}
         generating={false}
       />
     );
@@ -229,7 +234,7 @@ export default function BookStudyPage() {
         }))}
         onBack={back}
         onRate={(cardId, rating) => rateCard.mutate({ cardId, rating })}
-        onGenerate={regenerate}
+        onGenerate={isShared ? undefined : regenerate}
         generating={false}
       />
     );
@@ -254,7 +259,11 @@ export default function BookStudyPage() {
         summarySections: chapter.coverageManifest?.summarySections,
       }))}
       onBack={back}
-      onComposeNotes={chapterId => composeNotes.mutate({ chapterId })}
+      onComposeNotes={
+        isShared
+          ? undefined
+          : chapterId => composeNotes.mutate({ chapterId })
+      }
       composingChapterId={
         composeNotes.isPending
           ? (composeNotes.variables?.chapterId ?? null)

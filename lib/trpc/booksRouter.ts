@@ -21,14 +21,24 @@ import {
   listMcqsForUser,
   listStalledBookChaptersForUser,
   rateBookCard,
+  rateSharedBookCard,
+  recordMcqAttempt,
   resetBookChapterForRetry,
   resetBookExtractionForRetry,
   resetBookPageTextForRetry,
   resetBookPageVisualForRetry,
   saveMcqValidationResults,
   insertBookMcqs,
-  submitMcqAttemptForUser,
 } from "../db-books";
+import {
+  getBookAccess,
+  getBookCardAccess,
+  getChapterAccess,
+  getMcqAccess,
+  personalizeCards,
+  shareSafeBook,
+  type BookAccess,
+} from "../book-access";
 import { assignBookToSubject } from "../db-subjects";
 import {
   generateAndSaveChapterFlashcards,
@@ -55,6 +65,66 @@ import { staleBookChapterProcessingCutoff } from "../queue/claim";
 import { publishMessage } from "../queue/client";
 import { protectedProcedure, router } from "./trpc";
 
+// ── 📤 Study Pack access (lib/book-access.ts) ───────────────────────────
+// Reads: owner OR accepted share, then the existing owner-scoped reader
+// runs with access.ownerId — the same single copy of every artifact.
+// AI generation / reprocessing: owner only; a recipient gets a clear
+// FORBIDDEN instead of a (cost-incurring) run on someone else's file.
+const OWNER_ONLY_MESSAGE = "التوليد متاح لصاحب الملف فقط.";
+
+async function requireBookAccess(userId: string, bookId: string) {
+  const access = await getBookAccess(userId, bookId);
+  if (!access) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
+  }
+  return access;
+}
+
+function accessInfo(access: BookAccess) {
+  return {
+    role: access.role,
+    ownerName: access.ownerName,
+    ownerUsername: access.ownerUsername,
+  };
+}
+
+// Owner-only book actions: a recipient learns why it's refused, anyone
+// else just gets "not found" (no existence leak).
+async function throwOwnerOnlyOrNotFound(
+  userId: string,
+  lookup: { bookId: string } | { chapterId: string },
+  notFoundMessage: string
+): Promise<never> {
+  const access =
+    "bookId" in lookup
+      ? await getBookAccess(userId, lookup.bookId)
+      : await getChapterAccess(userId, lookup.chapterId);
+  if (access?.role === "shared") {
+    throw new TRPCError({ code: "FORBIDDEN", message: OWNER_ONLY_MESSAGE });
+  }
+  throw new TRPCError({ code: "NOT_FOUND", message: notFoundMessage });
+}
+
+async function requireOwnedChapter(userId: string, chapterId: string) {
+  const chapter = await getChapterForUser(userId, chapterId);
+  if (!chapter) {
+    return throwOwnerOnlyOrNotFound(
+      userId,
+      { chapterId },
+      "Chapter not found"
+    );
+  }
+  return chapter;
+}
+
+async function requireOwnedBook(userId: string, bookId: string) {
+  const result = await getBookForUser(userId, bookId);
+  if (!result) {
+    return throwOwnerOnlyOrNotFound(userId, { bookId }, "Book not found");
+  }
+  return result;
+}
+
 export const booksRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     return listBooksForUser(ctx.user.id);
@@ -63,11 +133,16 @@ export const booksRouter = router({
   get: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const result = await getBookForUser(ctx.user.id, input.id);
+      const access = await requireBookAccess(ctx.user.id, input.id);
+      const result = await getBookForUser(access.ownerId, input.id);
       if (!result) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
       }
-      return result;
+      return {
+        ...result,
+        book: shareSafeBook(result.book, access),
+        access: accessInfo(access),
+      };
     }),
 
   // Student's explicit "ابدأ التوليد" choice from the study-tools dashboard
@@ -79,10 +154,7 @@ export const booksRouter = router({
   startChapterAnalysis: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await getBookForUser(ctx.user.id, input.bookId);
-      if (!result) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
-      }
+      const result = await requireOwnedBook(ctx.user.id, input.bookId);
       const pending = result.chapters.filter(
         chapter => chapter.status === "pending"
       );
@@ -134,37 +206,50 @@ export const booksRouter = router({
   getStudyContent: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const access = await requireBookAccess(ctx.user.id, input.bookId);
       const result = await getBookStudyContentForUser(
-        ctx.user.id,
+        access.ownerId,
         input.bookId
       );
       if (!result) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
       }
-      return result;
+      return {
+        ...result,
+        cards: await personalizeCards(result.cards, access, ctx.user.id),
+        access: accessInfo(access),
+      };
     }),
 
   getMindMap: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const result = await getBookMindMapForUser(ctx.user.id, input.id);
+      const access = await requireBookAccess(ctx.user.id, input.id);
+      const result = await getBookMindMapForUser(access.ownerId, input.id);
       if (!result) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
       }
-      return result;
+      return { ...result, access: accessInfo(access) };
     }),
 
   getChapter: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const result = await getChapterContentForUser(ctx.user.id, input.id);
-      if (!result) {
+      const access = await getChapterAccess(ctx.user.id, input.id);
+      const result = access
+        ? await getChapterContentForUser(access.ownerId, input.id)
+        : null;
+      if (!access || !result) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Chapter not found",
         });
       }
-      return result;
+      return {
+        ...result,
+        cards: await personalizeCards(result.cards, access, ctx.user.id),
+        access: accessInfo(access),
+      };
     }),
 
   delete: protectedProcedure
@@ -208,11 +293,16 @@ export const booksRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const result = await rateBookCard(
-        ctx.user.id,
-        input.cardId,
-        input.rating
-      );
+      const access = await getBookCardAccess(ctx.user.id, input.cardId);
+      if (!access) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+      }
+      // A recipient's review goes to their own progress row — the owner's
+      // schedule on the card itself is never touched.
+      const result =
+        access.role === "owner"
+          ? await rateBookCard(ctx.user.id, input.cardId, input.rating)
+          : await rateSharedBookCard(ctx.user.id, input.cardId, input.rating);
       if (!result) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
       }
@@ -227,7 +317,10 @@ export const booksRouter = router({
   explainCard: protectedProcedure
     .input(z.object({ cardId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const card = await getBookCardForUser(ctx.user.id, input.cardId);
+      const access = await getBookCardAccess(ctx.user.id, input.cardId);
+      const card = access
+        ? await getBookCardForUser(access.ownerId, input.cardId)
+        : null;
       if (!card) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
       }
@@ -249,11 +342,11 @@ export const booksRouter = router({
   submitMcqAttempt: protectedProcedure
     .input(z.object({ mcqId: z.string(), selectedIndex: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await submitMcqAttemptForUser(
-        ctx.user.id,
-        input.mcqId,
-        input.selectedIndex
-      );
+      // Owner or accepted recipient; the attempt is always the caller's own.
+      const access = await getMcqAccess(ctx.user.id, input.mcqId);
+      const result = access
+        ? await recordMcqAttempt(ctx.user.id, input.mcqId, input.selectedIndex)
+        : null;
       if (!result) {
         throw new TRPCError({ code: "NOT_FOUND", message: "MCQ not found" });
       }
@@ -283,13 +376,7 @@ export const booksRouter = router({
   retryChapter: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "failed") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -313,10 +400,7 @@ export const booksRouter = router({
   retryExtraction: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await getBookForUser(ctx.user.id, input.bookId);
-      if (!result) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
-      }
+      const result = await requireOwnedBook(ctx.user.id, input.bookId);
       if (result.book.status !== "failed") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -363,19 +447,17 @@ export const booksRouter = router({
   listPages: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .query(async ({ ctx, input }) => {
-      return listBookPagesForUser(ctx.user.id, input.bookId);
+      const access = await requireBookAccess(ctx.user.id, input.bookId);
+      return listBookPagesForUser(access.ownerId, input.bookId);
     }),
 
   getCoverageReport: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Ownership check first — getBookCoverageReport itself has no
-      // per-user filter (it's a plain aggregate over one bookId), so the
-      // caller must prove ownership before we run it.
-      const owned = await getBookForUser(ctx.user.id, input.bookId);
-      if (!owned) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
-      }
+      // Access check first — getBookCoverageReport itself has no per-user
+      // filter (it's a plain aggregate over one bookId), so the caller must
+      // prove owner-or-accepted-share access before we run it.
+      await requireBookAccess(ctx.user.id, input.bookId);
       return getBookCoverageReport(input.bookId);
     }),
 
@@ -386,10 +468,7 @@ export const booksRouter = router({
   getCoverageDetail: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const owned = await getBookForUser(ctx.user.id, input.bookId);
-      if (!owned) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
-      }
+      await requireBookAccess(ctx.user.id, input.bookId);
       return getBookCoverageDetail(input.bookId);
     }),
 
@@ -403,13 +482,7 @@ export const booksRouter = router({
   generateMindMapSections: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "complete") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -429,13 +502,7 @@ export const booksRouter = router({
   generateVisualInsights: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "complete") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -451,13 +518,7 @@ export const booksRouter = router({
   generateChapterFlashcards: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "complete") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -471,13 +532,7 @@ export const booksRouter = router({
   generateChapterMcqs: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "complete") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -491,13 +546,7 @@ export const booksRouter = router({
   generateMedicalNotePages: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "complete") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -524,13 +573,7 @@ export const booksRouter = router({
   validateChapterMcqs: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await getChapterForUser(ctx.user.id, input.chapterId);
-      if (!chapter) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Chapter not found",
-        });
-      }
+      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
       if (chapter.status !== "complete") {
         throw new TRPCError({
           code: "BAD_REQUEST",

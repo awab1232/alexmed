@@ -2,12 +2,13 @@
 // and lib/db-subjects.ts's established conventions: getDb() singleton,
 // ownership-scoped queries, read functions return safe empty defaults,
 // write functions throw when the DB isn't configured.
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import {
   annotations,
   bookCards,
   bookChapters,
   bookPages,
+  bookShares,
   books,
   type Annotation,
 } from "../drizzle/schema";
@@ -42,7 +43,17 @@ async function assertOwnsPage(
       and(
         eq(bookPages.id, pageId),
         eq(bookPages.bookId, bookId),
-        eq(books.userId, userId)
+        // 📤 Owner or accepted share recipient; the annotation row itself
+        // is always the caller's own and private to them.
+        or(
+          eq(books.userId, userId),
+          sql`exists (
+            select 1 from ${bookShares}
+            where ${bookShares.bookId} = ${books.id}
+              and ${bookShares.recipientId} = ${userId}
+              and ${bookShares.status} = 'accepted'
+          )`
+        )
       )
     )
     .limit(1);
@@ -183,8 +194,15 @@ export async function createCardFromAnnotation(
     })
     .from(annotations)
     .innerJoin(bookPages, eq(bookPages.id, annotations.pageId))
+    // Owner only: the new card joins the book's own card set, which a
+    // share recipient must never add to (their notes stay notes).
+    .innerJoin(books, eq(books.id, bookPages.bookId))
     .where(
-      and(eq(annotations.id, annotationId), eq(annotations.userId, userId))
+      and(
+        eq(annotations.id, annotationId),
+        eq(annotations.userId, userId),
+        eq(books.userId, userId)
+      )
     )
     .limit(1);
   if (!row || !row.chapterId) return null;

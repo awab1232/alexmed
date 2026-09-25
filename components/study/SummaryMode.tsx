@@ -59,7 +59,8 @@ export default function SummaryMode({
   notice?: ReactNode;
   aiTarget: AiTarget;
   onBack: () => void;
-  onComposeNotes: (chapterId: string) => void;
+  // Absent for a shared (read-only) Study Pack — composing is owner-only.
+  onComposeNotes?: (chapterId: string) => void;
   composingChapterId: string | null;
 }) {
   const [lang, setLang] = useState<"en" | "ar">("en");
@@ -212,25 +213,27 @@ export default function SummaryMode({
                       <p className="summary-doc-body">{explanation}</p>
                     </section>
                   )}
-                  <div className="summary-doc-compose">
-                    <p>
-                      حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص،
-                      علاج، ونقاط خطر.
-                    </p>
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      disabled={composingChapterId !== null}
-                      onClick={() => onComposeNotes(chapter.id)}
-                    >
-                      {composingChapterId === chapter.id ? (
-                        <Loader2 size={15} className="spin" />
-                      ) : (
-                        "✨"
-                      )}{" "}
-                      تجهيز ملخص منظم
-                    </button>
-                  </div>
+                  {onComposeNotes && (
+                    <div className="summary-doc-compose">
+                      <p>
+                        حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص،
+                        علاج، ونقاط خطر.
+                      </p>
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        disabled={composingChapterId !== null}
+                        onClick={() => onComposeNotes(chapter.id)}
+                      >
+                        {composingChapterId === chapter.id ? (
+                          <Loader2 size={15} className="spin" />
+                        ) : (
+                          "✨"
+                        )}{" "}
+                        تجهيز ملخص منظم
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
 

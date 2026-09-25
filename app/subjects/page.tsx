@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BookOpen, CircleAlert, Loader2, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import { SharedHomeWidget } from "@/components/sharing/SharedHomeWidget";
 
 // Cycled by list position (not the subject's own type/color, since none is
 // stored) purely to make one folder visually distinct from its neighbor in
@@ -80,6 +81,8 @@ export default function SubjectsPage() {
           <p>مجلداتك الدراسية — كل مجلد يجمع ملفاتك حسب المادة.</p>
         </div>
       </div>
+
+      <SharedHomeWidget />
 
       {/* Search only once there are enough folders to need it. */}
       {subjects.length >= SEARCH_MIN_FOLDERS && (

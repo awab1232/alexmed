@@ -57,7 +57,8 @@ export default function QuizMode({
   mcqs: QuizMcq[];
   onBack: () => void;
   onSubmit: (mcqId: string, selectedIndex: number) => Promise<McqSubmitResult>;
-  onGenerate: () => void;
+  // Absent for a shared (read-only) Study Pack — generation is owner-only.
+  onGenerate?: () => void;
   generating: boolean;
 }) {
   const [index, setIndex] = useState(0);
@@ -158,19 +159,23 @@ export default function QuizMode({
         <div className="study-empty">
           <Sparkles size={28} />
           <h3>لا يوجد اختبار لهذا الجزء بعد</h3>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={generating}
-            onClick={onGenerate}
-          >
-            {generating ? (
-              <Loader2 size={16} className="spin" />
-            ) : (
-              <Sparkles size={16} />
-            )}
-            توليد اختبار لهذا الجزء
-          </button>
+          {onGenerate ? (
+            <button
+              type="button"
+              className="primary-button"
+              disabled={generating}
+              onClick={onGenerate}
+            >
+              {generating ? (
+                <Loader2 size={16} className="spin" />
+              ) : (
+                <Sparkles size={16} />
+              )}
+              توليد اختبار لهذا الجزء
+            </button>
+          ) : (
+            <p>لم يولّد صاحب الملف أسئلة لهذا الجزء بعد.</p>
+          )}
         </div>
       </StudyShell>
     );

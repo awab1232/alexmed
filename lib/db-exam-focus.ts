@@ -18,6 +18,7 @@ import {
   bookPages,
   books,
   bookVisualAssets,
+  examFocusBookmarks,
   examFocusCards,
   examFocusDecks,
   examFocusUnits,
@@ -148,8 +149,14 @@ export async function deleteExamFocusDeckForUser(
 }
 
 // Deck + per-unit progress (never the page text / facts, which can be
-// large) + category counts for the filter chips.
-export async function getExamFocusDeckForUser(userId: string, bookId: string) {
+// large) + category counts for the filter chips. `userId` is the deck's
+// owner; `viewerId` (owner or an accepted share recipient — the caller
+// checks access) scopes the personal bookmark count.
+export async function getExamFocusDeckForUser(
+  userId: string,
+  bookId: string,
+  viewerId: string = userId
+) {
   const db = getDb();
   if (!db) return null;
   const [deck] = await db
@@ -180,11 +187,12 @@ export async function getExamFocusDeckForUser(userId: string, bookId: string) {
     .groupBy(examFocusCards.category);
   const [saved] = await db
     .select({ n: count() })
-    .from(examFocusCards)
+    .from(examFocusBookmarks)
+    .innerJoin(examFocusCards, eq(examFocusCards.id, examFocusBookmarks.cardId))
     .where(
       and(
         eq(examFocusCards.deckId, deck.id),
-        eq(examFocusCards.bookmarked, true)
+        eq(examFocusBookmarks.userId, viewerId)
       )
     );
   return {
@@ -524,7 +532,9 @@ function escapeLike(value: string): string {
 // Server-side filter + search over the WHOLE persisted deck, paginated —
 // the swipe UI fetches pages of this as the student moves forward.
 export async function listExamFocusCardsForUser(input: {
+  // Deck owner; `viewerId` (defaults to the owner) scopes bookmarks.
   userId: string;
+  viewerId?: string;
   bookId: string;
   category?: string;
   bookmarkedOnly?: boolean;
@@ -544,12 +554,18 @@ export async function listExamFocusCardsForUser(input: {
       )
     );
   if (!deck) return { items: [], total: 0 };
+  const viewerId = input.viewerId ?? input.userId;
+  const bookmarkedByViewer = sql<boolean>`exists (
+    select 1 from ${examFocusBookmarks}
+    where ${examFocusBookmarks.cardId} = ${examFocusCards.id}
+      and ${examFocusBookmarks.userId} = ${viewerId}
+  )`;
   const conditions = [eq(examFocusCards.deckId, deck.id)];
   if (input.category) {
     conditions.push(eq(examFocusCards.category, input.category));
   }
   if (input.bookmarkedOnly) {
-    conditions.push(eq(examFocusCards.bookmarked, true));
+    conditions.push(bookmarkedByViewer);
   }
   const search = input.search?.trim().toLowerCase();
   if (search) {
@@ -574,7 +590,7 @@ export async function listExamFocusCardsForUser(input: {
       highlightText: examFocusCards.highlightText,
       flag: examFocusCards.flag,
       sourcePages: examFocusCards.sourcePages,
-      bookmarked: examFocusCards.bookmarked,
+      bookmarked: bookmarkedByViewer,
     })
     .from(examFocusCards)
     .where(where)
@@ -584,21 +600,39 @@ export async function listExamFocusCardsForUser(input: {
   return { items, total: Number(totalRow?.n ?? 0) };
 }
 
+// A viewer's personal bookmark (the caller has checked access via
+// lib/book-access.ts's getExamFocusCardAccess). `isOwner` also mirrors the
+// owner's choice onto the legacy examFocusCards.bookmarked column so a
+// rollback to pre-sharing code keeps the owner's bookmarks.
 export async function setExamFocusCardBookmark(
-  userId: string,
+  viewerId: string,
   cardId: string,
-  bookmarked: boolean
+  bookmarked: boolean,
+  isOwner: boolean
 ) {
   const db = requireDb();
-  const updated = await db
-    .update(examFocusCards)
-    .set({ bookmarked })
-    .where(
-      and(
-        eq(examFocusCards.id, cardId),
-        sql`${examFocusCards.deckId} in (select ${examFocusDecks.id} from ${examFocusDecks} where ${examFocusDecks.userId} = ${userId})`
-      )
-    )
-    .returning({ id: examFocusCards.id });
-  return updated.length > 0;
+  await db.transaction(async tx => {
+    if (bookmarked) {
+      await tx
+        .insert(examFocusBookmarks)
+        .values({ userId: viewerId, cardId })
+        .onConflictDoNothing();
+    } else {
+      await tx
+        .delete(examFocusBookmarks)
+        .where(
+          and(
+            eq(examFocusBookmarks.userId, viewerId),
+            eq(examFocusBookmarks.cardId, cardId)
+          )
+        );
+    }
+    if (isOwner) {
+      await tx
+        .update(examFocusCards)
+        .set({ bookmarked })
+        .where(eq(examFocusCards.id, cardId));
+    }
+  });
+  return true;
 }

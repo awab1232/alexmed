@@ -17,6 +17,7 @@ import {
 } from "drizzle-orm";
 import { deleteObjects } from "./storage";
 import {
+  bookCardProgress,
   bookCards,
   bookChapters,
   bookMcqAttempts,
@@ -1884,6 +1885,98 @@ export async function listMcqsForUser(userId: string) {
     .innerJoin(books, eq(books.id, bookChapters.bookId))
     .where(eq(books.userId, userId))
     .orderBy(desc(bookMcqs.createdAt));
+}
+
+// 📤 A recipient's review of a SHARED book's card — same FSRS schedule as
+// rateBookCard, but stored in the recipient's own book_card_progress row,
+// never on the owner's book_cards row. The caller must already have
+// verified access (lib/book-access.ts's getBookCardAccess).
+export async function rateSharedBookCard(
+  userId: string,
+  cardId: string,
+  rating: FsrsGrade
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  const [own] = await db
+    .select()
+    .from(bookCardProgress)
+    .where(
+      and(
+        eq(bookCardProgress.userId, userId),
+        eq(bookCardProgress.cardId, cardId)
+      )
+    )
+    .limit(1);
+  const now = new Date();
+  const update = scheduleFsrsReview(
+    FSRS_DEFAULT_WEIGHTS,
+    {
+      stability: own?.fsrsStability ?? null,
+      difficulty: own?.fsrsDifficulty ?? null,
+      lastReviewedAt: own?.lastReviewedAt ?? null,
+    },
+    rating,
+    now
+  );
+  await db
+    .insert(bookCardProgress)
+    .values({
+      userId,
+      cardId,
+      fsrsStability: update.stability,
+      fsrsDifficulty: update.difficulty,
+      intervalDays: update.intervalDays,
+      dueAt: update.dueAt,
+      lastReviewedAt: now,
+      reviewCount: 1,
+      lastRating: rating,
+    })
+    .onConflictDoUpdate({
+      target: [bookCardProgress.userId, bookCardProgress.cardId],
+      set: {
+        fsrsStability: update.stability,
+        fsrsDifficulty: update.difficulty,
+        intervalDays: update.intervalDays,
+        dueAt: update.dueAt,
+        lastReviewedAt: now,
+        reviewCount: sql`${bookCardProgress.reviewCount} + 1`,
+        lastRating: rating,
+        updatedAt: now,
+      },
+    });
+  await db.insert(bookReviewEvents).values({ cardId, userId, rating });
+  return update;
+}
+
+// 📤 Records an answer for the VIEWER (owner or accepted recipient — the
+// caller checks access via getMcqAccess); attempts are always the
+// viewer's own and never visible to anyone else.
+export async function recordMcqAttempt(
+  userId: string,
+  mcqId: string,
+  selectedIndex: number
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  const [mcq] = await db
+    .select({
+      correctIndex: bookMcqs.correctIndex,
+      explanationEn: bookMcqs.explanationEn,
+    })
+    .from(bookMcqs)
+    .where(eq(bookMcqs.id, mcqId))
+    .limit(1);
+  if (!mcq) return null;
+  const isCorrect = selectedIndex === mcq.correctIndex;
+  await db
+    .insert(bookMcqAttempts)
+    .values({ mcqId, userId, selectedIndex, isCorrect });
+  return {
+    isCorrect,
+    correctIndex: mcq.correctIndex,
+    explanationEn: mcq.explanationEn,
+  };
 }
 
 export async function submitMcqAttemptForUser(

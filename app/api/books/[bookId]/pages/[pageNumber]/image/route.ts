@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { getBookAccess } from "@/lib/book-access";
 import { getBookPageForUser } from "@/lib/db-books";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { NextResponse } from "next/server";
@@ -29,7 +30,11 @@ export async function GET(
     return NextResponse.json({ error: "رقم صفحة غير صالح." }, { status: 400 });
   }
 
-  const result = await getBookPageForUser(session.user.id, bookId, pageNumber);
+  // Owner or accepted share recipient (lib/book-access.ts).
+  const access = await getBookAccess(session.user.id, bookId);
+  const result = access
+    ? await getBookPageForUser(access.ownerId, bookId, pageNumber)
+    : null;
   if (!result || !result.page.storageKey) {
     return NextResponse.json(
       { error: "لم يتم العثور على هذه الصفحة." },

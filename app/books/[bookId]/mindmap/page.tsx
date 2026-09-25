@@ -99,7 +99,10 @@ export default function BookMindMapPage() {
                   <span className="mindmap-chapter-main"><strong>{chapter.title}</strong><small>{sections.length ? `${sections.length} branches · ${chapter.keyPoints?.length ?? 0} high-yield points` : "Ready to generate"}</small></span>
                   <span className="mindmap-chapter-action">{sections.length ? (isOpen ? <ChevronDown size={18} /> : <ChevronLeft size={18} />) : <Sparkles size={17} />}</span>
                 </button>
-                {!sections.length && (
+                {!sections.length && mapQuery.data?.access.role === "shared" && (
+                  <div className="mindmap-generate-row"><p>لم يبنِ صاحب الملف خريطة هذا الفصل بعد.</p></div>
+                )}
+                {!sections.length && mapQuery.data?.access.role === "owner" && (
                   <div className="mindmap-generate-row"><p>اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة في خريطة واحدة.</p><button type="button" className="primary-button" disabled={generating} onClick={() => generateSections.mutate({ chapterId: chapter.id })}>{generating ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />} {generating ? "جاري البناء..." : "بناء الخريطة"}</button></div>
                 )}
                 {isOpen && !!sections.length && (

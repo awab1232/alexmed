@@ -1,10 +1,13 @@
 "use client";
 
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   CheckCircle2,
+  Share2,
+  Trash2,
+  UserRound,
   Circle,
   CircleAlert,
   ClipboardList,
@@ -21,6 +24,7 @@ import {
   Workflow,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
+import { ShareStudyPackModal } from "@/components/sharing/ShareStudyPackModal";
 
 // Background analysis now happens entirely server-side, driven by Upstash
 // QStash workers (see app/api/books/analyze-chapter/route.ts) — this page's
@@ -79,10 +83,13 @@ function StageRow({
 export default function BookDetailPage() {
   const params = useParams<{ bookId: string }>();
   const bookId = params.bookId;
+  const router = useRouter();
   const utils = trpc.useUtils();
+  const [shareOpen, setShareOpen] = useState(false);
   const bookQuery = trpc.books.get.useQuery(
     { id: bookId },
     {
+      retry: false,
       refetchInterval: query => {
         const status = query.state.data?.book.status;
         return status && TERMINAL_BOOK_STATUSES.has(status)
@@ -114,8 +121,19 @@ export default function BookDetailPage() {
   // lost queue message or a worker killed mid-run). The server decides
   // what's actually stalled, so this never double-runs a healthy chapter.
   const resumeAnalysis = trpc.books.resumeChapterAnalysis.useMutation();
+  // 📤 Opened through an accepted share: read-only study of the owner's
+  // content — no generation, retries, folders or deletion (owner-only).
+  const isShared = bookQuery.data?.access.role === "shared";
+  const isOwner = bookQuery.data?.access.role === "owner";
+  const removeFromLibrary = trpc.sharing.removeFromLibrary.useMutation({
+    onSuccess: () => {
+      utils.sharing.sharedWithMe.invalidate();
+      router.push("/shared");
+    },
+  });
   const chapterStatuses = bookQuery.data?.chapters.map(c => c.status) ?? [];
   const analysisInFlight =
+    isOwner &&
     chapterStatuses.some(status => status !== "pending") &&
     chapterStatuses.some(
       status =>
@@ -128,9 +146,19 @@ export default function BookDetailPage() {
     const timer = setInterval(() => resumeMutate({ bookId }), 60_000);
     return () => clearInterval(timer);
   }, [analysisInFlight, bookId, resumeMutate]);
-  const subjectsQuery = trpc.subjects.list.useQuery();
+  const subjectsQuery = trpc.subjects.list.useQuery(undefined, {
+    enabled: isOwner,
+  });
   // 🔥 Exam Focus tile status (its own pipeline — see exam-focus/page.tsx).
-  const { data: examFocusDeck } = trpc.examFocus.get.useQuery({ bookId });
+  // For a shared file with no owner deck the server answers
+  // PRECONDITION_FAILED (a recipient can't start one) — shown on the tile.
+  const examFocusQuery = trpc.examFocus.get.useQuery(
+    { bookId },
+    { retry: false }
+  );
+  const examFocusDeck = examFocusQuery.data;
+  const examFocusUnavailable =
+    isShared && examFocusQuery.error?.data?.code === "PRECONDITION_FAILED";
   const setSubject = trpc.books.setSubject.useMutation({
     onSuccess: () => utils.books.get.invalidate({ id: bookId }),
   });
@@ -194,7 +222,9 @@ export default function BookDetailPage() {
     );
   }
 
-  const { book, chapters, totalCards, totalMcqs } = bookQuery.data;
+  const { book, chapters, totalCards, totalMcqs, access } = bookQuery.data;
+  const ownerLabel =
+    access.ownerName || (access.ownerUsername ? `@${access.ownerUsername}` : "");
   const completeCount = chapters.filter(c => c.status === "complete").length;
   const failedChapters = chapters.filter(c => c.status === "failed");
   const isExtracting = book.status === "extracting";
@@ -227,37 +257,93 @@ export default function BookDetailPage() {
     <section className="cards-view">
       <div className="cards-header">
         <div>
-          <Link href="/books" className="eyebrow" style={{ marginBottom: 8 }}>
-            <span className="eyebrow-dot" /> ‹ رجوع لكتبي
+          <Link
+            href={isShared ? "/shared" : "/books"}
+            className="eyebrow"
+            style={{ marginBottom: 8 }}
+          >
+            <span className="eyebrow-dot" /> ‹{" "}
+            {isShared ? "رجوع لمشترك معي" : "رجوع لكتبي"}
           </Link>
           <h1>{book.fileName}</h1>
           <p>
             {book.pageCount} صفحة · {chapters.length} فصل · {completeCount}/
             {chapters.length} مكتمل
           </p>
+          {isShared && (
+            <span className="sh-badge">
+              <UserRound size={13} aria-hidden="true" /> مشترك من{" "}
+              <bdi>{ownerLabel}</bdi>
+            </span>
+          )}
         </div>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={{ fontSize: 12 }}>المادة</span>
-          <select
-            value={book.subjectId ?? ""}
-            disabled={setSubject.isPending}
-            onChange={event => {
-              const value = event.target.value;
-              setSubject.mutate({
-                bookId,
-                subjectId: value || null,
-              });
+        {isShared ? (
+          <button
+            type="button"
+            className="secondary-button sh-remove-button"
+            disabled={removeFromLibrary.isPending}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد."
+                )
+              ) {
+                removeFromLibrary.mutate({ bookId });
+              }
             }}
           >
-            <option value="">بدون مادة</option>
-            {(subjectsQuery.data ?? []).map(subject => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            {removeFromLibrary.isPending ? (
+              <Loader2 size={15} className="spin" />
+            ) : (
+              <Trash2 size={15} />
+            )}
+            إزالة من مكتبتي
+          </button>
+        ) : (
+          <div className="sh-owner-controls">
+            <button
+              type="button"
+              className="primary-button sh-share-button"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 size={16} /> مشاركة
+            </button>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 12 }}>المادة</span>
+              <select
+                value={book.subjectId ?? ""}
+                disabled={setSubject.isPending}
+                onChange={event => {
+                  const value = event.target.value;
+                  setSubject.mutate({
+                    bookId,
+                    subjectId: value || null,
+                  });
+                }}
+              >
+                <option value="">بدون مادة</option>
+                {(subjectsQuery.data ?? []).map(subject => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
       </div>
+      {shareOpen && (
+        <ShareStudyPackModal
+          bookId={bookId}
+          bookTitle={book.fileName}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+      {removeFromLibrary.error && (
+        <div className="inline-alert error wide" role="alert">
+          <CircleAlert size={16} /> {removeFromLibrary.error.message}
+        </div>
+      )}
 
       {/* Study Tools (PR12, reshaped for the mandatory-choice gate) — reuses
           existing bookCards/bookMcqs/bookChapters.explanationAr+keyPoints via
@@ -300,7 +386,16 @@ export default function BookDetailPage() {
                 // own whole-file pipeline, independent of chapter analysis,
                 // so it's always openable once the pages are read.
                 const examFocusTile =
-                  toolIndex === 2 ? (
+                  toolIndex !== 2 ? null : examFocusUnavailable ? (
+                    <div
+                      key="exam-focus"
+                      className="study-tool-card is-exam-focus is-locked"
+                    >
+                      <Flame size={22} aria-hidden="true" />
+                      <span>🔥 Exam Focus</span>
+                      <small>لم يُنشئه صاحب الملف بعد</small>
+                    </div>
+                  ) : (
                     <Link
                       key="exam-focus"
                       href={`/books/${bookId}/exam-focus`}
@@ -322,7 +417,7 @@ export default function BookDetailPage() {
                         {examFocusDeck ? "افتح 🔥" : "ابدأ 🔥"}
                       </span>
                     </Link>
-                  ) : null;
+                  );
                 const state = chaptersNotStarted
                   ? "locked"
                   : !chaptersPhaseDone
@@ -335,7 +430,10 @@ export default function BookDetailPage() {
                       <Icon size={22} />
                       <span>{label}</span>
                       {state === "ready" && detail && <small>{detail}</small>}
-                      {state === "locked" && (
+                      {state === "locked" && isShared && (
+                        <small>لم يبدأ صاحب الملف التوليد بعد</small>
+                      )}
+                      {state === "locked" && !isShared && (
                         <button
                           type="button"
                           className="secondary-button"
@@ -399,7 +497,7 @@ export default function BookDetailPage() {
                 );
               })}
             </div>
-            {chaptersNotStarted && (
+            {chaptersNotStarted && !isShared && (
               <p className="study-tools-note">
                 <Lock size={12} /> التوليد يجهّز البطاقات والاختبار والملخص
                 والخريطة الذهنية معًا لنفس الملف — اضغط أي بطاقة للبدء.
@@ -569,22 +667,26 @@ export default function BookDetailPage() {
             {book.extractionError ||
               "تعذّرت قراءة هذا الكتاب. جرّب إعادة المحاولة أو رفع نسخة أخرى منه."}
           </span>
-          <button
-            type="button"
-            className="secondary-button"
-            style={{ marginRight: 12 }}
-            disabled={retryExtraction.isPending}
-            onClick={() => retryExtraction.mutate({ bookId })}
-          >
-            <RotateCcw size={14} /> إعادة محاولة الاستخراج
-          </button>
-          <Link
-            href="/books/upload"
-            className="secondary-button"
-            style={{ marginRight: 12 }}
-          >
-            ارفع كتابًا جديدًا
-          </Link>
+          {isOwner && (
+            <>
+              <button
+                type="button"
+                className="secondary-button"
+                style={{ marginRight: 12 }}
+                disabled={retryExtraction.isPending}
+                onClick={() => retryExtraction.mutate({ bookId })}
+              >
+                <RotateCcw size={14} /> إعادة محاولة الاستخراج
+              </button>
+              <Link
+                href="/books/upload"
+                className="secondary-button"
+                style={{ marginRight: 12 }}
+              >
+                ارفع كتابًا جديدًا
+              </Link>
+            </>
+          )}
         </div>
       )}
 
@@ -606,7 +708,7 @@ export default function BookDetailPage() {
         </div>
       )}
 
-      {failedTextPages.length > 0 && (
+      {isOwner && failedTextPages.length > 0 && (
         <div className="library-grid" style={{ marginBottom: 18 }}>
           {failedTextPages.map(page => (
             <div className="library-item" key={page.id}>
@@ -669,7 +771,7 @@ export default function BookDetailPage() {
                       : "جارٍ التحليل..."}
                   </span>
                 </div>
-                {chapter.status === "failed" && (
+                {chapter.status === "failed" && isOwner && (
                   <button
                     type="button"
                     className="secondary-button"

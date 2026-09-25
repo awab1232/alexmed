@@ -40,6 +40,7 @@ export default function ExamFocusPage() {
   const deckQuery = trpc.examFocus.get.useQuery(
     { bookId },
     {
+      retry: false,
       refetchInterval: query => {
         const status = query.state.data?.deck.status;
         return status === "processing" || status === "finalizing"
@@ -63,6 +64,8 @@ export default function ExamFocusPage() {
   const setBookmark = trpc.examFocus.setBookmark.useMutation();
 
   const deckData = deckQuery.data;
+  // 📤 A share recipient reads the owner's deck; (re)generating is owner-only.
+  const isShared = deckData?.access.role === "shared";
   const status = deckData?.deck.status;
   const processing = status === "processing" || status === "finalizing";
   const ready = status === "complete" || status === "partial_failed";
@@ -80,10 +83,10 @@ export default function ExamFocusPage() {
 
   // Safety net while processing: re-queue anything that stopped moving.
   useEffect(() => {
-    if (!processing) return;
+    if (!processing || isShared) return;
     const timer = setInterval(() => resumeMutate({ bookId }), RESUME_MS);
     return () => clearInterval(timer);
-  }, [processing, bookId, resumeMutate]);
+  }, [processing, isShared, bookId, resumeMutate]);
 
   // The moment processing finishes, load the fresh cards.
   const wasProcessing = useRef(false);
@@ -235,6 +238,24 @@ export default function ExamFocusPage() {
     );
   }
 
+  // No access, or a shared file whose owner never created a deck (the
+  // server explains; a recipient can't start one).
+  if (deckQuery.error) {
+    return (
+      <StudyShell title={shellTitle} onBack={back}>
+        <div className="study-empty">
+          <CircleAlert size={30} aria-hidden="true" />
+          <h3>Exam Focus غير متاح</h3>
+          <p>
+            {deckQuery.error.data?.code === "PRECONDITION_FAILED"
+              ? deckQuery.error.message
+              : "تعذر فتح هذا الملف."}
+          </p>
+        </div>
+      </StudyShell>
+    );
+  }
+
   if (deckQuery.isLoading || !deckData) {
     return (
       <StudyShell title={shellTitle} subtitle="High-Yield Notes" onBack={back}>
@@ -278,7 +299,7 @@ export default function ExamFocusPage() {
               : "لم نجد معلومات امتحانية واضحة 🤔"}
           </h3>
           <p>{deck.errorMessage ?? "جرّب إعادة التوليد."}</p>
-          {failedUnits.length ? (
+          {isShared ? null : failedUnits.length ? (
             <button
               type="button"
               className="primary-button"
@@ -321,13 +342,15 @@ export default function ExamFocusPage() {
           .map(unit => `ص ${unit.pageStart}–${unit.pageEnd}`)
           .join("، ")}
         .{" "}
-        <button
-          type="button"
-          onClick={() => retryFailed.mutate({ bookId })}
-          disabled={retryFailed.isPending}
-        >
-          إعادة المحاولة
-        </button>
+        {!isShared && (
+          <button
+            type="button"
+            onClick={() => retryFailed.mutate({ bookId })}
+            disabled={retryFailed.isPending}
+          >
+            إعادة المحاولة
+          </button>
+        )}
       </span>
     ) : coverage && coverage.status !== "COMPLETE" ? (
       <span className="ef-notice">
@@ -356,15 +379,17 @@ export default function ExamFocusPage() {
           >
             <Search size={20} />
           </button>
-          <button
-            type="button"
-            className="study-icon-button"
-            onClick={confirmRegenerate}
-            disabled={regenerate.isPending}
-            aria-label="إعادة توليد Exam Focus"
-          >
-            <RotateCcw size={19} />
-          </button>
+          {!isShared && (
+            <button
+              type="button"
+              className="study-icon-button"
+              onClick={confirmRegenerate}
+              disabled={regenerate.isPending}
+              aria-label="إعادة توليد Exam Focus"
+            >
+              <RotateCcw size={19} />
+            </button>
+          )}
         </>
       }
       footer={

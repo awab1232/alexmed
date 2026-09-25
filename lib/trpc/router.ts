@@ -14,6 +14,7 @@ import { decksRouter } from "./decksRouter";
 import { examFocusRouter } from "./examFocusRouter";
 import { mirrorRouter } from "./mirrorRouter";
 import { questionFilesRouter } from "./questionFilesRouter";
+import { sharingRouter } from "./sharingRouter";
 import { studentMaterialsRouter } from "./studentMaterialsRouter";
 import { subjectsRouter } from "./subjectsRouter";
 import { protectedProcedure, publicProcedure, router } from "./trpc";
@@ -48,6 +49,9 @@ export const appRouter = router({
   decks: decksRouter,
   books: booksRouter,
   examFocus: examFocusRouter,
+  // 📤 Study Pack sharing (requests, access, notifications) — see
+  // lib/db-sharing.ts; read authorization lives in lib/book-access.ts.
+  sharing: sharingRouter,
   brainGames: brainGamesRouter,
   bookPageMarks: bookPageMarksRouter,
   mirror: mirrorRouter,

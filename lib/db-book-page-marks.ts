@@ -4,7 +4,8 @@
 // is verified by joining up to books.userId (bookPageMarks itself carries a
 // userId column too, same denormalisation reasoning as bookCards).
 import { and, eq } from "drizzle-orm";
-import { bookPageMarks, books } from "../drizzle/schema";
+import { bookPageMarks } from "../drizzle/schema";
+import { getBookAccess } from "./book-access";
 import { isEmptyPageMarks, type PdfPageMarks } from "./pdf-marks";
 import { getDb } from "./db";
 
@@ -49,12 +50,9 @@ export async function saveBookPageMarks(
   const db = getDb();
   if (!db) throw new Error("Database not available");
 
-  const [owned] = await db
-    .select({ id: books.id })
-    .from(books)
-    .where(and(eq(books.id, bookId), eq(books.userId, userId)))
-    .limit(1);
-  if (!owned) return false;
+  // Owner or accepted share recipient — the marks row itself is always the
+  // caller's own (keyed by userId), never visible to the other side.
+  if (!(await getBookAccess(userId, bookId))) return false;
 
   if (isEmptyPageMarks(marks)) {
     await db
