@@ -130,7 +130,19 @@ export default function RegisterForm({
           </>
         )}
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-5 text-center text-xs text-muted-foreground leading-6">
+          بإنشاء حساب فإنك توافق على{" "}
+          <a href="/terms" className="text-primary underline">
+            سياسة الاستخدام
+          </a>{" "}
+          و
+          <a href="/privacy" className="text-primary underline">
+            سياسة الخصوصية
+          </a>
+          .
+        </p>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
           لديك حساب؟{" "}
           <a href="/login" className="text-primary underline">
             سجّل الدخول

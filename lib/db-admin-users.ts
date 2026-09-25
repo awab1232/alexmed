@@ -14,8 +14,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { getDb } from "./db";
-import { deleteBook, listBooksForUser } from "./db-books";
-import { deleteDeck, listDecksForUser } from "./db";
+import { deleteAccountCompletely } from "./db-account";
 
 export type AdminUserPlan = "free" | "premium";
 
@@ -149,27 +148,10 @@ export async function setUserSuspendedForAdmin(
 // cascades away everything else that references it (subjects,
 // chat_sessions, annotations, review events, admin_material_reviews — every
 // users.id foreign key in drizzle/schema.ts is onDelete: "cascade").
+// Same full deletion a student triggers from /account (lib/db-account.ts):
+// the user row (cascading to all their data) plus every stored file.
 export async function deleteUserForAdmin(userId: string): Promise<boolean> {
-  const db = getDb();
-  if (!db) throw new Error("Database not available");
-
-  const [userBooks, userDecks] = await Promise.all([
-    listBooksForUser(userId),
-    listDecksForUser(userId),
-  ]);
-
-  for (const book of userBooks) {
-    await deleteBook(userId, book.id);
-  }
-  for (const deck of userDecks) {
-    await deleteDeck(userId, deck.id);
-  }
-
-  const deleted = await db
-    .delete(users)
-    .where(eq(users.id, userId))
-    .returning({ id: users.id });
-  return deleted.length > 0;
+  return deleteAccountCompletely(userId);
 }
 
 export async function getPlatformStatsForAdmin() {

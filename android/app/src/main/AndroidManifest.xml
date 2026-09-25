@@ -29,7 +29,12 @@
         </provider>
     </application>
 
-    <!-- Permissions -->
+    <!-- Permissions (explained to users at /privacy#permissions) -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Only when the student taps 📷 in مساعد AI to photograph a question;
+         Capacitor asks at that moment. Not required: devices without a
+         camera can still install the app and pick images from the gallery. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

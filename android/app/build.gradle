@@ -12,10 +12,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.alexmed.app"
+    namespace = "com.nirolearn.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.alexmed.app"
+        applicationId "com.nirolearn.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

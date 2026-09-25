@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import { UsernameCard } from "@/components/sharing/UsernameCard";
+import DeleteAccountSection from "@/components/DeleteAccountSection";
 
 // Real route for Bottom Nav's "👤 حسابي". Also keeps مِرآة reachable (still
 // lives at "/", unchanged) now that Bottom Nav's "🏠" points at "/subjects"
@@ -192,6 +193,16 @@ export default function AccountPage() {
           <LogOut size={16} /> تسجيل الخروج
         </button>
       </div>
+
+      <p className="account-legal-links">
+        <Link href="/privacy">سياسة الخصوصية</Link> ·{" "}
+        <Link href="/privacy#permissions">لماذا نطلب الكاميرا والإشعارات</Link>{" "}
+        · <Link href="/terms">سياسة الاستخدام</Link>
+      </p>
+
+      {session?.user?.email && (
+        <DeleteAccountSection email={session.user.email} />
+      )}
     </section>
   );
 }

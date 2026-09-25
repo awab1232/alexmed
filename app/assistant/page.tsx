@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import {
   Check,
   Copy,
+  Camera,
   ImagePlus,
   Loader2,
   RotateCcw,
@@ -36,6 +37,7 @@ const STARTERS = [
 ];
 
 const STORAGE_KEY = "mirror-assistant-chat-v1";
+const CAMERA_EXPLAINED_KEY = "nirolearn-camera-explained-v1";
 // Sent back as context each turn (server caps at 16 turns).
 const HISTORY_TURNS = 16;
 const MAX_IMAGE_SIDE = 1600;
@@ -117,6 +119,30 @@ export default function AssistantPage() {
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  // Why we need the camera, shown once before the system asks for it.
+  const [cameraInfoOpen, setCameraInfoOpen] = useState(false);
+
+  function openCamera() {
+    let explained = false;
+    try {
+      explained = localStorage.getItem(CAMERA_EXPLAINED_KEY) === "1";
+    } catch {
+      // Storage blocked — just explain again.
+    }
+    if (explained) cameraRef.current?.click();
+    else setCameraInfoOpen(true);
+  }
+
+  function continueToCamera() {
+    try {
+      localStorage.setItem(CAMERA_EXPLAINED_KEY, "1");
+    } catch {
+      // Ignore — worst case the explanation shows again next time.
+    }
+    setCameraInfoOpen(false);
+    cameraRef.current?.click();
+  }
   const abortRef = useRef<AbortController | null>(null);
   const busy = status !== "idle";
 
@@ -186,8 +212,7 @@ export default function AssistantPage() {
         // A photo-only turn whose image is no longer in memory (restored
         // from storage) still needs non-empty text for the model.
         content: (
-          turn.content ||
-          (turn.thumb && !withImage ? "[أرسلت صورة]" : "")
+          turn.content || (turn.thumb && !withImage ? "[أرسلت صورة]" : "")
         ).slice(0, 8000),
         ...(withImage ? { image: turn.image } : {}),
       };
@@ -329,8 +354,8 @@ export default function AssistantPage() {
               أهلاً{firstName ? ` ${firstName}` : ""}! 👋✨
             </p>
             <p>
-              اسألني عن أي شيء: شرح، حل مسائل، ترجمة، كتابة، خطة دراسة… أو
-              صوّر سؤالاً أو صفحة وأنا أحلّلها لك 📸
+              اسألني عن أي شيء: شرح، حل مسائل، ترجمة، كتابة، خطة دراسة… أو صوّر
+              سؤالاً أو صفحة وأنا أحلّلها لك 📸
             </p>
             <div className="assistant-chat-starters">
               {STARTERS.map(starter => (
@@ -340,7 +365,7 @@ export default function AssistantPage() {
                   className="quiz-pill"
                   onClick={() =>
                     starter.startsWith("📸")
-                      ? fileRef.current?.click()
+                      ? openCamera()
                       : send(starter)
                   }
                 >
@@ -421,9 +446,18 @@ export default function AssistantPage() {
           <button
             type="button"
             className="assistant-attach"
+            onClick={openCamera}
+            disabled={busy || preparing}
+            aria-label="تصوير بالكاميرا"
+          >
+            <Camera size={20} />
+          </button>
+          <button
+            type="button"
+            className="assistant-attach"
             onClick={() => fileRef.current?.click()}
             disabled={busy || preparing}
-            aria-label="إرفاق صورة"
+            aria-label="اختيار صورة من المعرض"
           >
             <ImagePlus size={20} />
           </button>
@@ -431,6 +465,18 @@ export default function AssistantPage() {
             ref={fileRef}
             type="file"
             accept="image/*"
+            hidden
+            onChange={event => {
+              attach(event.target.files?.[0]);
+              event.target.value = "";
+            }}
+          />
+          {/* capture → opens the camera directly (on phones / the app). */}
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
             hidden
             onChange={event => {
               attach(event.target.files?.[0]);
@@ -483,6 +529,52 @@ export default function AssistantPage() {
           )}
         </div>
       </form>
+
+      {cameraInfoOpen && (
+        <div
+          className="upload-chooser-backdrop"
+          onClick={() => setCameraInfoOpen(false)}
+        >
+          <div
+            className="upload-chooser-sheet permission-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="camera-info-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="upload-chooser-handle" />
+            <span className="permission-icon" aria-hidden="true">
+              <Camera size={26} />
+            </span>
+            <h2 id="camera-info-title">نحتاج الكاميرا لتصوير سؤالك 📷</h2>
+            <ul>
+              <li>صوّر سؤالًا أو صفحة أو ملاحظاتك، والمساعد يقرؤها ويحلّها.</li>
+              <li>تُفتح الكاميرا فقط عندما تضغط الزر — لا شيء في الخلفية.</li>
+              <li>الصورة تُرسل للتحليل فقط ولا نخزّنها على خوادمنا.</li>
+              <li>إذا رفضت الإذن يمكنك دائمًا اختيار صورة من المعرض.</li>
+            </ul>
+            <div className="permission-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={continueToCamera}
+              >
+                متابعة
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setCameraInfoOpen(false)}
+              >
+                ليس الآن
+              </button>
+            </div>
+            <a href="/privacy#permissions" className="permission-more">
+              المزيد في سياسة الخصوصية
+            </a>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

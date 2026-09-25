@@ -1,4 +1,4 @@
-package com.alexmed.app;
+package com.nirolearn.app;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,6 +1,8 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { signOut } from "../auth";
 import { getUserProfileForAccount, updateUserProfile } from "../db";
+import { deleteAccountCompletely } from "../db-account";
 import { adminJobsRouter } from "./adminJobsRouter";
 import { adminMaterialsRouter } from "./adminMaterialsRouter";
 import { adminUsersRouter } from "./adminUsersRouter";
@@ -43,6 +45,25 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         await updateUserProfile(ctx.user.id, input);
+        return { success: true } as const;
+      }),
+    // "حذف حسابي" (/account) — permanent: the account, every file and all
+    // study data (lib/db-account.ts; promised in app/privacy/page.tsx).
+    // Always the session's own account; the student re-types their email
+    // so it can't happen by accident.
+    deleteAccount: protectedProcedure
+      .input(z.object({ confirmEmail: z.string().trim().max(320) }))
+      .mutation(async ({ ctx, input }) => {
+        if (
+          !ctx.user.email ||
+          input.confirmEmail.toLowerCase() !== ctx.user.email.toLowerCase()
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "البريد الإلكتروني غير مطابق لبريد حسابك.",
+          });
+        }
+        await deleteAccountCompletely(ctx.user.id);
         return { success: true } as const;
       }),
   }),

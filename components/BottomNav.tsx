@@ -53,7 +53,7 @@ export function resolveAssistantHref(pathname: string): string {
   return "/assistant";
 }
 
-// Real upload entry points only — AlexMed has exactly two, already-existing
+// Real upload entry points only — NiroLearn has exactly two, already-existing
 // flows (كتبي's chaptered book pipeline at /books/upload, and مِرآة's
 // simpler question-file-to-flashcards flow at "/"). Deliberately not a
 // larger grid: adding cards for capabilities the app doesn't have (voice

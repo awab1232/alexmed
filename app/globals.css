@@ -7239,3 +7239,257 @@ button.sh-student:focus-visible {
   margin: 0;
   line-height: 1.7;
 }
+
+/* ── ⚖️ Legal pages (/privacy, /terms — components/legal/LegalPage.tsx) ── */
+.legal-page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 28px 18px 60px;
+  color: var(--foreground);
+  line-height: 1.9;
+  font-size: 15px;
+  background: var(--background);
+  min-height: 100vh;
+}
+.legal-hero {
+  padding: 22px 20px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff6ef, #eef4fb);
+  border: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.legal-brand {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 14px;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.legal-hero h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  line-height: 1.4;
+}
+.legal-updated {
+  margin: 0 0 10px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.legal-intro p {
+  margin: 0;
+}
+.legal-toc {
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  margin-bottom: 22px;
+}
+.legal-toc strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.legal-toc ol {
+  margin: 0;
+  padding-inline-start: 22px;
+  columns: 2;
+  column-gap: 24px;
+  font-size: 14px;
+}
+.legal-toc a {
+  color: var(--secondary-foreground);
+  text-decoration: none;
+}
+.legal-toc a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.legal-section {
+  scroll-margin-top: 16px;
+  padding: 4px 2px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.legal-section h2 {
+  font-size: 19px;
+  margin: 10px 0 8px;
+  line-height: 1.5;
+}
+.legal-section h2 span {
+  color: var(--primary);
+}
+.legal-section h3 {
+  font-size: 15px;
+  margin: 14px 0 4px;
+}
+.legal-section ul {
+  margin: 4px 0;
+  padding-inline-start: 22px;
+}
+.legal-section li {
+  margin-bottom: 6px;
+}
+.legal-section p {
+  margin: 6px 0;
+}
+.legal-page a {
+  color: var(--primary);
+}
+.legal-note {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff6ef;
+  border: 1px solid #efc4a9;
+  font-size: 14px;
+}
+.legal-footer {
+  margin-top: 26px;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.legal-footer p {
+  margin: 4px 0;
+}
+@media (max-width: 560px) {
+  .legal-toc ol {
+    columns: 1;
+  }
+  .legal-hero h1 {
+    font-size: 24px;
+  }
+}
+
+/* /account: policy links + "حذف حسابي" */
+.account-legal-links {
+  margin: 22px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.account-legal-links a {
+  color: var(--secondary-foreground);
+}
+.account-danger {
+  scroll-margin-top: 16px;
+  margin-top: 26px;
+  padding: 16px;
+  border: 1px solid #ecc9c6;
+  border-radius: 16px;
+  background: #fdf6f5;
+}
+.account-danger h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: var(--destructive);
+}
+.account-danger p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--secondary-foreground);
+}
+.account-danger label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.account-danger input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--input);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 15px;
+}
+.account-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #d99a95;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--destructive);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.account-danger-button[type="submit"]:not(:disabled) {
+  background: var(--destructive);
+  border-color: var(--destructive);
+  color: #fff;
+}
+.account-danger-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.account-danger-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.account-danger-actions .secondary-button {
+  min-height: 40px;
+  padding: 0 16px;
+}
+.account-danger-error {
+  margin: 8px 0 0 !important;
+  color: var(--destructive) !important;
+}
+
+/* Permission explanation sheet (camera, مساعد AI) */
+.permission-sheet {
+  text-align: center;
+}
+.permission-sheet h2 {
+  margin: 8px 0 10px;
+  font-size: 17px;
+}
+.permission-sheet ul {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  text-align: start;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--secondary-foreground);
+}
+.permission-sheet li {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.permission-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #eef3f9;
+  color: #2d6cb5;
+}
+.permission-actions {
+  display: flex;
+  gap: 8px;
+}
+.permission-actions .primary-button,
+.permission-actions .secondary-button {
+  flex: 1;
+  min-height: 44px;
+}
+.permission-more {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}

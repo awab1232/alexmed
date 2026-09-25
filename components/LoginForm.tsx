@@ -78,6 +78,14 @@ export default function LoginForm({
         <p className="text-sm text-muted-foreground mb-6">
           مرحبًا بعودتك إلى مِرآة
         </p>
+        {searchParams.get("deleted") === "1" && (
+          <p
+            className="mb-5 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
+            role="status"
+          >
+            تم حذف حسابك وكل بياناتك نهائيًا. نتمنى لك التوفيق 🌱
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -131,6 +139,15 @@ export default function LoginForm({
           ليس لديك حساب؟{" "}
           <a href="/register" className="text-primary underline">
             أنشئ حسابًا
+          </a>
+        </p>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          <a href="/privacy" className="underline">
+            سياسة الخصوصية
+          </a>{" "}
+          ·{" "}
+          <a href="/terms" className="underline">
+            سياسة الاستخدام
           </a>
         </p>
       </div>
