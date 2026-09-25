@@ -1,4 +1,5 @@
 import BottomNav from "@/components/BottomNav";
+import GamesBackdrop from "@/components/brain-games/GamesBackdrop";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -14,7 +15,8 @@ export default async function GamesLayout({
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell games-shell">
+      <GamesBackdrop />
       <main className="main-content">{children}</main>
       <BottomNav />
     </div>

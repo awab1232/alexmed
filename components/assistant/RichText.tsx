@@ -64,16 +64,18 @@ export function tidyMath(line: string): string {
   for (const [pattern, symbol] of LATEX_SYMBOLS) {
     text = text.replace(pattern, symbol);
   }
-  return text
-    .replace(/\\[,;: ]/g, " ")
-    .replace(/\\!/g, "")
-    .replace(/\^\{?2\}?(?![\d{])/g, "²")
-    .replace(/\^\{?3\}?(?![\d{])/g, "³")
-    .replace(/\^\{([^{}]*)\}/g, "^$1")
-    .replace(/_\{([^{}]*)\}/g, "_$1")
-    // Collapse the gaps left behind (not leading indentation, which marks
-    // list-item continuations).
-    .replace(/(\S) {2,}/g, "$1 ");
+  return (
+    text
+      .replace(/\\[,;: ]/g, " ")
+      .replace(/\\!/g, "")
+      .replace(/\^\{?2\}?(?![\d{])/g, "²")
+      .replace(/\^\{?3\}?(?![\d{])/g, "³")
+      .replace(/\^\{([^{}]*)\}/g, "^$1")
+      .replace(/_\{([^{}]*)\}/g, "_$1")
+      // Collapse the gaps left behind (not leading indentation, which marks
+      // list-item continuations).
+      .replace(/(\S) {2,}/g, "$1 ")
+  );
 }
 
 // tidyMath on every line outside ``` code blocks.
@@ -230,6 +232,22 @@ function withLineBreaks(text: string) {
   ));
 }
 
+// Any Arabic in a line makes it read right-to-left, even when it starts with
+// an English term ("WHZ < -3 SD → سوء تغذية شديد") — dir="auto" would pick
+// left-to-right from that first Latin word. Pure-English lines stay LTR.
+const ARABIC = /\p{Script=Arabic}/u;
+export function textDirection(text: string): "rtl" | "ltr" {
+  return ARABIC.test(text) ? "rtl" : "ltr";
+}
+
+// In a right-to-left line "A → B" reads with the arrow pointing back at A,
+// so arrows are mirrored there (→ becomes ←, ⇒ becomes ⇐).
+export function forReading(text: string): string {
+  return textDirection(text) === "rtl"
+    ? text.replace(/→/g, "←").replace(/⇒/g, "⇐")
+    : text;
+}
+
 export default function RichText({ text }: { text: string }) {
   const blocks = parseBlocks(tidySource(text));
   return (
@@ -246,18 +264,20 @@ export default function RichText({ text }: { text: string }) {
             return (
               <p
                 key={index}
-                dir="auto"
+                dir={textDirection(block.text)}
                 className={`rich-heading is-h${Math.min(block.level, 3)}`}
               >
-                {renderInline(block.text)}
+                {renderInline(forReading(block.text))}
               </p>
             );
           case "list": {
             const Tag = block.ordered ? "ol" : "ul";
             return (
-              <Tag key={index} dir="auto">
+              <Tag key={index} dir={textDirection(block.items.join(" "))}>
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex}>{withLineBreaks(item)}</li>
+                  <li key={itemIndex} dir={textDirection(item)}>
+                    {withLineBreaks(forReading(item))}
+                  </li>
                 ))}
               </Tag>
             );
@@ -265,7 +285,11 @@ export default function RichText({ text }: { text: string }) {
           case "table":
             return (
               <div key={index} className="rich-table-wrap">
-                <table dir="auto">
+                <table
+                  dir={textDirection(
+                    [...block.header, ...block.rows.flat()].join(" ")
+                  )}
+                >
                   <thead>
                     <tr>
                       {block.header.map((cell, cellIndex) => (
@@ -287,16 +311,16 @@ export default function RichText({ text }: { text: string }) {
             );
           case "quote":
             return (
-              <blockquote key={index} dir="auto">
-                {withLineBreaks(block.text)}
+              <blockquote key={index} dir={textDirection(block.text)}>
+                {withLineBreaks(forReading(block.text))}
               </blockquote>
             );
           case "rule":
             return <hr key={index} />;
           default:
             return (
-              <p key={index} dir="auto">
-                {withLineBreaks(block.text)}
+              <p key={index} dir={textDirection(block.text)}>
+                {withLineBreaks(forReading(block.text))}
               </p>
             );
         }

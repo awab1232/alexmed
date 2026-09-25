@@ -333,7 +333,7 @@ export default function AssistantPage() {
         </div>
         <div className="assistant-chat-title">
           <strong>مساعد NiroLearn</strong>
-          <small>اسألني أي شيء أو أرسل صورة — أنا هنا لأساعدك 😊</small>
+          <small>اسألني أي شيء أو أرسل صورة 😊</small>
         </div>
         {!!turns.length && (
           <button

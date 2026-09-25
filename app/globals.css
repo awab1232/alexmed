@@ -7493,3 +7493,258 @@ button.sh-student:focus-visible {
   font-size: 12px;
   color: var(--muted-foreground);
 }
+
+/* ── 🧠 Brain Games animated background (components/brain-games/GamesBackdrop) ── */
+.games-shell {
+  position: relative;
+  isolation: isolate;
+}
+.games-shell > .main-content {
+  position: relative;
+  z-index: 1;
+}
+.games-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(160deg, #f4efff 0%, #f5f0e8 48%, #edf5ff 100%);
+}
+.games-glow {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  will-change: transform;
+  animation: games-drift 26s ease-in-out infinite alternate;
+}
+.games-glow.is-a {
+  top: -28vmax;
+  right: -22vmax;
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.34), rgba(124, 92, 255, 0) 62%);
+}
+.games-glow.is-b {
+  bottom: -32vmax;
+  left: -26vmax;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.26), rgba(37, 99, 235, 0) 62%);
+  animation-duration: 32s;
+  animation-delay: -8s;
+}
+.games-glow.is-c {
+  top: 30%;
+  left: 25%;
+  width: 48vmax;
+  height: 48vmax;
+  background: radial-gradient(circle, rgba(232, 123, 69, 0.22), rgba(232, 123, 69, 0) 62%);
+  animation-duration: 38s;
+  animation-delay: -15s;
+}
+@keyframes games-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(7vw, 5vh, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(-6vw, -4vh, 0) scale(0.94);
+  }
+}
+.games-glyph {
+  position: absolute;
+  bottom: -70px;
+  font-weight: 800;
+  line-height: 1;
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: games-float;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.games-glyph.is-blue {
+  color: #2563eb;
+}
+.games-glyph.is-violet {
+  color: #7c3aed;
+}
+.games-glyph.is-orange {
+  color: #e87b45;
+}
+.games-glyph.is-green {
+  color: #16a34a;
+}
+@keyframes games-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.32;
+  }
+  85% {
+    opacity: 0.32;
+  }
+  100% {
+    transform: translate3d(0, -118vh, 0) rotate(160deg);
+    opacity: 0;
+  }
+}
+/* Cards float over the motion as frosted glass. */
+.games-shell .bg-card,
+.games-shell .bg-home-tile {
+  background: rgba(255, 253, 249, 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .games-glow {
+    animation: none;
+  }
+  .games-glyph {
+    display: none;
+  }
+}
+
+/* ── 🤖 مساعد AI full-screen (app/assistant) — ChatGPT-style ── */
+.main-content.assistant-main {
+  padding: 0;
+  min-height: 0;
+}
+.assistant-main .assistant-chat {
+  --chat-gutter: max(14px, calc((100% - 820px) / 2));
+  height: calc(100vh - 74px - env(safe-area-inset-bottom));
+  height: calc(100dvh - 74px - env(safe-area-inset-bottom));
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+.assistant-main .assistant-chat-header {
+  padding: 10px var(--chat-gutter);
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid #efeae3;
+}
+.assistant-main .assistant-chat-avatar {
+  width: 38px;
+  height: 38px;
+}
+.assistant-main .assistant-chat-title strong {
+  font-size: 17px;
+}
+.assistant-main .assistant-chat-title small {
+  font-size: 12.5px;
+}
+.assistant-main .assistant-chat-messages {
+  gap: 18px;
+  padding: 18px var(--chat-gutter) 24px;
+}
+.assistant-main .study-ai-message {
+  font-size: 16.5px;
+  line-height: 1.9;
+}
+/* Answers read like a page: full width, no bubble. */
+.assistant-main .study-ai-message:not(.is-user) {
+  align-self: stretch;
+  max-width: 100%;
+  padding: 2px 2px 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1f2d33;
+}
+/* The student's own messages stay as bubbles on their side. */
+.assistant-main .study-ai-message.is-user {
+  max-width: 85%;
+  padding: 11px 16px;
+  border-radius: 20px 20px 6px 20px;
+  background: #e9f1fb;
+}
+.assistant-main .rich-text p,
+.assistant-main .rich-text ul,
+.assistant-main .rich-text ol,
+.assistant-main .rich-text blockquote,
+.assistant-main .rich-text pre,
+.assistant-main .rich-text .rich-table-wrap {
+  margin-bottom: 12px;
+}
+.assistant-main .rich-text .rich-heading.is-h1 {
+  font-size: 20px;
+}
+.assistant-main .rich-text .rich-heading.is-h2 {
+  font-size: 19px;
+}
+.assistant-main .rich-text .rich-heading.is-h3 {
+  font-size: 18px;
+}
+.assistant-main .rich-text table {
+  font-size: 14.5px;
+}
+.assistant-main .rich-text pre code {
+  font-size: 14px;
+}
+.assistant-main .assistant-copy {
+  margin-top: 6px;
+  border-color: transparent;
+  background: #f5f2ed;
+}
+.assistant-main .assistant-chat-welcome {
+  max-width: 560px;
+  margin: auto;
+  gap: 12px;
+}
+.assistant-main .assistant-chat-hello {
+  font-size: 26px;
+}
+.assistant-main .assistant-chat-welcome p {
+  font-size: 16px;
+}
+.assistant-main .assistant-chat-starters .quiz-pill {
+  font-size: 14.5px;
+  padding: 10px 14px;
+}
+.assistant-main .study-ai-status {
+  font-size: 15px;
+}
+/* Composer: one rounded bar pinned at the bottom. */
+.assistant-main .assistant-chat-form {
+  padding: 8px var(--chat-gutter) 10px;
+  border-top: 0;
+  background: linear-gradient(to top, #fff 70%, rgba(255, 255, 255, 0));
+}
+.assistant-main .assistant-input-row {
+  align-items: flex-end;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #e3ded6;
+  border-radius: 26px;
+  background: #faf9f7;
+  box-shadow: 0 6px 20px rgba(32, 44, 50, 0.07);
+}
+.assistant-main .assistant-input-row:focus-within {
+  border-color: #2d6cb5;
+  box-shadow: 0 0 0 3px rgba(45, 108, 181, 0.12);
+}
+.assistant-main .assistant-input-row textarea {
+  min-height: 44px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 16.5px;
+  box-shadow: none;
+}
+.assistant-main .assistant-input-row textarea:focus {
+  box-shadow: none;
+}
+.assistant-main .assistant-input-row > button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+@media (min-width: 781px) {
+  .assistant-main .assistant-chat {
+    height: calc(100dvh - 78px - env(safe-area-inset-bottom));
+  }
+}

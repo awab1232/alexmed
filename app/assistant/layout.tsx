@@ -16,7 +16,8 @@ export default async function AssistantLayout({
 
   return (
     <div className="app-shell">
-      <main className="main-content">{children}</main>
+      {/* Full-bleed, ChatGPT-style chat: the page itself fills the screen. */}
+      <main className="main-content assistant-main">{children}</main>
       <BottomNav />
     </div>
   );

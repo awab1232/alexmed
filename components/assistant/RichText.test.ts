@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { parseBlocks, tidyMath, tidySource } from "./RichText";
+import {
+  forReading,
+  parseBlocks,
+  textDirection,
+  tidyMath,
+  tidySource,
+} from "./RichText";
+
+describe("RichText textDirection", () => {
+  it("reads any line with Arabic right-to-left, even if it starts in English", () => {
+    expect(textDirection("WHZ < -3 SD → سوء تغذية شديد.")).toBe("rtl");
+    expect(textDirection("الفكرة الأساسية")).toBe("rtl");
+    expect(textDirection("Weight-for-height + MUAC")).toBe("ltr");
+  });
+
+  it("mirrors arrows only in right-to-left lines", () => {
+    expect(forReading("WHZ < -3 SD → سوء تغذية شديد")).toBe(
+      "WHZ < -3 SD ← سوء تغذية شديد"
+    );
+    expect(forReading("preload → stroke volume")).toBe(
+      "preload → stroke volume"
+    );
+  });
+});
 
 describe("RichText tidyMath (LaTeX the model slipped in)", () => {
   it("turns the model's real cardiac-output answer into readable text", () => {
@@ -83,7 +106,9 @@ describe("RichText parseBlocks", () => {
   });
 
   it("keeps a lone pipe line or unfinished code as plain content", () => {
-    expect(parseBlocks("a | b")).toEqual([{ kind: "paragraph", text: "a | b" }]);
+    expect(parseBlocks("a | b")).toEqual([
+      { kind: "paragraph", text: "a | b" },
+    ]);
     expect(parseBlocks("```\nstill streaming")).toEqual([
       { kind: "code", text: "still streaming" },
     ]);
