@@ -55,7 +55,10 @@ export type NiroMoment =
   | "correct"
   | "almost"
   | "levelUp"
-  | "allDone";
+  | "allDone"
+  | "welcomeBack"
+  | "join"
+  | "oops";
 
 // Niro's voice: a smart friend who is great at explaining — playful,
 // confident, supportive, never childish, never a lecture. Short lines in the
@@ -70,6 +73,9 @@ const NIRO_LINES: Record<NiroMoment, readonly string[]> = {
   almost: ["قربت كثير… جرّب مرة كمان 😏", "مش مشكلة، خلينا نعيدها صح 💪"],
   levelUp: ["مستوى جديد! كمّل هيك ⚡", "ولا غلطة تقريبًا… مستواك طالع 🔥"],
   allDone: ["خلصت كل المستويات! أنت أسطورة 🏆"],
+  welcomeBack: ["رجعت! 😌 يلا نكمّل من وين ما وقفنا"],
+  join: ["أنا Niro 👋 خلينا نبدأ رحلتك بالدراسة"],
+  oops: ["أوبس… في شي مش مزبوط، جرّب مرة ثانية 👀"],
 };
 
 // Deterministic pick (no hydration mismatches): same seed → same line.

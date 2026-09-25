@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import NiroAuthScene from "@/components/niro/NiroAuthScene";
+import { GoogleIcon, PasswordInput } from "@/components/AuthFields";
+import { niroLine } from "@/lib/niro";
 
 const SUSPENDED_MESSAGE_AR =
   "حسابك معلّق حاليًا. تواصل مع الدعم إذا كنت تظن أن هذا خطأ.";
@@ -70,87 +73,86 @@ export default function LoginForm({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-foreground mb-1">
-          تسجيل الدخول
-        </h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          مرحبًا بعودتك إلى NiroLearn
+    <NiroAuthScene
+      expression={error ? "shocked" : loading ? "explaining" : "normal"}
+      line={error ? niroLine("oops") : niroLine("welcomeBack")}
+    >
+      <h1 className="text-2xl font-bold text-foreground mb-1">تسجيل الدخول</h1>
+      <p className="text-sm text-muted-foreground mb-6">
+        مرحبًا بعودتك إلى NiroLearn
+      </p>
+      {searchParams.get("deleted") === "1" && (
+        <p
+          className="mb-5 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
+          role="status"
+        >
+          تم حذف حسابك وكل بياناتك نهائيًا. نتمنى لك التوفيق 🌱
         </p>
-        {searchParams.get("deleted") === "1" && (
-          <p
-            className="mb-5 rounded-lg bg-muted px-3 py-2 text-sm text-foreground"
-            role="status"
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">البريد الإلكتروني</Label>
+          <Input
+            id="email"
+            type="email"
+            required
+            dir="ltr"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">كلمة المرور</Label>
+          <PasswordInput
+            id="password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "جاري الدخول..." : "دخول"}
+        </Button>
+      </form>
+
+      {googleEnabled && (
+        <>
+          <div className="flex items-center gap-3 my-5">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">أو</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full niro-auth-google"
+            disabled={googleLoading}
+            onClick={handleGoogle}
           >
-            تم حذف حسابك وكل بياناتك نهائيًا. نتمنى لك التوفيق 🌱
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">البريد الإلكتروني</Label>
-            <Input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">كلمة المرور</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "جاري الدخول..." : "دخول"}
+            <GoogleIcon />
+            {googleLoading ? "جاري التحويل..." : "تسجيل الدخول عبر Google"}
           </Button>
-        </form>
+        </>
+      )}
 
-        {googleEnabled && (
-          <>
-            <div className="flex items-center gap-3 my-5">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">أو</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              disabled={googleLoading}
-              onClick={handleGoogle}
-            >
-              {googleLoading ? "جاري التحويل..." : "تسجيل الدخول عبر Google"}
-            </Button>
-          </>
-        )}
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          ليس لديك حساب؟{" "}
-          <a href="/register" className="text-primary underline">
-            أنشئ حسابًا
-          </a>
-        </p>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          <a href="/privacy" className="underline">
-            سياسة الخصوصية
-          </a>{" "}
-          ·{" "}
-          <a href="/terms" className="underline">
-            سياسة الاستخدام
-          </a>
-        </p>
-      </div>
-    </div>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        ليس لديك حساب؟{" "}
+        <a href="/register" className="text-primary underline">
+          أنشئ حسابًا
+        </a>
+      </p>
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        <a href="/privacy" className="underline">
+          سياسة الخصوصية
+        </a>{" "}
+        ·{" "}
+        <a href="/terms" className="underline">
+          سياسة الاستخدام
+        </a>
+      </p>
+    </NiroAuthScene>
   );
 }

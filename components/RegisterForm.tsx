@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import NiroAuthScene from "@/components/niro/NiroAuthScene";
+import { GoogleIcon, PasswordInput } from "@/components/AuthFields";
+import { niroLine } from "@/lib/niro";
 
 export default function RegisterForm({
   googleEnabled,
@@ -65,8 +68,11 @@ export default function RegisterForm({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
+    <NiroAuthScene
+      expression={error ? "shocked" : loading ? "explaining" : "victory"}
+      line={error ? niroLine("oops") : niroLine("join")}
+    >
+      <div>
         <h1 className="text-2xl font-bold text-foreground mb-1">إنشاء حساب</h1>
         <p className="text-sm text-muted-foreground mb-6">
           انضم إلى NiroLearn لحفظ مذاكرتك
@@ -88,6 +94,7 @@ export default function RegisterForm({
               id="email"
               type="email"
               required
+              dir="ltr"
               value={email}
               onChange={e => setEmail(e.target.value)}
               autoComplete="email"
@@ -95,13 +102,11 @@ export default function RegisterForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">كلمة المرور</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
-              required
               minLength={8}
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={setPassword}
               autoComplete="new-password"
             />
           </div>
@@ -121,10 +126,11 @@ export default function RegisterForm({
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full niro-auth-google"
               disabled={googleLoading}
               onClick={handleGoogle}
             >
+              <GoogleIcon />
               {googleLoading ? "جاري التحويل..." : "التسجيل عبر Google"}
             </Button>
           </>
@@ -149,6 +155,6 @@ export default function RegisterForm({
           </a>
         </p>
       </div>
-    </div>
+    </NiroAuthScene>
   );
 }
