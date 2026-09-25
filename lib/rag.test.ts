@@ -2,9 +2,65 @@ import { describe, expect, it } from "vitest";
 import {
   buildContextBlock,
   buildRagSystemPrompt,
+  buildSearchQuery,
+  buildStudyContext,
   capChunks,
   type RetrievedChunk,
 } from "./rag";
+
+describe("buildSearchQuery", () => {
+  it("matches ANY meaningful word (OR), longer words as prefixes", () => {
+    expect(buildSearchQuery("What is cardiac output?")).toBe(
+      "cardiac:* | output:*"
+    );
+  });
+
+  it("drops Arabic question words/particles and keeps content words", () => {
+    expect(buildSearchQuery("ما هو علاج قصور القلب؟")).toBe(
+      "علاج:* | قصور:* | القلب:*"
+    );
+  });
+
+  it("strips diacritics and punctuation, dedupes, and never passes tsquery syntax", () => {
+    const query = buildSearchQuery("القَلْب & القلب | !(drop) 'x':*")!;
+    expect(query).toBe("القلب:* | drop:*");
+    expect(query).not.toMatch(/[&!()']/);
+  });
+
+  it("returns null when nothing searchable remains", () => {
+    expect(buildSearchQuery("ما هو؟")).toBeNull();
+    expect(buildSearchQuery("   ")).toBeNull();
+  });
+});
+
+describe("buildStudyContext", () => {
+  it("sends the overview, the matched pages and the question", () => {
+    const text = buildStudyContext(
+      "Summary: the heart",
+      [chunkOf(4, "Cardiac output = HR × SV")],
+      "ما النتاج القلبي؟"
+    );
+    expect(text).toContain("MATERIAL OVERVIEW:\nSummary: the heart");
+    expect(text).toContain("صفحة 4");
+    expect(text).toContain("QUESTION: ما النتاج القلبي؟");
+  });
+
+  it("still answers (from own knowledge) when no page matched", () => {
+    const text = buildStudyContext("", [], "What is Python?");
+    expect(text).toMatch(/none of the file's pages matched/);
+    expect(text).not.toContain("MATERIAL OVERVIEW");
+  });
+});
+
+function chunkOf(pageNumber: number, text: string): RetrievedChunk {
+  return {
+    bookId: "b1",
+    bookFileName: "book.pdf",
+    chapterId: null,
+    pageNumber,
+    text,
+  };
+}
 
 function chunk(overrides: Partial<RetrievedChunk> = {}): RetrievedChunk {
   return {
@@ -66,21 +122,26 @@ describe("buildContextBlock", () => {
 });
 
 describe("buildRagSystemPrompt", () => {
-  it("names the correct scope for each level and forbids outside knowledge", () => {
-    expect(buildRagSystemPrompt("page")).toContain("the current page only");
-    expect(buildRagSystemPrompt("chapter")).toContain(
-      "the current chapter only"
-    );
-    expect(buildRagSystemPrompt("book")).toContain("the current book only");
+  it("names the correct scope for each level", () => {
+    expect(buildRagSystemPrompt("page")).toContain("the current page");
+    expect(buildRagSystemPrompt("chapter")).toContain("the current chapter");
+    expect(buildRagSystemPrompt("book")).toContain("the current book");
     expect(buildRagSystemPrompt("subject")).toContain(
       "every book in the current subject"
     );
   });
 
-  it("instructs the model to cite pages and never invent facts", () => {
+  it("helps with anything, marking what isn't from the file", () => {
+    const prompt = buildRagSystemPrompt("chapter");
+    expect(prompt).toContain("ANYTHING");
+    expect(prompt).toMatch(/never refuse/i);
+    expect(prompt).toContain("من خارج الملف");
+  });
+
+  it("cites pages for file facts and never invents what the file says", () => {
     const prompt = buildRagSystemPrompt("page");
     expect(prompt).toMatch(/cite/i);
-    expect(prompt).toMatch(/never invent/i);
+    expect(prompt).toMatch(/never invent what the file says/i);
   });
 
   it("instructs the model not to reveal quiz answers immediately", () => {

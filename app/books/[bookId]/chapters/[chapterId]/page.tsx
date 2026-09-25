@@ -28,6 +28,7 @@ import McqCard from "@/components/McqCard";
 import QuizMode from "@/components/study/QuizMode";
 import FlashcardsMode from "@/components/study/FlashcardsMode";
 import SummaryMode from "@/components/study/SummaryMode";
+import RichText from "@/components/assistant/RichText";
 import {
   isSpeechRecognitionSupported,
   isSpeechSynthesisSupported,
@@ -1781,9 +1782,13 @@ export default function ChapterDetailPage() {
                         maxWidth: "90%",
                       }}
                     >
-                      <p style={{ whiteSpace: "pre-line" }}>
-                        {message.content}
-                      </p>
+                      {message.role === "assistant" ? (
+                        <RichText text={message.content} />
+                      ) : (
+                        <p style={{ whiteSpace: "pre-line" }} dir="auto">
+                          {message.content}
+                        </p>
+                      )}
                       {!!message.citedPages?.length && (
                         <p
                           style={{

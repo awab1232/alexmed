@@ -7036,3 +7036,206 @@ button.sh-student:focus-visible {
   color: var(--muted-foreground);
   font-size: 12px;
 }
+
+/* ── 🤖 Assistant replies: Markdown (components/assistant/RichText.tsx) ── */
+.study-ai-message .rich-text {
+  white-space: normal;
+}
+.rich-text > :first-child {
+  margin-top: 0;
+}
+.rich-text > :last-child {
+  margin-bottom: 0;
+}
+.rich-text p,
+.rich-text ul,
+.rich-text ol,
+.rich-text blockquote,
+.rich-text pre,
+.rich-text .rich-table-wrap {
+  margin: 0 0 8px;
+}
+.rich-text ul,
+.rich-text ol {
+  padding-inline-start: 22px;
+}
+.rich-text li {
+  margin-bottom: 3px;
+}
+.rich-text li::marker {
+  color: #d9773f;
+}
+.rich-text .rich-heading {
+  margin: 12px 0 6px;
+  font-weight: 800;
+  color: #22343a;
+}
+.rich-text .rich-heading.is-h1 {
+  font-size: 17px;
+}
+.rich-text .rich-heading.is-h2 {
+  font-size: 16px;
+}
+.rich-text .rich-heading.is-h3 {
+  font-size: 15px;
+}
+.rich-text strong {
+  font-weight: 800;
+  color: #1f3136;
+}
+.rich-text code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(45, 108, 181, 0.1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.rich-text pre {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #1f2a30;
+  color: #eef2f3;
+  overflow-x: auto;
+  text-align: left;
+  white-space: pre;
+}
+.rich-text pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font-size: 13px;
+}
+.rich-text blockquote {
+  padding: 6px 12px;
+  border-inline-start: 3px solid #d9773f;
+  background: rgba(217, 119, 63, 0.07);
+  border-radius: 6px;
+}
+.rich-text hr {
+  border: 0;
+  border-top: 1px solid #e3ded6;
+  margin: 10px 0;
+}
+.rich-table-wrap {
+  overflow-x: auto;
+}
+.rich-text table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 13px;
+}
+.rich-text th,
+.rich-text td {
+  padding: 6px 9px;
+  border: 1px solid #e3ded6;
+  text-align: start;
+  vertical-align: top;
+}
+.rich-text th {
+  background: #f3efe8;
+  font-weight: 800;
+}
+
+/* General مساعد AI: photos, multi-line input, copy */
+.assistant-answer {
+  max-width: 94%;
+}
+.assistant-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 3px 9px;
+  border: 1px solid #e3ded6;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b7775;
+  font-size: 12px;
+  cursor: pointer;
+}
+.assistant-copy:hover {
+  color: #2d6cb5;
+  border-color: #b9cde6;
+}
+.assistant-chat-photo {
+  display: block;
+  max-width: min(240px, 100%);
+  max-height: 240px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.assistant-chat-form.study-ai-form {
+  flex-direction: column;
+  gap: 8px;
+}
+.assistant-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.assistant-input-row textarea {
+  flex: 1;
+  min-width: 0;
+  max-height: 160px;
+  padding: 11px 14px;
+  border: 1px solid #e3ded6;
+  border-radius: 14px;
+  background: #faf9f7;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: auto;
+}
+.assistant-input-row textarea:focus {
+  outline: none;
+  border-color: #2d6cb5;
+  box-shadow: 0 0 0 3px rgba(45, 108, 181, 0.12);
+}
+.assistant-input-row > button {
+  flex-shrink: 0;
+  height: 46px;
+}
+.study-ai-form .assistant-attach {
+  background: #eef3f9;
+  color: #2d6cb5;
+}
+.assistant-attachment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  width: 64px;
+  height: 64px;
+  border: 1px solid #e3ded6;
+  border-radius: 12px;
+  background: #faf9f7;
+}
+.assistant-attachment img {
+  width: 100%;
+  height: 100%;
+  border-radius: 11px;
+  object-fit: cover;
+}
+.study-ai-form .assistant-attachment button {
+  position: absolute;
+  top: -8px;
+  inset-inline-end: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #3c4a4e;
+}
+.study-ai-empty:has(.selection-ai-actions) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.study-ai-empty p {
+  margin: 0;
+  line-height: 1.7;
+}

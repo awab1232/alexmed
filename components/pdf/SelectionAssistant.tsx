@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, Sparkles, X } from "lucide-react";
+import { Loader2, Send, Sparkles, Square, X } from "lucide-react";
+import RichText from "@/components/assistant/RichText";
 
 export type PdfTextSelection = { text: string; pageNumber: number };
 
@@ -202,17 +203,17 @@ export default function SelectionAssistant({
                 </div>
               )}
               {turns.map((turn, index) =>
-                !turn.content ? null : (
+                !turn.content ? null : turn.role === "user" ? (
                   <div
                     key={index}
                     dir="auto"
-                    className={
-                      turn.role === "user"
-                        ? "study-ai-message is-user"
-                        : "study-ai-message"
-                    }
+                    className="study-ai-message is-user"
                   >
                     {turn.content}
+                  </div>
+                ) : (
+                  <div key={index} className="study-ai-message">
+                    <RichText text={turn.content} />
                   </div>
                 )
               )}
@@ -234,16 +235,28 @@ export default function SelectionAssistant({
             >
               <input
                 value={input}
+                dir="auto"
                 onChange={event => setInput(event.target.value)}
-                placeholder="اسأل عن هذا النص..."
+                placeholder="اسأل عن هذا النص أو أي شيء..."
+                aria-label="سؤالك"
               />
-              <button
-                type="submit"
-                disabled={!input.trim() || busy}
-                aria-label="إرسال"
-              >
-                <Send size={18} />
-              </button>
+              {busy ? (
+                <button
+                  type="button"
+                  onClick={() => abortRef.current?.abort()}
+                  aria-label="إيقاف"
+                >
+                  <Square size={15} fill="currentColor" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  aria-label="إرسال"
+                >
+                  <Send size={18} />
+                </button>
+              )}
             </form>
           </div>
         </div>

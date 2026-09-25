@@ -12,11 +12,8 @@ import {
   type ChatMessage,
   type ChatSession,
 } from "../drizzle/schema";
-import {
-  getBookForUser,
-  getBookPageOwnedByUser,
-  getChapterForUser,
-} from "./db-books";
+import { getBookAccess, getChapterAccess } from "./book-access";
+import { getBookPageOwnedByUser } from "./db-books";
 import { getSubjectForUser } from "./db-subjects";
 import { getDb } from "./db";
 
@@ -53,21 +50,33 @@ function targetId(target: ChatTarget): string {
   }
 }
 
-// Verifies the student actually owns whatever this scope points at, reusing
-// each feature's own existing ownership-check function rather than
-// duplicating the join here. Returns false (never throws) so the caller can
-// turn it into a clean NOT_FOUND at the tRPC layer.
+// Verifies the student may study whatever this scope points at: their own
+// book/chapter/page, or one they hold an ACCEPTED share of (lib/book-
+// access.ts) — the chat session and its messages are always the caller's
+// own, never visible to the owner. Subjects (folders) stay owner-only.
+// Returns false (never throws) so the caller can turn it into a clean
+// NOT_FOUND at the tRPC layer.
 async function ownsTarget(
   userId: string,
   target: ChatTarget
 ): Promise<boolean> {
   switch (target.scope) {
-    case "page":
-      return !!(await getBookPageOwnedByUser(userId, target.pageId));
+    case "page": {
+      if (await getBookPageOwnedByUser(userId, target.pageId)) return true;
+      const db = getDb();
+      const [page] = db
+        ? await db
+            .select({ bookId: bookPages.bookId })
+            .from(bookPages)
+            .where(eq(bookPages.id, target.pageId))
+            .limit(1)
+        : [];
+      return !!page && !!(await getBookAccess(userId, page.bookId));
+    }
     case "chapter":
-      return !!(await getChapterForUser(userId, target.chapterId));
+      return !!(await getChapterAccess(userId, target.chapterId));
     case "book":
-      return !!(await getBookForUser(userId, target.bookId));
+      return !!(await getBookAccess(userId, target.bookId));
     case "subject":
       return !!(await getSubjectForUser(userId, target.subjectId));
   }

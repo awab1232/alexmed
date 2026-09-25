@@ -11,19 +11,14 @@ import {
 } from "../db-chat";
 import { invokeLLM } from "../llm";
 import {
-  buildContextBlock,
-  buildRagSystemPrompt,
-  getPageChunk,
-  NO_EVIDENCE_MESSAGE_AR,
-  searchBookPages,
-  searchChapterPages,
-  searchSubjectPages,
-} from "../rag";
-import {
   assertChatMessageAllowed,
   ChatRateLimitedError,
 } from "../queue/rateLimit";
+import { citedPagesOf, prepareStudyChatTurn } from "../study-chat";
 import { protectedProcedure, router } from "./trpc";
+
+export const NO_ANSWER_MESSAGE_AR =
+  "لم يصل رد من المساعد، حاول مرة أخرى 🙏";
 
 const targetSchema = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("page"), pageId: z.string() }),
@@ -31,10 +26,6 @@ const targetSchema = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("book"), bookId: z.string() }),
   z.object({ scope: z.literal("subject"), subjectId: z.string() }),
 ]);
-
-// Bounded conversation memory — enough for the model to follow a "اختبرني"
-// back-and-forth without an unbounded (and increasingly expensive) prompt.
-const HISTORY_MESSAGE_LIMIT = 10;
 
 export const chatRouter = router({
   getOrCreateSession: protectedProcedure
@@ -56,10 +47,8 @@ export const chatRouter = router({
       return listChatMessages(ctx.user.id, input.sessionId);
     }),
 
-  // The core RAG call — retrieves scoped context, and only calls the LLM at
-  // all when real evidence was found (see lib/rag.ts's NO_EVIDENCE_MESSAGE_AR
-  // path below), so a question with no matching source never spends an AI
-  // call just to say "I don't know".
+  // The core study-chat call (whole answer at once; the study sheets use the
+  // streamed twin, app/api/chat/stream/route.ts — same lib/study-chat.ts).
   ask: protectedProcedure
     .input(
       z.object({ sessionId: z.string(), question: z.string().min(1).max(2000) })
@@ -90,51 +79,21 @@ export const chatRouter = router({
         content: input.question,
       });
 
-      const chunks =
-        session.scope === "page"
-          ? await getPageChunk(session.pageId!)
-          : session.scope === "chapter"
-            ? await searchChapterPages(session.chapterId!, input.question)
-            : session.scope === "book"
-              ? await searchBookPages(session.bookId!, input.question)
-              : await searchSubjectPages(session.subjectId!, input.question);
-
-      if (!chunks.length) {
-        const assistantMessage = await appendChatMessage(session.id, {
-          role: "assistant",
-          content: NO_EVIDENCE_MESSAGE_AR,
-        });
-        return { userMessage, assistantMessage };
-      }
-
-      const history = await listChatMessages(ctx.user.id, session.id);
-      const recentHistory = history
-        .slice(0, -1) // exclude the user message we just appended (added below)
-        .slice(-HISTORY_MESSAGE_LIMIT)
-        .map(m => ({ role: m.role, content: m.content }) as const);
-
-      const response = await invokeLLM({
-        messages: [
-          { role: "system", content: buildRagSystemPrompt(session.scope) },
-          ...recentHistory,
-          {
-            role: "user",
-            content: `SOURCE EXCERPTS:\n${buildContextBlock(chunks)}\n\nQUESTION: ${input.question}`,
-          },
-        ],
-        max_tokens: 1500,
-      });
-
+      // Always answers: the file's overview + best-matching pages ground it
+      // when they're relevant, and the model's own knowledge (marked as
+      // outside the file) covers the rest — see lib/rag.ts's prompt.
+      const { messages, chunks } = await prepareStudyChatTurn(
+        ctx.user.id,
+        session,
+        input.question
+      );
+      const response = await invokeLLM({ messages, max_tokens: 2500 });
       const answer =
-        response.choices[0]?.message.content?.trim() || NO_EVIDENCE_MESSAGE_AR;
-      const citedPages = chunks.map(chunk => ({
-        bookId: chunk.bookId,
-        pageNumber: chunk.pageNumber,
-      }));
+        response.choices[0]?.message.content?.trim() || NO_ANSWER_MESSAGE_AR;
       const assistantMessage = await appendChatMessage(session.id, {
         role: "assistant",
         content: answer,
-        citedPages,
+        citedPages: citedPagesOf(chunks),
       });
 
       return { userMessage, assistantMessage };
