@@ -432,33 +432,36 @@ export async function getBookForUser(userId: string, bookId: string) {
     .limit(1);
   if (!book) return null;
 
-  const chapters = await db
-    .select({
-      id: bookChapters.id,
-      orderIndex: bookChapters.orderIndex,
-      title: bookChapters.title,
-      startPage: bookChapters.startPage,
-      endPage: bookChapters.endPage,
-      status: bookChapters.status,
-      errorMessage: bookChapters.errorMessage,
-    })
-    .from(bookChapters)
-    .where(eq(bookChapters.bookId, bookId))
-    .orderBy(asc(bookChapters.orderIndex));
-
-  // Real totals across every complete chapter — the study-tools dashboard
-  // (app/books/[bookId]/page.tsx) shows these on the بطاقات/اختبار cards
-  // instead of just the first chapter's counts.
-  const [cardTotal] = await db
-    .select({ total: count() })
-    .from(bookCards)
-    .innerJoin(bookChapters, eq(bookCards.chapterId, bookChapters.id))
-    .where(eq(bookChapters.bookId, bookId));
-  const [mcqTotal] = await db
-    .select({ total: count() })
-    .from(bookMcqs)
-    .innerJoin(bookChapters, eq(bookMcqs.chapterId, bookChapters.id))
-    .where(eq(bookChapters.bookId, bookId));
+  // In parallel: each query is a full round trip to the database, and this
+  // runs on every book-page poll.
+  const [chapters, [cardTotal], [mcqTotal]] = await Promise.all([
+    db
+      .select({
+        id: bookChapters.id,
+        orderIndex: bookChapters.orderIndex,
+        title: bookChapters.title,
+        startPage: bookChapters.startPage,
+        endPage: bookChapters.endPage,
+        status: bookChapters.status,
+        errorMessage: bookChapters.errorMessage,
+      })
+      .from(bookChapters)
+      .where(eq(bookChapters.bookId, bookId))
+      .orderBy(asc(bookChapters.orderIndex)),
+    // Real totals across every complete chapter — the study-tools dashboard
+    // (app/books/[bookId]/page.tsx) shows these on the بطاقات/اختبار cards
+    // instead of just the first chapter's counts.
+    db
+      .select({ total: count() })
+      .from(bookCards)
+      .innerJoin(bookChapters, eq(bookCards.chapterId, bookChapters.id))
+      .where(eq(bookChapters.bookId, bookId)),
+    db
+      .select({ total: count() })
+      .from(bookMcqs)
+      .innerJoin(bookChapters, eq(bookMcqs.chapterId, bookChapters.id))
+      .where(eq(bookChapters.bookId, bookId)),
+  ]);
 
   return {
     book,
@@ -1381,9 +1384,37 @@ export async function getChapterVisualAssets(chapterId: string) {
 // Wait for the independent page-vision worker before generating the chapter
 // study material. Failed pages are allowed through (and remain visible in
 // coverage), while pending/processing pages must not be silently omitted.
+// A book's page-visual pipeline processes one page at a time, touching
+// updatedAt as it goes; if NO page of the book has changed for this long
+// while some are still pending/processing, the chain died (a worker killed
+// by a redeploy, a lost queue message) and nothing will ever finish them.
+export const STALE_VISUAL_PIPELINE_MS = 20 * 60 * 1000;
+
 export async function hasPendingChapterVisualAnalysis(chapterId: string) {
   const db = getDb();
   if (!db) return false;
+  // Unblock chapters waiting on a dead pipeline: those pages become
+  // "failed" (the book page offers a retry) instead of keeping the chapter
+  // re-checking every 30s forever (seen live: pages stuck "processing"
+  // for days, their chapters looping).
+  await db
+    .update(bookPages)
+    .set({
+      visualStatus: "failed",
+      errorMessage: "انقطع تحليل صور هذه الصفحة — يمكنك إعادة المحاولة.",
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(bookPages.chapterId, chapterId),
+        inArray(bookPages.visualStatus, ["pending", "processing"]),
+        sql`not exists (
+          select 1 from book_pages recent
+          where recent."bookId" = ${bookPages.bookId}
+            and recent."updatedAt" > ${new Date(Date.now() - STALE_VISUAL_PIPELINE_MS)}
+        )`
+      )
+    );
   const rows = await db
     .select({ visualStatus: bookPages.visualStatus })
     .from(bookPages)
