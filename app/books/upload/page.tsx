@@ -12,6 +12,13 @@ import {
   X,
 } from "lucide-react";
 import SubjectPicker from "@/components/SubjectPicker";
+import { trpc } from "@/lib/trpc-client";
+import type { BillingErrorDetails } from "@/lib/billing/catalog";
+import {
+  PlanLimitError,
+  UpgradePrompt,
+  errorFromResponseBody,
+} from "@/components/billing/UpgradePrompt";
 
 type Stage = "idle" | "uploading" | "planning";
 type FileKind = "study_book" | "question_file";
@@ -84,6 +91,11 @@ export default function BookUploadPage() {
   const [stage, setStage] = useState<Stage>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState("");
+  // 💳 Set when the student's plan refused the file (size / daily quota).
+  const [limitDetails, setLimitDetails] = useState<BillingErrorDetails | null>(
+    null
+  );
+  const usage = trpc.billing.mine.useQuery();
   const [dragActive, setDragActive] = useState(false);
   const [profile, setProfile] = useState("general");
   // Pre-selected when arriving from a folder's "＋ إضافة ملف" button
@@ -94,6 +106,7 @@ export default function BookUploadPage() {
 
   function chooseFile(nextFile: File | undefined) {
     setError("");
+    setLimitDetails(null);
     if (!nextFile) return;
     if (
       nextFile.type !== "application/pdf" &&
@@ -124,7 +137,7 @@ export default function BookUploadPage() {
       });
       const uploadUrlData = await uploadUrlResponse.json();
       if (!uploadUrlResponse.ok)
-        throw new Error(uploadUrlData.error || "تعذر تجهيز رابط الرفع.");
+        throw errorFromResponseBody(uploadUrlData, "تعذر تجهيز رابط الرفع.");
 
       await putFileWithProgress(
         uploadUrlData.uploadUrl,
@@ -150,7 +163,7 @@ export default function BookUploadPage() {
         );
         const planData = await planResponse.json();
         if (!planResponse.ok)
-          throw new Error(planData.error || "تعذر تجهيز ملف الأسئلة.");
+          throw errorFromResponseBody(planData, "تعذر تجهيز ملف الأسئلة.");
         router.push(`/books/question-files/${planData.bookId}`);
         return;
       }
@@ -167,11 +180,14 @@ export default function BookUploadPage() {
       });
       const planData = await planResponse.json();
       if (!planResponse.ok)
-        throw new Error(planData.error || "تعذر تجهيز الكتاب.");
+        throw errorFromResponseBody(planData, "تعذر تجهيز الكتاب.");
 
       router.push(`/books/${planData.bookId}`);
     } catch (processingError) {
       setStage("idle");
+      if (processingError instanceof PlanLimitError) {
+        setLimitDetails(processingError.details);
+      }
       setError(
         processingError instanceof Error
           ? processingError.message
@@ -242,7 +258,14 @@ export default function BookUploadPage() {
                   ? `${formatBytes(file.size)} · جاهز للرفع`
                   : "أو اضغط لاختيار ملف من جهازك"}
               </span>
-              {!file && <small>ملفات PDF فقط، حتى ٢٥٠ ميجابايت</small>}
+              {!file && (
+                <small>
+                  ملفات PDF فقط
+                  {usage.data
+                    ? `، حتى ${usage.data.maxFileSizeMb}MB في باقتك`
+                    : ""}
+                </small>
+              )}
             </div>
           )}
 
@@ -346,11 +369,26 @@ export default function BookUploadPage() {
             </div>
           )}
 
-          {error && (
-            <div className="inline-alert error">
-              <CircleAlert size={16} />
-              {error}
-            </div>
+          {error &&
+            (limitDetails ? (
+              <UpgradePrompt details={limitDetails} message={error} />
+            ) : (
+              <div className="inline-alert error">
+                <CircleAlert size={16} />
+                {error}
+              </div>
+            ))}
+
+          {/* 💳 What the student's plan still allows today. */}
+          {usage.data && !isProcessing && (
+            <p className="upload-quota">
+              متبقي اليوم: {usage.data.books.daily.remaining ?? "∞"} ملفات دراسة
+              · {usage.data.questions.daily.remaining ?? "∞"} ملفات أسئلة · حتى{" "}
+              <bdi dir="ltr">{usage.data.maxFileSizeMb}MB</bdi> للملف ·{" "}
+              <a href="/account/plan" className="underline">
+                باقتي
+              </a>
+            </p>
           )}
 
           {isProcessing && (

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admitAssistantMessage } from "@/lib/billing/assistant-guard";
 import { getBookAccess } from "@/lib/book-access";
 import { getBookPageForUser } from "@/lib/db-books";
 import { streamFastAnswer } from "@/lib/fast-answer-stream";
@@ -69,6 +70,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "الصفحة غير موجودة." }, { status: 404 });
   }
 
+  // 💳 One message from the plan's daily assistant quota.
+  const admitted = await admitAssistantMessage(session.user.id);
+  if (admitted instanceof NextResponse) return admitted;
+
   const messages = buildSelectionAssistantMessages({
     fileName: input.fileName ?? "PDF",
     pageNumber: input.pageNumber,
@@ -79,5 +84,9 @@ export async function POST(request: Request) {
     history: input.history,
   });
 
-  return streamFastAnswer(messages, { logTag: "ask-selection" });
+  return streamFastAnswer(messages, {
+    logTag: "ask-selection",
+    onNoAnswer: admitted.refund,
+    onComplete: admitted.recordAnswer,
+  });
 }

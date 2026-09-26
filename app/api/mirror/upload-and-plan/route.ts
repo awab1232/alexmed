@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admitUpload } from "@/lib/billing/upload-guard";
 import { createMirrorJobShell } from "@/lib/db-mirror";
 import { getSubjectForUser } from "@/lib/db-subjects";
 import { publishMessage } from "@/lib/queue/client";
@@ -72,12 +73,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "المجلد غير موجود." }, { status: 400 });
   }
 
-  const job = await createMirrorJobShell(session.user.id, {
-    fileName,
-    fileKey: key,
-    depth,
-    subjectId,
-  });
+  // 💳 Plan: a مِرآة PDF is a processed file like a book — same size cap
+  // and the same daily / monthly file quota.
+  const admitted = await admitUpload(session.user.id, key, "BOOK_FILE");
+  if (admitted instanceof NextResponse) return admitted;
+
+  let job;
+  try {
+    job = await createMirrorJobShell(session.user.id, {
+      fileName,
+      fileKey: key,
+      depth,
+      subjectId,
+    });
+  } catch (error) {
+    await admitted.release();
+    throw error;
+  }
 
   try {
     await publishMessage(
@@ -86,6 +98,7 @@ export async function POST(request: Request) {
     );
   } catch (publishError) {
     console.error("[Mirror] Failed to enqueue extraction", publishError);
+    await admitted.release();
     return NextResponse.json(
       {
         error: "تم إنشاء الملف لكن تعذر بدء المعالجة. حاول إعادة رفع الملف.",

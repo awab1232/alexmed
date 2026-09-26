@@ -6,6 +6,7 @@ import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -74,6 +75,27 @@ export async function storageGet(
 ): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
   return { key, url: `/api/files/${key}` };
+}
+
+// The stored object's real size in bytes (null when it doesn't exist) —
+// what plan file-size limits are checked against, since the size a browser
+// declares when asking for an upload URL can't be trusted.
+export async function storageObjectSize(
+  relKey: string
+): Promise<number | null> {
+  try {
+    const result = await getS3Client().send(
+      new HeadObjectCommand({ Bucket: getBucket(), Key: normalizeKey(relKey) })
+    );
+    return typeof result.ContentLength === "number"
+      ? result.ContentLength
+      : null;
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })
+      .$metadata?.httpStatusCode;
+    if (status === 404) return null;
+    throw error;
+  }
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {

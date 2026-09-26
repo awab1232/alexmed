@@ -61,7 +61,7 @@ export default function AdminOverviewPage() {
           isLoading={statsQuery.isLoading}
         />
         <StatCard
-          label="مستخدمون مميّزون (Premium)"
+          label="مشتركو الباقات المدفوعة"
           value={stats?.premiumUsers ?? 0}
           icon={Crown}
           isLoading={statsQuery.isLoading}

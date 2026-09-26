@@ -19,6 +19,14 @@ import NiroAvatar from "@/components/niro/NiroAvatar";
 import NiroEmptyState from "@/components/niro/NiroEmptyState";
 import NiroThinking from "@/components/niro/NiroThinking";
 import { NIRO_NAME, niroLine } from "@/lib/niro";
+import { trpc } from "@/lib/trpc-client";
+import type { BillingErrorDetails } from "@/lib/billing/catalog";
+import {
+  PlanLimitError,
+  RemainingHint,
+  UpgradePrompt,
+  errorFromResponseBody,
+} from "@/components/billing/UpgradePrompt";
 
 // `image` (full data URL) lives only in memory for follow-ups; `thumb` is a
 // small copy kept with the saved conversation so old photos still show.
@@ -119,6 +127,14 @@ export default function AssistantPage() {
     "idle"
   );
   const [error, setError] = useState("");
+  // 💳 Set when the plan's daily assistant limit refused the message.
+  const [limitDetails, setLimitDetails] = useState<BillingErrorDetails | null>(
+    null
+  );
+  const utils = trpc.useUtils();
+  const usage = trpc.billing.mine.useQuery(undefined, {
+    staleTime: 60_000,
+  });
   const [copied, setCopied] = useState<number | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -232,6 +248,7 @@ export default function AssistantPage() {
     setInput("");
     setAttachment(null);
     setError("");
+    setLimitDetails(null);
     setStatus("waiting");
     const controller = new AbortController();
     abortRef.current = controller;
@@ -247,10 +264,13 @@ export default function AssistantPage() {
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {
-        const body = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(body?.error || "تعذر الوصول للمساعد، حاول مرة أخرى 🙏");
+        const body = (await response.json().catch(() => null)) as Parameters<
+          typeof errorFromResponseBody
+        >[0];
+        throw errorFromResponseBody(
+          body,
+          "تعذر الوصول للمساعد، حاول مرة أخرى 🙏"
+        );
       }
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -293,6 +313,7 @@ export default function AssistantPage() {
       });
       setInput(message);
       setAttachment(photo);
+      if (err instanceof PlanLimitError) setLimitDetails(err.details);
       setError(
         err instanceof Error
           ? err.message
@@ -301,6 +322,8 @@ export default function AssistantPage() {
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       setStatus("idle");
+      // Keep "X messages left today" current.
+      void utils.billing.mine.invalidate();
     }
   }
 
@@ -312,6 +335,7 @@ export default function AssistantPage() {
     abortRef.current?.abort();
     setTurns([]);
     setError("");
+    setLimitDetails(null);
     setAttachment(null);
     setStatus("idle");
   }
@@ -428,7 +452,19 @@ export default function AssistantPage() {
             }
           />
         )}
-        {error && <p className="study-ai-error">{error}</p>}
+        {error &&
+          (limitDetails ? (
+            <UpgradePrompt details={limitDetails} message={error} />
+          ) : (
+            <p className="study-ai-error">{error}</p>
+          ))}
+        {!error && (
+          <RemainingHint
+            remaining={usage.data?.assistant.remaining}
+            limit={usage.data?.assistant.limit}
+            noun="رسائل"
+          />
+        )}
         <div ref={endRef} />
       </div>
 

@@ -35,6 +35,12 @@ import BottomNav from "@/components/BottomNav";
 import { MarkableText, MarkingSurface } from "@/components/CardMarks";
 import MirrorTextInput from "@/components/MirrorTextInput";
 import SubjectPicker from "@/components/SubjectPicker";
+import {
+  PlanLimitError,
+  UpgradePrompt,
+  errorFromResponseBody,
+} from "@/components/billing/UpgradePrompt";
+import type { BillingErrorDetails } from "@/lib/billing/catalog";
 
 type PageText = { page: number; text: string; hasText: boolean; ocr?: boolean };
 type Card = {
@@ -64,7 +70,6 @@ type Card = {
 
 type View = "upload" | "cards" | "library";
 type Stage = "idle" | "extracting" | "processing" | "ready";
-const UPLOAD_MAX_MB = Number(process.env.NEXT_PUBLIC_UPLOAD_MAX_MB) || 250;
 // Same polling convention as app/mirror/[jobId]/page.tsx — once a deck's
 // originating مِرآة job reaches one of these, no more cards are coming.
 const POLL_INTERVAL_MS = 3000;
@@ -131,6 +136,10 @@ export default function Home() {
   const [onlyReview, setOnlyReview] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState("");
+  // 💳 Set when the server refused the upload for a plan limit.
+  const [limitDetails, setLimitDetails] = useState<BillingErrorDetails | null>(
+    null
+  );
   const [warning, setWarning] = useState("");
   const [speakingTarget, setSpeakingTarget] = useState<string | null>(null);
   // Upload screen: PDF file vs pasted question text. textTargetDeckId
@@ -150,6 +159,12 @@ export default function Home() {
   const subjectsQuery = trpc.subjects.list.useQuery(undefined, {
     enabled: view === "library",
   });
+  // 💳 The per-file size limit comes from the student's plan (the server
+  // enforces it again on upload).
+  const billingQuery = trpc.billing.mine.useQuery(undefined, {
+    enabled: view === "upload",
+  });
+  const maxFileSizeMb = billingQuery.data?.maxFileSizeMb ?? null;
   const setDeckSubjectMutation = trpc.decks.setSubject.useMutation({
     onSuccess: () => {
       utils.decks.list.invalidate();
@@ -270,6 +285,7 @@ export default function Home() {
     setTextTargetDeckId(deckId);
     setInputMode("text");
     setError("");
+    setLimitDetails(null);
     setView("upload");
   }
   const progress = pageCount
@@ -278,6 +294,7 @@ export default function Home() {
 
   function chooseFile(nextFile: File | undefined) {
     setError("");
+    setLimitDetails(null);
     setWarning("");
     if (!nextFile) return;
     if (
@@ -287,8 +304,10 @@ export default function Home() {
       setError("اختَر ملف PDF فقط.");
       return;
     }
-    if (nextFile.size > UPLOAD_MAX_MB * 1024 * 1024) {
-      setError(`حجم الملف أكبر من ${UPLOAD_MAX_MB}MB في النسخة الحالية.`);
+    if (maxFileSizeMb && nextFile.size > maxFileSizeMb * 1024 * 1024) {
+      setError(
+        `حجم الملف أكبر من حد باقتك (${maxFileSizeMb}MB). يمكنك الترقية لرفع ملفات أكبر.`
+      );
       return;
     }
     setFile(nextFile);
@@ -311,6 +330,7 @@ export default function Home() {
   async function startProcessing() {
     if (!file || !subjectId) return;
     setError("");
+    setLimitDetails(null);
     setWarning("");
     setStage("extracting");
 
@@ -326,7 +346,7 @@ export default function Home() {
       });
       const uploadData = await uploadUrlResponse.json();
       if (!uploadUrlResponse.ok)
-        throw new Error(uploadData.error || "تعذر تجهيز رابط الرفع.");
+        throw errorFromResponseBody(uploadData, "تعذر تجهيز رابط الرفع.");
 
       const putResponse = await fetch(uploadData.uploadUrl, {
         method: "PUT",
@@ -350,11 +370,18 @@ export default function Home() {
       });
       const planned = await planResponse.json();
       if (!planResponse.ok)
-        throw new Error(planned.error || "تعذر تجهيز الملف للتوليد.");
+        throw errorFromResponseBody(planned, "تعذر تجهيز الملف للتوليد.");
 
       router.push(`/mirror/${planned.jobId}`);
     } catch (processingError) {
       setStage("idle");
+      if (processingError instanceof PlanLimitError) {
+        setLimitDetails(processingError.details);
+        setError(processingError.message);
+        void utils.billing.mine.invalidate();
+        return;
+      }
+      setLimitDetails(null);
       setError(
         processingError instanceof Error
           ? processingError.message
@@ -375,6 +402,7 @@ export default function Home() {
     setStage("idle");
     setView("upload");
     setError("");
+    setLimitDetails(null);
     setWarning("");
     setQuery("");
     setOnlyReview(false);
@@ -677,8 +705,11 @@ export default function Home() {
                     </span>
                     {!file && (
                       <small>
-                        حد أقصى {UPLOAD_MAX_MB}MB · يدعم الملفات الكبيرة
-                        والدفعات المتعددة وPDF المصوّر عبر OCR
+                        {maxFileSizeMb
+                          ? `حد أقصى ${maxFileSizeMb}MB في باقتك · `
+                          : ""}
+                        يدعم الملفات الكبيرة والدفعات المتعددة وPDF المصوّر عبر
+                        OCR
                       </small>
                     )}
                   </div>
@@ -703,12 +734,14 @@ export default function Home() {
                       </button>
                     </div>
                   )}
-                  {error && (
+                  {error && limitDetails ? (
+                    <UpgradePrompt details={limitDetails} message={error} />
+                  ) : error ? (
                     <div className="inline-alert error">
                       <CircleAlert size={16} />
                       {error}
                     </div>
-                  )}
+                  ) : null}
                   {warning && (
                     <div className="inline-alert warning">
                       <CircleAlert size={16} />
@@ -1280,7 +1313,9 @@ export default function Home() {
                       <span>
                         {deck.pageCount > 0 && `${deck.pageCount} صفحة · `}
                         {deck.cardCount} بطاقة ·{" "}
-                        {new Date(deck.createdAt).toLocaleDateString("ar-u-nu-latn")}
+                        {new Date(deck.createdAt).toLocaleDateString(
+                          "ar-u-nu-latn"
+                        )}
                       </span>
                     </div>
                     <select

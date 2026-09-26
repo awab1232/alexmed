@@ -4,10 +4,12 @@ import { signOut } from "../auth";
 import { getUserProfileForAccount, updateUserProfile } from "../db";
 import { parsePhone } from "../phone";
 import { deleteAccountCompletely } from "../db-account";
+import { adminBillingRouter } from "./adminBillingRouter";
 import { adminJobsRouter } from "./adminJobsRouter";
 import { adminMaterialsRouter } from "./adminMaterialsRouter";
 import { adminUsersRouter } from "./adminUsersRouter";
 import { annotationsRouter } from "./annotationsRouter";
+import { billingRouter } from "./billingRouter";
 import { booksRouter } from "./booksRouter";
 import { brainGamesRouter } from "./brainGamesRouter";
 import { bookPageMarksRouter } from "./bookPageMarksRouter";
@@ -82,6 +84,9 @@ export const appRouter = router({
         return { success: true } as const;
       }),
   }),
+  // 💳 Plans, subscriptions & usage (lib/billing) — student side and admin.
+  billing: billingRouter,
+  adminBilling: adminBillingRouter,
   decks: decksRouter,
   books: booksRouter,
   examFocus: examFocusRouter,

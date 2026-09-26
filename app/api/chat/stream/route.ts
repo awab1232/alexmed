@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admitAssistantMessage } from "@/lib/billing/assistant-guard";
 import { appendChatMessage, getChatSessionForUser } from "@/lib/db-chat";
 import { streamFastAnswer } from "@/lib/fast-answer-stream";
 import {
@@ -47,8 +48,16 @@ export async function POST(request: Request) {
   // check in lib/db-chat.ts's getOrCreateChatSession).
   const chat = await getChatSessionForUser(userId, parsed.data.sessionId);
   if (!chat) {
-    return NextResponse.json({ error: "المحادثة غير موجودة." }, { status: 404 });
+    return NextResponse.json(
+      { error: "المحادثة غير موجودة." },
+      { status: 404 }
+    );
   }
+
+  // 💳 One message from the plan's daily assistant quota — checked before
+  // the question is saved, so a refused message leaves no trace.
+  const admitted = await admitAssistantMessage(userId);
+  if (admitted instanceof NextResponse) return admitted;
 
   await appendChatMessage(chat.id, {
     role: "user",
@@ -62,7 +71,9 @@ export async function POST(request: Request) {
   return streamFastAnswer(messages, {
     logTag: "study-chat",
     maxTokens: 2500,
+    onNoAnswer: admitted.refund,
     onComplete: async answer => {
+      await admitted.recordAnswer(answer);
       if (!answer.trim()) return;
       await appendChatMessage(chat.id, {
         role: "assistant",

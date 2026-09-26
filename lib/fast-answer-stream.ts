@@ -16,6 +16,9 @@ export function streamFastAnswer(
     // Called once with the full text the student received (for saving it);
     // errors here are logged, never shown mid-answer.
     onComplete?: (answer: string) => Promise<void>;
+    // Called instead when no model produced an answer at all (the student
+    // only saw an error line) — used to give the plan's message back.
+    onNoAnswer?: () => Promise<void>;
   }
 ): Response {
   const maxTokens = options.maxTokens ?? 2500;
@@ -24,6 +27,7 @@ export function streamFastAnswer(
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let wrote = false;
+      let answered = false;
       let full = "";
       const write = (text: string) => {
         full += text;
@@ -41,6 +45,7 @@ export function streamFastAnswer(
         })) {
           if (chunk.delta) {
             wrote = true;
+            answered = true;
             write(chunk.delta);
           }
         }
@@ -61,6 +66,7 @@ export function streamFastAnswer(
               max_tokens: maxTokens,
             });
             const answer = response.choices[0]?.message.content?.trim();
+            if (answer) answered = true;
             write(answer || "لم يصل رد من المساعد، حاول مرة أخرى.");
           } catch (fallbackError) {
             console.error(
@@ -71,6 +77,13 @@ export function streamFastAnswer(
           }
         }
       } finally {
+        if (!answered && options.onNoAnswer) {
+          try {
+            await options.onNoAnswer();
+          } catch (refundError) {
+            console.error(`[${options.logTag}] onNoAnswer failed`, refundError);
+          }
+        }
         if (options.onComplete) {
           try {
             await options.onComplete(full);

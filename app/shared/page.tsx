@@ -43,7 +43,9 @@ function ContentsChips({ contents }: { contents: Contents }) {
     contents.examFocus != null && `🔥 ${contents.examFocus} Exam Focus`,
   ].filter(Boolean) as string[];
   if (!chips.length) {
-    return <p className="sh-hint">الملف جاهز للقراءة، ولم يُولَّد محتوى بعد.</p>;
+    return (
+      <p className="sh-hint">الملف جاهز للقراءة، ولم يُولَّد محتوى بعد.</p>
+    );
   }
   return (
     <ul className="sh-chips" aria-label="محتوى الملف">
@@ -237,7 +239,9 @@ export default function SharedWithMePage() {
             <div className="sh-empty">
               <BookOpen size={28} aria-hidden="true" />
               <strong>لا توجد ملفات مشتركة بعد</strong>
-              <span>الملفات التي تقبلها تظهر هنا وتفتح بنفس أدوات الدراسة.</span>
+              <span>
+                الملفات التي تقبلها تظهر هنا وتفتح بنفس أدوات الدراسة.
+              </span>
             </div>
           ) : (
             library.data.map(pack => (
@@ -277,7 +281,7 @@ export default function SharedWithMePage() {
           ) : (
             <ul className="sh-notes">
               {notifications.data.map(note => {
-                const data = note.data as { bookTitle?: string };
+                const data = note.data as { bookTitle?: string; text?: string };
                 const who = ownerLabel(note.actorName, note.actorUsername);
                 const title = data.bookTitle ?? "";
                 const text =
@@ -287,7 +291,9 @@ export default function SharedWithMePage() {
                       ? `${who} قبل ملفك «${title}»`
                       : note.type === "share_declined"
                         ? `${who} رفض طلب مشاركة «${title}»`
-                        : title;
+                        : note.type === "billing"
+                          ? (data.text ?? "")
+                          : title;
                 return (
                   <li
                     key={note.id}

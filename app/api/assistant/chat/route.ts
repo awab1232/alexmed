@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admitAssistantMessage } from "@/lib/billing/assistant-guard";
 import { streamFastAnswer } from "@/lib/fast-answer-stream";
 import {
   buildGeneralAssistantMessages,
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
       { status: 429 }
     );
   }
+  // 💳 One message from the plan's daily assistant quota.
+  const admitted = await admitAssistantMessage(session.user.id);
+  if (admitted instanceof NextResponse) return admitted;
   const { message, image, history } = parsed.data;
   const hasImage = !!image || history.some(turn => turn.image);
   const messages = buildGeneralAssistantMessages({
@@ -89,6 +93,8 @@ export async function POST(request: Request) {
   return streamFastAnswer(messages, {
     logTag: "assistant-chat",
     maxTokens: 4000,
+    onNoAnswer: admitted.refund,
+    onComplete: admitted.recordAnswer,
     ...(hasImage ? { model: DEFAULT_VISION_MODEL } : {}),
   });
 }

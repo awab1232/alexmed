@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admitUpload } from "@/lib/billing/upload-guard";
 import { createBookShell } from "@/lib/db-books";
 import { getSubjectForUser } from "@/lib/db-subjects";
 import { publishMessage } from "@/lib/queue/client";
@@ -83,12 +84,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "المادة غير موجودة." }, { status: 400 });
   }
 
-  const book = await createBookShell(session.user.id, {
-    fileName,
-    fileKey: key,
-    profile,
-    subjectId,
-  });
+  // 💳 Plan: the stored file's real size + one file from today's quota.
+  const admitted = await admitUpload(session.user.id, key, "BOOK_FILE");
+  if (admitted instanceof NextResponse) return admitted;
+
+  let book;
+  try {
+    book = await createBookShell(session.user.id, {
+      fileName,
+      fileKey: key,
+      profile,
+      subjectId,
+    });
+  } catch (error) {
+    await admitted.release();
+    throw error;
+  }
 
   try {
     await publishMessage(
@@ -97,6 +108,7 @@ export async function POST(request: Request) {
     );
   } catch (publishError) {
     console.error("[Books] Failed to enqueue extraction", publishError);
+    await admitted.release();
     return NextResponse.json(
       {
         error: "تم إنشاء الكتاب لكن تعذر بدء المعالجة. حاول إعادة رفع الملف.",

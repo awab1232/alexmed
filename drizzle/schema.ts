@@ -2301,3 +2301,266 @@ export const phoneVerifications = pgTable(
     ),
   })
 );
+
+// ── 💳 Plans, subscriptions & usage (lib/billing/*) ─────────────────────
+// ONE source of truth for what a student may do: their effective plan is
+// the plan of their active, unexpired subscription, else "free"
+// (lib/billing/entitlement.ts). users.plan / planExpiresAt predate this and
+// are no longer read or written.
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "active",
+  "expired",
+  "cancelled",
+  "pending",
+  "paused",
+]);
+
+export const billingPeriodEnum = pgEnum("billing_period", [
+  "monthly",
+  "yearly",
+]);
+
+export const paymentRequestStatusEnum = pgEnum("payment_request_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "cancelled",
+]);
+
+export type PlanFeatureFlags = Record<string, boolean>;
+
+// Plan catalogue — prices and limits live here (editable from the admin
+// dashboard), never hard-coded in routes. id is the stable slug.
+export const plans = pgTable("plans", {
+  id: varchar("id", { length: 32 }).primaryKey(), // free | pro | ultimate
+  name: text("name").notNull(),
+  tagline: text("tagline").default("").notNull(),
+  description: text("description").default("").notNull(),
+  // Smallest currency unit (cents). Payment is always in `currency`; local
+  // currencies are shown as an approximate equivalent only.
+  priceMonthlyCents: integer("priceMonthlyCents").default(0).notNull(),
+  priceYearlyCents: integer("priceYearlyCents"),
+  currency: varchar("currency", { length: 3 }).default("USD").notNull(),
+  assistantDailyLimit: integer("assistantDailyLimit").notNull(),
+  // Output-token safety net per day; null = no token cap.
+  assistantTokenDailyLimit: integer("assistantTokenDailyLimit"),
+  questionsDailyLimit: integer("questionsDailyLimit").notNull(),
+  questionsMonthlyLimit: integer("questionsMonthlyLimit"),
+  booksDailyLimit: integer("booksDailyLimit").notNull(),
+  booksMonthlyLimit: integer("booksMonthlyLimit"),
+  maxFileSizeMb: integer("maxFileSizeMb").notNull(),
+  // Processing priority = how many of the student's files are analysed in
+  // parallel by the queue (lib/queue/concurrency.ts).
+  processingConcurrency: integer("processingConcurrency").default(2).notNull(),
+  features: jsonb("features").$type<PlanFeatureFlags>().default({}).notNull(),
+  highlighted: boolean("highlighted").default(false).notNull(),
+  active: boolean("active").default(true).notNull(),
+  sortOrder: integer("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    planId: varchar("planId", { length: 32 })
+      .notNull()
+      .references(() => plans.id),
+    status: subscriptionStatusEnum("status").default("active").notNull(),
+    billingPeriod: billingPeriodEnum("billingPeriod")
+      .default("monthly")
+      .notNull(),
+    startDate: timestamp("startDate", { withTimezone: true }).notNull(),
+    // Null = no end (only for admin grants that say so explicitly).
+    endDate: timestamp("endDate", { withTimezone: true }),
+    paymentMethod: text("paymentMethod"),
+    paymentReference: text("paymentReference"),
+    paymentRequestId: uuid("paymentRequestId"),
+    activatedBy: uuid("activatedBy").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    cancelledAt: timestamp("cancelledAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userStatusIdx: index("subscriptions_user_status_idx").on(
+      table.userId,
+      table.status
+    ),
+    userEndIdx: index("subscriptions_user_end_idx").on(
+      table.userId,
+      table.endDate
+    ),
+    // At most ONE active subscription per student — a second activation
+    // must end the first (lib/billing/subscriptions.ts), never stack.
+    oneActivePerUser: uniqueIndex("subscriptions_one_active_per_user")
+      .on(table.userId)
+      .where(sql`status = 'active'`),
+  })
+);
+
+// Usage is keyed by period, so a new day / month simply starts a new row —
+// no reset job. Increments are single conditional upserts (atomic under
+// concurrent requests), see lib/billing/usage.ts.
+export const usageDaily = pgTable(
+  "usage_daily",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    day: varchar("day", { length: 10 }).notNull(), // YYYY-MM-DD, app timezone
+    assistantMessages: integer("assistantMessages").default(0).notNull(),
+    assistantTokens: integer("assistantTokens").default(0).notNull(),
+    questionFiles: integer("questionFiles").default(0).notNull(),
+    bookFiles: integer("bookFiles").default(0).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userDayUnique: uniqueIndex("usage_daily_user_day_idx").on(
+      table.userId,
+      table.day
+    ),
+  })
+);
+
+export const usageMonthly = pgTable(
+  "usage_monthly",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    month: varchar("month", { length: 7 }).notNull(), // YYYY-MM
+    questionFiles: integer("questionFiles").default(0).notNull(),
+    bookFiles: integer("bookFiles").default(0).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userMonthUnique: uniqueIndex("usage_monthly_user_month_idx").on(
+      table.userId,
+      table.month
+    ),
+  })
+);
+
+// Manual upgrade requests (no card data, ever): the student says which plan
+// and how they paid; an admin approves (→ subscription) or rejects.
+export const paymentRequests = pgTable(
+  "payment_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    planId: varchar("planId", { length: 32 })
+      .notNull()
+      .references(() => plans.id),
+    billingPeriod: billingPeriodEnum("billingPeriod")
+      .default("monthly")
+      .notNull(),
+    durationMonths: integer("durationMonths").default(1).notNull(),
+    // Snapshot of the server price when requested (never from the client).
+    amountCents: integer("amountCents").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    paymentMethod: text("paymentMethod").notNull(),
+    reference: text("reference"),
+    proofUrl: text("proofUrl"),
+    note: text("note"),
+    status: paymentRequestStatusEnum("status").default("pending").notNull(),
+    adminNote: text("adminNote"),
+    reviewedBy: uuid("reviewedBy").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+    subscriptionId: uuid("subscriptionId"),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    statusCreatedIdx: index("payment_requests_status_created_idx").on(
+      table.status,
+      table.createdAt
+    ),
+    userCreatedIdx: index("payment_requests_user_created_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    // One open request per student at a time.
+    onePendingPerUser: uniqueIndex("payment_requests_one_pending_per_user")
+      .on(table.userId)
+      .where(sql`status = 'pending'`),
+  })
+);
+
+// Every change to a student's entitlement — who, what, when, before, after.
+export const subscriptionAuditLogs = pgTable(
+  "subscription_audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    subscriptionId: uuid("subscriptionId"),
+    adminId: uuid("adminId").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    action: text("action").notNull(),
+    previousPlan: varchar("previousPlan", { length: 32 }),
+    newPlan: varchar("newPlan", { length: 32 }),
+    previousStatus: text("previousStatus"),
+    newStatus: text("newStatus"),
+    previousEndDate: timestamp("previousEndDate", { withTimezone: true }),
+    newEndDate: timestamp("newEndDate", { withTimezone: true }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userCreatedIdx: index("subscription_audit_user_created_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+  })
+);
+
+// Small admin-editable settings (payment instructions, support contact,
+// display currency rates) — a key → JSON value table, not a CMS.
+export const appSettings = pgTable("app_settings", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: jsonb("value").$type<Record<string, unknown>>().notNull(),
+  updatedBy: uuid("updatedBy").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

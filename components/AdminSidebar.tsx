@@ -11,12 +11,19 @@ import {
   LogOut,
   ShieldCheck,
   Users,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "نظرة عامة", icon: LayoutDashboard, exact: true },
   { href: "/admin/users", label: "المستخدمون", icon: Users, exact: false },
+  {
+    href: "/admin/billing",
+    label: "الاشتراكات والمدفوعات",
+    icon: CreditCard,
+    exact: false,
+  },
   {
     href: "/admin/materials",
     label: "مكتبة الأدمن",

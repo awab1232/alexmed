@@ -5,7 +5,6 @@ import {
   getPlatformStatsForAdmin,
   getUserDetailForAdmin,
   listUsersForAdmin,
-  setUserPlanForAdmin,
   setUserSuspendedForAdmin,
 } from "../db-admin-users";
 import { adminProcedure, router } from "./trpc";
@@ -35,23 +34,6 @@ export const adminUsersRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       }
       return detail;
-    }),
-
-  setPlan: adminProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-        plan: z.enum(["free", "premium"]),
-        planExpiresAt: z.string().datetime().nullable(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      await setUserPlanForAdmin(
-        input.userId,
-        input.plan,
-        input.planExpiresAt ? new Date(input.planExpiresAt) : null
-      );
-      return { ok: true };
     }),
 
   setSuspended: adminProcedure

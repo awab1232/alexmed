@@ -2,15 +2,8 @@ import { auth } from "@/lib/auth";
 import { storageGetUploadUrl } from "@/lib/storage";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-
-const DEFAULT_MAX_MB = 250;
-
-function getMaxUploadBytes() {
-  const configured = Number(process.env.UPLOAD_MAX_MB);
-  const maxMb =
-    Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_MB;
-  return { maxMb, maxBytes: maxMb * 1024 * 1024 };
-}
+import { billingErrorResponse } from "@/lib/billing/http";
+import { assertFileSizeAllowed } from "@/lib/billing/usage";
 
 // Step 1 of the direct-to-storage upload flow: hands the browser a short-lived
 // presigned PUT url so the actual file bytes go straight to S3/MinIO,
@@ -41,15 +34,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { maxMb, maxBytes } = getMaxUploadBytes();
   if (!Number.isFinite(fileSize) || fileSize <= 0) {
     return NextResponse.json({ error: "حجم الملف غير صالح." }, { status: 400 });
   }
-  if (fileSize > maxBytes) {
-    return NextResponse.json(
-      { error: `حجم الملف أكبر من ${maxMb}MB في النسخة الحالية.` },
-      { status: 413 }
-    );
+  // 💳 The student's plan decides the maximum size (lib/billing). This is
+  // the early check; processing re-checks the stored file's real size.
+  try {
+    await assertFileSizeAllowed(session.user.id, fileSize);
+  } catch (error) {
+    const response = billingErrorResponse(error);
+    if (response) return response;
+    throw error;
   }
 
   const key = `study-pdfs/${randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;

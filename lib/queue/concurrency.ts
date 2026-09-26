@@ -15,6 +15,7 @@ import {
   mirrorJobs,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
+import { getUserPlan } from "../billing/entitlement";
 import { staleBookChapterProcessingCutoff } from "./claim";
 import {
   getAdminMaterialsQueueConcurrency,
@@ -113,6 +114,21 @@ export async function isGlobalConcurrencyExceeded(
   return current >= globalLimitFor(kind);
 }
 
+// 💳 Priority processing: how many of a student's files are analysed in
+// parallel comes from their plan (plans.processingConcurrency), never below
+// the operator's QUEUE_PER_USER_CONCURRENCY. If the plan can't be read the
+// queue keeps working at the base value.
+async function studentConcurrencyLimit(userId: string): Promise<number> {
+  const base = getQueuePerUserConcurrency();
+  try {
+    const plan = await getUserPlan(userId);
+    return Math.max(base, plan.processingConcurrency);
+  } catch (error) {
+    console.error("[Queue] Could not read plan for concurrency", error);
+    return base;
+  }
+}
+
 export async function isUserConcurrencyExceeded(
   userId: string,
   kind: ConcurrencyKind
@@ -121,6 +137,6 @@ export async function isUserConcurrencyExceeded(
   const limit =
     kind === "admin_materials"
       ? getAdminMaterialsQueueConcurrency()
-      : getQueuePerUserConcurrency();
+      : await studentConcurrencyLimit(userId);
   return current >= limit;
 }

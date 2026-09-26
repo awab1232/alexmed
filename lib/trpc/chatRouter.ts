@@ -1,4 +1,11 @@
 import { TRPCError } from "@trpc/server";
+import { toTrpcError } from "../billing/http";
+import {
+  consumeUsage,
+  estimateTokens,
+  recordAssistantTokens,
+  releaseUsage,
+} from "../billing/usage";
 import { z } from "zod";
 import {
   appendChatMessage,
@@ -17,8 +24,7 @@ import {
 import { citedPagesOf, prepareStudyChatTurn } from "../study-chat";
 import { protectedProcedure, router } from "./trpc";
 
-export const NO_ANSWER_MESSAGE_AR =
-  "لم يصل رد من المساعد، حاول مرة أخرى 🙏";
+export const NO_ANSWER_MESSAGE_AR = "لم يصل رد من المساعد، حاول مرة أخرى 🙏";
 
 const targetSchema = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("page"), pageId: z.string() }),
@@ -74,6 +80,15 @@ export const chatRouter = router({
         });
       }
 
+      // 💳 Same assistant quota as the streamed routes (this procedure is
+      // callable directly, so it must not be a way around the limit).
+      let receipt;
+      try {
+        receipt = await consumeUsage(ctx.user.id, "ASSISTANT_MESSAGE");
+      } catch (error) {
+        toTrpcError(error);
+      }
+
       const userMessage = await appendChatMessage(session.id, {
         role: "user",
         content: input.question,
@@ -87,9 +102,17 @@ export const chatRouter = router({
         session,
         input.question
       );
-      const response = await invokeLLM({ messages, max_tokens: 2500 });
-      const answer =
-        response.choices[0]?.message.content?.trim() || NO_ANSWER_MESSAGE_AR;
+      let response;
+      try {
+        response = await invokeLLM({ messages, max_tokens: 2500 });
+      } catch (error) {
+        await releaseUsage(receipt);
+        throw error;
+      }
+      const reply = response.choices[0]?.message.content?.trim();
+      if (!reply) await releaseUsage(receipt);
+      else await recordAssistantTokens(receipt, estimateTokens(reply));
+      const answer = reply || NO_ANSWER_MESSAGE_AR;
       const assistantMessage = await appendChatMessage(session.id, {
         role: "assistant",
         content: answer,

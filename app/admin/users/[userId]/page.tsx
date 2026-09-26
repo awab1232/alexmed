@@ -8,14 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -37,11 +29,6 @@ function formatDate(value: string | Date | null) {
 }
 
 // Local (input-only) date format, e.g. "2026-12-31", for <input type="date">.
-function toDateInputValue(value: string | Date | null) {
-  if (!value) return "";
-  return new Date(value).toISOString().slice(0, 10);
-}
-
 export default function AdminUserDetailPage() {
   const params = useParams<{ userId: string }>();
   const router = useRouter();
@@ -49,18 +36,9 @@ export default function AdminUserDetailPage() {
 
   const detailQuery = trpc.adminUsers.get.useQuery({ userId: params.userId });
 
-  const [planDraft, setPlanDraft] = useState<"free" | "premium" | null>(null);
-  const [expiresDraft, setExpiresDraft] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
 
-  const setPlan = trpc.adminUsers.setPlan.useMutation({
-    onSuccess: () => {
-      utils.adminUsers.get.invalidate({ userId: params.userId });
-      setPlanDraft(null);
-      setExpiresDraft(null);
-    },
-  });
   const setSuspended = trpc.adminUsers.setSuspended.useMutation({
     onSuccess: () => {
       utils.adminUsers.get.invalidate({ userId: params.userId });
@@ -84,11 +62,7 @@ export default function AdminUserDetailPage() {
   const { user, stats } = detailQuery.data;
   // Phone sign-up accounts have no email.
   const accountId = user.email ?? user.phone ?? "";
-  const plan = planDraft ?? user.plan;
-  const expiresAt = expiresDraft ?? toDateInputValue(user.planExpiresAt);
   const isSuspended = !!user.suspendedAt;
-  const planDirty =
-    plan !== user.plan || expiresAt !== toDateInputValue(user.planExpiresAt);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -170,56 +144,19 @@ export default function AdminUserDetailPage() {
         </Card>
       </div>
 
+      {/* 💳 Plans & subscriptions live in /admin/billing (lib/billing) —
+          the one place that changes a student's entitlement, with audit. */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">الاشتراك</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-xs text-muted-foreground">
-            حقل يدوي فقط — لا يوجد نظام دفع حقيقي متصل بعد.
-          </p>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5">
-              <Label>الخطة</Label>
-              <Select
-                value={plan}
-                onValueChange={value =>
-                  setPlanDraft(value as "free" | "premium")
-                }
-              >
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>تاريخ الانتهاء (اختياري)</Label>
-              <Input
-                type="date"
-                value={expiresAt}
-                onChange={event => setExpiresDraft(event.target.value)}
-                className="w-44"
-              />
-            </div>
-            <Button
-              disabled={!planDirty || setPlan.isPending}
-              onClick={() =>
-                setPlan.mutate({
-                  userId: params.userId,
-                  plan,
-                  planExpiresAt: expiresAt
-                    ? new Date(expiresAt).toISOString()
-                    : null,
-                })
-              }
-            >
-              {setPlan.isPending ? "جارٍ الحفظ..." : "حفظ"}
-            </Button>
-          </div>
+        <CardContent>
+          <Link
+            href={`/admin/billing/${params.userId}`}
+            className="text-sm underline"
+          >
+            إدارة الباقة والاستخدام وسجل الاشتراكات ←
+          </Link>
         </CardContent>
       </Card>
 

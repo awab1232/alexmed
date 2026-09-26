@@ -2,9 +2,23 @@ import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from "@shared/const";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
+import { BillingError } from "../billing/usage";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
+  // Plan limits (lib/billing) travel to the client as structured data —
+  // code, plan, limit, the plan that would lift it — so the UI can show the
+  // right upgrade prompt instead of parsing messages.
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        billing:
+          error.cause instanceof BillingError ? error.cause.details : null,
+      },
+    };
+  },
 });
 
 export const router = t.router;

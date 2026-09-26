@@ -124,8 +124,8 @@ export default function AdminUsersPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {user.plan === "premium" ? (
-                      <Badge>Premium</Badge>
+                    {user.planId && user.planId !== "free" ? (
+                      <Badge className="capitalize">{user.planId}</Badge>
                     ) : (
                       <span className="text-muted-foreground">Free</span>
                     )}

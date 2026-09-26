@@ -4,19 +4,18 @@
 // only ever called from adminProcedure-gated routes (see
 // lib/trpc/adminUsersRouter.ts), which is itself gated by role==="admin"
 // both server-side (app/admin/layout.tsx) and per-request (adminProcedure).
-import { count, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import {
   bookCards,
   bookMcqAttempts,
   books,
   decks,
   subjects,
+  subscriptions,
   users,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 import { deleteAccountCompletely } from "./db-account";
-
-export type AdminUserPlan = "free" | "premium";
 
 export async function listUsersForAdmin(params: {
   search?: string;
@@ -34,7 +33,7 @@ export async function listUsersForAdmin(params: {
     ? or(
         ilike(users.email, `%${search}%`),
         ilike(users.name, `%${search}%`),
-        ilike(users.phone, `%${search.replace(/[s-]/g, "")}%`)
+        ilike(users.phone, `%${search.replace(/[\s-]/g, "")}%`)
       )
     : undefined;
 
@@ -46,13 +45,22 @@ export async function listUsersForAdmin(params: {
         phone: users.phone,
         name: users.name,
         role: users.role,
-        plan: users.plan,
-        planExpiresAt: users.planExpiresAt,
+        // 💳 Effective plan from the subscriptions table (lib/billing) —
+        // null = Free. users.plan is no longer read.
+        planId: subscriptions.planId,
+        planEndDate: subscriptions.endDate,
         suspendedAt: users.suspendedAt,
         createdAt: users.createdAt,
         lastSignedIn: users.lastSignedIn,
       })
       .from(users)
+      .leftJoin(
+        subscriptions,
+        and(
+          eq(subscriptions.userId, users.id),
+          eq(subscriptions.status, "active")
+        )
+      )
       .where(whereClause)
       .orderBy(desc(users.createdAt))
       .limit(limit)
@@ -74,8 +82,6 @@ export async function getUserDetailForAdmin(userId: string) {
       phone: users.phone,
       name: users.name,
       role: users.role,
-      plan: users.plan,
-      planExpiresAt: users.planExpiresAt,
       suspendedAt: users.suspendedAt,
       createdAt: users.createdAt,
       lastSignedIn: users.lastSignedIn,
@@ -120,19 +126,6 @@ export async function getUserDetailForAdmin(userId: string) {
       mcqAttemptsCorrect: Number(mcqStats.correct),
     },
   };
-}
-
-export async function setUserPlanForAdmin(
-  userId: string,
-  plan: AdminUserPlan,
-  planExpiresAt: Date | null
-) {
-  const db = getDb();
-  if (!db) throw new Error("Database not available");
-  await db
-    .update(users)
-    .set({ plan, planExpiresAt, updatedAt: new Date() })
-    .where(eq(users.id, userId));
 }
 
 export async function setUserSuspendedForAdmin(
@@ -191,7 +184,16 @@ export async function getPlatformStatsForAdmin() {
     db
       .select({
         total: count(),
-        premium: count(sql`case when ${users.plan} = 'premium' then 1 end`),
+        // 💳 Students with an active, unexpired paid subscription.
+        premium: count(
+          sql`case when exists (
+            select 1 from ${subscriptions}
+            where ${subscriptions.userId} = ${users.id}
+              and ${subscriptions.status} = 'active'
+              and ${subscriptions.planId} <> 'free'
+              and (${subscriptions.endDate} is null or ${subscriptions.endDate} > now())
+          ) then 1 end`
+        ),
         suspended: count(
           sql`case when ${users.suspendedAt} is not null then 1 end`
         ),

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import { formatPhoneForDisplay } from "@/lib/phone";
+import PlanSummaryCard from "@/components/billing/PlanSummaryCard";
 import { UsernameCard } from "@/components/sharing/UsernameCard";
 import DeleteAccountSection from "@/components/DeleteAccountSection";
 
@@ -30,11 +31,6 @@ const QUICK_LINKS = [
   { href: "/materials", label: "مكتبة الأدمن", icon: GraduationCap },
   { href: "/shared", label: "مشترك معي", icon: Users },
 ] as const;
-
-const PLAN_LABELS: Record<string, string> = {
-  free: "مجانية",
-  premium: "بريميوم",
-};
 
 export default function AccountPage() {
   const { data: session } = useSession();
@@ -130,18 +126,10 @@ export default function AccountPage() {
             تم الحفظ.
           </p>
         )}
-
-        {profileQuery.data && (
-          <p style={{ fontSize: 12, color: "#8a9493", marginTop: 14 }}>
-            الاشتراك:{" "}
-            <strong>
-              {PLAN_LABELS[profileQuery.data.plan] ?? profileQuery.data.plan}
-            </strong>
-            {profileQuery.data.planExpiresAt &&
-              ` · حتى ${new Date(profileQuery.data.planExpiresAt).toLocaleDateString("ar-EG-u-nu-latn")}`}
-          </p>
-        )}
       </div>
+
+      {/* 💳 Current plan + today's usage (lib/billing). */}
+      <PlanSummaryCard />
 
       {/* 📤 Public handle for Study Pack sharing (opt-in discoverability). */}
       <UsernameCard />

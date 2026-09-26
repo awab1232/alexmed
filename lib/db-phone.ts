@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { and, count, desc, eq, gt, gte, sql } from "drizzle-orm";
 import { phoneVerifications, users } from "../drizzle/schema";
 import { requireDb } from "./db";
+import { isUniqueViolation } from "./db-errors";
 import {
   cancelVerification,
   checkCode,
@@ -261,10 +262,9 @@ export async function createAccountWithVerifiedPhone(input: {
   } catch (error) {
     // The number was registered meanwhile, or a simultaneous sign-up with
     // the same number hit the unique index first.
-    const message = error instanceof Error ? error.message : String(error);
     if (
       error instanceof PhoneTakenError ||
-      /users_phone_unique|duplicate key/i.test(message)
+      isUniqueViolation(error, "users_phone_unique")
     ) {
       return { ok: false, error: "phone_taken" };
     }
