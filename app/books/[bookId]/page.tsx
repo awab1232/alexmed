@@ -1,10 +1,12 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Share2,
   Trash2,
   UserRound,
@@ -25,6 +27,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import { ShareStudyPackModal } from "@/components/sharing/ShareStudyPackModal";
+import { bookDisplayTitle } from "@/lib/book-title";
 
 // Background analysis now happens entirely server-side, driven by Upstash
 // QStash workers (see app/api/books/analyze-chapter/route.ts) — this page's
@@ -59,22 +62,16 @@ function StageRow({
   detail?: string;
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "7px 0",
-        opacity: status === "pending" ? 0.5 : 1,
-      }}
-    >
-      {status === "done" && <CheckCircle2 size={16} color="#528c6d" />}
-      {status === "active" && <Loader2 size={16} className="spin" />}
-      {status === "failed" && <CircleAlert size={16} color="#974d49" />}
-      {status === "pending" && <Circle size={16} />}
-      <span style={{ fontSize: 12 }}>
+    <div className={`book-stage is-${status}`}>
+      {status === "done" && <CheckCircle2 size={16} aria-hidden="true" />}
+      {status === "active" && (
+        <Loader2 size={16} className="spin" aria-hidden="true" />
+      )}
+      {status === "failed" && <CircleAlert size={16} aria-hidden="true" />}
+      {status === "pending" && <Circle size={16} aria-hidden="true" />}
+      <span>
         {label}
-        {detail && <span style={{ color: "#9a9186" }}> — {detail}</span>}
+        {detail && <small>{detail}</small>}
       </span>
     </div>
   );
@@ -254,63 +251,123 @@ export default function BookDetailPage() {
     ? Math.round((completeCount / chapters.length) * 100)
     : 0;
 
+  const toolState = chaptersNotStarted
+    ? "locked"
+    : !chaptersPhaseDone
+      ? "generating"
+      : "ready";
+  const studyModes = [
+    {
+      key: "cards",
+      icon: Layers3,
+      label: "بطاقات",
+      purpose: "احفظ بالتكرار المتباعد، بطاقة بطاقة",
+      count: `${totalCards} بطاقة`,
+      href: `/books/${bookId}/study?tool=cards`,
+    },
+    {
+      key: "mcqs",
+      icon: ClipboardList,
+      label: "اختبار",
+      purpose: "أسئلة اختيار من متعدد كأنك في الامتحان",
+      count: `${totalMcqs} سؤال`,
+      href: `/books/${bookId}/study?tool=mcqs`,
+    },
+    {
+      key: "summary",
+      icon: NotebookText,
+      label: "ملخص",
+      purpose: "الشرح كاملًا في صفحة مرتبة للقراءة",
+      count: null,
+      href: `/books/${bookId}/study?tool=explanation`,
+    },
+    {
+      key: "mindmap",
+      icon: Workflow,
+      label: "خريطة ذهنية",
+      purpose: "كيف ترتبط المفاهيم ببعضها",
+      count: null,
+      href: `/books/${bookId}/mindmap`,
+    },
+    // Quizlet-style match game over this file's own cards
+    // (app/books/[bookId]/match).
+    {
+      key: "match",
+      icon: Gamepad2,
+      label: "لعبة المطابقة",
+      purpose: "طابق كل سؤال بجوابه قبل ما يخلص الوقت",
+      count: null,
+      href: `/books/${bookId}/match`,
+    },
+  ] as const;
+  const examFocusReady =
+    examFocusDeck?.deck.status === "complete" ||
+    examFocusDeck?.deck.status === "partial_failed";
+  const examFocusBusy =
+    examFocusDeck?.deck.status === "processing" ||
+    examFocusDeck?.deck.status === "finalizing";
+  const chaptersLabel =
+    chapters.length === 1 ? "جزء واحد" : `${chapters.length} أجزاء`;
+
   return (
-    <section className="cards-view">
-      <div className="cards-header">
-        <div>
-          <Link
-            href={isShared ? "/shared" : "/books"}
-            className="eyebrow"
-            style={{ marginBottom: 8 }}
-          >
-            <span className="eyebrow-dot" /> ‹{" "}
-            {isShared ? "رجوع لمشترك معي" : "رجوع لكتبي"}
-          </Link>
-          <h1>{book.fileName}</h1>
-          <p>
-            {book.pageCount} صفحة · {chapters.length} فصل · {completeCount}/
-            {chapters.length} مكتمل
-          </p>
-          {isShared && (
-            <span className="sh-badge">
-              <UserRound size={13} aria-hidden="true" /> مشترك من{" "}
-              <bdi>{ownerLabel}</bdi>
+    <section className="cards-view book-view">
+      <header className="book-head">
+        <Link href={isShared ? "/shared" : "/books"} className="eyebrow">
+          <ChevronRight size={15} aria-hidden="true" />
+          {isShared ? "مشترك معي" : "كتبي"}
+        </Link>
+        <h1>
+          <bdi>{bookDisplayTitle(book.fileName)}</bdi>
+        </h1>
+        <p className="book-meta">
+          {book.pageCount} صفحة
+          {hasChapters ? `، ${chaptersLabel}` : ""}
+          {toolState === "ready" && hasChapters && !failedChapters.length && (
+            <span className="book-status is-ready">
+              <CheckCircle2 size={14} aria-hidden="true" /> جاهز للدراسة
             </span>
           )}
-        </div>
+          {(isExtracting || toolState === "generating") && (
+            <span className="book-status is-busy">
+              <Loader2 size={14} className="spin" aria-hidden="true" />
+              {isExtracting ? "نقرأ الصفحات" : "نجهّز أدوات الدراسة"}
+            </span>
+          )}
+        </p>
+        {isShared && (
+          <span className="sh-badge">
+            <UserRound size={13} aria-hidden="true" /> مشترك من{" "}
+            <bdi>{ownerLabel}</bdi>
+          </span>
+        )}
         {isShared ? (
-          <button
-            type="button"
-            className="secondary-button sh-remove-button"
-            disabled={removeFromLibrary.isPending}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد."
-                )
-              ) {
-                removeFromLibrary.mutate({ bookId });
-              }
-            }}
-          >
-            {removeFromLibrary.isPending ? (
-              <Loader2 size={15} className="spin" />
-            ) : (
-              <Trash2 size={15} />
-            )}
-            إزالة من مكتبتي
-          </button>
-        ) : (
-          <div className="sh-owner-controls">
+          <div className="book-actions">
             <button
               type="button"
-              className="primary-button sh-share-button"
-              onClick={() => setShareOpen(true)}
+              className="secondary-button sh-remove-button"
+              disabled={removeFromLibrary.isPending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد."
+                  )
+                ) {
+                  removeFromLibrary.mutate({ bookId });
+                }
+              }}
             >
-              <Share2 size={16} /> مشاركة
+              {removeFromLibrary.isPending ? (
+                <Loader2 size={15} className="spin" />
+              ) : (
+                <Trash2 size={15} />
+              )}
+              إزالة من مكتبتي
             </button>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12 }}>المادة</span>
+          </div>
+        ) : (
+          <div className="book-actions sh-owner-controls">
+            <label className="book-folder-field">
+              <span>المجلد</span>
               <select
                 value={book.subjectId ?? ""}
                 disabled={setSubject.isPending}
@@ -322,7 +379,7 @@ export default function BookDetailPage() {
                   });
                 }}
               >
-                <option value="">بدون مادة</option>
+                <option value="">بدون مجلد</option>
                 {(subjectsQuery.data ?? []).map(subject => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
@@ -330,9 +387,16 @@ export default function BookDetailPage() {
                 ))}
               </select>
             </label>
+            <button
+              type="button"
+              className="secondary-button sh-share-button"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 size={16} aria-hidden="true" /> مشاركة
+            </button>
           </div>
         )}
-      </div>
+      </header>
       {shareOpen && (
         <ShareStudyPackModal
           bookId={bookId}
@@ -346,320 +410,307 @@ export default function BookDetailPage() {
         </div>
       )}
 
-      {/* Study Tools (PR12, reshaped for the mandatory-choice gate) — reuses
-          existing bookCards/bookMcqs/bookChapters.explanationAr+keyPoints via
-          the chapter reader's own tabs (?tool= preselects one). No chapter is
-          analyzed until the student picks one of these four cards; see
-          lib/trpc/booksRouter.ts's startChapterAnalysis. */}
-      <div className="study-tools-panel">
-        <div className="panel-heading">
-          <h2>ماذا تريد أن تفعل بهذا الملف؟</h2>
-        </div>
+      {/* Study modes. No chapter is analyzed until the student asks for it
+          (one click prepares cards, questions, summary and mind map together
+          — lib/trpc/booksRouter.ts's startChapterAnalysis). Exam Focus has
+          its own whole-file pipeline, so it is always openable once the
+          pages are read. */}
+      <section className="book-study" aria-labelledby="book-study-title">
+        <h2 id="book-study-title" className="book-section-title">
+          ادرس هذا الكتاب
+        </h2>
         {!hasChapters ? (
-          <p style={{ fontSize: 13, color: "#8a9493" }}>
-            الأدوات ستكون متاحة بعد اكتمال قراءة صفحات الملف.
+          <p className="book-quiet">
+            أدوات الدراسة تظهر هنا بعد ما نخلّص قراءة صفحات الملف.
           </p>
         ) : (
           <>
-            <div className="study-tools-grid">
-              {[
-                {
-                  icon: ClipboardList,
-                  label: "اختبار",
-                  detail: `${totalMcqs} سؤال`,
-                },
-                {
-                  icon: Layers3,
-                  label: "بطاقات",
-                  detail: `${totalCards} بطاقة`,
-                },
-                { icon: NotebookText, label: "ملخص", detail: undefined },
-                { icon: Workflow, label: "خريطة ذهنية", detail: undefined },
-                // Quizlet-style match game over this file's own cards
-                // (app/books/[bookId]/match).
-                {
-                  icon: Gamepad2,
-                  label: "لعبة المطابقة",
-                  detail: "طابق السؤال بجوابه",
-                },
-              ].map(({ icon: Icon, label, detail }, toolIndex) => {
-                // 🔥 Exam Focus sits third (after اختبار/بطاقات). It has its
-                // own whole-file pipeline, independent of chapter analysis,
-                // so it's always openable once the pages are read.
-                const examFocusTile =
-                  toolIndex !== 2 ? null : examFocusUnavailable ? (
-                    <div
-                      key="exam-focus"
-                      className="study-tool-card is-exam-focus is-locked"
-                    >
-                      <Flame size={22} aria-hidden="true" />
-                      <span>🔥 Exam Focus</span>
-                      <small>لم يُنشئه صاحب الملف بعد</small>
-                    </div>
+            {examFocusUnavailable ? (
+              <div className="book-examfocus is-locked">
+                <span className="book-examfocus-name">
+                  <Flame size={18} aria-hidden="true" /> Exam Focus
+                </span>
+                <strong>أهم ما يأتي في الامتحان</strong>
+                <span>لم يُنشئه صاحب الملف بعد</span>
+              </div>
+            ) : (
+              <Link
+                href={`/books/${bookId}/exam-focus`}
+                className="book-examfocus"
+              >
+                <span className="book-examfocus-name">
+                  <Flame size={18} aria-hidden="true" /> Exam Focus
+                </span>
+                <strong>أهم ما يأتي في الامتحان من هذا الكتاب</strong>
+                <span>
+                  {examFocusReady
+                    ? `${examFocusDeck!.deck.totalCards} معلومة مركّزة، مرتبة حسب الأهمية`
+                    : examFocusBusy
+                      ? "نحلّل الكتاب ونستخرج المعلومات المهمة…"
+                      : "نستخرج المعلومات التي يتكرر سؤالها ونرتبها لك"}
+                </span>
+                <span className="nl-marker-button">
+                  {examFocusBusy && (
+                    <Loader2 size={16} className="spin" aria-hidden="true" />
+                  )}
+                  {examFocusDeck ? "افتح Exam Focus" : "جهّز Exam Focus"}
+                </span>
+              </Link>
+            )}
+
+            {toolState === "locked" && !isShared && (
+              <div className="book-generate">
+                <p>
+                  جهّز البطاقات والأسئلة والملخص والخريطة الذهنية لهذا الكتاب
+                  بضغطة واحدة. تقدر تسكّر الصفحة، التجهيز يكمل لحاله.
+                </p>
+                <button
+                  type="button"
+                  className="primary-button"
+                  disabled={startAnalysis.isPending}
+                  onClick={() => startAnalysis.mutate({ bookId })}
+                >
+                  {startAnalysis.isPending ? (
+                    <Loader2 size={16} className="spin" />
                   ) : (
-                    <Link
-                      key="exam-focus"
-                      href={`/books/${bookId}/exam-focus`}
-                      className="study-tool-card is-exam-focus"
-                    >
-                      <span className="ef-tile-new">جديد</span>
-                      <Flame size={22} aria-hidden="true" />
-                      <span>🔥 Exam Focus</span>
-                      <small>
-                        {examFocusDeck?.deck.status === "complete" ||
-                        examFocusDeck?.deck.status === "partial_failed"
-                          ? `${examFocusDeck.deck.totalCards} بطاقة high-yield`
-                          : examFocusDeck?.deck.status === "processing" ||
-                              examFocusDeck?.deck.status === "finalizing"
-                            ? "قيد التحليل…"
-                            : "أهم معلومات الامتحان"}
-                      </small>
-                      <span className="secondary-button">
-                        {examFocusDeck ? "افتح 🔥" : "ابدأ 🔥"}
-                      </span>
-                    </Link>
-                  );
-                const state = chaptersNotStarted
-                  ? "locked"
-                  : !chaptersPhaseDone
-                    ? "generating"
-                    : "ready";
+                    <Sparkles size={16} />
+                  )}
+                  جهّز أدوات الدراسة
+                </button>
+                {startAnalysis.error && (
+                  <p className="book-error" role="alert">
+                    تعذّر بدء التجهيز. تحقق من اتصالك وحاول مرة أخرى.
+                  </p>
+                )}
+              </div>
+            )}
+            {toolState === "locked" && isShared && (
+              <p className="book-quiet">لم يبدأ صاحب الملف التجهيز بعد.</p>
+            )}
+            {toolState === "generating" && (
+              <div className="book-progress">
+                <div className="book-progress-label">
+                  <span>نجهّز أدوات الدراسة</span>
+                  <b>{analysisProgressPercent}%</b>
+                </div>
+                <div
+                  className="book-progress-track"
+                  role="progressbar"
+                  aria-label="تقدّم التجهيز"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={analysisProgressPercent}
+                >
+                  <i
+                    style={{
+                      width: `${Math.max(4, analysisProgressPercent)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <ul className={`book-modes is-${toolState}`}>
+              {studyModes.map(mode => {
+                const Icon = mode.icon;
+                const open = toolState === "ready" && !!firstCompleteChapter;
+                const body = (
+                  <>
+                    <span className="book-mode-glyph" aria-hidden="true">
+                      <Icon size={20} />
+                    </span>
+                    <span className="book-mode-text">
+                      <strong>{mode.label}</strong>
+                      <span>{mode.purpose}</span>
+                    </span>
+                    <span className="book-mode-end">
+                      {open ? (
+                        <>
+                          {mode.count && <small>{mode.count}</small>}
+                          <ChevronLeft size={18} aria-hidden="true" />
+                        </>
+                      ) : toolState === "generating" ? (
+                        <small>قيد التجهيز</small>
+                      ) : (
+                        <Lock size={15} aria-label="غير جاهز بعد" />
+                      )}
+                    </span>
+                  </>
+                );
                 return (
-                  <Fragment key={label}>
-                    {examFocusTile}
-                    <div className={`study-tool-card is-${state}`}>
-                      <Icon size={22} />
-                      <span>{label}</span>
-                      {state === "ready" && detail && <small>{detail}</small>}
-                      {state === "locked" && isShared && (
-                        <small>لم يبدأ صاحب الملف التوليد بعد</small>
-                      )}
-                      {state === "locked" && !isShared && (
-                        <button
-                          type="button"
-                          className="secondary-button"
-                          disabled={startAnalysis.isPending}
-                          onClick={() => startAnalysis.mutate({ bookId })}
-                        >
-                          {startAnalysis.isPending ? (
-                            <Loader2 size={14} className="spin" />
-                          ) : (
-                            <Sparkles size={14} />
-                          )}
-                          ابدأ
-                        </button>
-                      )}
-                      {state === "generating" && (
-                        <small className="study-tool-progress">
-                          <Loader2 size={13} className="spin" /> قيد التوليد…{" "}
-                          {analysisProgressPercent}%
-                        </small>
-                      )}
-                      {state === "ready" &&
-                        firstCompleteChapter &&
-                        (label === "بطاقات" ? (
-                          <Link
-                            href={`/books/${bookId}/study?tool=cards`}
-                            className="secondary-button"
-                          >
-                            ابدأ المراجعة
-                          </Link>
-                        ) : label === "اختبار" ? (
-                          <Link
-                            href={`/books/${bookId}/study?tool=mcqs`}
-                            className="secondary-button"
-                          >
-                            اختبر نفسك
-                          </Link>
-                        ) : label === "ملخص" ? (
-                          <Link
-                            href={`/books/${bookId}/study?tool=explanation`}
-                            className="secondary-button"
-                          >
-                            عرض
-                          </Link>
-                        ) : label === "لعبة المطابقة" ? (
-                          <Link
-                            href={`/books/${bookId}/match`}
-                            className="secondary-button"
-                          >
-                            العب 🎮
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/books/${bookId}/mindmap`}
-                            className="secondary-button"
-                          >
-                            عرض
-                          </Link>
-                        ))}
-                    </div>
-                  </Fragment>
+                  <li key={mode.key} className={`book-mode is-${mode.key}`}>
+                    {open ? (
+                      <Link href={mode.href} className="book-mode-row">
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="book-mode-row" aria-disabled="true">
+                        {body}
+                      </div>
+                    )}
+                  </li>
                 );
               })}
-            </div>
-            {chaptersNotStarted && !isShared && (
-              <p className="study-tools-note">
-                <Lock size={12} /> التوليد يجهّز البطاقات والاختبار والملخص
-                والخريطة الذهنية معًا لنفس الملف — اضغط أي بطاقة للبدء.
-              </p>
-            )}
+            </ul>
           </>
         )}
-      </div>
+      </section>
 
-      {/* File overview (learnra-style bottom card) — "عرض الملف" opens a
-          dedicated read page (app/books/[bookId]/read) that embeds the
-          browser's own native PDF viewer, instead of a custom in-page
-          renderer: real text selection/copy/search/print, plus (in
-          Chromium) the browser's own built-in highlight/note tools. */}
+      {/* "عرض الملف" opens app/books/[bookId]/read, which embeds the
+          browser's own PDF viewer (real selection/search/print). */}
       {book.fileKey && (
-        <div className="study-tools-panel file-overview-panel">
-          <div className="panel-heading">
-            <h2>نظرة عامة على الملف</h2>
-          </div>
-          <div className="file-overview-row">
-            <div className="file-overview-meta">
-              <FileText size={20} />
-              <div>
-                <strong>{book.fileName}</strong>
-                <span>
-                  {new Date(book.createdAt).toLocaleDateString("ar-u-nu-latn")}{" "}
-                  · {book.pageCount} صفحة
-                </span>
-              </div>
-            </div>
-            <Link href={`/books/${bookId}/read`} className="primary-button">
-              <Eye size={16} /> عرض الملف
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {coverageQuery.data && coverageQuery.data.totalPages > 0 && (
-        <div className="stats-row" style={{ marginBottom: 18 }}>
-          <div className="stat-card">
-            <span>صفحات مُجهّزة بصريًا</span>
-            <strong>
-              {coverageQuery.data.totalPages - coverageQuery.data.visualPending}
-              /{coverageQuery.data.totalPages}
-            </strong>
-          </div>
-          <div className="stat-card">
-            <span>صفحات فيها صور/مخططات</span>
-            <strong>{coverageQuery.data.pagesWithVisuals}</strong>
-          </div>
-          {coverageQuery.data.needsReview > 0 && (
-            <div className="stat-card accent">
-              <span>تحتاج مراجعة</span>
-              <strong>{coverageQuery.data.needsReview}</strong>
-            </div>
-          )}
-          {coverageQuery.data.failed > 0 && (
-            <div className="stat-card accent">
-              <span>صفحات فشل تحليلها</span>
-              <strong>{coverageQuery.data.failed}</strong>
-            </div>
-          )}
-        </div>
-      )}
-
-      {coverageDetailQuery.data && coverageDetailQuery.data.totalPages > 0 && (
-        <div
-          className={`inline-alert wide ${coverageDetailQuery.data.status === "COMPLETE" ? "success" : "warning"}`}
-        >
-          {coverageDetailQuery.data.status === "COMPLETE" ? (
-            <CheckCircle2 size={16} />
-          ) : (
-            <Loader2 size={16} className="spin" />
-          )}
+        <Link href={`/books/${bookId}/read`} className="book-source">
+          <FileText size={20} aria-hidden="true" />
           <span>
-            تغطية المعالجة: {coverageDetailQuery.data.coverage}% (
-            {coverageDetailQuery.data.processedPages}/
-            {coverageDetailQuery.data.totalPages} صفحة)
-            {coverageDetailQuery.data.missingPages.length > 0 && (
-              <>
-                {" "}
-                — بعض الصفحات تحتاج معالجة:{" "}
-                {coverageDetailQuery.data.missingPages.join("، ")}
-              </>
-            )}
-            {coverageDetailQuery.data.failedPages.length > 0 && (
-              <>
-                {" "}
-                — صفحات فشلت: {coverageDetailQuery.data.failedPages.join("، ")}
-              </>
-            )}
+            <strong>الملف الأصلي</strong>
+            <span>
+              {book.pageCount} صفحة، رُفع{" "}
+              {new Date(book.createdAt).toLocaleDateString("ar-u-nu-latn")}
+            </span>
           </span>
-        </div>
+          <span className="book-source-action">
+            <Eye size={16} aria-hidden="true" /> عرض
+          </span>
+        </Link>
       )}
 
-      {!pipelineReady && book.status !== "failed" && (
-        <div className="study-tools-panel">
-          <span className="micro-label">مراحل المعالجة</span>
-          <p style={{ fontSize: 11, color: "#9a9186", margin: "2px 0 6px" }}>
-            تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، مش هنفقد أي تقدم.
-          </p>
-          {/* book.status === "failed" is excluded by the wrapping condition
-              above, so reaching this row always means extraction succeeded. */}
-          <StageRow
-            label="قراءة الصفحات"
-            status={isExtracting ? "active" : "done"}
-          />
-          <StageRow
-            label="تحليل الفصول (الشرح، البطاقات، الأسئلة)"
-            status={
-              isExtracting || chaptersNotStarted
-                ? "pending"
-                : chaptersPhaseDone
-                  ? failedChapters.length
-                    ? "failed"
-                    : "done"
-                  : "active"
-            }
-            detail={
-              chaptersNotStarted
-                ? "بانتظار اختيارك"
-                : chapters.length
-                  ? `${completeCount}/${chapters.length} فصل`
-                  : undefined
-            }
-          />
-          <StageRow
-            label="استخراج الصور والمخططات"
-            status={
-              isExtracting
-                ? "pending"
-                : !coverageQuery.data || coverageQuery.data.totalPages === 0
+      {/* Pipeline internals — real per-stage and per-page state — stay one
+          tap away instead of competing with studying. Open while work is
+          still running so progress is visible. */}
+      <details className="book-processing" open={!pipelineReady || undefined}>
+        <summary>
+          تفاصيل المعالجة
+          {pipelineReady && (
+            <span className="book-processing-done">
+              <CheckCircle2 size={14} aria-hidden="true" /> مكتملة
+            </span>
+          )}
+        </summary>
+        {coverageQuery.data && coverageQuery.data.totalPages > 0 && (
+          <dl className="book-processing-stats">
+            <div>
+              <dt>صفحات مُجهّزة بصريًا</dt>
+              <dd>
+                {coverageQuery.data.totalPages -
+                  coverageQuery.data.visualPending}
+                /{coverageQuery.data.totalPages}
+              </dd>
+            </div>
+            <div>
+              <dt>صفحات فيها صور أو مخططات</dt>
+              <dd>{coverageQuery.data.pagesWithVisuals}</dd>
+            </div>
+            {coverageQuery.data.needsReview > 0 && (
+              <div className="is-alert">
+                <dt>تحتاج مراجعة</dt>
+                <dd>{coverageQuery.data.needsReview}</dd>
+              </div>
+            )}
+            {coverageQuery.data.failed > 0 && (
+              <div className="is-alert">
+                <dt>صفحات فشل تحليلها</dt>
+                <dd>{coverageQuery.data.failed}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+
+        {coverageDetailQuery.data &&
+          coverageDetailQuery.data.totalPages > 0 && (
+            <p
+              className={`book-coverage ${coverageDetailQuery.data.status === "COMPLETE" ? "is-complete" : ""}`}
+            >
+              {coverageDetailQuery.data.status === "COMPLETE" ? (
+                <CheckCircle2 size={15} aria-hidden="true" />
+              ) : (
+                <Loader2 size={15} className="spin" aria-hidden="true" />
+              )}
+              <span>
+                تغطية المعالجة {coverageDetailQuery.data.coverage}% (
+                {coverageDetailQuery.data.processedPages} من{" "}
+                {coverageDetailQuery.data.totalPages} صفحة)
+                {coverageDetailQuery.data.missingPages.length > 0 && (
+                  <>
+                    . صفحات تحتاج معالجة:{" "}
+                    {coverageDetailQuery.data.missingPages.join("، ")}
+                  </>
+                )}
+                {coverageDetailQuery.data.failedPages.length > 0 && (
+                  <>
+                    . صفحات فشلت:{" "}
+                    {coverageDetailQuery.data.failedPages.join("، ")}
+                  </>
+                )}
+              </span>
+            </p>
+          )}
+
+        {!pipelineReady && book.status !== "failed" && (
+          <div className="book-stages">
+            <p className="book-quiet">
+              تقدر تسكّر الصفحة وترجع بعدين من أي جهاز، ما راح يضيع أي تقدّم.
+            </p>
+            {/* book.status === "failed" is excluded by the wrapping condition
+                above, so reaching this row always means extraction succeeded. */}
+            <StageRow
+              label="قراءة الصفحات"
+              status={isExtracting ? "active" : "done"}
+            />
+            <StageRow
+              label="تحليل الفصول (الشرح، البطاقات، الأسئلة)"
+              status={
+                isExtracting || chaptersNotStarted
                   ? "pending"
-                  : coverageQuery.data.visualPending > 0
-                    ? "active"
-                    : "done"
-            }
-            detail={
-              coverageQuery.data && coverageQuery.data.totalPages > 0
-                ? `${coverageQuery.data.totalPages - coverageQuery.data.visualPending}/${coverageQuery.data.totalPages} صفحة`
-                : undefined
-            }
-          />
-          <StageRow
-            label="التحقق من اكتمال التغطية"
-            status={
-              !chaptersPhaseDone
-                ? "pending"
-                : coverageDetailQuery.data?.status === "COMPLETE"
-                  ? "done"
-                  : "active"
-            }
-            detail={
-              coverageDetailQuery.data &&
-              coverageDetailQuery.data.totalPages > 0
-                ? `${coverageDetailQuery.data.coverage}%`
-                : undefined
-            }
-          />
-        </div>
-      )}
+                  : chaptersPhaseDone
+                    ? failedChapters.length
+                      ? "failed"
+                      : "done"
+                    : "active"
+              }
+              detail={
+                chaptersNotStarted
+                  ? "بانتظار اختيارك"
+                  : chapters.length
+                    ? `${completeCount}/${chapters.length}`
+                    : undefined
+              }
+            />
+            <StageRow
+              label="استخراج الصور والمخططات"
+              status={
+                isExtracting
+                  ? "pending"
+                  : !coverageQuery.data || coverageQuery.data.totalPages === 0
+                    ? "pending"
+                    : coverageQuery.data.visualPending > 0
+                      ? "active"
+                      : "done"
+              }
+              detail={
+                coverageQuery.data && coverageQuery.data.totalPages > 0
+                  ? `${coverageQuery.data.totalPages - coverageQuery.data.visualPending}/${coverageQuery.data.totalPages} صفحة`
+                  : undefined
+              }
+            />
+            <StageRow
+              label="التحقق من اكتمال التغطية"
+              status={
+                !chaptersPhaseDone
+                  ? "pending"
+                  : coverageDetailQuery.data?.status === "COMPLETE"
+                    ? "done"
+                    : "active"
+              }
+              detail={
+                coverageDetailQuery.data &&
+                coverageDetailQuery.data.totalPages > 0
+                  ? `${coverageDetailQuery.data.coverage}%`
+                  : undefined
+              }
+            />
+          </div>
+        )}
+      </details>
 
       {book.status === "failed" && (
         <div className="inline-alert error wide">

@@ -15,6 +15,7 @@ export default function StudyShell({
   children,
   footer,
   notice,
+  tone,
 }: {
   title: string;
   subtitle?: string;
@@ -24,6 +25,8 @@ export default function StudyShell({
   footer?: ReactNode;
   // e.g. a coverage warning ("PARTIAL: 3/5 parts") shown under the header.
   notice?: ReactNode;
+  // "focus" = Exam Focus's own dark, distraction-free surface.
+  tone?: "focus";
 }) {
   // The page underneath shouldn't scroll/rubber-band behind the shell.
   useEffect(() => {
@@ -35,7 +38,11 @@ export default function StudyShell({
   }, []);
 
   return (
-    <div className="study-shell" role="dialog" aria-modal="true">
+    <div
+      className={tone ? `study-shell is-${tone}` : "study-shell"}
+      role="dialog"
+      aria-modal="true"
+    >
       <header className="study-shell-header">
         <button
           type="button"

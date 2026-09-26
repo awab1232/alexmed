@@ -3,9 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { BookOpen, CircleAlert, Loader2, Plus } from "lucide-react";
+import {
+  ChevronLeft,
+  CircleAlert,
+  FolderPlus,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import { SharedHomeWidget } from "@/components/sharing/SharedHomeWidget";
+import { StudyNext } from "@/components/home/StudyNext";
 
 // Cycled by list position (not the subject's own type/color, since none is
 // stored) purely to make one folder visually distinct from its neighbor in
@@ -71,18 +78,23 @@ export default function SubjectsPage() {
   }, [subjects, query]);
 
   return (
-    <section className="cards-view">
-      <div className="cards-header">
-        <div>
-          <div className="eyebrow">
-            <span className="eyebrow-dot" /> الرئيسية
-          </div>
-          <h1>ملفاتي</h1>
-          <p>مجلداتك الدراسية — كل مجلد يجمع ملفاتك حسب المادة.</p>
-        </div>
-      </div>
+    <section className="cards-view home-view">
+      <StudyNext />
 
       <SharedHomeWidget />
+
+      <div className="home-section-head home-folders-head">
+        <h2>مجلداتي</h2>
+        {!showForm && (
+          <button
+            type="button"
+            className="home-text-button"
+            onClick={() => setShowForm(true)}
+          >
+            <FolderPlus size={16} aria-hidden="true" /> مجلد جديد
+          </button>
+        )}
+      </div>
 
       {/* Search only once there are enough folders to need it. */}
       {subjects.length >= SEARCH_MIN_FOLDERS && (
@@ -99,18 +111,17 @@ export default function SubjectsPage() {
       )}
 
       {showForm && (
-        <div className="panel-card" style={{ marginBottom: 18 }}>
-          <div className="panel-heading">
-            <h2>مجلد جديد</h2>
-          </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div className="home-folder-form">
+          <div className="home-folder-form-row">
             <input
+              aria-label="اسم المجلد"
               value={name}
               onChange={event => setName(event.target.value)}
               placeholder="اسم المجلد (مثال: تشريح، رياضيات 1)"
               style={{ flex: "1 1 220px" }}
             />
             <select
+              aria-label="نوع المادة"
               value={type}
               onChange={event => setType(event.target.value)}
             >
@@ -137,10 +148,17 @@ export default function SubjectsPage() {
                 "إنشاء"
               )}
             </button>
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => setShowForm(false)}
+            >
+              إلغاء
+            </button>
           </div>
           {createMutation.error && (
-            <p style={{ color: "#c0392b", marginTop: 8 }}>
-              تعذّر إنشاء المجلد. حاول مرة أخرى.
+            <p className="home-form-error" role="alert">
+              تعذّر إنشاء المجلد. تحقق من الاسم وحاول مرة أخرى.
             </p>
           )}
         </div>
@@ -166,45 +184,52 @@ export default function SubjectsPage() {
           <h3>جاري تحميل ملفاتك...</h3>
         </div>
       ) : !subjects.length ? (
-        <div className="empty-state">
-          <BookOpen size={28} />
-          <h3>ابدأ برفع أول ملف دراسي</h3>
-          <Link
-            href="/books/upload"
-            className="primary-button"
-            style={{ marginTop: 14, width: "auto", padding: "0 22px" }}
-          >
-            <Plus size={16} /> رفع ملف
-          </Link>
-        </div>
+        <p className="home-folders-empty">
+          لا توجد مجلدات بعد. المجلد يجمع كتب مادة واحدة وملفات أسئلتها.{" "}
+          {!showForm && (
+            <button
+              type="button"
+              className="home-text-button"
+              onClick={() => setShowForm(true)}
+            >
+              <Plus size={15} aria-hidden="true" /> أنشئ مجلدًا
+            </button>
+          )}
+        </p>
       ) : !filtered.length ? (
         <div className="empty-state">
           <h3>لا نتائج مطابقة</h3>
           <p>جرّب اسمًا آخر للبحث.</p>
         </div>
       ) : (
-        <div className="subject-folder-grid">
+        <ul className="home-folder-list">
           {filtered.map((subject, i) => {
             const lastUpdate = formatLastUpdate(subject.lastUpdatedAt);
             return (
-              <Link
-                key={subject.id}
-                href={`/subjects/${subject.id}`}
-                className={`subject-folder-card subject-folder-card-${i % FOLDER_COLOR_COUNT}`}
-              >
-                <span className="subject-folder-icon">
-                  <BookOpen size={20} />
-                </span>
-                <strong>{subject.name}</strong>
-                <span className="subject-folder-count">
-                  {subject.bookCount} ملف
-                  {subject.deckCount ? ` · ${subject.deckCount} ملف أسئلة` : ""}
-                  {lastUpdate ? ` · آخر تحديث ${lastUpdate}` : ""}
-                </span>
-              </Link>
+              <li key={subject.id}>
+                <Link
+                  href={`/subjects/${subject.id}`}
+                  className={`home-folder-row is-tab-${i % FOLDER_COLOR_COUNT}`}
+                >
+                  <span className="home-folder-tab" aria-hidden="true" />
+                  <span className="home-folder-text">
+                    <strong>{subject.name}</strong>
+                    <span>
+                      {subject.bookCount === 1
+                        ? "كتاب واحد"
+                        : `${subject.bookCount} كتب`}
+                      {subject.deckCount
+                        ? `، ${subject.deckCount} ملف أسئلة`
+                        : ""}
+                      {lastUpdate ? `، آخر تحديث ${lastUpdate}` : ""}
+                    </span>
+                  </span>
+                  <ChevronLeft size={18} aria-hidden="true" />
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </section>
   );

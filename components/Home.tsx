@@ -685,6 +685,16 @@ export default function Home() {
                       setDragActive(false);
                       chooseFile(event.dataTransfer.files?.[0]);
                     }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="اختر ملف PDF من جهازك"
+                    onKeyDown={event => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        inputRef.current?.click();
+                      }
+                    }}
                     onClick={() => inputRef.current?.click()}
                   >
                     <input

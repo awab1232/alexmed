@@ -204,12 +204,24 @@ export default function BookStudyPage() {
 
   if (contentQuery.isLoading || !data) {
     return (
-      <StudyShell title="جاري التحميل" onBack={back}>
+      <StudyShell
+        title={contentQuery.error ? "تعذر التحميل" : "جاري التحميل"}
+        onBack={back}
+      >
         <div className="study-empty">
           {contentQuery.error ? (
             <>
               <CircleAlert size={28} />
               <h3>تعذر تحميل محتوى الملف</h3>
+              <p>تحقق من اتصالك ثم أعد المحاولة. تقدّمك محفوظ.</p>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={contentQuery.isFetching}
+                onClick={() => contentQuery.refetch()}
+              >
+                إعادة المحاولة
+              </button>
             </>
           ) : (
             <Loader2 size={28} className="spin" />

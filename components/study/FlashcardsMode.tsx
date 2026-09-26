@@ -311,9 +311,18 @@ export default function FlashcardsMode({
         card && (
           <div
             className={flipped ? "flash-card is-flipped" : "flash-card"}
+            role="button"
+            tabIndex={0}
             onClick={event => {
               if ((event.target as HTMLElement).closest("button")) return;
               setFlipped(f => !f);
+            }}
+            onKeyDown={event => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setFlipped(f => !f);
+              }
             }}
           >
             <div className="flash-card-top">

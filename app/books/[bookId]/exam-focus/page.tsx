@@ -214,13 +214,13 @@ export default function ExamFocusPage() {
   }
 
   const back = () => router.push(`/books/${bookId}`);
-  const shellTitle = "🔥 EXAM FOCUS";
+  const shellTitle = "Exam Focus";
 
   // ── States ──
   const startError = start.error?.message ?? regenerate.error?.message;
   if (startError && !deckData) {
     return (
-      <StudyShell title={shellTitle} onBack={back}>
+      <StudyShell tone="focus" title={shellTitle} onBack={back}>
         <div className="study-empty">
           <CircleAlert size={30} aria-hidden="true" />
           <h3>ما قدرنا نبدأ Exam Focus</h3>
@@ -242,7 +242,7 @@ export default function ExamFocusPage() {
   // server explains; a recipient can't start one).
   if (deckQuery.error) {
     return (
-      <StudyShell title={shellTitle} onBack={back}>
+      <StudyShell tone="focus" title={shellTitle} onBack={back}>
         <div className="study-empty">
           <CircleAlert size={30} aria-hidden="true" />
           <h3>Exam Focus غير متاح</h3>
@@ -258,7 +258,12 @@ export default function ExamFocusPage() {
 
   if (deckQuery.isLoading || !deckData) {
     return (
-      <StudyShell title={shellTitle} subtitle="High-Yield Notes" onBack={back}>
+      <StudyShell
+        tone="focus"
+        title={shellTitle}
+        subtitle="أهم معلومات الامتحان"
+        onBack={back}
+      >
         <div className="study-empty" aria-live="polite">
           <Loader2 size={28} className="spin" aria-hidden="true" />
           <p>نجهّز Exam Focus…</p>
@@ -271,7 +276,12 @@ export default function ExamFocusPage() {
 
   if (processing) {
     return (
-      <StudyShell title={shellTitle} subtitle="High-Yield Notes" onBack={back}>
+      <StudyShell
+        tone="focus"
+        title={shellTitle}
+        subtitle="أهم معلومات الامتحان"
+        onBack={back}
+      >
         <ExamFocusProgress deckStatus={deck.status} units={units} />
       </StudyShell>
     );
@@ -290,7 +300,12 @@ export default function ExamFocusPage() {
 
   if (status === "failed" || deck.totalCards === 0) {
     return (
-      <StudyShell title={shellTitle} subtitle="High-Yield Notes" onBack={back}>
+      <StudyShell
+        tone="focus"
+        title={shellTitle}
+        subtitle="أهم معلومات الامتحان"
+        onBack={back}
+      >
         <div className="study-empty">
           <CircleAlert size={30} aria-hidden="true" />
           <h3>
@@ -364,8 +379,9 @@ export default function ExamFocusPage() {
 
   return (
     <StudyShell
+      tone="focus"
       title={shellTitle}
-      subtitle={`High-Yield Notes · ${deck.totalCards} بطاقة`}
+      subtitle={`${deck.totalCards} معلومة مركّزة`}
       onBack={back}
       notice={notice}
       actions={

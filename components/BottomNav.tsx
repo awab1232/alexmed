@@ -41,13 +41,26 @@ const ITEMS = [
 // when they're inside a chapter, book, or folder, per the confirmed
 // requirement. app/assistant/page.tsx reads these same params to open the
 // right chat.ask scope immediately instead of showing the no-context picker.
+const HOME_SECTIONS = ["/books", "/review", "/today", "/shared"];
+
+const STATIC_BOOK_ROUTES = new Set([
+  "upload",
+  "question-files",
+  "quizzes",
+  "review",
+  "stats",
+  "weak-points",
+]);
+
 export function resolveAssistantHref(pathname: string): string {
   const chapterMatch = pathname.match(/^\/books\/[^/]+\/chapters\/([^/]+)/);
   if (chapterMatch)
     return `/assistant?scope=chapter&chapterId=${chapterMatch[1]}`;
 
+  // /books/upload, /books/stats … are pages, not books.
   const bookMatch = pathname.match(/^\/books\/([^/]+)$/);
-  if (bookMatch) return `/assistant?scope=book&bookId=${bookMatch[1]}`;
+  if (bookMatch && !STATIC_BOOK_ROUTES.has(bookMatch[1]))
+    return `/assistant?scope=book&bookId=${bookMatch[1]}`;
 
   const subjectMatch = pathname.match(/^\/subjects\/([^/]+)$/);
   if (subjectMatch)
@@ -96,7 +109,12 @@ export default function BottomNav() {
             item.href === "/assistant"
               ? resolveAssistantHref(pathname)
               : item.href;
-          const active = pathname.startsWith(item.href);
+          // Books, review and today's plan all live under Home.
+          const active =
+            pathname.startsWith(item.href) ||
+            (item.href === "/subjects" &&
+              HOME_SECTIONS.some(prefix => pathname.startsWith(prefix)) &&
+              !pathname.startsWith("/books/upload"));
           const Icon = item.icon;
 
           // The upload action gets a raised, filled FAB instead of a flat

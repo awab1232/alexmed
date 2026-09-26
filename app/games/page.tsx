@@ -59,7 +59,7 @@ export default function BrainGamesHome() {
           <h2>أهلًا بك في ألعاب الذاكرة 🧠</h2>
           <p>تحدَّ ذاكرتك وسرعتك وتفكيرك المنطقي.</p>
           <Link href="/games/math" className="primary-button">
-            ابدأ أول لعبة ←
+            ابدأ أول لعبة
           </Link>
         </div>
       )}

@@ -47,6 +47,7 @@ export default function SubjectPicker({
       {creating ? (
         <div className="subject-picker-create-row">
           <input
+            aria-label="اسم المجلد الجديد"
             autoFocus
             value={newName}
             placeholder="اسم المجلد (مثال: تشريح، رياضيات ١)"
@@ -82,6 +83,7 @@ export default function SubjectPicker({
       ) : (
         <div className="subject-picker-row">
           <select
+            aria-label={label}
             value={value}
             onChange={event => onChange(event.target.value)}
             disabled={subjectsQuery.isLoading}

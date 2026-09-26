@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#203b43",
+  themeColor: "#1b2340",
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
           crossOrigin=""
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300..700&family=Noto+Naskh+Arabic:wght@400..700&display=swap"
           rel="stylesheet"
         />
       </head>
