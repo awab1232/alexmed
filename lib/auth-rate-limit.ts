@@ -45,7 +45,10 @@ export async function assertLoginAllowed(email: string): Promise<void> {
     .select({ c: count() })
     .from(loginAttempts)
     .where(
-      and(eq(loginAttempts.email, email), gte(loginAttempts.createdAt, windowStart))
+      and(
+        eq(loginAttempts.email, email),
+        gte(loginAttempts.createdAt, windowStart)
+      )
     );
 
   if (Number(row?.c ?? 0) >= getLoginRateLimitMax()) {

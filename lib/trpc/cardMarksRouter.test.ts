@@ -43,7 +43,11 @@ describe("cardMarksRouter.save", () => {
   it("returns NOT_FOUND when the card isn't the caller's", async () => {
     mockSave.mockResolvedValue(false);
     await expect(
-      caller().save({ cardId: "someone-elses-card", highlights: [], strokes: [] })
+      caller().save({
+        cardId: "someone-elses-card",
+        highlights: [],
+        strokes: [],
+      })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 

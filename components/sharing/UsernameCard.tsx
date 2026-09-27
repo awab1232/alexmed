@@ -79,8 +79,8 @@ export function UsernameCard({ compact = false }: { compact?: boolean }) {
         </p>
       ) : (
         <p className="sh-hint">
-          من <bdi dir="ltr">3</bdi> إلى <bdi dir="ltr">24</bdi> حرفًا:
-          أحرف إنجليزية صغيرة وأرقام و <bdi dir="ltr">.</bdi> و{" "}
+          من <bdi dir="ltr">3</bdi> إلى <bdi dir="ltr">24</bdi> حرفًا: أحرف
+          إنجليزية صغيرة وأرقام و <bdi dir="ltr">.</bdi> و{" "}
           <bdi dir="ltr">_</bdi>
         </p>
       )}

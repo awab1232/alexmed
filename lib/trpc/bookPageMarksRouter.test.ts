@@ -94,7 +94,12 @@ describe("bookPageMarksRouter.save", () => {
 
   it("rejects pageNumber below 1", async () => {
     await expect(
-      caller().save({ bookId: "b1", pageNumber: 0, highlights: [], strokes: [] })
+      caller().save({
+        bookId: "b1",
+        pageNumber: 0,
+        highlights: [],
+        strokes: [],
+      })
     ).rejects.toBeTruthy();
   });
 });

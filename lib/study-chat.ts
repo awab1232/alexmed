@@ -59,7 +59,10 @@ export async function englishSearchTerms(question: string): Promise<string> {
   );
   try {
     const terms = await Promise.race([call, timeout]);
-    return terms.replace(/[^\p{L}\p{N}\s-]/gu, " ").slice(0, 200).trim();
+    return terms
+      .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+      .slice(0, 200)
+      .trim();
   } catch {
     return "";
   }
@@ -91,8 +94,7 @@ export async function prepareStudyChatTurn(
     .slice(-HISTORY_MESSAGE_LIMIT)
     .filter(message => message.content.trim())
     .map(
-      message =>
-        ({ role: message.role, content: message.content }) as Message
+      message => ({ role: message.role, content: message.content }) as Message
     );
   return {
     chunks,

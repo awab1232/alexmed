@@ -51,7 +51,11 @@ async function advanceGenerationWindow(jobId: string) {
   const [next] = await getNextPendingMirrorBatches(jobId, 1);
   if (!next) return;
   try {
-    await publishMessage({ type: "generate_mirror_batch", batchId: next.id, jobId });
+    await publishMessage({
+      type: "generate_mirror_batch",
+      batchId: next.id,
+      jobId,
+    });
   } catch (error) {
     // Logged only — this batch just stays "pending" with no in-flight
     // message, same recoverable state a fresh extraction leaves batches in;
@@ -158,7 +162,11 @@ export async function POST(request: Request) {
     );
     // 200, not a failure response — this batch's retry is now entirely our
     // own responsibility via the delayed publish above.
-    return NextResponse.json({ batchId, status: "retrying", error: errorMessage });
+    return NextResponse.json({
+      batchId,
+      status: "retrying",
+      error: errorMessage,
+    });
   }
 
   try {

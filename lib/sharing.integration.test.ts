@@ -367,9 +367,9 @@ describe.skipIf(!live)(
       await expect(
         as("b").sharing.sharesForBook({ bookId })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
-      await expect(as("b").sharing.revoke({ shareId })).rejects.toMatchObject(
-        { code: "NOT_FOUND" }
-      );
+      await expect(as("b").sharing.revoke({ shareId })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
 
       await as("a").sharing.revoke({ shareId });
       await expect(
@@ -378,9 +378,9 @@ describe.skipIf(!live)(
       await expect(
         as("b").books.rateCard({ cardId: cardIds[0], rating: "good" })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
-      await expect(
-        as("b").examFocus.cards({ bookId })
-      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      await expect(as("b").examFocus.cards({ bookId })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
       expect(await isFileKeyAccessibleToUser(ids.b, fileKey)).toBe(false);
       expect(await as("b").sharing.sharedWithMe()).toEqual([]);
       // A's pack is untouched.

@@ -127,9 +127,7 @@ export const sharingRouter = router({
       run(() => removeSharedFromLibrary(ctx.user.id, input.bookId))
     ),
 
-  blocked: protectedProcedure.query(({ ctx }) =>
-    listBlockedUsers(ctx.user.id)
-  ),
+  blocked: protectedProcedure.query(({ ctx }) => listBlockedUsers(ctx.user.id)),
 
   unblock: protectedProcedure
     .input(z.object({ userId: z.string().uuid() }))

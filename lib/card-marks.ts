@@ -128,7 +128,11 @@ function subtractRange(
     if (h.start < start) result.push({ ...h, end: start });
     if (h.end > end) {
       // A split leaves two pieces that must not share an id.
-      result.push({ ...h, id: h.start < start ? newMarkId() : h.id, start: end });
+      result.push({
+        ...h,
+        id: h.start < start ? newMarkId() : h.id,
+        start: end,
+      });
     }
   }
   return result;

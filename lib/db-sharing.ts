@@ -620,7 +620,10 @@ export async function unblockUser(blockerId: string, blockedId: string) {
   await db
     .delete(userBlocks)
     .where(
-      and(eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockedId, blockedId))
+      and(
+        eq(userBlocks.blockerId, blockerId),
+        eq(userBlocks.blockedId, blockedId)
+      )
     );
 }
 

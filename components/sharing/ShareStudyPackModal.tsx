@@ -158,7 +158,9 @@ export function ShareStudyPackModal({
                 type="button"
                 className="primary-button"
                 disabled={send.isPending}
-                onClick={() => send.mutate({ bookId, recipientId: selected.id })}
+                onClick={() =>
+                  send.mutate({ bookId, recipientId: selected.id })
+                }
               >
                 {send.isPending ? (
                   <Loader2 size={16} className="spin" />
@@ -199,7 +201,8 @@ export function ShareStudyPackModal({
             <div className="sh-results" aria-live="polite">
               {debounced.length < 2 ? (
                 <p className="sh-hint">
-                  اكتب حرفين على الأقل. يظهر فقط الطلاب الذين اختاروا اسم مستخدم.
+                  اكتب حرفين على الأقل. يظهر فقط الطلاب الذين اختاروا اسم
+                  مستخدم.
                 </p>
               ) : search.isLoading ? null : results.length === 0 ? (
                 <p className="sh-hint">لا يوجد طالب بهذا الاسم.</p>

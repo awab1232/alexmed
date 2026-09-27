@@ -460,7 +460,11 @@ function MarkingLayer({
 
   return (
     <MarkContext.Provider value={{ highlights: marks.highlights, tool }}>
-      <div className="marking-toolbar" role="toolbar" aria-label="أدوات التظليل">
+      <div
+        className="marking-toolbar"
+        role="toolbar"
+        aria-label="أدوات التظليل"
+      >
         <div className="marking-tools">
           {tools.map(item => (
             <button
