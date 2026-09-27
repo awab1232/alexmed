@@ -10,7 +10,7 @@
 //   - 5 code checks per sent code (Vonage itself allows 3 wrong codes)
 import bcrypt from "bcryptjs";
 import { createHash } from "node:crypto";
-import { and, count, desc, eq, gt, gte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, gte, ne, sql } from "drizzle-orm";
 import { phoneVerifications, users } from "../drizzle/schema";
 import { requireDb } from "./db";
 import { isUniqueViolation } from "./db-errors";
@@ -25,6 +25,15 @@ import {
 export const RESEND_COOLDOWN_SECONDS = 60;
 const MAX_SENDS_PER_PHONE_PER_HOUR = 5;
 const MAX_SENDS_PER_IP_PER_HOUR = 15;
+// Status of a row that only records an attempt on an already-registered
+// number (no SMS sent) — see startPhoneVerification.
+const TAKEN_STATUS = "taken";
+// Every SMS is paid, and per-number / per-IP limits can be dodged by a
+// requester with many numbers and addresses — so there is also a ceiling on
+// all sends together, a backstop against SMS pumping.
+function maxSendsPerHourTotal() {
+  return Math.max(1, Number(process.env.SMS_MAX_SENDS_PER_HOUR) || 200);
+}
 const MAX_CHECKS_PER_CODE = 5;
 // After the code is confirmed, the student has this long to finish the
 // name + password step.
@@ -46,7 +55,8 @@ export type StartOutcome =
         | "cooldown"
         | "too_many"
         | "invalid_number"
-        | "sms_failed";
+        | "sms_failed"
+        | "busy";
       retryAfterSeconds?: number;
     };
 
@@ -56,15 +66,45 @@ export async function startPhoneVerification(input: {
   fetchImpl?: VonageFetch;
 }): Promise<StartOutcome> {
   const db = requireDb();
+  const hourAgo = new Date(Date.now() - 60 * 60_000);
+  // No address (no proxy header) still gets a bucket — a shared one —
+  // rather than skipping the per-IP limit.
+  const ipHash = hashIp(input.ip || "unknown") ?? "";
+
+  // Per device first, and it counts every attempt — including ones that hit
+  // an already-registered number — so the "phone_taken" answer can't be
+  // used to test numbers at will.
+  const [perIp] = await db
+    .select({ c: count() })
+    .from(phoneVerifications)
+    .where(
+      and(
+        eq(phoneVerifications.ipHash, ipHash),
+        gte(phoneVerifications.createdAt, hourAgo)
+      )
+    );
+  if (Number(perIp?.c ?? 0) >= MAX_SENDS_PER_IP_PER_HOUR) {
+    return { ok: false, error: "too_many" };
+  }
+
   const [taken] = await db
     .select({ id: users.id })
     .from(users)
     .where(eq(users.phone, input.phone))
     .limit(1);
-  if (taken) return { ok: false, error: "phone_taken" };
+  if (taken) {
+    // Recorded only so it counts toward the device limit above; excluded
+    // from every per-number / global SMS count below (no SMS was sent).
+    await db.insert(phoneVerifications).values({
+      phone: input.phone,
+      status: TAKEN_STATUS,
+      ipHash,
+      expiresAt: new Date(),
+    });
+    return { ok: false, error: "phone_taken" };
+  }
 
-  const hourAgo = new Date(Date.now() - 60 * 60_000);
-  const ipHash = hashIp(input.ip);
+  const sent = ne(phoneVerifications.status, TAKEN_STATUS);
   const [last] = await db
     .select({
       id: phoneVerifications.id,
@@ -73,7 +113,7 @@ export async function startPhoneVerification(input: {
       providerRequestId: phoneVerifications.providerRequestId,
     })
     .from(phoneVerifications)
-    .where(eq(phoneVerifications.phone, input.phone))
+    .where(and(eq(phoneVerifications.phone, input.phone), sent))
     .orderBy(desc(phoneVerifications.createdAt))
     .limit(1);
   if (last) {
@@ -92,25 +132,20 @@ export async function startPhoneVerification(input: {
     .where(
       and(
         eq(phoneVerifications.phone, input.phone),
-        gte(phoneVerifications.createdAt, hourAgo)
+        gte(phoneVerifications.createdAt, hourAgo),
+        sent
       )
     );
   if (Number(perPhone?.c ?? 0) >= MAX_SENDS_PER_PHONE_PER_HOUR) {
     return { ok: false, error: "too_many" };
   }
-  if (ipHash) {
-    const [perIp] = await db
-      .select({ c: count() })
-      .from(phoneVerifications)
-      .where(
-        and(
-          eq(phoneVerifications.ipHash, ipHash),
-          gte(phoneVerifications.createdAt, hourAgo)
-        )
-      );
-    if (Number(perIp?.c ?? 0) >= MAX_SENDS_PER_IP_PER_HOUR) {
-      return { ok: false, error: "too_many" };
-    }
+  const [total] = await db
+    .select({ c: count() })
+    .from(phoneVerifications)
+    .where(and(gte(phoneVerifications.createdAt, hourAgo), sent));
+  if (Number(total?.c ?? 0) >= maxSendsPerHourTotal()) {
+    console.error("[Phone] Hourly SMS ceiling reached — refusing new sends");
+    return { ok: false, error: "busy" };
   }
 
   // A resend: free the number at Vonage (one active request per number).

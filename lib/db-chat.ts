@@ -3,7 +3,7 @@
 // each scope reuse the exact functions those two files already export
 // (getBookPageOwnedByUser/getChapterForUser/getBookForUser/
 // getSubjectForUser) rather than re-deriving the same joins here.
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, lte } from "drizzle-orm";
 import {
   bookCards,
   bookPages,
@@ -130,7 +130,31 @@ export async function getChatSessionForUser(
     .from(chatSessions)
     .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
     .limit(1);
-  return session ?? null;
+  if (!session) return null;
+  // Access to a shared book can end after the session was created (the
+  // owner revokes, or the recipient removes it), and every turn reads the
+  // book's pages — so re-check the target each time, not only at creation.
+  const target = sessionTarget(session);
+  if (!target || !(await ownsTarget(userId, target))) return null;
+  return session;
+}
+
+function sessionTarget(session: ChatSession): ChatTarget | null {
+  switch (session.scope) {
+    case "page":
+      return session.pageId ? { scope: "page", pageId: session.pageId } : null;
+    case "chapter":
+      return session.chapterId
+        ? { scope: "chapter", chapterId: session.chapterId }
+        : null;
+    case "book":
+      return session.bookId ? { scope: "book", bookId: session.bookId } : null;
+    case "subject":
+      return session.subjectId
+        ? { scope: "subject", subjectId: session.subjectId }
+        : null;
+  }
+  return null;
 }
 
 export async function listChatMessages(
@@ -234,12 +258,8 @@ export async function createNoteFromChatMessage(
 ) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
-  const [message] = await db
-    .select()
-    .from(chatMessages)
-    .where(eq(chatMessages.id, messageId))
-    .limit(1);
-  if (!message || message.role !== "assistant") return null;
+  const message = await getOwnAssistantMessage(userId, messageId);
+  if (!message) return null;
 
   const page = await resolveMessageTargetPage(userId, message);
   if (!page) return null;
@@ -258,30 +278,43 @@ export async function createNoteFromChatMessage(
   return note;
 }
 
+// A chat's messages are private to whoever holds the session (the same rule
+// listChatMessages enforces), so a message id alone is never enough: it must
+// belong to one of the caller's own sessions.
+async function getOwnAssistantMessage(userId: string, messageId: string) {
+  const db = getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ message: chatMessages })
+    .from(chatMessages)
+    .innerJoin(chatSessions, eq(chatSessions.id, chatMessages.sessionId))
+    .where(and(eq(chatMessages.id, messageId), eq(chatSessions.userId, userId)))
+    .limit(1);
+  const message = row?.message;
+  return message && message.role === "assistant" ? message : null;
+}
+
 export async function createCardFromChatMessage(
   userId: string,
   messageId: string
 ) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
-  const [message] = await db
-    .select()
-    .from(chatMessages)
-    .where(eq(chatMessages.id, messageId))
-    .limit(1);
-  if (!message || message.role !== "assistant") return null;
+  const message = await getOwnAssistantMessage(userId, messageId);
+  if (!message) return null;
 
   const page = await resolveMessageTargetPage(userId, message);
   if (!page || !page.chapterId) return null;
 
-  // Find the preceding user question for a meaningful question field.
+  // The user question this reply answered (the latest one before it).
   const [priorUserMessage] = await db
     .select({ content: chatMessages.content })
     .from(chatMessages)
     .where(
       and(
         eq(chatMessages.sessionId, message.sessionId),
-        eq(chatMessages.role, "user")
+        eq(chatMessages.role, "user"),
+        lte(chatMessages.createdAt, message.createdAt)
       )
     )
     .orderBy(desc(chatMessages.createdAt))

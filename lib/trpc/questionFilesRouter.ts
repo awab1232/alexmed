@@ -36,8 +36,8 @@ export const questionFilesRouter = router({
       const ok = await retryQuestionFileExtraction(ctx.user.id, input.bookId);
       if (!ok) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Question file not found",
+          code: "BAD_REQUEST",
+          message: "إعادة المحاولة متاحة فقط لملف فشلت قراءته.",
         });
       }
       await publishMessage({

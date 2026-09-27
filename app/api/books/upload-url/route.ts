@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { storageGetUploadUrl } from "@/lib/storage";
-import { randomUUID } from "node:crypto";
+import { newUploadKey } from "@/lib/upload-keys";
 import { NextResponse } from "next/server";
 import { billingErrorResponse } from "@/lib/billing/http";
 import { assertFileSizeAllowed } from "@/lib/billing/usage";
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     throw error;
   }
 
-  const key = `book-pdfs/${randomUUID()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const key = newUploadKey("book-pdfs", session.user.id, fileName);
   // Always PDF: only .pdf names are accepted above, and the type is signed
   // into the upload URL — a client-chosen type (e.g. text/html) would let a
   // file be served back from storage as a web page.

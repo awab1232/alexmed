@@ -8,6 +8,7 @@ import {
 } from "../db";
 import { getDueCardsForUser, rateCard } from "../db-decks-srs";
 import { assignDeckToSubject } from "../db-subjects";
+import { isOwnUploadKey } from "../upload-keys";
 import { protectedProcedure, router } from "./trpc";
 
 const cardInput = z.object({
@@ -48,10 +49,14 @@ export const decksRouter = router({
         fileKey: z.string().optional(),
         pageCount: z.number().int().min(0),
         depth: z.string(),
-        cards: z.array(cardInput).min(1),
+        cards: z.array(cardInput).min(1).max(1000),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // The file key is client input: only a key issued to this user.
+      if (input.fileKey && !isOwnUploadKey(input.fileKey, ctx.user.id)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid file" });
+      }
       const deck = await createDeckWithCards(ctx.user.id, input);
       return { id: deck.id };
     }),

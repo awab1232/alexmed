@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   adminMaterials,
   bookShares,
@@ -115,4 +115,38 @@ export async function isFileKeyAccessibleToUser(
   }
 
   return false;
+}
+
+// Storage keys from a just-deleted book/account that are still referenced
+// by some remaining row are removed from the list before the objects are
+// deleted. Uploaded-file keys are client input, so a row can point at a
+// file another user uploaded (rows created before keys were bound to their
+// uploader — lib/upload-keys.ts); deleting that row must never delete the
+// other user's file. Call AFTER the database delete.
+export async function withoutKeysStillReferenced(
+  keys: string[]
+): Promise<string[]> {
+  if (!keys.length) return keys;
+  const db = getDb();
+  if (!db) return [];
+  const rows = await Promise.all([
+    db
+      .select({ k: books.fileKey })
+      .from(books)
+      .where(inArray(books.fileKey, keys)),
+    db
+      .select({ k: decks.fileKey })
+      .from(decks)
+      .where(inArray(decks.fileKey, keys)),
+    db
+      .select({ k: mirrorJobs.fileKey })
+      .from(mirrorJobs)
+      .where(inArray(mirrorJobs.fileKey, keys)),
+    db
+      .select({ k: adminMaterials.fileKey })
+      .from(adminMaterials)
+      .where(inArray(adminMaterials.fileKey, keys)),
+  ]);
+  const referenced = new Set(rows.flat().map(row => row.k));
+  return keys.filter(key => !referenced.has(key));
 }

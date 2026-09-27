@@ -93,6 +93,10 @@ export default function ReviewPage() {
         textAr: result.explanationAr,
       });
     },
+    // Uses the assistant quota — when it's spent, say so in its place.
+    onError: (error, variables) => {
+      setExplanation({ cardId: variables.cardId, textAr: error.message });
+    },
   });
 
   const cards = useMemo<DueCard[]>(() => {

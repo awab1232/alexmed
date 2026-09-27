@@ -1,5 +1,5 @@
-// Shared per-page OCR loop, used by both مِرآة (app/api/pdf/ocr/route.ts) and
-// كتبي (app/api/books/extract-and-plan/route.ts) so scanned/image-only PDFs
+// Shared per-page OCR loop, used by both مِرآة (app/api/mirror/extract/route.ts)
+// and كتبي (app/api/books/extract/route.ts) so scanned/image-only PDFs
 // are handled identically in both pipelines instead of drifting apart.
 import { invokeLLM } from "./llm";
 import { isNemotronOcrConfigured, nemotronOcrPage } from "./nemotron-ocr";

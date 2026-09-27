@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   createExamFocusDeck,
-  deleteExamFocusDeckForUser,
+  deleteExamFocusDeckForRegenerate,
   findStalledExamFocusWork,
   getBookForExamFocus,
   getBookPagesForExamFocus,
@@ -131,8 +131,9 @@ export const examFocusRouter = router({
     }),
 
   // Only on the student's explicit "إعادة التوليد" — drops the old deck
-  // (cascade: units + cards) and plans the file again. Old in-flight queue
-  // messages then find no unit and are skipped.
+  // (cascade: units + cards) and plans the file again. Refused while the
+  // current deck is still generating and within a cooldown of the last run
+  // (lib/db-exam-focus.ts), since every run re-pays AI for the whole file.
   regenerate: protectedProcedure
     .input(z.object({ bookId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -141,7 +142,22 @@ export const examFocusRouter = router({
       if (!book) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });
       }
-      await deleteExamFocusDeckForUser(ctx.user.id, input.bookId);
+      const dropped = await deleteExamFocusDeckForRegenerate(
+        ctx.user.id,
+        input.bookId
+      );
+      if (dropped === "busy") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "البطاقات ما زالت قيد التوليد — انتظر حتى تكتمل.",
+        });
+      }
+      if (dropped === "cooldown") {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "أعدت التوليد قبل قليل — حاول مرة ثانية بعد عشر دقائق.",
+        });
+      }
       return startDeck(ctx.user.id, input.bookId);
     }),
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../db-exam-focus", () => ({
   createExamFocusDeck: vi.fn(),
-  deleteExamFocusDeckForUser: vi.fn(),
+  deleteExamFocusDeckForRegenerate: vi.fn(async () => "deleted"),
   findStalledExamFocusWork: vi.fn(),
   getBookForExamFocus: vi.fn(),
   getBookPagesForExamFocus: vi.fn(),
@@ -21,7 +21,7 @@ import { examFocusRouter } from "./examFocusRouter";
 import { getBookAccess, getExamFocusCardAccess } from "../book-access";
 import {
   createExamFocusDeck,
-  deleteExamFocusDeckForUser,
+  deleteExamFocusDeckForRegenerate,
   findStalledExamFocusWork,
   getBookForExamFocus,
   getBookPagesForExamFocus,
@@ -74,6 +74,7 @@ const sharedAccess = { ...ownerAccess, ownerId: "owner-9", role: "shared" };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  m(deleteExamFocusDeckForRegenerate).mockResolvedValue("deleted");
   m(getBookAccess).mockResolvedValue(ownerAccess);
   m(getExamFocusCardAccess).mockResolvedValue(ownerAccess);
   m(getBookForExamFocus).mockResolvedValue(readyBook);
@@ -164,9 +165,24 @@ describe("examFocus.regenerate / retryFailed / resume", () => {
       unitIds: ["unit-0"],
     });
     await caller().regenerate({ bookId: "b1" });
-    expect(deleteExamFocusDeckForUser).toHaveBeenCalledWith("u1", "b1");
+    expect(deleteExamFocusDeckForRegenerate).toHaveBeenCalledWith("u1", "b1");
     expect(createExamFocusDeck).toHaveBeenCalled();
   });
+
+  it.each([
+    ["busy", "CONFLICT"],
+    ["cooldown", "TOO_MANY_REQUESTS"],
+  ] as const)(
+    "regenerate is refused when the deck is %s — no AI run, no queue message",
+    async (state, code) => {
+      m(deleteExamFocusDeckForRegenerate).mockResolvedValue(state);
+      await expect(caller().regenerate({ bookId: "b1" })).rejects.toMatchObject(
+        { code }
+      );
+      expect(createExamFocusDeck).not.toHaveBeenCalled();
+      expect(publishMessage).not.toHaveBeenCalled();
+    }
+  );
 
   it("retryFailed re-queues only the failed units", async () => {
     m(resetFailedExamFocusUnits).mockResolvedValue({
@@ -300,7 +316,7 @@ describe("📤 examFocus for a share recipient", () => {
         { code: "FORBIDDEN" }
       );
       expect(createExamFocusDeck).not.toHaveBeenCalled();
-      expect(deleteExamFocusDeckForUser).not.toHaveBeenCalled();
+      expect(deleteExamFocusDeckForRegenerate).not.toHaveBeenCalled();
       expect(resetFailedExamFocusUnits).not.toHaveBeenCalled();
       expect(publishMessage).not.toHaveBeenCalled();
     }

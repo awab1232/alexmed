@@ -32,6 +32,16 @@ describe("verifyQStashRequest", () => {
     expect(result).toBe(false);
   });
 
+  it("fails closed when APP_BASE_URL is unset (never trusts the request's own host)", async () => {
+    delete process.env.APP_BASE_URL;
+    const result = await verifyQStashRequest(
+      '{"batchId":"x"}',
+      "some-signature",
+      new Request("https://attacker.example/api/mirror/generate-batch")
+    );
+    expect(result).toBe(false);
+  });
+
   it("fails closed (returns false, does not throw) when signing keys are unconfigured", async () => {
     delete process.env.QSTASH_CURRENT_SIGNING_KEY;
     delete process.env.QSTASH_NEXT_SIGNING_KEY;

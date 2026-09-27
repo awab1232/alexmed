@@ -16,6 +16,7 @@ import {
   touchLastSignedIn,
 } from "./db";
 import { looksLikePhone, parsePhone } from "./phone";
+import { getSessionUserState } from "./session-user";
 import {
   LoginRateLimitedError,
   assertLoginAllowed,
@@ -160,11 +161,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = (user as { id: string }).id;
         token.role = (user as { role?: string }).role ?? "user";
-      } else if (token.id && !token.role) {
-        // Returning session for a user created via the adapter (e.g. first
-        // Google sign-in) won't have `role` on the initial `user` object from
-        // some provider flows — default it the same way the schema does.
-        token.role = "user";
+        return token;
+      }
+      if (!token.id) return token;
+      // Every later session read re-checks the account (lib/session-user.ts):
+      // returning null ends the session, so suspending or deleting a user
+      // takes effect on existing sessions, and the role always comes from
+      // the database rather than from whatever was true at sign-in.
+      try {
+        const current = await getSessionUserState(token.id as string);
+        if (!current) return null;
+        token.role = current.role;
+      } catch (error) {
+        // A database hiccup must not sign everyone out; keep the token.
+        console.error("[Auth] Session re-check failed", error);
+        if (!token.role) token.role = "user";
       }
       return token;
     },

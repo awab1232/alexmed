@@ -15,6 +15,8 @@ import {
   type MirrorJob,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import { withoutKeysStillReferenced } from "./db-file-access";
+import { deleteObjects } from "./storage";
 import type { GeneratedCard } from "./pdf-cards";
 
 export type MirrorPageText = { page: number; text: string; hasText: boolean };
@@ -539,8 +541,20 @@ export async function deleteMirrorJob(userId: string, jobId: string) {
   const deleted = await db
     .delete(mirrorJobs)
     .where(and(eq(mirrorJobs.id, jobId), eq(mirrorJobs.userId, userId)))
-    .returning({ id: mirrorJobs.id });
-  return deleted.length > 0;
+    .returning({ id: mirrorJobs.id, fileKey: mirrorJobs.fileKey });
+  if (!deleted.length) return false;
+
+  // Best-effort: remove the uploaded PDF, unless another row still uses it.
+  // The job's page images stay — the deck's cards may still show them.
+  const fileKey = deleted[0].fileKey;
+  if (fileKey) {
+    try {
+      await deleteObjects(await withoutKeysStillReferenced([fileKey]));
+    } catch (error) {
+      console.error("[Mirror] Failed to delete stored file", { jobId, error });
+    }
+  }
+  return true;
 }
 
 // Ownership check for a batch-scoped action (the generate-batch route) —

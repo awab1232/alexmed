@@ -9,6 +9,8 @@ import {
   resetMirrorBatchForRetry,
   resetMirrorJobFailedPagesForRetry,
 } from "../db-mirror";
+import { toTrpcError } from "../billing/http";
+import { consumeUsage, releaseUsage } from "../billing/usage";
 import { getSubjectForUser } from "../db-subjects";
 import { seedMirrorGeneration } from "../mirror-dispatch";
 import { splitTextIntoPages, validateQuestionText } from "../mirror-text";
@@ -83,14 +85,32 @@ export const mirrorRouter = router({
         subjectId = input.target.subjectId;
       }
 
-      const created = await createMirrorTextJob(ctx.user.id, {
-        title: input.target.title || null,
-        depth: input.depth,
-        pages: splitTextIntoPages(validation.text),
-        deckId: input.target.mode === "append" ? input.target.deckId : null,
-        subjectId,
-      });
+      // 💳 Pasted text runs the same paid generation as an uploaded مِرآة
+      // PDF, so it costs the same file from the plan quota
+      // (app/api/mirror/upload-and-plan/route.ts) — handed back if no job
+      // gets created.
+      let receipt;
+      try {
+        receipt = await consumeUsage(ctx.user.id, "BOOK_FILE");
+      } catch (error) {
+        toTrpcError(error);
+      }
+
+      let created;
+      try {
+        created = await createMirrorTextJob(ctx.user.id, {
+          title: input.target.title || null,
+          depth: input.depth,
+          pages: splitTextIntoPages(validation.text),
+          deckId: input.target.mode === "append" ? input.target.deckId : null,
+          subjectId,
+        });
+      } catch (error) {
+        await releaseUsage(receipt);
+        throw error;
+      }
       if (!created) {
+        await releaseUsage(receipt);
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "لم نجد هذا الملف. اختر ملفًا آخر.",

@@ -15,6 +15,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import { withoutKeysStillReferenced } from "./db-file-access";
 import { deleteObjects } from "./storage";
 import {
   bookCardProgress,
@@ -27,6 +28,7 @@ import {
   bookReviewEvents,
   bookTerms,
   bookVisualAssets,
+  extractedQuestionImages,
   type Book,
   type BookChapter,
   type BookPage,
@@ -618,11 +620,17 @@ export async function deleteBook(userId: string, bookId: string) {
     })
     .from(bookVisualAssets)
     .where(eq(bookVisualAssets.bookId, bookId));
+  // A question file's cropped question images.
+  const questionImages = await db
+    .select({ storageKey: extractedQuestionImages.storageKey })
+    .from(extractedQuestionImages)
+    .where(eq(extractedQuestionImages.bookId, bookId));
 
   const storageKeys = [
     book.fileKey,
     ...pages.flatMap(page => [page.storageKey, page.previewKey]),
     ...visuals.flatMap(visual => [visual.storageKey, visual.previewKey]),
+    ...questionImages.map(image => image.storageKey),
   ].filter((key): key is string => Boolean(key));
 
   const deleted = await db
@@ -633,7 +641,7 @@ export async function deleteBook(userId: string, bookId: string) {
 
   if (storageKeys.length) {
     try {
-      await deleteObjects(storageKeys);
+      await deleteObjects(await withoutKeysStillReferenced(storageKeys));
     } catch (error) {
       console.error("[Books] Failed to delete storage objects for book", {
         bookId,

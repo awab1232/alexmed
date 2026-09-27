@@ -15,6 +15,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import { forgetSessionUserState } from "./session-user";
 import { deleteAccountCompletely } from "./db-account";
 
 export async function listUsersForAdmin(params: {
@@ -138,6 +139,7 @@ export async function setUserSuspendedForAdmin(
     .update(users)
     .set({ suspendedAt: suspended ? new Date() : null, updatedAt: new Date() })
     .where(eq(users.id, userId));
+  forgetSessionUserState(userId);
 }
 
 // Permanent, irreversible deletion. Books/decks are deleted individually via

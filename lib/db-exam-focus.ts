@@ -10,6 +10,7 @@ import {
   gte,
   ilike,
   inArray,
+  notInArray,
   lt,
   or,
   sql,
@@ -136,16 +137,56 @@ export async function createExamFocusDeck(input: {
   });
 }
 
-export async function deleteExamFocusDeckForUser(
+// "إعادة التوليد" re-runs the whole file through the AI, so it is gated:
+// never while the current deck is still being generated (deleting it would
+// discard paid work that is still running, and hide those running units
+// from the per-student concurrency cap), and at most once per cooldown per
+// file. A deck stuck "processing" past the stale window may be replaced so a
+// student is never trapped. The checks and the delete are one statement, so
+// two concurrent regenerates can't both pass.
+export const EXAM_FOCUS_REGENERATE_COOLDOWN_MS = 10 * 60_000;
+const EXAM_FOCUS_REGENERATE_STALE_MS = 30 * 60_000;
+
+export async function deleteExamFocusDeckForRegenerate(
   userId: string,
   bookId: string
-) {
+): Promise<"deleted" | "none" | "busy" | "cooldown"> {
   const db = requireDb();
-  await db
+  const now = Date.now();
+  const staleBefore = new Date(now - EXAM_FOCUS_REGENERATE_STALE_MS);
+  const cooldownBefore = new Date(now - EXAM_FOCUS_REGENERATE_COOLDOWN_MS);
+  const deleted = await db
     .delete(examFocusDecks)
     .where(
+      and(
+        eq(examFocusDecks.bookId, bookId),
+        eq(examFocusDecks.userId, userId),
+        lt(examFocusDecks.createdAt, cooldownBefore),
+        or(
+          notInArray(examFocusDecks.status, ["processing", "finalizing"]),
+          lt(examFocusDecks.updatedAt, staleBefore)
+        )
+      )
+    )
+    .returning({ id: examFocusDecks.id });
+  if (deleted.length) return "deleted";
+
+  const [deck] = await db
+    .select({
+      status: examFocusDecks.status,
+      createdAt: examFocusDecks.createdAt,
+      updatedAt: examFocusDecks.updatedAt,
+    })
+    .from(examFocusDecks)
+    .where(
       and(eq(examFocusDecks.bookId, bookId), eq(examFocusDecks.userId, userId))
-    );
+    )
+    .limit(1);
+  if (!deck) return "none";
+  const running =
+    (deck.status === "processing" || deck.status === "finalizing") &&
+    deck.updatedAt.getTime() >= staleBefore.getTime();
+  return running ? "busy" : "cooldown";
 }
 
 // Deck + per-unit progress (never the page text / facts, which can be

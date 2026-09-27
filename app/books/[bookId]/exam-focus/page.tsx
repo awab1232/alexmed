@@ -294,7 +294,11 @@ export default function ExamFocusPage() {
         "إعادة توليد Exam Focus من جديد؟ البطاقات الحالية والمحفوظة رح تنحذف."
       )
     ) {
-      regenerate.mutate({ bookId });
+      // Refused while still generating or right after a regenerate — say why.
+      regenerate.mutate(
+        { bookId },
+        { onError: error => window.alert(error.message) }
+      );
     }
   };
 

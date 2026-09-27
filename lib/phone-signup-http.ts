@@ -3,11 +3,21 @@
 // Arabic message for every error the flow can return.
 import { NextResponse } from "next/server";
 
-// Railway / most proxies put the client first in X-Forwarded-For.
+// The requester's IP as seen by OUR proxy. X-Forwarded-For is a list the
+// client can pre-fill, and each proxy appends the address it saw — so the
+// leftmost entry is attacker-chosen (rotating it would dodge the per-IP SMS
+// limit), and the trustworthy one is the entry our edge added: counted from
+// the right. TRUSTED_PROXY_HOPS is how many proxies we run behind (1 =
+// Railway's edge alone; 2 if e.g. Cloudflare is put in front of it).
 export function requestIp(request: Request): string | null {
   const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]?.trim() || null;
-  return request.headers.get("x-real-ip");
+  if (!forwarded) return null;
+  const hops = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
+  const entries = forwarded
+    .split(",")
+    .map(entry => entry.trim())
+    .filter(Boolean);
+  return entries[entries.length - hops] ?? entries[0] ?? null;
 }
 
 const MESSAGES = {
@@ -17,6 +27,7 @@ const MESSAGES = {
   cooldown: "استنى شوي قبل ما نرسل كود جديد.",
   too_many: "طلبات كثيرة على هذا الرقم. حاول بعد ساعة.",
   sms_failed: "تعذّر إرسال الرسالة الآن. حاول بعد قليل.",
+  busy: "خدمة الرسائل مشغولة الآن. حاول بعد قليل.",
   sms_not_configured: "التسجيل برقم الهاتف غير متاح حالياً. حاول لاحقاً.",
   wrong_code: "الكود غير صحيح. تأكد منه وحاول مرة ثانية.",
   expired: "انتهت صلاحية الكود. اطلب كوداً جديداً.",
@@ -33,6 +44,7 @@ const STATUS: Record<PhoneSignupError, number> = {
   cooldown: 429,
   too_many: 429,
   sms_failed: 502,
+  busy: 503,
   sms_not_configured: 503,
   wrong_code: 400,
   expired: 410,

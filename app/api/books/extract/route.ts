@@ -13,7 +13,9 @@ import { getQueueMaxAttempts } from "@/lib/queue/types";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
-// Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
+// Must be imported before "pdf-parse" — pdf-parse's own troubleshooting docs
+// require this for serverless platforms (Vercel/Lambda/...), where DOMMatrix
+// isn't a native global: https://github.com/mehmet-kozan/pdf-parse/blob/main/docs/troubleshooting.md
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 

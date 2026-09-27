@@ -350,6 +350,20 @@ export async function deleteDeck(userId: string, deckId: string) {
   const deleted = await db
     .delete(decks)
     .where(and(eq(decks.id, deckId), eq(decks.userId, userId)))
-    .returning({ id: decks.id });
-  return deleted.length > 0;
+    .returning({ id: decks.id, fileKey: decks.fileKey });
+  if (!deleted.length) return false;
+
+  // Best-effort: remove the deck's uploaded PDF too, unless another row
+  // still uses it (e.g. the مِرآة job it came from).
+  const fileKey = deleted[0].fileKey;
+  if (fileKey) {
+    try {
+      const { withoutKeysStillReferenced } = await import("./db-file-access");
+      const { deleteObjects } = await import("./storage");
+      await deleteObjects(await withoutKeysStillReferenced([fileKey]));
+    } catch (error) {
+      console.error("[Decks] Failed to delete stored file", { deckId, error });
+    }
+  }
+  return true;
 }

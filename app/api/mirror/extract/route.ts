@@ -12,7 +12,7 @@ import { publishMessage } from "@/lib/queue/client";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
-// Must be imported before "pdf-parse" — see app/api/pdf/extract/route.ts for why.
+// Must be imported before "pdf-parse" — see app/api/books/extract/route.ts for why.
 import { CanvasFactory } from "pdf-parse/worker";
 import { PDFParse } from "pdf-parse";
 

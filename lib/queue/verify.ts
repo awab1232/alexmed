@@ -30,6 +30,11 @@ function getReceiver(): Receiver {
 // process often sees an internal scheme/host that doesn't match the public
 // URL QStash actually called, which fails verification even for a genuine
 // QStash request.
+//
+// Without APP_BASE_URL there is no trusted public URL to check against —
+// falling back to request.url would let the request's own Host header pick
+// the URL being verified — so verification fails closed. Publishing needs
+// APP_BASE_URL too (lib/queue/client.ts), so a working setup always has it.
 export async function verifyQStashRequest(
   rawBody: string,
   signature: string | null,
@@ -37,8 +42,11 @@ export async function verifyQStashRequest(
 ): Promise<boolean> {
   if (!signature) return false;
   const base = process.env.APP_BASE_URL?.replace(/\/$/, "");
-  const pathname = new URL(request.url).pathname;
-  const url = base ? `${base}${pathname}` : request.url;
+  if (!base) {
+    console.error("[Queue] APP_BASE_URL is not set — refusing worker call");
+    return false;
+  }
+  const url = `${base}${new URL(request.url).pathname}`;
   try {
     return await getReceiver().verify({ signature, body: rawBody, url });
   } catch {

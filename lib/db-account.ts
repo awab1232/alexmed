@@ -15,6 +15,8 @@ import {
   users,
 } from "../drizzle/schema";
 import { requireDb } from "./db";
+import { withoutKeysStillReferenced } from "./db-file-access";
+import { forgetSessionUserState } from "./session-user";
 import { deleteObjects } from "./storage";
 
 // Every storage key the account owns, across every table that holds one
@@ -95,9 +97,10 @@ export async function deleteAccountCompletely(
     .where(eq(users.id, userId))
     .returning({ id: users.id });
   if (!deleted.length) return false;
+  forgetSessionUserState(userId);
   if (keys.length) {
     try {
-      await deleteObjects(keys);
+      await deleteObjects(await withoutKeysStillReferenced(keys));
     } catch (error) {
       console.error("[Account] Failed to delete some stored files", {
         userId,

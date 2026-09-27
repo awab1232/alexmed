@@ -1,12 +1,14 @@
 // 💳 Plan checks for a file a student asks to process (books, question
 // files, مِرآة). Called by the *-and-plan routes after the request is
 // validated and before anything is created:
+//   0. the key was issued to THIS user (lib/upload-keys.ts),
 //   1. the uploaded object's REAL size (storage HEAD) vs the plan maximum,
 //   2. one unit of the daily / monthly quota, consumed atomically.
 // The route calls `release()` if it then fails to start processing, so a
 // failed upload never costs the student a file.
 import { NextResponse } from "next/server";
 import { storageObjectSize } from "../storage";
+import { isOwnUploadKey } from "../upload-keys";
 import type { Resource } from "./catalog";
 import { billingErrorResponse } from "./http";
 import {
@@ -26,6 +28,9 @@ export async function admitUpload(
   key: string,
   resource: Extract<Resource, "BOOK_FILE" | "QUESTION_FILE">
 ): Promise<AdmittedUpload | NextResponse> {
+  if (!isOwnUploadKey(key, userId)) {
+    return NextResponse.json({ error: "ارفع ملف PDF أولًا." }, { status: 400 });
+  }
   const size = await storageObjectSize(key);
   if (size === null) {
     return NextResponse.json(

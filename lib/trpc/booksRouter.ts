@@ -60,6 +60,8 @@ import {
   parseGapQuestions,
   parseMcqValidation,
 } from "../book-analysis";
+import { toTrpcError } from "../billing/http";
+import { consumeUsage, releaseUsage } from "../billing/usage";
 import { invokeLLM } from "../llm";
 import { generationBudget } from "../chapter-generation";
 import {
@@ -340,11 +342,25 @@ export const booksRouter = router({
       if (!card) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
       }
-      const response = await invokeLLM({
-        max_tokens: 400,
-        messages: buildExplainCardMessages(card.questionEn, card.answerEn),
-        response_format: explainCardResponseSchema,
-      });
+      // 💳 An AI answer on demand, like the assistant — same quota
+      // (lib/trpc/chatRouter.ts's ask), handed back if the call fails.
+      let receipt;
+      try {
+        receipt = await consumeUsage(ctx.user.id, "ASSISTANT_MESSAGE");
+      } catch (error) {
+        toTrpcError(error);
+      }
+      let response;
+      try {
+        response = await invokeLLM({
+          max_tokens: 400,
+          messages: buildExplainCardMessages(card.questionEn, card.answerEn),
+          response_format: explainCardResponseSchema,
+        });
+      } catch (error) {
+        await releaseUsage(receipt);
+        throw error;
+      }
       const explanationAr = parseExplainCard(
         response.choices[0]?.message.content
       );

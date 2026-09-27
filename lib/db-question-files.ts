@@ -206,7 +206,11 @@ export async function retryQuestionFileExtraction(
       and(
         eq(books.id, bookId),
         eq(books.userId, userId),
-        eq(books.sourceType, "question_file")
+        eq(books.sourceType, "question_file"),
+        // Only a FAILED file: re-extracting a finished one re-runs the paid
+        // AI enrichment for every question, outside the upload quota. Part
+        // of the same UPDATE, so concurrent retries can't both pass.
+        eq(books.status, "failed")
       )
     )
     .returning({ id: books.id });

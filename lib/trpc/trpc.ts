@@ -2,18 +2,38 @@ import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from "@shared/const";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
+import { AiRateLimitError } from "../ai/types";
 import { BillingError } from "../billing/usage";
+
+export const INTERNAL_ERROR_MESSAGE = "حدث خطأ غير متوقع. حاول مرة أخرى.";
+const AI_BUSY_MESSAGE = "المساعد مشغول الآن. حاول بعد قليل.";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
   // Plan limits (lib/billing) travel to the client as structured data —
   // code, plan, limit, the plan that would lift it — so the UI can show the
   // right upgrade prompt instead of parsing messages.
+  //
+  // An unexpected exception (a database or provider error, a bug) is wrapped
+  // by tRPC as INTERNAL_SERVER_ERROR with the original error as its cause;
+  // its message can carry SQL, table names or upstream details, so the
+  // client gets a generic message instead (the real one is logged by the
+  // route's onError). Errors thrown on purpose as TRPCError keep theirs.
   errorFormatter({ shape, error }) {
+    const unexpected =
+      error.code === "INTERNAL_SERVER_ERROR" &&
+      error.cause instanceof Error &&
+      !(error.cause instanceof TRPCError);
     return {
       ...shape,
+      message: !unexpected
+        ? shape.message
+        : error.cause instanceof AiRateLimitError
+          ? AI_BUSY_MESSAGE
+          : INTERNAL_ERROR_MESSAGE,
       data: {
         ...shape.data,
+        stack: undefined,
         billing:
           error.cause instanceof BillingError ? error.cause.details : null,
       },
