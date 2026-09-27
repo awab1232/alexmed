@@ -13,6 +13,7 @@ import LegalPage, {
 export const metadata: Metadata = {
   title: `سياسة الخصوصية | ${LEGAL_APP_NAME}`,
   description: `كيف يجمع ${LEGAL_APP_NAME} بياناتك ويستخدمها ويحميها، ولماذا يطلب الكاميرا والإشعارات.`,
+  alternates: { canonical: "/privacy" },
 };
 
 const email = (

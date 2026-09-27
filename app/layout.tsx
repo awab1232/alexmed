@@ -1,9 +1,42 @@
 import Providers from "@/components/Providers";
+import {
+  BASE_OPEN_GRAPH,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
 import type { Metadata, Viewport } from "next";
+import { Noto_Naskh_Arabic, Readex_Pro } from "next/font/google";
 import "./globals.css";
 
+// Self-hosted by next/font: no render-blocking Google Fonts stylesheet, and
+// a size-matched fallback so text doesn't jump when the font arrives.
+// globals.css reads them through --font-readex / --font-naskh.
+const readexPro = Readex_Pro({
+  subsets: ["arabic", "latin"],
+  display: "swap",
+  variable: "--font-readex",
+});
+const notoNaskh = Noto_Naskh_Arabic({
+  subsets: ["arabic"],
+  display: "swap",
+  variable: "--font-naskh",
+});
+
+// Site-wide defaults. Each public page sets its own title, description and
+// canonical; app pages behind sign-in inherit these and are kept out of the
+// sitemap.
 export const metadata: Metadata = {
-  title: "NiroLearn | بطاقات المذاكرة",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // No og:title here: a page without its own falls back to its <title>
+  // rather than inheriting the home page's.
+  openGraph: BASE_OPEN_GRAPH,
+  twitter: { card: "summary_large_image" },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -16,19 +49,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300..700&family=Noto+Naskh+Arabic:wght@400..700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`${readexPro.variable} ${notoNaskh.variable}`}
+    >
       <body>
         <Providers>{children}</Providers>
       </body>

@@ -90,7 +90,7 @@ body {
   min-width: 320px;
   background: var(--background);
   color: var(--foreground);
-  font-family: "Readex Pro", system-ui, sans-serif;
+  font-family: var(--font-readex), system-ui, sans-serif;
 }
 button,
 input {
@@ -148,7 +148,7 @@ input:focus-visible {
   margin-top: 4px;
   color: #b2b4bb;
   font:
-    11px "Readex Pro",
+    11px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
   text-transform: none;
@@ -164,7 +164,7 @@ input:focus-visible {
   margin: 0;
   color: #a7a9b0;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
   text-transform: none;
@@ -212,7 +212,7 @@ input:focus-visible {
 .nav-item b {
   color: #4567ed;
   font:
-    11px "Readex Pro",
+    11px var(--font-readex),
     sans-serif;
 }
 .nav-item.active b {
@@ -247,7 +247,7 @@ input:focus-visible {
   background: #4567ed;
   color: #ffffff;
   font:
-    700 13px "Readex Pro",
+    700 13px var(--font-readex),
     sans-serif;
 }
 .sidebar-account-info {
@@ -308,7 +308,7 @@ input:focus-visible {
   padding: 25px 11px 0;
   color: #898b92;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
   text-transform: none;
@@ -500,7 +500,7 @@ input:focus-visible {
   gap: 7px;
   color: #8d8f96;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
   text-transform: none;
@@ -527,7 +527,7 @@ input:focus-visible {
   gap: 8px;
   color: #3156eb;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
   font-weight: 700;
   letter-spacing: 0;
@@ -579,14 +579,14 @@ h1 em {
 .stamp-top,
 .stamp-line + span {
   font:
-    8px "Readex Pro",
+    8px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
 }
 .intro-stamp strong {
   margin: 6px 0;
   font:
-    800 20px/1 "Readex Pro",
+    800 20px/1 var(--font-readex),
     sans-serif;
   letter-spacing: 0;
   text-align: center;
@@ -1220,7 +1220,7 @@ h1 em {
   margin-top: 2px;
   color: #94969d;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
 }
 .selected-file button {
@@ -1465,7 +1465,7 @@ h1 em {
   margin-top: 3px;
   color: #9c9ea5;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
 }
 .primary-button,
@@ -1537,7 +1537,7 @@ h1 em {
   margin: 0;
   color: #8f9198;
   font:
-    11px "Readex Pro",
+    11px var(--font-readex),
     sans-serif;
 }
 .header-actions {
@@ -1620,7 +1620,7 @@ h1 em {
   margin: 5px 0 1px;
   color: #293255;
   font:
-    800 25px "Readex Pro",
+    800 25px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
 }
@@ -1713,7 +1713,7 @@ h1 em {
 .search-box span {
   color: #a3aaa5;
   font:
-    23px "Readex Pro",
+    23px var(--font-readex),
     sans-serif;
   transform: rotate(-20deg);
 }
@@ -1822,7 +1822,7 @@ h1 em {
 .list-number {
   color: #b3b5bc;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
 }
 .list-copy {
@@ -1845,7 +1845,7 @@ h1 em {
   margin-top: 4px;
   color: #a1aaa5;
   font:
-    9px "Readex Pro",
+    9px var(--font-readex),
     sans-serif;
 }
 .list-alert {
@@ -1920,7 +1920,7 @@ h1 em {
   margin-top: 4px;
   color: #91939a;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
 }
 .library-item-actions {
@@ -2013,7 +2013,7 @@ h1 em {
   margin: 0 3px 9px;
   color: #95979e;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
 }
 .review-pill,
@@ -2076,7 +2076,7 @@ h1 em {
 .card-confidence {
   color: #365aeb;
   font:
-    9px "Readex Pro",
+    9px var(--font-readex),
     sans-serif;
   letter-spacing: 0;
 }
@@ -2116,7 +2116,7 @@ h1 em {
   margin: 0;
   color: #777980;
   font:
-    13px/1.8 "Readex Pro",
+    13px/1.8 var(--font-readex),
     sans-serif;
 }
 .micro-label {
@@ -2151,7 +2151,7 @@ h1 em {
   border-radius: 50%;
   color: #395ceb;
   font:
-    22px "Readex Pro",
+    22px var(--font-readex),
     sans-serif;
 }
 .reveal-button strong {
@@ -2160,7 +2160,7 @@ h1 em {
 .reveal-button small {
   color: #a5aca6;
   font:
-    10px "Readex Pro",
+    10px var(--font-readex),
     sans-serif;
 }
 .answer-block.revealed {
@@ -2181,7 +2181,7 @@ h1 em {
 .answer-pair span {
   color: #6f7178;
   font:
-    12px "Readex Pro",
+    12px var(--font-readex),
     sans-serif;
 }
 .explanation-pair {
@@ -2428,7 +2428,7 @@ h1 em {
   background: #ffffff;
   color: var(--foreground);
   font:
-    14px/1.9 "Readex Pro",
+    14px/1.9 var(--font-readex),
     sans-serif;
 }
 .text-input-area:focus {
@@ -2623,7 +2623,7 @@ h1 em {
   margin-top: 3px;
   color: #9fa1a8;
   font:
-    9px/1.5 "Readex Pro",
+    9px/1.5 var(--font-readex),
     sans-serif;
 }
 .card-navigation {
@@ -2946,7 +2946,7 @@ h1 em {
   background: #ffffff;
   color: #293255;
   font:
-    12px "Readex Pro",
+    12px var(--font-readex),
     sans-serif;
 }
 .text-input:focus {
@@ -3130,12 +3130,12 @@ h1 em {
   border-radius: 999px;
   background: #eef7f0;
   color: #39735c;
-  font: 700 11px "Readex Pro", sans-serif;
+  font: 700 11px var(--font-readex), sans-serif;
   white-space: nowrap;
 }
 .summary-language-badge small {
   color: #7f8188;
-  font: 600 11px "Readex Pro", sans-serif;
+  font: 600 11px var(--font-readex), sans-serif;
 }
 .summary-hero {
   display: flex;
@@ -3197,7 +3197,7 @@ h1 em {
   border-radius: 9px;
   background: #e4eafb;
   color: #1741e7;
-  font: 700 10px "Readex Pro", sans-serif;
+  font: 700 10px var(--font-readex), sans-serif;
 }
 .summary-section-support .summary-step {
   background: #dfeee3;
@@ -3267,7 +3267,7 @@ h1 em {
   border-radius: 50%;
   background: #f3dda9;
   color: #6b4a12;
-  font: 700 10px "Readex Pro", sans-serif;
+  font: 700 10px var(--font-readex), sans-serif;
 }
 @media (max-width: 780px) {
   .summary-panel { padding: 17px; border-radius: 15px; }
@@ -3318,7 +3318,7 @@ h1 em {
 .summary-reader-actions {
   flex-shrink: 0;
   color: #8c918e;
-  font: 10px "Readex Pro", sans-serif;
+  font: 10px var(--font-readex), sans-serif;
 }
 .summary-print-button {
   padding: 7px 10px;
@@ -3369,7 +3369,7 @@ h1 em {
 .summary-toc button > span {
   grid-row: span 2;
   color: #3358eb;
-  font: 700 10px "Readex Pro", sans-serif;
+  font: 700 10px var(--font-readex), sans-serif;
 }
 .summary-toc button strong { font-size: 11px; }
 .summary-toc button small { margin-top: 2px; color: #9a9e99; font-size: 10px; }
@@ -3407,13 +3407,13 @@ h1 em {
 .mindmap-hero .eyebrow { color: #4567ed; }
 .mindmap-title-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; background: #4163ec; color: white; box-shadow: 0 8px 18px rgba(65, 99, 236,.28); }
 .mindmap-hero-meta { display: flex; align-items: center; gap: 7px; margin-top: 17px; color: #babcc3; font-size: 11px; direction: ltr; }
-.mindmap-hero-art { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #9fc2b5; opacity: .8; font: 10px "Readex Pro", sans-serif; text-align: center; }
+.mindmap-hero-art { display: flex; flex-direction: column; align-items: center; gap: 10px; color: #9fc2b5; opacity: .8; font: 10px var(--font-readex), sans-serif; text-align: center; }
 .mindmap-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 12px; }
 .mindmap-stats > div { padding: 14px 16px; border: 1px solid #d9dbe2; border-radius: 13px; background: #ffffff; }
-.mindmap-stats span, .mindmap-stats small { display: block; color: #8a8c93; font: 10px "Readex Pro", sans-serif; }
-.mindmap-stats strong { display: block; margin: 4px 0; color: #393d4f; font: 700 24px "Readex Pro", sans-serif; }
-.mindmap-stats small { font-family: "Readex Pro", sans-serif; }
-.mindmap-legend { display: flex; flex-wrap: wrap; gap: 17px; margin: 12px 2px 16px; color: #7e8087; font: 10px "Readex Pro", sans-serif; }
+.mindmap-stats span, .mindmap-stats small { display: block; color: #8a8c93; font: 10px var(--font-readex), sans-serif; }
+.mindmap-stats strong { display: block; margin: 4px 0; color: #393d4f; font: 700 24px var(--font-readex), sans-serif; }
+.mindmap-stats small { font-family: var(--font-readex), sans-serif; }
+.mindmap-legend { display: flex; flex-wrap: wrap; gap: 17px; margin: 12px 2px 16px; color: #7e8087; font: 10px var(--font-readex), sans-serif; }
 .mindmap-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: #4163ec; }
 .legend-dot.green { background: #78a98b; }.legend-dot.gold { background: #d7a54e; }.legend-dot.blue { background: #799fb4; }
@@ -3422,25 +3422,25 @@ h1 em {
 .mindmap-chapter.is-open { border-color: #cfded5; box-shadow: 0 14px 30px rgba(47, 51, 69,.07); }
 .mindmap-chapter-head { display: flex; align-items: center; gap: 13px; width: 100%; padding: 16px 18px; background: transparent; color: #393d4f; text-align: left; cursor: pointer; }
 .mindmap-chapter-head:hover { background: #f5f7fe; }
-.mindmap-chapter-number { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #e4eafb; color: #1741e7; font: 700 11px "Readex Pro", sans-serif; }
+.mindmap-chapter-number { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #e4eafb; color: #1741e7; font: 700 11px var(--font-readex), sans-serif; }
 .mindmap-chapter-main { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-.mindmap-chapter-main strong { font-size: 15px; }.mindmap-chapter-main small { color: #92949b; font: 10px "Readex Pro", sans-serif; direction: ltr; text-align: left; }
+.mindmap-chapter-main strong { font-size: 15px; }.mindmap-chapter-main small { color: #92949b; font: 10px var(--font-readex), sans-serif; direction: ltr; text-align: left; }
 .mindmap-chapter-action { color: #3156eb; }
 .mindmap-generate-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 0 18px 17px 65px; }
 .mindmap-generate-row p { margin: 0; color: #7d8580; font-size: 12px; line-height: 1.7; }
 .mindmap-generate-row .primary-button { flex-shrink: 0; }
 .mindmap-branches { position: relative; padding: 8px 18px 20px 65px; background: linear-gradient(180deg, #f6f8ff, #f2f4fb); }
 .mindmap-root { display: flex; align-items: center; gap: 10px; width: fit-content; margin: 5px auto 20px; padding: 10px 16px; border: 1px solid #cbded3; border-radius: 12px; background: #eaf5ee; color: #315d4d; box-shadow: 0 7px 15px rgba(69,110,85,.08); }
-.mindmap-root > span { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; background: #78a98b; color: white; }.mindmap-root strong { display: block; font-size: 13px; }.mindmap-root small { display: block; margin-top: 2px; color: #797b82; font: 10px "Readex Pro", sans-serif; }
+.mindmap-root > span { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; background: #78a98b; color: white; }.mindmap-root strong { display: block; font-size: 13px; }.mindmap-root small { display: block; margin-top: 2px; color: #797b82; font: 10px var(--font-readex), sans-serif; }
 .mindmap-branch-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .mindmap-branch { position: relative; padding: 15px; border: 1px solid #dadce3; border-radius: 13px; background: #ffffff; box-shadow: 0 7px 18px rgba(47, 51, 69,.04); }
 .mindmap-branch::before { content: ""; position: absolute; top: -21px; left: 50%; width: 1px; height: 21px; background: #c8d9d0; }
-.mindmap-branch-title { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid #e6e8ef; }.mindmap-branch-title > span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: #e4eafb; color: #1740e4; font: 700 10px "Readex Pro", sans-serif; }.mindmap-branch-title strong { display: block; color: #393d4f; font-size: 13px; }.mindmap-branch-title small { display: block; margin-top: 2px; color: #989aa1; font: 9px "Readex Pro", sans-serif; }
+.mindmap-branch-title { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid #e6e8ef; }.mindmap-branch-title > span { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: #e4eafb; color: #1740e4; font: 700 10px var(--font-readex), sans-serif; }.mindmap-branch-title strong { display: block; color: #393d4f; font-size: 13px; }.mindmap-branch-title small { display: block; margin-top: 2px; color: #989aa1; font: 9px var(--font-readex), sans-serif; }
 .mindmap-english { margin: 12px 0 5px; color: #4c5062; font-size: 12px; line-height: 1.7; }.mindmap-arabic { margin: 0; color: #6c7770; font-size: 11px; line-height: 1.8; }
-.mindmap-label { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; color: #8a8c93; font: 10px "Readex Pro", sans-serif; text-transform: none; letter-spacing: 0; }
+.mindmap-label { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; color: #8a8c93; font: 10px var(--font-readex), sans-serif; text-transform: none; letter-spacing: 0; }
 .mindmap-concepts, .mindmap-exam, .mindmap-prompts, .mindmap-visuals, .mindmap-fallback-points { margin-top: 14px; padding-top: 11px; border-top: 1px solid #e6e8ef; }
 .mindmap-concept { margin-top: 8px; padding: 9px 10px; border-radius: 9px; background: #f1f7f2; }.mindmap-concept strong { display: block; color: #356a55; font-size: 12px; }.mindmap-concept > span { display: block; margin-top: 2px; color: #7a7c83; font-size: 11px; }.mindmap-concept p { margin: 5px 0 0; color: #6a6c73; font-size: 11px; line-height: 1.6; }
-.mindmap-exam { padding: 11px; border-radius: 10px; background: #fff3c4; }.mindmap-exam > div, .mindmap-fallback-points > div { display: flex; gap: 7px; margin-top: 6px; color: #6b4a12; font-size: 11px; line-height: 1.6; }.mindmap-exam b, .mindmap-fallback-points b { flex: 0 0 18px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #efd9a2; color: #6b4a12; font: 700 9px "Readex Pro", sans-serif; }
+.mindmap-exam { padding: 11px; border-radius: 10px; background: #fff3c4; }.mindmap-exam > div, .mindmap-fallback-points > div { display: flex; gap: 7px; margin-top: 6px; color: #6b4a12; font-size: 11px; line-height: 1.6; }.mindmap-exam b, .mindmap-fallback-points b { flex: 0 0 18px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #efd9a2; color: #6b4a12; font: 700 9px var(--font-readex), sans-serif; }
 .mindmap-prompts { padding: 11px; border-radius: 10px; background: #f1f3fa; }.mindmap-prompts > div { display: flex; gap: 5px; margin-top: 6px; color: #466b78; font-size: 11px; line-height: 1.55; }
 .mindmap-visuals > div { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; color: #6a6c73; font-size: 11px; line-height: 1.6; }.mindmap-visuals > div svg { flex-shrink: 0; margin-top: 3px; color: #7b9eaa; }
 .mindmap-chapter-footer { display: flex; justify-content: center; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed #d9ddd5; }.mindmap-chapter-footer a { display: inline-flex; align-items: center; gap: 5px; color: #3156eb; font-size: 11px; text-decoration: none; }.mindmap-chapter-footer a:hover { text-decoration: underline; }
@@ -3471,7 +3471,7 @@ h1 em {
   right: 31px;
   z-index: 1;
   color: #abadb4;
-  font: 700 11px "Readex Pro", sans-serif;
+  font: 700 11px var(--font-readex), sans-serif;
   letter-spacing: 0;
 }
 .visual-summary-cover-mark {
@@ -3496,7 +3496,7 @@ h1 em {
   margin: 0 0 22px;
   color: #82848b;
   direction: ltr;
-  font: 11px "Readex Pro", sans-serif;
+  font: 11px var(--font-readex), sans-serif;
 }
 .visual-summary-page .summary-hero {
   position: relative;
@@ -3540,7 +3540,7 @@ h1 em {
   font-size: 11px;
   line-height: 1.6;
 }
-.visual-summary-visual > span { color: #668f78; font: 700 10px "Readex Pro", sans-serif; }
+.visual-summary-visual > span { color: #668f78; font: 700 10px var(--font-readex), sans-serif; }
 .visual-summary-visual > strong { color: #3e7459; font-size: 10px; text-transform: none; }
 .visual-summary-visual p { margin: 0; }
 .summary-page-nav {
@@ -3550,7 +3550,7 @@ h1 em {
   background: #ffffff;
   color: #6c6e75;
   cursor: pointer;
-  font: 10px "Readex Pro", sans-serif;
+  font: 10px var(--font-readex), sans-serif;
 }
 .summary-page-nav:hover:not(:disabled) { background: #eff1f8; color: #393d4f; }
 .summary-page-nav:disabled { cursor: not-allowed; opacity: .38; }
@@ -3631,7 +3631,7 @@ h1 em {
 .visual-summary-image-wrap { position: relative; overflow: hidden; border-radius: 8px; background: #e3e5ec; }
 .visual-summary-image-wrap img { display: block; width: 100%; height: 145px; object-fit: cover; cursor: zoom-in; transition: transform .2s ease; }
 .visual-summary-image-wrap img:hover { transform: scale(1.04); }
-.visual-summary-image-wrap span { position: absolute; right: 6px; bottom: 6px; padding: 3px 6px; border-radius: 5px; background: rgba(40, 44, 62,.82); color: #fff; font: 10px "Readex Pro", sans-serif; }
+.visual-summary-image-wrap span { position: absolute; right: 6px; bottom: 6px; padding: 3px 6px; border-radius: 5px; background: rgba(40, 44, 62,.82); color: #fff; font: 10px var(--font-readex), sans-serif; }
 .visual-summary-visual-card .visual-summary-visual { display: block; margin-top: 0; padding: 5px 0; border-bottom: 1px dashed #e1e7e0; }
 .visual-summary-visual-card .visual-summary-visual:last-child { border-bottom: 0; }
 .visual-summary-visual-card .visual-summary-visual strong { display: block; margin-bottom: 3px; }
@@ -3662,14 +3662,14 @@ h1 em {
 .composer-launcher strong { display: block; margin-top: 4px; color: #355e50; font-size: 13px; }
 .composer-launcher small { display: block; margin-top: 3px; color: #77877b; font-size: 10px; }
 .composer-launcher .primary-button { flex-shrink: 0; padding: 9px 12px; font-size: 11px; }
-.composer-ready { flex-shrink: 0; color: #4d8963; font: 700 11px "Readex Pro", sans-serif; }
+.composer-ready { flex-shrink: 0; color: #4d8963; font: 700 11px var(--font-readex), sans-serif; }
 .composer-pages { display: grid; gap: 18px; margin-bottom: 16px; }
 .composer-page { position: relative; overflow: hidden; padding: 27px 30px 31px; border: 1px solid #d5d7de; background: #ffffff; background-image: linear-gradient(rgba(218, 220, 227,.23) 1px, transparent 1px); background-size: 100% 28px; box-shadow: 0 12px 28px rgba(50,58,50,.08); }
 .composer-page::after { content: ""; position: absolute; inset: 12px; border: 1px solid rgba(181, 183, 190,.42); pointer-events: none; }
 .composer-page > * { position: relative; z-index: 1; }
-.composer-page-head { display: flex; justify-content: space-between; color: #94969d; font: 700 10px "Readex Pro", sans-serif; letter-spacing: 0; }
+.composer-page-head { display: flex; justify-content: space-between; color: #94969d; font: 700 10px var(--font-readex), sans-serif; letter-spacing: 0; }
 .composer-page h2 { margin: 15px 0 4px; color: #3a3e50; font-size: 25px; letter-spacing: 0; }
-.composer-subtitle { margin: 0 0 18px; color: #81838a; font: 11px "Readex Pro", sans-serif; }
+.composer-subtitle { margin: 0 0 18px; color: #81838a; font: 11px var(--font-readex), sans-serif; }
 .composer-block { margin-top: 12px; padding: 12px 14px; border: 1px solid #dfe3ec; border-left: 4px solid #8ba697; border-radius: 9px; background: rgba(255,255,255,.8); }
 .composer-block.tone-high_yield { border-left-color: #e1ad54; background: #fff3c4; }
 .composer-block.tone-warning { border-left-color: #d97862; background: #eef2fd; }
@@ -3677,7 +3677,7 @@ h1 em {
 .composer-block-heading { display: flex; align-items: center; gap: 7px; color: #355d59; }
 .composer-block-heading > span { font-size: 16px; }
 .composer-block-heading strong { font-size: 13px; }
-.composer-block-heading small { margin-left: auto; color: #999ba2; font: 10px "Readex Pro", sans-serif; }
+.composer-block-heading small { margin-left: auto; color: #999ba2; font: 10px var(--font-readex), sans-serif; }
 .composer-block p { margin: 7px 0 0; color: #5a5c63; font-size: 11px; line-height: 1.75; }
 .composer-block ul { display: grid; gap: 5px; margin: 8px 0 0; padding-left: 20px; color: #575960; font-size: 11px; line-height: 1.7; }
 @media (max-width: 780px) { .composer-launcher { align-items: stretch; flex-direction: column; }.composer-launcher .primary-button { width: 100%; }.composer-page { padding: 22px 18px 26px; }.composer-page h2 { font-size: 21px; }.composer-block-heading { align-items: flex-start; }.composer-block-heading small { margin-left: auto; } }
@@ -3941,7 +3941,7 @@ h1 em {
   border-radius: 50%;
   background: #dee0e7;
   color: #72747b;
-  font: 600 12px "Readex Pro", sans-serif;
+  font: 600 12px var(--font-readex), sans-serif;
   cursor: pointer;
 }
 .quiz-dot + .quiz-dot::before {
@@ -4037,7 +4037,7 @@ h1 em {
   border: 1px solid #d2d4db;
   border-radius: 9px;
   background: #ebedf4;
-  font: 600 13px "Readex Pro", sans-serif;
+  font: 600 13px var(--font-readex), sans-serif;
   color: #61636a;
 }
 .quiz-choice-text {
@@ -4210,7 +4210,7 @@ h1 em {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font: 700 14px "Readex Pro", sans-serif;
+  font: 700 14px var(--font-readex), sans-serif;
   color: #262a3c;
 }
 .flash-stat small {
@@ -4233,7 +4233,7 @@ h1 em {
   border: 0;
   border-radius: 12px;
   background: #edeff6;
-  font: 700 14px "Readex Pro", sans-serif;
+  font: 700 14px var(--font-readex), sans-serif;
   color: #2d6cb5;
   cursor: pointer;
 }
@@ -4549,7 +4549,7 @@ h1 em {
 .summary-doc-range {
   margin-inline-start: 8px;
   color: #8e9097;
-  font: 400 12px "Readex Pro", sans-serif;
+  font: 400 12px var(--font-readex), sans-serif;
 }
 .summary-doc-divider {
   margin: 28px 0 8px;
@@ -4619,7 +4619,7 @@ h1 em {
 }
 .pdf-viewer-load-percent {
   margin: 4px 0 0;
-  font: 700 15px "Readex Pro", sans-serif;
+  font: 700 15px var(--font-readex), sans-serif;
   color: #2d6cb5;
 }
 
@@ -4807,7 +4807,7 @@ h1 em {
 .explanation-pair p[dir="rtl"],
 .concept-grid small[dir="rtl"] {
   text-align: right;
-  font-family: "Readex Pro", sans-serif;
+  font-family: var(--font-readex), sans-serif;
 }
 .explanation-pair p[dir="ltr"]:first-child {
   text-align: left;
@@ -9135,8 +9135,8 @@ button.sh-student:focus-visible {
   --nl-correct-soft: #e2f5ec;
   --nl-wrong: #dc3f46;
   --nl-wrong-soft: #fdecee;
-  --nl-font-ui: "Readex Pro", system-ui, sans-serif;
-  --nl-font-read: "Noto Naskh Arabic", "Readex Pro", serif;
+  --nl-font-ui: var(--font-readex), system-ui, sans-serif;
+  --nl-font-read: var(--font-naskh), var(--font-readex), serif;
   --nl-r-sm: 6px;
   --nl-r-md: 12px;
   --nl-r-lg: 20px;

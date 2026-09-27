@@ -1,0 +1,846 @@
+/* NiroLearn landing — "ink & highlighter" (app/globals.css @nl-design).
+   Paper background, ink type and actions, Niro blue for links/focus, and
+   the highlighter yellow only where something matters. One motion: the
+   highlighter sweep in the hero, off under prefers-reduced-motion. */
+
+.page {
+  --w: 1120px;
+  --gutter: 16px;
+  min-height: 100vh;
+  background: var(--nl-paper);
+  color: var(--nl-ink);
+  font-family: var(--nl-font-ui);
+}
+@media (min-width: 768px) {
+  .page {
+    --gutter: 32px;
+  }
+}
+
+.skip {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: -60px;
+  z-index: 50;
+  padding: 10px 14px;
+  border-radius: var(--nl-r-sm);
+  background: var(--nl-ink);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip:focus {
+  top: 12px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--nl-rule);
+  background: rgb(242 244 249 / 0.92);
+  backdrop-filter: saturate(1.2) blur(8px);
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 12px var(--gutter);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--nl-ink);
+  font-size: 19px;
+  font-weight: 700;
+  text-decoration: none;
+  direction: ltr;
+}
+.nav {
+  display: none;
+  gap: 22px;
+}
+.nav a {
+  color: var(--nl-ink-2);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.nav a:hover {
+  color: var(--nl-ink);
+}
+@media (min-width: 900px) {
+  .nav {
+    display: flex;
+  }
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+.headerActions a,
+.primary,
+.secondary {
+  white-space: nowrap;
+}
+@media (min-width: 900px) {
+  .bar {
+    gap: 20px;
+  }
+  .headerActions {
+    gap: 8px;
+  }
+}
+.linkButton {
+  padding: 8px 10px;
+  color: var(--nl-ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.linkButton:hover {
+  color: var(--nl-niro-deep);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.primary,
+.primarySmall,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--nl-r-md);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background-color 160ms var(--nl-ease),
+    border-color 160ms var(--nl-ease);
+}
+.primary {
+  min-height: 52px;
+  padding: 0 26px;
+  background: var(--nl-ink);
+  color: #fff;
+  font-size: 17px;
+}
+.primarySmall {
+  min-height: 40px;
+  padding: 0 14px;
+  background: var(--nl-ink);
+  color: #fff;
+  font-size: 15px;
+}
+.primary:hover,
+.primarySmall:hover {
+  background: #2c3760;
+}
+.secondary {
+  min-height: 52px;
+  padding: 0 22px;
+  border: 1px solid var(--nl-rule-strong);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  font-size: 17px;
+}
+.secondary:hover {
+  border-color: var(--nl-ink-3);
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.hero {
+  display: grid;
+  gap: 40px;
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 44px var(--gutter) 56px;
+}
+@media (min-width: 960px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 56px;
+    padding-top: 72px;
+    padding-bottom: 88px;
+  }
+}
+.heroTitle {
+  margin: 0 0 18px;
+  color: var(--nl-ink);
+  font-size: clamp(32px, 4.6vw, 46px);
+  font-weight: 700;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+.heroLede {
+  max-width: 34em;
+  margin: 0 0 28px;
+  color: var(--nl-ink-2);
+  font-size: clamp(17px, 2.4vw, 19px);
+  line-height: 1.85;
+}
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ctaRow > a {
+  flex: 1 1 160px;
+}
+@media (min-width: 560px) {
+  .ctaRow > a {
+    flex: 0 0 auto;
+  }
+}
+.fineprint {
+  margin: 14px 0 0;
+  color: var(--nl-ink-3);
+  font-size: 14px;
+}
+
+/* The lecture page */
+.heroVisual {
+  position: relative;
+  padding-bottom: 24px;
+}
+.sheet {
+  position: relative;
+  padding: 22px 22px 26px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-sm);
+  background: var(--nl-sheet);
+  box-shadow:
+    0 1px 0 var(--nl-rule),
+    0 18px 40px -24px rgb(27 35 64 / 0.35);
+}
+@media (min-width: 960px) {
+  .sheet {
+    padding: 28px 30px 34px;
+    transform: rotate(-1deg);
+  }
+}
+.sheetHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--nl-rule);
+  color: var(--nl-ink-3);
+  font-size: 13px;
+  font-weight: 500;
+}
+.sheetText {
+  margin: 0;
+  color: var(--nl-ink);
+  font-family: var(--nl-font-read);
+  font-size: clamp(16px, 2.2vw, 19px);
+  line-height: 2.15;
+}
+.mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  color: inherit;
+  background-color: transparent;
+  background-image: linear-gradient(var(--nl-marker), var(--nl-marker));
+  background-repeat: no-repeat;
+  background-position: right 55%;
+  background-size: 100% 78%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mark {
+    animation: sweep 700ms var(--nl-ease) 350ms both;
+  }
+  .markDelay1 {
+    animation-delay: 950ms;
+  }
+  .markDelay2 {
+    animation-delay: 1550ms;
+  }
+}
+@keyframes sweep {
+  from {
+    background-size: 0% 78%;
+  }
+  to {
+    background-size: 100% 78%;
+  }
+}
+.sheetLines {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.sheetLines span {
+  height: 9px;
+  border-radius: 99px;
+  background: #eceff5;
+}
+.sheetLines span:nth-child(2) {
+  width: 86%;
+}
+.sheetLines span:nth-child(3) {
+  width: 62%;
+}
+
+.outputs {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+@media (min-width: 960px) {
+  .outputs {
+    position: relative;
+    z-index: 2;
+    width: 76%;
+    margin-top: -26px;
+    margin-inline-start: 6%;
+  }
+}
+.outCard {
+  padding: 14px 16px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+  box-shadow: 0 12px 28px -20px rgb(27 35 64 / 0.4);
+}
+.outCard p {
+  margin: 8px 0 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.outChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.outChips span {
+  padding: 6px 12px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: 99px;
+  background: var(--nl-sheet);
+  color: var(--nl-ink-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+.heroNiro {
+  display: none;
+}
+@media (min-width: 960px) {
+  .heroNiro {
+    display: block;
+    position: absolute;
+    inset-inline-end: -18px;
+    bottom: -12px;
+    z-index: 3;
+  }
+}
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+.section {
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 56px var(--gutter);
+  border-top: 1px solid var(--nl-rule);
+  scroll-margin-top: 72px;
+}
+@media (min-width: 768px) {
+  .section {
+    padding-top: 88px;
+    padding-bottom: 88px;
+  }
+}
+.sectionHead {
+  max-width: 40em;
+  margin-bottom: 32px;
+}
+.sectionHead h2,
+.focusCopy h2,
+.cta h2 {
+  margin: 0 0 10px;
+  color: inherit;
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 700;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.sectionHead p {
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 17px;
+  line-height: 1.8;
+}
+.caption {
+  margin: 18px 0 0;
+  color: var(--nl-ink-3);
+  font-size: 13px;
+}
+
+/* Problem → solution: a corrected page, crossed out in red pen. */
+.ledger {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ledgerRow {
+  display: grid;
+  gap: 6px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--nl-rule);
+}
+@media (min-width: 768px) {
+  .ledgerRow {
+    grid-template-columns: 1fr 1.15fr;
+    gap: 40px;
+    align-items: baseline;
+  }
+}
+.ledgerProblem {
+  margin: 0;
+  color: var(--nl-ink-3);
+  font-size: 17px;
+}
+.strike {
+  text-decoration: line-through;
+  text-decoration-color: var(--nl-wrong);
+  text-decoration-thickness: 2px;
+}
+.ledgerAnswer {
+  margin: 0;
+  color: var(--nl-ink);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+/* How it works — a real sequence, so it is numbered. */
+.steps {
+  display: grid;
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 768px) {
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+  }
+}
+.step h3 {
+  margin: 10px 0 6px;
+  font-size: 21px;
+  font-weight: 700;
+}
+.step p {
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.8;
+}
+.stepNumber {
+  display: inline-block;
+  padding: 0 8px;
+  background: linear-gradient(transparent 55%, var(--nl-marker-soft) 55%);
+  color: var(--nl-ink);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* Exam Focus — the one dark band. */
+.focusBand {
+  background: var(--nl-ink);
+  color: #fff;
+  scroll-margin-top: 72px;
+}
+.focusInner {
+  display: grid;
+  gap: 36px;
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 64px var(--gutter);
+}
+@media (min-width: 960px) {
+  .focusInner {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 64px;
+    padding-top: 96px;
+    padding-bottom: 96px;
+  }
+}
+.focusCopy p {
+  margin: 0 0 20px;
+  color: #d6dbea;
+  font-size: 17px;
+  line-height: 1.9;
+}
+.focusPoints {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.focusPoints li {
+  position: relative;
+  padding-inline-start: 22px;
+  color: #eef1f8;
+  font-size: 16px;
+  line-height: 1.7;
+}
+.focusPoints li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--nl-marker);
+}
+.focusStack {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.focusStack .caption {
+  color: #aab2c8;
+}
+.focusCard {
+  padding: 16px 18px;
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+}
+.focusCard p {
+  margin: 10px 0 8px;
+  font-family: var(--nl-font-read);
+  font-size: 17px;
+  line-height: 1.8;
+}
+.focusTag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--nl-r-sm);
+  background: var(--nl-marker);
+  color: var(--nl-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.focusSource {
+  color: var(--nl-ink-3);
+  font-size: 13px;
+}
+
+/* Features — index rows with a small preview, not a card grid. */
+.features {
+  display: grid;
+}
+.feature {
+  display: grid;
+  gap: 18px;
+  padding: 28px 0;
+  border-top: 1px solid var(--nl-rule);
+}
+@media (min-width: 768px) {
+  .feature {
+    grid-template-columns: 1fr 1.1fr;
+    align-items: center;
+    gap: 48px;
+  }
+}
+.featureCopy h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.featureCopy p {
+  max-width: 30em;
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.85;
+}
+.preview {
+  padding: 18px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+}
+.pvHeading,
+.pvQuestion {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+.pvSummary ul,
+.pvQuiz ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pvSummary li {
+  position: relative;
+  padding-inline-start: 16px;
+  color: var(--nl-ink-2);
+  font-family: var(--nl-font-read);
+  font-size: 16px;
+  line-height: 1.8;
+}
+.pvSummary li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.8em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nl-niro);
+}
+.pvAnswer {
+  margin: 0 0 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--nl-rule-strong);
+  color: var(--nl-ink-2);
+  line-height: 1.8;
+}
+.pvRate {
+  display: flex;
+  gap: 8px;
+}
+.pvRate span {
+  flex: 1;
+  padding: 7px 0;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-sm);
+  color: var(--nl-ink-2);
+  font-size: 14px;
+  text-align: center;
+}
+.pvQuiz li {
+  padding: 10px 12px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-sm);
+  color: var(--nl-ink-2);
+}
+.pvQuiz .pvCorrect {
+  border-color: var(--nl-correct);
+  background: var(--nl-correct-soft);
+  color: var(--nl-ink);
+  font-weight: 600;
+}
+.pvMap {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin: 0 auto;
+}
+.pvMapLines path {
+  fill: none;
+  stroke: var(--nl-rule-strong);
+  stroke-width: 1.5;
+}
+.pvMapNodes rect {
+  fill: var(--nl-sheet);
+  stroke: var(--nl-rule-strong);
+}
+.pvMapNodes .pvMapRoot {
+  fill: var(--nl-niro-soft);
+  stroke: var(--nl-niro);
+}
+.pvMapNodes text {
+  fill: var(--nl-ink);
+  font-family: var(--nl-font-ui);
+  font-size: 12px;
+  text-anchor: middle;
+}
+.pvChat {
+  display: grid;
+  gap: 10px;
+}
+.pvAsk {
+  justify-self: start;
+  margin: 0;
+  padding: 9px 14px;
+  border-radius: 14px;
+  background: var(--nl-ink);
+  color: #fff;
+}
+.pvReply {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-self: end;
+  max-width: 92%;
+  padding: 10px 14px;
+  border: 1px solid var(--nl-rule);
+  border-radius: 14px;
+  background: var(--nl-niro-soft);
+}
+.pvReply p {
+  margin: 0;
+  color: var(--nl-ink);
+  line-height: 1.8;
+}
+
+.alsoRow {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 28px;
+  border-top: 1px solid var(--nl-rule);
+}
+@media (min-width: 768px) {
+  .alsoRow {
+    grid-template-columns: 1fr 1.1fr;
+    gap: 48px;
+  }
+}
+.alsoRow h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+.alsoRow ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.alsoRow li {
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* FAQ — native disclosure, no script. */
+.faq {
+  max-width: 48em;
+  border-top: 1px solid var(--nl-rule);
+}
+.faqItem {
+  border-bottom: 1px solid var(--nl-rule);
+}
+.faqItem summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  list-style: none;
+}
+.faqItem summary::-webkit-details-marker {
+  display: none;
+}
+.faqItem summary::after {
+  content: "+";
+  color: var(--nl-ink-3);
+  font-size: 22px;
+  line-height: 1;
+}
+.faqItem[open] summary::after {
+  content: "−";
+}
+.faqItem p {
+  margin: 0 0 18px;
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+/* Closing call to action */
+.cta {
+  display: grid;
+  justify-items: start;
+  gap: 20px;
+  max-width: var(--w);
+  margin: 0 auto 64px;
+  padding: 36px var(--gutter);
+}
+@media (min-width: 768px) {
+  .cta {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 36px;
+    padding: 48px 56px;
+    border: 1px solid var(--nl-rule);
+    border-radius: var(--nl-r-lg);
+    background: var(--nl-sheet);
+  }
+}
+.cta p {
+  margin: 0 0 20px;
+  color: var(--nl-ink-2);
+  font-size: 17px;
+  line-height: 1.8;
+}
+.ctaNiro {
+  display: block;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--nl-rule);
+  background: var(--nl-sheet);
+}
+.footerInner {
+  display: grid;
+  gap: 28px;
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 40px var(--gutter) 20px;
+}
+@media (min-width: 768px) {
+  .footerInner {
+    grid-template-columns: 1fr 1.4fr;
+  }
+}
+.footerBrand p {
+  max-width: 26em;
+  margin: 10px 0 0;
+  color: var(--nl-ink-3);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.footerNav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+}
+@media (min-width: 560px) {
+  .footerNav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.footerNav a {
+  padding: 4px 0;
+  color: var(--nl-ink-2);
+  font-size: 15px;
+  text-decoration: none;
+}
+.footerNav a:hover {
+  color: var(--nl-ink);
+  text-decoration: underline;
+}
+.copyright {
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 12px var(--gutter) 28px;
+  color: var(--nl-ink-3);
+  font-size: 13px;
+  direction: ltr;
+  text-align: end;
+}
