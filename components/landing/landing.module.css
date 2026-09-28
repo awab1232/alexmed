@@ -73,6 +73,13 @@
 .nav a:hover {
   color: var(--nl-ink);
 }
+.nav a[aria-current="page"] {
+  color: var(--nl-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--nl-marker);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+}
 @media (min-width: 900px) {
   .nav {
     display: flex;
@@ -168,6 +175,15 @@
     padding-top: 72px;
     padding-bottom: 88px;
   }
+}
+.kicker {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 0 4px;
+  background: linear-gradient(transparent 60%, var(--nl-marker-soft) 60%);
+  color: var(--nl-ink-2);
+  font-size: 15px;
+  font-weight: 600;
 }
 .heroTitle {
   margin: 0 0 18px;
@@ -452,6 +468,43 @@
   font-size: 40px;
   font-weight: 700;
   line-height: 1.1;
+}
+
+/* Study method — four principles, each ruled like a margin note. */
+.method {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: method;
+}
+@media (min-width: 768px) {
+  .method {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 36px;
+  }
+}
+.methodItem {
+  counter-increment: method;
+  padding: 4px 18px 6px 0;
+  border-inline-start: 3px solid var(--nl-marker);
+}
+.methodItem h3 {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 700;
+}
+.methodItem h3::before {
+  content: counter(method) ". ";
+  color: var(--nl-ink-3);
+  font-weight: 600;
+}
+.methodItem p {
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 /* Exam Focus — the one dark band. */
@@ -815,15 +868,26 @@
   font-size: 15px;
   line-height: 1.7;
 }
-.footerNav {
+.footerCols {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 24px;
+  gap: 24px;
 }
 @media (min-width: 560px) {
-  .footerNav {
+  .footerCols {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+.footerNav {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+.footerHeading {
+  margin: 0 0 6px;
+  color: var(--nl-ink);
+  font-size: 15px;
+  font-weight: 700;
 }
 .footerNav a {
   padding: 4px 0;
@@ -843,4 +907,229 @@
   font-size: 13px;
   direction: ltr;
   text-align: end;
+}
+
+/* ── Tool pages & study guide ───────────────────────────────────────── */
+.toolHero {
+  display: grid;
+  gap: 32px;
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 40px var(--gutter) 48px;
+}
+@media (min-width: 960px) {
+  .toolHero {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
+    gap: 48px;
+    padding-top: 64px;
+    padding-bottom: 72px;
+  }
+}
+.toolHero .heroTitle {
+  font-size: clamp(30px, 3.4vw, 40px);
+}
+.heroLede p {
+  margin: 0 0 12px;
+}
+.heroLede p:last-child {
+  margin-bottom: 0;
+}
+
+/* Plain reading column for explanations. */
+.prose {
+  max-width: 44em;
+  color: var(--nl-ink-2);
+  font-size: 17px;
+  line-height: 1.9;
+}
+.prose p {
+  margin: 0 0 14px;
+}
+.prose h3 {
+  margin: 26px 0 8px;
+  color: var(--nl-ink);
+  font-size: 20px;
+  font-weight: 700;
+}
+.prose ul,
+.prose ol {
+  margin: 0 0 14px;
+  padding-inline-start: 22px;
+}
+.prose li {
+  margin-bottom: 6px;
+}
+.prose strong {
+  color: var(--nl-ink);
+}
+.source {
+  margin-top: 18px;
+  color: var(--nl-ink-3);
+  font-size: 14px;
+}
+
+/* Two columns side by side: what a generic tool gives vs NiroLearn. */
+.compareTable {
+  width: 100%;
+  max-width: 820px;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.compareTable th,
+.compareTable td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--nl-rule);
+  text-align: start;
+  vertical-align: top;
+}
+.compareTable thead th {
+  color: var(--nl-ink-3);
+  font-size: 14px;
+  font-weight: 600;
+}
+.compareTable thead th:last-child {
+  color: var(--nl-ink);
+}
+.compareTable tbody th {
+  width: 34%;
+  color: var(--nl-ink);
+  font-weight: 600;
+}
+.compareTable td:last-child {
+  background: var(--nl-marker-soft);
+  color: var(--nl-ink);
+}
+.tableWrap {
+  overflow-x: auto;
+}
+
+.related {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--nl-rule);
+}
+@media (min-width: 768px) {
+  .related {
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 0;
+    gap: 28px;
+  }
+}
+.related li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--nl-rule);
+}
+@media (min-width: 768px) {
+  .related li {
+    padding: 0 0 0 0;
+    border-bottom: 0;
+    border-top: 3px solid var(--nl-ink);
+    padding-top: 14px;
+  }
+}
+.related a {
+  color: var(--nl-ink);
+  font-size: 19px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--nl-marker);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+}
+.related p {
+  margin: 6px 0 0;
+  color: var(--nl-ink-2);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.tryCard {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 900px) {
+  .tryCard {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+}
+
+/* Study plan — a real sequence, drawn as a ruled timeline. */
+.guide {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  max-width: 46em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: guide;
+}
+.guide::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  inset-inline-start: 17px;
+  width: 2px;
+  background: var(--nl-rule-strong);
+}
+.guideStep {
+  position: relative;
+  counter-increment: guide;
+  padding-inline-start: 56px;
+}
+.guideStep::before {
+  content: counter(guide);
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--nl-ink);
+  color: #fff;
+  font-weight: 700;
+}
+.guideStep h3 {
+  margin: 4px 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.guideStep p {
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.85;
+}
+.guideStep .guideTool {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-inline-start: 3px solid var(--nl-marker);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  font-size: 15px;
+}
+.guideTool a {
+  color: var(--nl-niro-deep);
+  font-weight: 600;
+}
+.featureLink,
+.moreLink a {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--nl-niro-deep);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.moreLink {
+  margin: 18px 0 0;
 }

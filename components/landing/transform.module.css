@@ -1,0 +1,439 @@
+/* Before/after comparison and the illustrated "study artifacts" inside it.
+   Same ink & highlighter tokens as landing.module.css. The only motion is
+   the divider's first sweep (JS, reduced-motion aware) and the flashcard
+   flip, which answers a click. */
+
+/* ── Comparison frame ───────────────────────────────────────────────── */
+.compare {
+  margin: 0;
+}
+.stage {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-lg);
+  background: #e9ecf3;
+  isolation: isolate;
+}
+.layerBefore,
+.layerAfter {
+  grid-area: 1 / 1;
+  min-width: 0;
+  padding: 44px 16px 20px;
+}
+@media (min-width: 768px) {
+  .layerBefore,
+  .layerAfter {
+    padding: 52px 28px 28px;
+  }
+}
+.layerBefore {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 14px,
+      rgb(27 35 64 / 0.025) 14px 15px
+    ),
+    #e6e9f0;
+}
+.layerAfter {
+  /* "After" sits on the right, where Arabic reading starts; --pos is the
+     share of the width it shows, measured from the right edge. */
+  clip-path: inset(0 0 0 calc(100% - var(--pos)));
+  background: var(--nl-paper);
+}
+.tag {
+  position: absolute;
+  top: 12px;
+  z-index: 3;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.tagBefore {
+  inset-inline-end: 12px;
+  background: var(--nl-ink);
+  color: #fff;
+}
+.tagAfter {
+  inset-inline-start: 12px;
+  background: var(--nl-marker);
+  color: var(--nl-ink);
+}
+.divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: var(--pos);
+  z-index: 2;
+  width: 2px;
+  margin-inline-start: -1px;
+  background: var(--nl-ink);
+  pointer-events: none;
+}
+.handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--nl-ink);
+  border-radius: 50%;
+  background: var(--nl-marker);
+  box-shadow: 0 6px 18px -6px rgb(27 35 64 / 0.5);
+  transform: translate(-50%, -50%);
+}
+.handle::before,
+.handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-block: 6px solid transparent;
+  transform: translateY(-50%);
+}
+.handle::before {
+  left: 7px;
+  border-right: 7px solid var(--nl-ink);
+}
+.handle::after {
+  right: 7px;
+  border-left: 7px solid var(--nl-ink);
+}
+/* The real control: a full-size, invisible range input on top. */
+.range {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+.stage:has(.range:focus-visible) {
+  outline: 3px solid var(--nl-niro);
+  outline-offset: 3px;
+}
+.caption {
+  margin: 10px 2px 0;
+  color: var(--nl-ink-3);
+  font-size: 13px;
+}
+
+/* ── "Before": a dense lecture page ─────────────────────────────────── */
+.lecture {
+  max-width: 560px;
+  margin-inline: auto;
+  padding: 18px 18px 22px;
+  border: 1px solid #d3d7e0;
+  background: #fbfbf8;
+  box-shadow: 0 10px 24px -18px rgb(27 35 64 / 0.45);
+  color: #3a3f4d;
+  font-family: Georgia, "Times New Roman", serif;
+  text-align: left;
+  transform: rotate(0.6deg);
+}
+.lectureHead {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #d9dce3;
+  color: #7a7f8c;
+  font-size: 11px;
+}
+.lectureTitle {
+  margin: 0 0 6px;
+  color: #22273a;
+  font-size: 16px;
+  font-weight: 700;
+}
+.lectureText {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: justify;
+  hyphens: auto;
+}
+.lectureFig {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+  align-items: center;
+  margin: 8px 0 10px;
+  font-size: 10.5px;
+  font-style: italic;
+  color: #6c7180;
+}
+.lectureFig svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid #dde0e7;
+  background: #fff;
+}
+.lectureFade {
+  height: 40px;
+  margin-top: -30px;
+  background: linear-gradient(transparent, #fbfbf8);
+  position: relative;
+}
+
+/* ── "After": what the student studies instead ──────────────────────── */
+.after {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+  margin-inline: auto;
+}
+.sumCard {
+  padding: 16px 18px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+}
+.sumTitle {
+  margin: 0 0 10px;
+  color: var(--nl-ink);
+  font-size: 17px;
+  font-weight: 700;
+}
+.sumPoints {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  color: var(--nl-ink);
+  font-size: 14px;
+  line-height: 1.6;
+  direction: ltr;
+  text-align: left;
+  padding: 0 0 0 18px;
+}
+.sumSupport {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--nl-rule-strong);
+  color: var(--nl-ink-2);
+  font-family: var(--nl-font-read);
+  font-size: 15px;
+  line-height: 1.9;
+}
+.focus {
+  padding: 12px 14px;
+  border-radius: var(--nl-r-md);
+  background: var(--nl-marker-soft);
+  border-inline-start: 4px solid var(--nl-marker);
+}
+.focus strong {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.focus p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.focus small {
+  display: block;
+  margin-top: 4px;
+  color: var(--nl-ink-3);
+  font-size: 12px;
+}
+.terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.terms li {
+  padding: 4px 10px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: 99px;
+  background: var(--nl-sheet);
+  font-size: 13px;
+}
+.terms bdi {
+  color: var(--nl-ink-3);
+}
+
+/* Flashcard stack */
+.deck {
+  position: relative;
+  display: grid;
+  max-width: 420px;
+  margin: 12px auto 26px;
+}
+.deckCard {
+  grid-area: 1 / 1;
+  padding: 18px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+  box-shadow: 0 14px 30px -22px rgb(27 35 64 / 0.6);
+}
+.deckCard:nth-child(2) {
+  transform: translate(-10px, 12px) rotate(-2.5deg);
+  z-index: -1;
+}
+.deckCard:nth-child(3) {
+  transform: translate(-20px, 24px) rotate(-5deg);
+  z-index: -2;
+}
+.deckQ {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.deckA {
+  margin: 0 0 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--nl-rule-strong);
+  color: var(--nl-ink-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.deckRate {
+  display: flex;
+  gap: 6px;
+}
+.deckRate span {
+  flex: 1;
+  padding: 6px 0;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-sm);
+  font-size: 13px;
+  text-align: center;
+}
+.deckDue {
+  margin: 0;
+  color: var(--nl-ink-3);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Mind map */
+.map {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  margin-inline: auto;
+}
+.map line {
+  stroke: var(--nl-rule-strong);
+  stroke-width: 2;
+}
+.map rect {
+  fill: var(--nl-sheet);
+  stroke: var(--nl-rule-strong);
+}
+.map .mapRoot {
+  fill: var(--nl-ink);
+  stroke: var(--nl-ink);
+}
+.map .mapHot {
+  fill: var(--nl-marker-soft);
+  stroke: var(--nl-marker);
+}
+.map text {
+  fill: var(--nl-ink);
+  font-family: var(--nl-font-ui);
+  font-size: 17px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.map .mapRootText {
+  fill: #fff;
+  font-size: 19px;
+  font-weight: 700;
+}
+.map .mapSub {
+  fill: var(--nl-ink-3);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* ── Flip card (interactive) ────────────────────────────────────────── */
+.flip {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  min-height: 220px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  perspective: 1200px;
+}
+.flipInner {
+  position: relative;
+  display: grid;
+  min-height: 220px;
+  transition: transform 520ms var(--nl-ease);
+  transform-style: preserve-3d;
+}
+.flip[aria-pressed="true"] .flipInner {
+  transform: rotateY(180deg);
+}
+.flipFace {
+  grid-area: 1 / 1;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+  box-shadow: 0 18px 36px -26px rgb(27 35 64 / 0.6);
+  backface-visibility: hidden;
+}
+.flipBack {
+  background: var(--nl-marker-soft);
+  transform: rotateY(180deg);
+}
+.flipLabel {
+  color: var(--nl-ink-3);
+  font-size: 13px;
+  font-weight: 600;
+}
+.flipText {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.flipBack .flipText {
+  font-size: 17px;
+  font-weight: 500;
+}
+.flip:focus-visible {
+  outline: none;
+}
+.flip:focus-visible .flipFace {
+  outline: 3px solid var(--nl-niro);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flipInner {
+    transition: none;
+  }
+}
+.flipHint {
+  margin: 10px 0 0;
+  color: var(--nl-ink-3);
+  font-size: 13px;
+  text-align: center;
+}

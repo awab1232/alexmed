@@ -1,0 +1,36 @@
+# NiroLearn
+
+> NiroLearn (nirolearn.com) is an Arabic-first AI study platform for students. A student uploads their own study material as a PDF (a textbook, lecture file or past-exam question file) and NiroLearn turns it into study tools built from that file.
+
+The interface is in Arabic. Students can upload material in Arabic or English (for example medicine and engineering). For English material, explanations keep the original English terminology and add an Arabic support explanation plus a bilingual list of key terms. Text is read even from scanned pages.
+
+## What it does
+
+- Organized summary (تلخيص PDF) for each part of the file, with headings and key points.
+- Exam Focus: the high-importance, exam-relevant facts pulled from the whole file, grouped by type (must-know, numbers and limits, exam traps, comparisons…), each with the page it came from.
+- Flashcards (فلاش كارد) generated from the file, scheduled with spaced repetition based on how the student rates each card.
+- Multiple-choice quizzes built from the file, with an explanation for each answer.
+- Mind map (خريطة ذهنية) for each part of the file.
+- Niro, a study assistant that answers questions using the file's own pages.
+- PDF reader with highlights and notes; past-exam question files turned into review cards; study packs shared with classmates.
+
+## Who it is for
+
+University and school students across the Arab world who study from large PDF books, lecture files and past exam papers.
+
+## Plans
+
+Free plan with all study tools at lower usage limits (no payment card needed). Pro and Ultimate plans raise the limits. Current details: https://nirolearn.com/pricing
+
+## Links
+
+- Home: https://nirolearn.com/
+- AI PDF summaries for studying: https://nirolearn.com/pdf-summary
+- AI flashcards with spaced repetition: https://nirolearn.com/flashcards
+- AI mind maps from PDF: https://nirolearn.com/mind-map
+- Study guide (how to study a big file before an exam): https://nirolearn.com/how-to-study
+- Pricing: https://nirolearn.com/pricing
+- Sign up (free): https://nirolearn.com/register
+- Contact: https://nirolearn.com/contact
+- Privacy policy: https://nirolearn.com/privacy
+- Terms of use: https://nirolearn.com/terms

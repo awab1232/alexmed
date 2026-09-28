@@ -18,8 +18,11 @@ const readexPro = Readex_Pro({
   display: "swap",
   variable: "--font-readex",
 });
+// "latin" too: Naskh text still contains spaces and digits, and without the
+// latin subset preloaded that file was fetched only after first paint — the
+// hero re-flowed on arrival (CLS) and its LCP waited for it.
 const notoNaskh = Noto_Naskh_Arabic({
-  subsets: ["arabic"],
+  subsets: ["arabic", "latin"],
   display: "swap",
   variable: "--font-naskh",
 });

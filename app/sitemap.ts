@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { PUBLIC_PATHS, SITE_URL } from "@/lib/site";
+import { PUBLIC_PATHS, SITE_URL, TOOL_PAGES } from "@/lib/site";
 
 // Only the public, indexable pages — never app pages behind sign-in.
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -11,6 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ? 1
         : path === "/pricing" || path === "/register"
           ? 0.8
-          : 0.5,
+          : TOOL_PAGES.some(page => page.href === path)
+            ? 0.9
+            : 0.5,
   }));
 }
