@@ -6,11 +6,13 @@
 // to build workers on top of — a duplicate/retried delivery that arrives
 // while the first attempt is still in flight (or already finished) always
 // finds nothing left to claim.
-import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import {
   adminMaterialBatches,
   bookChapters,
   bookPages,
+  books,
+  chapterGenerationJobs,
   extractedQuestions,
   mirrorBatches,
   mirrorImagePages,
@@ -305,4 +307,107 @@ export async function claimMirrorImagePage(
       attemptCount: mirrorImagePages.attemptCount,
     });
   return row ?? null;
+}
+
+// ── On-demand chapter generation (lib/generation-jobs.ts) ────────────────
+
+// Longer than any single generation run (a chapter's chunked flashcards /
+// notes can take several minutes of AI time): a "processing" job older than
+// this was abandoned by a killed worker and may be claimed again.
+export const STALE_GENERATION_JOB_MS = 20 * 60 * 1000;
+
+export type ClaimedGenerationJob = {
+  id: string;
+  chapterId: string;
+  bookId: string;
+  userId: string;
+  kind: string;
+  rebuild: boolean;
+  attemptCount: number;
+};
+
+// queued -> processing, atomically. Of two deliveries of the same message
+// (or a delivery racing a stale-job recovery), exactly one gets the row;
+// the other does no AI work.
+export async function claimGenerationJob(
+  jobId: string
+): Promise<ClaimedGenerationJob | null> {
+  const db = requireDb();
+  const now = new Date();
+  const t = chapterGenerationJobs;
+  const [row] = await db
+    .update(t)
+    .set({
+      status: "processing",
+      attemptCount: sql`${t.attemptCount} + 1`,
+      startedAt: now,
+      errorType: null,
+      errorMessage: null,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(t.id, jobId),
+        or(
+          eq(t.status, "queued"),
+          and(
+            eq(t.status, "processing"),
+            lt(t.startedAt, new Date(now.getTime() - STALE_GENERATION_JOB_MS))
+          )
+        )
+      )
+    )
+    .returning({
+      id: t.id,
+      chapterId: t.chapterId,
+      bookId: t.bookId,
+      userId: t.userId,
+      kind: t.kind,
+      rebuild: t.rebuild,
+      attemptCount: t.attemptCount,
+    });
+  return row ?? null;
+}
+
+// ── كتبي PDF extraction (app/api/books/extract) ──────────────────────────
+
+// One extraction invocation (text pass or one 12-page OCR batch) holds the
+// book for at most this long; a lease left by a killed worker expires and
+// the next delivery may take over.
+export const BOOK_EXTRACTION_LEASE_MS = 10 * 60 * 1000;
+
+// Ownership of the book's current extraction step. Status stays
+// "extracting" throughout (the rest of the app reads it); the lease is
+// what makes two concurrent deliveries for the same book mutually
+// exclusive — the loser sees a live lease and does no OCR/AI work.
+export async function claimBookExtraction(bookId: string): Promise<boolean> {
+  const db = requireDb();
+  const now = new Date();
+  const rows = await db
+    .update(books)
+    .set({
+      extractionLeaseUntil: new Date(now.getTime() + BOOK_EXTRACTION_LEASE_MS),
+    })
+    .where(
+      and(
+        eq(books.id, bookId),
+        eq(books.status, "extracting"),
+        or(
+          isNull(books.extractionLeaseUntil),
+          lt(books.extractionLeaseUntil, now)
+        )
+      )
+    )
+    .returning({ id: books.id });
+  return rows.length > 0;
+}
+
+// Called when the invocation is done (whatever the outcome) so the next,
+// self-chained step can claim the book straight away.
+export async function releaseBookExtraction(bookId: string): Promise<void> {
+  const db = requireDb();
+  await db
+    .update(books)
+    .set({ extractionLeaseUntil: null })
+    .where(eq(books.id, bookId));
 }

@@ -1,4 +1,8 @@
 import { auth } from "@/lib/auth";
+import {
+  acquireInteractiveSlot,
+  INTERACTIVE_LIMIT_MESSAGE_AR,
+} from "@/lib/ai/interactive-limit";
 import { admitAssistantMessage } from "@/lib/billing/assistant-guard";
 import { appendChatMessage, getChatSessionForUser } from "@/lib/db-chat";
 import { streamFastAnswer } from "@/lib/fast-answer-stream";
@@ -54,23 +58,44 @@ export async function POST(request: Request) {
     );
   }
 
+  // Load guard across every replica (lib/ai/interactive-limit.ts) — taken
+  // before the quota, so a refusal here costs the student nothing.
+  const slot = await acquireInteractiveSlot(userId, "study_chat");
+  if (!slot.ok) {
+    return NextResponse.json(
+      { error: INTERACTIVE_LIMIT_MESSAGE_AR[slot.reason] },
+      { status: 429 }
+    );
+  }
+
   // 💳 One message from the plan's daily assistant quota — checked before
   // the question is saved, so a refused message leaves no trace.
   const admitted = await admitAssistantMessage(userId);
-  if (admitted instanceof NextResponse) return admitted;
+  if (admitted instanceof NextResponse) {
+    await slot.release();
+    return admitted;
+  }
 
-  await appendChatMessage(chat.id, {
-    role: "user",
-    content: parsed.data.question,
-  });
-  const { messages, chunks } = await prepareStudyChatTurn(
-    userId,
-    chat,
-    parsed.data.question
-  );
+  let messages: Awaited<ReturnType<typeof prepareStudyChatTurn>>["messages"];
+  let chunks: Awaited<ReturnType<typeof prepareStudyChatTurn>>["chunks"];
+  try {
+    await appendChatMessage(chat.id, {
+      role: "user",
+      content: parsed.data.question,
+    });
+    ({ messages, chunks } = await prepareStudyChatTurn(
+      userId,
+      chat,
+      parsed.data.question
+    ));
+  } catch (error) {
+    await slot.release();
+    throw error;
+  }
   return streamFastAnswer(messages, {
     logTag: "study-chat",
     maxTokens: 2500,
+    onSettled: slot.release,
     onNoAnswer: admitted.refund,
     onComplete: async answer => {
       await admitted.recordAnswer(answer);

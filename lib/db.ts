@@ -23,17 +23,29 @@ import { associateImagesWithQuestions } from "./question-file-analysis";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+function readPoolMax(): number {
+  const parsed = Number(process.env.DATABASE_POOL_MAX);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 5;
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
-// `max`/`connect_timeout` are connection-pool hygiene per serverless
-// instance, not the real concurrency lever — the actual cap on how many
-// batches/chapters process at once is QUEUE_GLOBAL_CONCURRENCY (see
-// lib/queue/types.ts), enforced via QStash Flow Control and a DB backstop.
+// One pool per process (a module-level singleton), so a replica never holds
+// more than `max` connections however many requests it serves:
+//   total connections ≈ replicas × DATABASE_POOL_MAX (default 5)
+// — size it against the database's own limit before adding replicas.
+// `idle_timeout` hands idle connections back instead of holding the full
+// pool on every replica around the clock; `max_lifetime` recycles long-lived
+// ones. `prepare: false` keeps it compatible with a transaction pooler.
+// These are pool hygiene, not the concurrency lever — the cap on how many
+// jobs process at once is the QStash Flow Control keys (lib/queue).
 export function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     const client = postgres(process.env.DATABASE_URL, {
       prepare: false,
-      max: 5,
+      max: readPoolMax(),
       connect_timeout: 10,
+      idle_timeout: 20,
+      max_lifetime: 60 * 30,
     });
     _db = drizzle(client);
   }

@@ -38,7 +38,12 @@ export type QueueMessage =
   // 🔥 Exam Focus (lib/exam-focus.ts) — one message per unit (a page range
   // of the whole file), then one finalize once every unit is settled.
   | { type: "extract_exam_focus_unit"; unitId: string; deckId: string }
-  | { type: "finalize_exam_focus"; deckId: string };
+  | { type: "finalize_exam_focus"; deckId: string }
+  // On-demand chapter generation (flashcards, MCQs, mind map, notes, visual
+  // insights, MCQ validation) — one message per chapter_generation_jobs row
+  // (lib/generation-jobs.ts); the worker claims the row atomically before
+  // any AI call.
+  | { type: "run_chapter_generation"; jobId: string };
 
 function readIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -101,6 +106,15 @@ export function getQuestionFilesEnrichmentQueueConcurrency(): number {
 // capacity, same reasoning as the other per-pipeline concurrency knobs above.
 export function getMirrorImagesQueueConcurrency(): number {
   return readIntEnv("MIRROR_IMAGES_QUEUE_CONCURRENCY", 2);
+}
+
+// On-demand chapter generation (lib/generation-jobs.ts): how many run at
+// once across ALL students — one shared Flow Control key, so 100 students
+// clicking "generate" at once become 100 queued jobs, not 100 simultaneous
+// AI calls. The per-student cap is the plan's processing concurrency
+// (lib/queue/concurrency.ts), checked inside the worker.
+export function getGenerationQueueConcurrency(): number {
+  return readIntEnv("GENERATION_QUEUE_CONCURRENCY", 4);
 }
 
 export function getJobCreationRateLimitMax(): number {

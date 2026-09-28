@@ -1,21 +1,15 @@
 import { getChapterById } from "@/lib/db-books";
-import { generateAndSaveMindMapSections } from "@/lib/book-enrichment";
-import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
+import { enqueueChapterGeneration } from "@/lib/generation-jobs";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { NextResponse } from "next/server";
 
-export const maxDuration = 60;
-
-// Audit Phase 6 — automatic trigger for a chapter's hierarchical mind-map
-// sections, published (best-effort, fire-and-forget) right after
-// app/api/books/analyze-chapter/route.ts marks a chapter "complete". No
-// atomic "claim" here (unlike the bulk pipelines' claim*() helpers) — the
-// underlying generateAndSaveMindMapSections is already idempotent (returns
-// the cached sections if already generated), so an occasional duplicate
-// QStash delivery, or a race with a student's own manual click on the same
-// chapter (lib/trpc/booksRouter.ts's generateMindMapSections), just means
-// reading the same cached result twice — never a duplicate LLM call, never
-// conflicting writes.
+// Legacy destination for "generate_chapter_mindmap_sections" messages.
+// Mind-map generation now runs as a chapter_generation_jobs job
+// (lib/generation-jobs.ts, app/api/books/generation-job) with an atomic
+// claim; analyze-chapter enqueues that directly. This route only drains
+// messages published before that change: it turns each one into the same
+// job (a no-op if one is already queued/running), so nothing in flight is
+// lost and nothing runs twice.
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get("upstash-signature");
@@ -37,30 +31,21 @@ export async function POST(request: Request) {
   }
 
   const chapter = await getChapterById(chapterId);
-  if (!chapter) {
+  if (!chapter || chapter.status !== "complete") {
     return NextResponse.json({ chapterId, status: "skipped" });
   }
 
-  // Same per-user concurrency backstop as analyze-chapter — this is a real
-  // LLM call, so it counts against the student's own budget too.
-  if (await isUserConcurrencyExceeded(chapter.userId, "books")) {
-    return NextResponse.json(
-      { chapterId, status: "throttled" },
-      { status: 429 }
-    );
-  }
-
   try {
-    const sections = await generateAndSaveMindMapSections(chapterId);
-    return NextResponse.json({
+    const job = await enqueueChapterGeneration({
       chapterId,
-      status: sections === null ? "skipped" : "complete",
+      bookId: chapter.bookId,
+      userId: chapter.userId,
+      kind: "mindmap",
     });
+    return NextResponse.json({ chapterId, status: "queued", jobId: job.id });
   } catch (error) {
-    console.error("[Books] generate-mindmap-sections failed", error);
-    // Best-effort only (see header comment) — a failure here never blocks
-    // or retries against the chapter's own completion; the student's
-    // manual "بناء الخريطة الهرمية" button remains available as a fallback.
-    return NextResponse.json({ chapterId, status: "failed" });
+    console.error("[Books] generate-mindmap-sections enqueue failed", error);
+    // Nothing enqueued — let QStash retry the delivery.
+    return NextResponse.json({ error: "تعذر إضافة المهمة." }, { status: 502 });
   }
 }

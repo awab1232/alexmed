@@ -8,6 +8,7 @@ import {
   getAdminMaterialsQueueConcurrency,
   getBooksVisualQueueConcurrency,
   getExamFocusQueueConcurrency,
+  getGenerationQueueConcurrency,
   getMirrorImagesQueueConcurrency,
   getQuestionFilesEnrichmentQueueConcurrency,
   getQueueGlobalConcurrency,
@@ -75,6 +76,8 @@ function resolveDestination(message: QueueMessage): string {
       return `${base}/api/books/exam-focus/extract-unit`;
     case "finalize_exam_focus":
       return `${base}/api/books/exam-focus/finalize`;
+    case "run_chapter_generation":
+      return `${base}/api/books/generation-job`;
   }
 }
 
@@ -163,6 +166,13 @@ function defaultFlowControl(message: QueueMessage): FlowControl {
     // deliveries for the same deck never overlap.
     case "finalize_exam_focus":
       return { key: `exam-focus-finalize-${message.deckId}`, parallelism: 1 };
+    // One shared key for every student's on-demand generation — the global
+    // cap on how many of these AI jobs run at once.
+    case "run_chapter_generation":
+      return {
+        key: "chapter-generation-pipeline",
+        parallelism: getGenerationQueueConcurrency(),
+      };
   }
 }
 

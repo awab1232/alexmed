@@ -6,9 +6,24 @@
 // 429 — retrying a rate-limit against a gateway that already handles rate-
 // limit routing itself would just duplicate requests for no benefit).
 import { omniRouteConfig } from "../config";
+import { logAiEvent } from "../context";
+import {
+  checkModel,
+  msUntilNextProbe,
+  recordModelFailure,
+  recordModelSuccess,
+  type BreakerSnapshot,
+} from "../circuit-breaker";
 import { parseOpenAiSseStream } from "../sse";
 import {
+  AiAuthError,
+  AiCircuitOpenError,
+  AiInvalidRequestError,
   AiRateLimitError,
+  AiTimeoutError,
+  AiUpstreamError,
+  classifyAiError,
+  type AiErrorType,
   type AiProvider,
   type EmbedParams,
   type EmbedResult,
@@ -38,11 +53,61 @@ const REQUEST_TIMEOUT_MS = 120_000;
 // generation — up to 16k tokens for a chapter analysis — must fit in one
 // attempt, and a stream only takes as long as the model actually writes.
 const STREAMED_GENERATION_TIMEOUT_MS = 240_000;
+// Wall-clock budget for one generateText() call across ALL candidate models
+// — without it a call could wait 240s on every model in the chain in turn.
+// Later candidates get whatever is left; when it's spent the call fails as
+// a timeout and the queue retries it later with backoff.
+const GENERATION_TOTAL_BUDGET_MS = 300_000;
+// A candidate isn't started with less than this left — too little time to
+// produce anything but another timeout.
+const MIN_ATTEMPT_MS = 20_000;
 const RETRY_MAX_RETRIES = 1; // conservative — see file header.
-const RETRY_DELAY_MS = 500;
+const RETRY_BASE_DELAY_MS = 500;
 
 const sleep = (ms: number) =>
   new Promise<void>(resolve => setTimeout(resolve, ms));
+
+// Exponential backoff with "equal jitter": half the exponential delay is
+// fixed, half random — so many callers failing at once don't all retry at
+// the same instant. Exported for tests.
+export function backoffWithJitter(
+  attempt: number,
+  baseMs = RETRY_BASE_DELAY_MS,
+  random = Math.random
+): number {
+  const exponential = baseMs * 2 ** attempt;
+  return Math.round(exponential / 2 + random() * (exponential / 2));
+}
+
+// Same-model retry is only worth it for errors that say "try again": the
+// gateway/upstream is briefly unavailable. A 500 moves on to the next
+// model instead (retrying a broken model just doubles the load), and 4xx
+// never retries here. Exported for tests.
+export function isRetryableStatus(status: number): boolean {
+  return status === 502 || status === 503 || status === 504;
+}
+
+// What a failed HTTP status means for the fallback loop. Exported for tests.
+export function classifyStatus(status: number): AiErrorType {
+  if (status === 401 || status === 403) return "auth";
+  if (status === 429) return "rate_limit";
+  if (status >= 500) return "upstream";
+  return "invalid_request";
+}
+
+// Failures that say the MODEL (or its provider) is unhealthy — these count
+// toward its circuit breaker. An invalid request is about the payload, and
+// an auth error about the shared key, not the model. A 404 is counted: it
+// usually means the model id no longer exists upstream.
+function countsTowardBreaker(type: AiErrorType, status?: number): boolean {
+  if (status === 404) return true;
+  return (
+    type === "rate_limit" ||
+    type === "upstream" ||
+    type === "timeout" ||
+    type === "network"
+  );
+}
 
 function requireApiKey(): string {
   const key = omniRouteConfig.apiKey;
@@ -95,13 +160,16 @@ async function fetchWithTimeout(
         ...init,
         signal: AbortSignal.timeout(timeoutMs),
       });
-      // Only retry network-shaped failures via 5xx; never 429 (see header).
-      if (response.ok || response.status < 500) return response;
+      // Only 502/503/504 are retried on the same model; never 429 (see
+      // header) and never a plain 500 (the next model is a better bet).
+      if (response.ok || !isRetryableStatus(response.status)) return response;
       if (attempt === RETRY_MAX_RETRIES) return response;
       console.warn(
         `[AI][omniroute] retrying after ${describeStatus(response.status)}`
       );
-      await sleep(RETRY_DELAY_MS);
+      // Release the failed response before waiting.
+      await response.body?.cancel().catch(() => undefined);
+      await sleep(backoffWithJitter(attempt));
     } catch (error) {
       lastError = error;
       // A timeout (AbortSignal firing) is NOT the same as a fast network
@@ -112,7 +180,7 @@ async function fetchWithTimeout(
       const isTimeout = error instanceof Error && error.name === "TimeoutError";
       if (isTimeout || attempt === RETRY_MAX_RETRIES) throw error;
       console.warn("[AI][omniroute] retrying after network error");
-      await sleep(RETRY_DELAY_MS);
+      await sleep(backoffWithJitter(attempt));
     }
   }
   throw lastError instanceof Error
@@ -389,15 +457,71 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
   // distribution: e.g. a free provider first, a paid/quota-limited one only
   // as last resort. (An earlier version shuffled this for load spreading;
   // that's what a fixed order gives up in exchange for honoring priority.)
+  //
+  // Failure handling per candidate:
+  //   - circuit open (lib/ai/circuit-breaker.ts) → skipped, nothing sent;
+  //   - 401/403 → stop: the one gateway key is shared by every model;
+  //   - 429 / 5xx / timeout / network → counted against the model's
+  //     circuit, next model;
+  //   - other 4xx → next model (it may accept the payload), not counted;
+  //   - a JSON request answered without JSON → next model.
+  // Everything runs inside GENERATION_TOTAL_BUDGET_MS.
   const candidates = candidateModels(
     primaryModel,
     hasImageContent(params.messages)
   );
+  const deadline = Date.now() + GENERATION_TOTAL_BUDGET_MS;
 
-  let lastFailure: Response | undefined;
+  let lastError: Error | undefined;
+  let lastRateLimitRetryAfter: number | undefined;
+  const skipped: (BreakerSnapshot | null)[] = [];
+  let attempted = 0;
+
   for (let i = 0; i < candidates.length; i++) {
     const model = candidates[i];
     const isLastCandidate = i === candidates.length - 1;
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_ATTEMPT_MS) {
+      lastError = new AiTimeoutError(
+        "OmniRoute: the generation time budget ran out before a model answered"
+      );
+      break;
+    }
+
+    const breaker = await checkModel(model);
+    if (!breaker.allowed) {
+      skipped.push(breaker.snapshot);
+      logAiEvent("ai_call", {
+        provider: "omniroute",
+        model,
+        attempt: i + 1,
+        status: "skipped",
+        errorType: "circuit_open",
+      });
+      continue;
+    }
+    attempted++;
+
+    const startedAt = Date.now();
+    const fail = (
+      type: AiErrorType,
+      error: Error,
+      httpStatus?: number
+    ): void => {
+      lastError = error;
+      logAiEvent("ai_call", {
+        provider: "omniroute",
+        model,
+        attempt: i + 1,
+        status: "error",
+        errorType: type,
+        httpStatus,
+        durationMs: Date.now() - startedAt,
+      });
+      if (countsTowardBreaker(type, httpStatus)) {
+        void recordModelFailure(model, type);
+      }
+    };
 
     let response: Response;
     try {
@@ -414,14 +538,22 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
           // A stream starts within seconds, so long generations finish.
           body: JSON.stringify(buildPayload(model, params, true)),
         },
-        STREAMED_GENERATION_TIMEOUT_MS
+        Math.min(STREAMED_GENERATION_TIMEOUT_MS, remaining)
       );
     } catch (error) {
-      if (isLastCandidate) throw error;
-      console.warn(
-        `[AI][omniroute] ${model} request failed, trying next fallback model`,
-        error
+      const type = classifyAiError(error);
+      fail(
+        type,
+        type === "timeout"
+          ? new AiTimeoutError(`OmniRoute ${model} timed out`)
+          : new AiUpstreamError(`OmniRoute ${model} request failed`)
       );
+      if (!isLastCandidate) {
+        console.warn(
+          `[AI][omniroute] ${model} request failed, trying next fallback model`,
+          error
+        );
+      }
       continue;
     }
 
@@ -439,52 +571,97 @@ async function generateText(params: GenerateParams): Promise<GenerateResult> {
         ) {
           throw new Error("JSON was requested but the answer contains none");
         }
+        logAiEvent("ai_call", {
+          provider: "omniroute",
+          model,
+          attempt: i + 1,
+          status: "ok",
+          durationMs: Date.now() - startedAt,
+        });
+        void recordModelSuccess(model);
         return result;
       } catch (error) {
         // Cut off mid-stream, or finished with no content at all — the
         // same "this model failed" as an error status: move on.
-        if (isLastCandidate) throw error;
-        console.warn(
-          `[AI][omniroute] ${model} stream failed, trying next fallback model`,
-          error
+        const type = classifyAiError(error);
+        fail(
+          type === "timeout" ? "timeout" : "upstream",
+          type === "timeout"
+            ? new AiTimeoutError(`OmniRoute ${model} stream timed out`)
+            : new AiUpstreamError(
+                `OmniRoute ${model} stream failed: ${
+                  error instanceof Error ? error.message : "unknown"
+                }`
+              )
         );
+        if (!isLastCandidate) {
+          console.warn(
+            `[AI][omniroute] ${model} stream failed, trying next fallback model`,
+            error
+          );
+        }
         continue;
       }
     }
 
-    // Server-log only (never sent to the client, never the API key) — the
-    // generic describeStatus() message thrown below deliberately omits this,
-    // but a 400 in particular usually means the payload itself was rejected
-    // for a reason worth seeing while debugging a new model/provider.
+    // Server-log only (never sent to the client, never the API key) — a 400
+    // in particular usually means the payload itself was rejected for a
+    // reason worth seeing while debugging a new model/provider.
     try {
       const bodyText = (await response.text()).slice(0, 500);
       console.warn(
         `[AI][omniroute] ${model} returned ${response.status}: ${bodyText}`
       );
     } catch {
-      // Body already consumed or unreadable — the status-only warning below
-      // (for non-last candidates) still fires.
+      // Body already consumed or unreadable.
     }
 
+    const type = classifyStatus(response.status);
+    const message = `OmniRoute chat completion failed: ${describeStatus(response.status)}`;
+    if (type === "auth") {
+      fail(type, new AiAuthError(message), response.status);
+      // Same key for every model — the rest of the chain would fail too.
+      throw lastError!;
+    }
+    if (type === "rate_limit") {
+      lastRateLimitRetryAfter = parseRetryAfterMs(response);
+      fail(
+        type,
+        new AiRateLimitError(message, lastRateLimitRetryAfter),
+        response.status
+      );
+    } else if (type === "upstream") {
+      fail(type, new AiUpstreamError(message), response.status);
+    } else {
+      fail(type, new AiInvalidRequestError(message), response.status);
+    }
     if (!isLastCandidate) {
       console.warn(
         `[AI][omniroute] ${model} returned ${describeStatus(response.status)}, trying next fallback model`
       );
-      continue;
     }
-    lastFailure = response;
   }
 
-  // Every candidate (primary + all configured fallbacks) failed.
-  if (lastFailure!.status === 429) {
-    throw new AiRateLimitError(
-      `OmniRoute chat completion failed: ${describeStatus(lastFailure!.status)}`,
-      parseRetryAfterMs(lastFailure!)
+  // Nothing was even tried: every candidate's circuit is open.
+  if (attempted === 0 && skipped.length) {
+    throw new AiCircuitOpenError(
+      "OmniRoute: every candidate model is temporarily unavailable",
+      Math.max(5_000, msUntilNextProbe(skipped))
     );
   }
-  throw new Error(
-    `OmniRoute chat completion failed: ${describeStatus(lastFailure!.status)}`
-  );
+  // A rate limit anywhere in the chain is the most useful signal to hand
+  // back when the last candidate's own failure is less specific.
+  if (
+    lastRateLimitRetryAfter !== undefined &&
+    !(lastError instanceof AiRateLimitError) &&
+    !(lastError instanceof AiInvalidRequestError)
+  ) {
+    throw new AiRateLimitError(
+      lastError?.message ?? "OmniRoute rate limited",
+      lastRateLimitRetryAfter
+    );
+  }
+  throw lastError ?? new AiUpstreamError("OmniRoute chat completion failed");
 }
 
 async function* streamText(
@@ -493,19 +670,74 @@ async function* streamText(
   const apiKey = requireApiKey();
   const model = await resolveModel(params);
 
-  const response = await fetch(`${omniRouteConfig.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify(buildPayload(model, params, true)),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-
-  if (!response.ok || !response.body) {
-    throw new Error(
-      `OmniRoute stream failed: ${describeStatus(response.status)}`
+  // Same circuit as generateText: an open circuit fails fast, and the
+  // caller (lib/fast-answer-stream.ts) falls back to the regular chain.
+  const breaker = await checkModel(model);
+  if (!breaker.allowed) {
+    logAiEvent("ai_stream", {
+      provider: "omniroute",
+      model,
+      status: "skipped",
+      errorType: "circuit_open",
+    });
+    throw new AiCircuitOpenError(
+      `OmniRoute ${model} is temporarily unavailable`,
+      Math.max(5_000, msUntilNextProbe([breaker.snapshot]))
     );
   }
 
+  const startedAt = Date.now();
+  let response: Response;
+  try {
+    response = await fetch(`${omniRouteConfig.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: headers(apiKey),
+      body: JSON.stringify(buildPayload(model, params, true)),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const type = classifyAiError(error);
+    logAiEvent("ai_stream", {
+      provider: "omniroute",
+      model,
+      status: "error",
+      errorType: type,
+      durationMs: Date.now() - startedAt,
+    });
+    void recordModelFailure(model, type);
+    throw type === "timeout"
+      ? new AiTimeoutError(`OmniRoute ${model} stream timed out`)
+      : new AiUpstreamError(`OmniRoute ${model} stream request failed`);
+  }
+
+  if (!response.ok || !response.body) {
+    const type = response.ok ? "upstream" : classifyStatus(response.status);
+    logAiEvent("ai_stream", {
+      provider: "omniroute",
+      model,
+      status: "error",
+      errorType: type,
+      httpStatus: response.status,
+      durationMs: Date.now() - startedAt,
+    });
+    if (countsTowardBreaker(type, response.status)) {
+      void recordModelFailure(model, type);
+    }
+    const message = `OmniRoute stream failed: ${describeStatus(response.status)}`;
+    if (type === "auth") throw new AiAuthError(message);
+    if (type === "rate_limit")
+      throw new AiRateLimitError(message, parseRetryAfterMs(response));
+    if (type === "invalid_request") throw new AiInvalidRequestError(message);
+    throw new AiUpstreamError(message);
+  }
+
+  logAiEvent("ai_stream", {
+    provider: "omniroute",
+    model,
+    status: "ok",
+    durationMs: Date.now() - startedAt,
+  });
+  void recordModelSuccess(model);
   yield* parseOpenAiSseStream(response.body);
 }
 

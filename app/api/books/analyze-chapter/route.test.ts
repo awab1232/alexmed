@@ -21,7 +21,11 @@ vi.mock("@/lib/llm", async importOriginal => {
   const actual = await importOriginal<typeof import("@/lib/llm")>();
   return { ...actual, invokeLLM: vi.fn() };
 });
+vi.mock("@/lib/generation-jobs", () => ({
+  enqueueChapterGeneration: vi.fn().mockResolvedValue({ id: "job-1" }),
+}));
 
+import { enqueueChapterGeneration } from "@/lib/generation-jobs";
 import { verifyQStashRequest } from "@/lib/queue/verify";
 import { claimBookChapter } from "@/lib/queue/claim";
 import { publishMessage } from "@/lib/queue/client";
@@ -37,6 +41,9 @@ import { invokeLLM } from "@/lib/llm";
 import { POST } from "./route";
 
 const mockVerify = verifyQStashRequest as unknown as ReturnType<typeof vi.fn>;
+const mockEnqueue = enqueueChapterGeneration as unknown as ReturnType<
+  typeof vi.fn
+>;
 const mockGetChapter = getChapterById as unknown as ReturnType<typeof vi.fn>;
 const mockClaim = claimBookChapter as unknown as ReturnType<typeof vi.fn>;
 const mockComplete = completeChapterAnalysis as unknown as ReturnType<
@@ -341,12 +348,11 @@ describe("POST /api/books/analyze-chapter", () => {
     // trigger its own LLM call — only 2, not 3.
     expect(mockInvoke).toHaveBeenCalledTimes(2);
 
-    // Audit Phase 6 — the automatic mind-map-section trigger fires once the
-    // chapter is durably complete.
-    expect(mockPublish).toHaveBeenCalledWith({
-      type: "generate_chapter_mindmap_sections",
-      chapterId: "c1",
-    });
+    // Audit Phase 6 — the automatic mind-map generation is queued (as the
+    // chapter's mind-map job) once the chapter is durably complete.
+    expect(mockEnqueue).toHaveBeenCalledWith(
+      expect.objectContaining({ chapterId: "c1", kind: "mindmap" })
+    );
 
     // Progress is persisted with BOTH results (old + newly generated).
     expect(mockSaveProgress).toHaveBeenCalledTimes(1);
