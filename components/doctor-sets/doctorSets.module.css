@@ -1,0 +1,374 @@
+/* 🔒 Protected Doctor Question Sets — doctor dashboard, application, and
+   the student's "مجموعات الدكاترة" screens. Ink & highlighter tokens from
+   app/base.css; lists with hairline rules rather than floating cards, one
+   marker action per screen. */
+
+.page {
+  display: grid;
+  gap: 20px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  color: var(--nl-ink);
+}
+
+.header {
+  display: grid;
+  gap: 6px;
+}
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.header p {
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 14px;
+}
+.back {
+  color: var(--nl-ink-2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.back:hover,
+.back:focus-visible {
+  color: var(--nl-niro);
+}
+
+/* ── Numbers ──────────────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+  overflow: hidden;
+}
+.stat {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border-inline-start: 1px solid var(--nl-rule);
+}
+.stat:first-child {
+  border-inline-start: 0;
+}
+.stat dt {
+  color: var(--nl-ink-2);
+  font-size: 12px;
+}
+.stat dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Sections & lists ─────────────────────────────────────────────────── */
+.section {
+  display: grid;
+  gap: 10px;
+}
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sectionHead h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--nl-rule);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+.list > li:first-child > .row,
+.list > .row:first-child {
+  border-top: 0;
+}
+a.row:hover,
+a.row:focus-visible {
+  background: var(--nl-paper);
+}
+.rowMain {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.rowTitle {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.rowMeta {
+  color: var(--nl-ink-2);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.rowActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.empty {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 18px 16px;
+  border: 1px dashed var(--nl-rule-strong);
+  border-radius: var(--nl-r-lg);
+  color: var(--nl-ink-2);
+}
+.empty strong {
+  color: var(--nl-ink);
+}
+
+/* ── Status chips (state in form, not only text) ─────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 9px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--nl-ink-2);
+}
+.chipLive {
+  border-color: var(--nl-correct);
+  background: var(--nl-correct-soft);
+  color: var(--nl-correct);
+}
+.chipWarn {
+  border-color: var(--nl-marker);
+  background: var(--nl-marker-soft);
+  color: var(--nl-ink);
+}
+.chipStop {
+  border-color: var(--nl-wrong);
+  background: var(--nl-wrong-soft);
+  color: var(--nl-wrong);
+}
+
+/* ── Forms ────────────────────────────────────────────────────────────── */
+.form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+}
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.field small {
+  color: var(--nl-ink-2);
+  font-weight: 400;
+}
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  background: #fff;
+  color: var(--nl-ink);
+  font: inherit;
+  font-weight: 400;
+}
+.field textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible {
+  outline: 2px solid var(--nl-niro);
+  outline-offset: 1px;
+}
+.fieldRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+.choice {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.choice label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  font-weight: 400;
+  cursor: pointer;
+}
+.choice label:has(input:checked) {
+  border-color: var(--nl-ink);
+  background: var(--nl-paper);
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.error {
+  margin: 0;
+  color: var(--nl-wrong);
+  font-size: 13.5px;
+}
+.note {
+  margin: 0;
+  color: var(--nl-ink-2);
+  font-size: 13px;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--nl-rule);
+  scrollbar-width: none;
+}
+.tab {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--nl-ink-2);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.tab[aria-selected="true"] {
+  border-bottom-color: var(--nl-ink);
+  color: var(--nl-ink);
+  font-weight: 600;
+}
+.tab:focus-visible {
+  outline: 2px solid var(--nl-niro);
+  outline-offset: -2px;
+}
+
+/* ── Access codes ─────────────────────────────────────────────────────── */
+.codeInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  background: #fff;
+  color: var(--nl-ink);
+  font:
+    600 18px/1.3 ui-monospace,
+    "SFMono-Regular",
+    Menlo,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  direction: ltr;
+  text-align: center;
+}
+.codeInput:focus-visible {
+  outline: 2px solid var(--nl-niro);
+  outline-offset: 1px;
+}
+.code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+.freshCodes {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid var(--nl-marker);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-marker-soft);
+}
+.codeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 14px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+}
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filters input,
+.filters select {
+  padding: 8px 10px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  background: #fff;
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.lockTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--nl-ink-2);
+  font-size: 12px;
+}
+
+@media (max-width: 560px) {
+  .row {
+    flex-wrap: wrap;
+  }
+  .rowActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .stat {
+    border-inline-start: 0;
+    border-top: 1px solid var(--nl-rule);
+  }
+  .stat:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

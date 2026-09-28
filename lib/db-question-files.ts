@@ -13,16 +13,19 @@ import {
   extractedQuestions,
   type Book,
 } from "../drizzle/schema";
-import { getDb } from "./db";
+import { getDb, requireDb } from "./db";
 import { getQuestionFileCoverage } from "./db-question-file-images";
-import { storageGet } from "./storage";
 import type { ExtractedQuestionInput } from "./question-extraction";
 
+// `subjectId` is the student's folder (required by the student upload
+// route); a doctor's protected set has none. `executor` lets a caller create
+// the book inside its own transaction (lib/db-question-sets.ts).
 export async function createQuestionFileShell(
   userId: string,
-  input: { fileName: string; fileKey: string; subjectId: string }
+  input: { fileName: string; fileKey: string; subjectId: string | null },
+  executor?: Pick<ReturnType<typeof requireDb>, "insert">
 ): Promise<Book> {
-  const db = getDb();
+  const db = executor ?? getDb();
   if (!db) throw new Error("Database not available");
 
   const [book] = await db
@@ -74,12 +77,62 @@ export async function listQuestionFilesForUser(userId: string) {
     .orderBy(desc(books.createdAt));
 }
 
+// The only book fields a question-file viewer ever needs. Never the storage
+// key of the uploaded PDF (fileKey), the owner/folder ids, or the
+// extraction staging columns (pageTexts etc.) — this projection is what
+// every question-file read returns, whoever the viewer is.
+const questionFileBookColumns = {
+  id: books.id,
+  fileName: books.fileName,
+  status: books.status,
+  extractionError: books.extractionError,
+  pageCount: books.pageCount,
+  createdAt: books.createdAt,
+};
+
+// Likewise for each question: the content the question cards render, not
+// the enrichment worker's bookkeeping (aiError, attempt counts).
+const questionColumns = {
+  id: extractedQuestions.id,
+  orderIndex: extractedQuestions.orderIndex,
+  questionText: extractedQuestions.questionText,
+  options: extractedQuestions.options,
+  extractedAnswerIndex: extractedQuestions.extractedAnswerIndex,
+  extractedAnswerText: extractedQuestions.extractedAnswerText,
+  aiInferredAnswerIndex: extractedQuestions.aiInferredAnswerIndex,
+  explanationText: extractedQuestions.explanationText,
+  sourcePage: extractedQuestions.sourcePage,
+  keywords: extractedQuestions.keywords,
+  aiExplanationAr: extractedQuestions.aiExplanationAr,
+  aiStatus: extractedQuestions.aiStatus,
+};
+
+export type QuestionFileBookView = {
+  id: string;
+  fileName: string;
+  status: Book["status"];
+  extractionError: string | null;
+  pageCount: number;
+  createdAt: Date;
+};
+
+type QuestionImageRef = { imageId: string; storageKey: string };
+
+// How a question's image is addressed in the response. The owner's own
+// file keeps the existing /api/files/<key> URL; a caller that must not see
+// storage keys (a protected set's student) passes its own builder.
+export type QuestionImageUrlBuilder = (image: QuestionImageRef) => string;
+
+// Same URL lib/storage.ts's storageGet builds.
+const ownerImageUrl: QuestionImageUrlBuilder = image =>
+  `/api/files/${image.storageKey.replace(/^\/+/, "")}`;
+
 export async function getQuestionFileForUser(userId: string, bookId: string) {
   const db = getDb();
   if (!db) return null;
 
   const [book] = await db
-    .select()
+    .select(questionFileBookColumns)
     .from(books)
     .where(
       and(
@@ -91,8 +144,22 @@ export async function getQuestionFileForUser(userId: string, bookId: string) {
     .limit(1);
   if (!book) return null;
 
+  return { book, ...(await readQuestionFileContent(bookId, ownerImageUrl)) };
+}
+
+// Questions + their images + processing coverage for a question-file book
+// the caller has ALREADY been authorized for. Three queries whatever the
+// question count (no per-question lookups), and no AI or queue work — a
+// read of what the pipeline already produced.
+export async function readQuestionFileContent(
+  bookId: string,
+  imageUrl: QuestionImageUrlBuilder
+) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+
   const questions = await db
-    .select()
+    .select(questionColumns)
     .from(extractedQuestions)
     .where(eq(extractedQuestions.bookId, bookId))
     .orderBy(asc(extractedQuestions.orderIndex));
@@ -105,6 +172,7 @@ export async function getQuestionFileForUser(userId: string, bookId: string) {
     const rows = await db
       .select({
         questionId: extractedQuestionImageRelations.questionId,
+        imageId: extractedQuestionImages.id,
         storageKey: extractedQuestionImages.storageKey,
       })
       .from(extractedQuestionImageRelations)
@@ -118,10 +186,7 @@ export async function getQuestionFileForUser(userId: string, bookId: string) {
       .where(eq(extractedQuestionImages.bookId, bookId));
     for (const row of rows) {
       if (!imagesByQuestionId.has(row.questionId)) {
-        imagesByQuestionId.set(
-          row.questionId,
-          (await storageGet(row.storageKey)).url
-        );
+        imagesByQuestionId.set(row.questionId, imageUrl(row));
       }
     }
   }
@@ -133,8 +198,13 @@ export async function getQuestionFileForUser(userId: string, bookId: string) {
 
   const coverage = await getQuestionFileCoverage(bookId);
 
-  return { book, questions: questionsWithImages, coverage };
+  return { questions: questionsWithImages, coverage };
 }
+
+export type QuestionFileContent = Awaited<
+  ReturnType<typeof readQuestionFileContent>
+>;
+export type QuestionFileQuestion = QuestionFileContent["questions"][number];
 
 export async function saveExtractedQuestions(
   bookId: string,

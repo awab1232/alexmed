@@ -8,8 +8,10 @@ import {
   Briefcase,
   GraduationCap,
   LayoutDashboard,
+  Lock,
   LogOut,
   ShieldCheck,
+  Stethoscope,
   Users,
   CreditCard,
 } from "lucide-react";
@@ -31,6 +33,20 @@ const NAV_ITEMS = [
     exact: false,
   },
   { href: "/admin/jobs", label: "الوظائف", icon: Briefcase, exact: false },
+  // 🔒 Protected Doctor Question Sets (pages show a notice while the
+  // feature flag is off).
+  {
+    href: "/admin/doctors",
+    label: "الدكاترة",
+    icon: Stethoscope,
+    exact: false,
+  },
+  {
+    href: "/admin/question-sets",
+    label: "المجموعات المحمية",
+    icon: Lock,
+    exact: false,
+  },
 ] as const;
 
 // Deliberately its own component, not a themed variant of AppSidebar — a

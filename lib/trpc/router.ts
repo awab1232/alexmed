@@ -4,6 +4,13 @@ import { signOut } from "../auth";
 import { getUserProfileForAccount, updateUserProfile } from "../db";
 import { parsePhone } from "../phone";
 import { deleteAccountCompletely } from "../db-account";
+import { hasLiveQuestionSets } from "../db-question-sets";
+import {
+  adminDoctorsRouter,
+  adminQuestionSetsRouter,
+} from "./adminDoctorSetsRouter";
+import { doctorRouter } from "./doctorRouter";
+import { questionSetsRouter } from "./questionSetsRouter";
 import { adminBillingRouter } from "./adminBillingRouter";
 import { adminJobsRouter } from "./adminJobsRouter";
 import { adminMaterialsRouter } from "./adminMaterialsRouter";
@@ -80,6 +87,15 @@ export const appRouter = router({
                 : "البريد الإلكتروني غير مطابق لبريد حسابك.",
           });
         }
+        // A doctor's published question sets would be deleted with the
+        // account, and with them every student's access — archive first.
+        if (await hasLiveQuestionSets(ctx.user.id)) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "لديك مجموعات أسئلة منشورة لطلابك. أرشفها أولًا من لوحة الدكتور ثم احذف الحساب.",
+          });
+        }
         await deleteAccountCompletely(ctx.user.id);
         return { success: true } as const;
       }),
@@ -113,6 +129,13 @@ export const appRouter = router({
   // Admin dashboard's user management (users list/detail/plan/suspend/
   // delete + platform-wide stats) — same adminProcedure gating pattern.
   adminUsers: adminUsersRouter,
+  // 🔒 Protected Doctor Question Sets (behind DOCTOR_SETS_ENABLED): the
+  // doctor's side, the student's side, and admin moderation. Read
+  // authorization lives in lib/question-set-access.ts.
+  doctor: doctorRouter,
+  questionSets: questionSetsRouter,
+  adminDoctors: adminDoctorsRouter,
+  adminQuestionSets: adminQuestionSetsRouter,
 });
 
 export type AppRouter = typeof appRouter;
