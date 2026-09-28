@@ -18,12 +18,14 @@ const readexPro = Readex_Pro({
   display: "swap",
   variable: "--font-readex",
 });
-// "latin" too: Naskh text still contains spaces and digits, and without the
-// latin subset preloaded that file was fetched only after first paint — the
-// hero re-flowed on arrival (CLS) and its LCP waited for it.
+// The reading face is secondary: not preloaded (its ~50KB competed with the
+// HTML, CSS and UI font before first paint) and "optional", so a view that
+// doesn't have it yet keeps the fallback instead of re-flowing when it
+// lands. It is cached for every later visit.
 const notoNaskh = Noto_Naskh_Arabic({
   subsets: ["arabic", "latin"],
-  display: "swap",
+  display: "optional",
+  preload: false,
   variable: "--font-naskh",
 });
 
