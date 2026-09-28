@@ -235,6 +235,15 @@ export async function saveExtractedQuestions(
   );
 }
 
+// The resumable OCR staging columns app/api/books/extract-questions uses —
+// cleared once the file completes, and on a retry so it starts fresh.
+export const CLEARED_OCR_STAGING = {
+  pageTexts: null,
+  pagesNeedingOcr: null,
+  ocrFailedPages: null,
+  ocrAttemptCounts: null,
+};
+
 export async function markQuestionFileComplete(
   bookId: string,
   pageCount: number
@@ -243,7 +252,13 @@ export async function markQuestionFileComplete(
   if (!db) throw new Error("Database not available");
   await db
     .update(books)
-    .set({ status: "complete", pageCount, updatedAt: new Date() })
+    .set({
+      status: "complete",
+      pageCount,
+      // OCR staging (app/api/books/extract-questions) is done with.
+      ...CLEARED_OCR_STAGING,
+      updatedAt: new Date(),
+    })
     .where(eq(books.id, bookId));
 }
 
@@ -271,7 +286,12 @@ export async function retryQuestionFileExtraction(
 
   const updated = await db
     .update(books)
-    .set({ status: "extracting", extractionError: null, updatedAt: new Date() })
+    .set({
+      status: "extracting",
+      extractionError: null,
+      ...CLEARED_OCR_STAGING,
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(books.id, bookId),

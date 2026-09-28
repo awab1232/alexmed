@@ -24,7 +24,10 @@ import {
 import { getDb, requireDb } from "./db";
 import { isUniqueViolation } from "./db-errors";
 import { recordQuestionSetEvent } from "./db-question-set-audit";
-import { createQuestionFileShell } from "./db-question-files";
+import {
+  CLEARED_OCR_STAGING,
+  createQuestionFileShell,
+} from "./db-question-files";
 import {
   accessCodeHint,
   assertAccessCodeKeyConfigured,
@@ -397,7 +400,12 @@ export async function resetDraftProcessing(
   const db = requireDb();
   const rows = await db
     .update(books)
-    .set({ status: "extracting", extractionError: null, updatedAt: new Date() })
+    .set({
+      status: "extracting",
+      extractionError: null,
+      ...CLEARED_OCR_STAGING,
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(books.status, "failed"),
