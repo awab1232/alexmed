@@ -1306,6 +1306,15 @@ export const extractedQuestions = pgTable(
       .notNull(),
     aiError: text("aiError"),
     aiAttemptCount: integer("aiAttemptCount").default(0).notNull(),
+    // Arabic version of the question and its options, in the same order as
+    // `options` (lib/question-extraction.ts splits it out of the file's own
+    // bilingual text; the answer line is never part of it). When the file
+    // has no Arabic, stage 3 (generate-question-content) translates once
+    // and translationSource says so — "source" | "machine" — so machine
+    // translations can be reviewed. Null = no Arabic yet.
+    questionTextAr: text("questionTextAr"),
+    optionsAr: jsonb("optionsAr").$type<string[]>(),
+    translationSource: varchar("translationSource", { length: 16 }),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),

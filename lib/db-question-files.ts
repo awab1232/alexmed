@@ -105,6 +105,9 @@ const questionColumns = {
   keywords: extractedQuestions.keywords,
   aiExplanationAr: extractedQuestions.aiExplanationAr,
   aiStatus: extractedQuestions.aiStatus,
+  questionTextAr: extractedQuestions.questionTextAr,
+  optionsAr: extractedQuestions.optionsAr,
+  translationSource: extractedQuestions.translationSource,
 };
 
 export type QuestionFileBookView = {
@@ -231,6 +234,12 @@ export async function saveExtractedQuestions(
       extractedAnswerText: q.extractedAnswerText,
       explanationText: q.explanationText,
       sourcePage: q.sourcePage,
+      // The file's own Arabic (lib/question-extraction.ts). Anything still
+      // missing is machine-translated once in stage 3, which then marks the
+      // question "machine".
+      questionTextAr: q.questionTextAr,
+      optionsAr: q.optionsAr,
+      translationSource: q.questionTextAr ? "source" : null,
     }))
   );
 }

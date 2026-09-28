@@ -166,6 +166,7 @@ function QuestionsTab({
   const publish = trpc.doctor.sets.publish.useMutation({
     onSuccess: onPublished,
   });
+  const [showAll, setShowAll] = useState(false);
   const retry = trpc.doctor.sets.retryProcessing.useMutation({
     onSuccess: onPublished,
   });
@@ -225,7 +226,29 @@ function QuestionsTab({
       )}
 
       {preview.data?.questions.length ? (
-        <QuestionList questions={preview.data.questions} />
+        <>
+          <div className={s.actions}>
+            <button
+              type="button"
+              className="secondary-button"
+              aria-pressed={showAll}
+              onClick={() => setShowAll(value => !value)}
+            >
+              {showAll ? "إخفاء الإجابات" : "أظهر كل الإجابات"}
+            </button>
+            {preview.data.questions.some(
+              q => q.translationSource === "machine"
+            ) && (
+              <span className={s.note}>
+                بعض الترجمات آلية (عليها وسم «ترجمة آلية») — راجعها.
+              </span>
+            )}
+          </div>
+          <QuestionList
+            questions={preview.data.questions}
+            revealAll={showAll}
+          />
+        </>
       ) : preview.isLoading ? (
         <p className={s.note}>جاري تحميل الأسئلة...</p>
       ) : (

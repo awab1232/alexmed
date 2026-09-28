@@ -195,10 +195,14 @@ export async function saveExtractedQuestionEnrichment(
     // is only ever persisted when it did NOT, per the schema comment's
     // "never overrides a real source-stated answer" invariant.
     hasStatedAnswer: boolean;
+    // Only the parts the file didn't provide — never overwrites the file's
+    // own Arabic. Present = a machine translation was produced.
+    translation?: { questionTextAr?: string; optionsAr?: string[] };
   }
 ): Promise<void> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
+  const translation = update.translation;
   await db
     .update(extractedQuestions)
     .set({
@@ -207,6 +211,19 @@ export async function saveExtractedQuestionEnrichment(
       ...(update.hasStatedAnswer
         ? {}
         : { aiInferredAnswerIndex: update.inferredAnswerIndex }),
+      ...(translation &&
+      (translation.questionTextAr !== undefined ||
+        translation.optionsAr !== undefined)
+        ? {
+            ...(translation.questionTextAr !== undefined
+              ? { questionTextAr: translation.questionTextAr }
+              : {}),
+            ...(translation.optionsAr !== undefined
+              ? { optionsAr: translation.optionsAr }
+              : {}),
+            translationSource: "machine",
+          }
+        : {}),
       aiStatus: "complete",
       aiError: null,
     })

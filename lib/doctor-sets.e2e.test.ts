@@ -46,23 +46,44 @@ vi.mock("@/lib/queue/client", () => ({
 }));
 vi.mock("@/lib/llm", async importOriginal => ({
   ...(await importOriginal<typeof import("./llm")>()),
-  invokeLLM: vi.fn(async (params: { max_tokens?: number }) => {
-    h.llmCalls++;
-    // Stage 2 (page classification) vs stage 3 (question enrichment).
-    const content =
-      params.max_tokens === 600
-        ? JSON.stringify({
-            hasImage: true,
-            captionEn: "diagram",
-            isAtPageEnd: false,
-          })
-        : JSON.stringify({
-            keywords: ["anatomy"],
-            explanationAr: "شرح تجريبي",
-            inferredAnswerIndex: 1,
-          });
-    return { choices: [{ message: { content } }] };
-  }),
+  invokeLLM: vi.fn(
+    async (params: {
+      max_tokens?: number;
+      response_format?: { json_schema?: { name?: string } };
+      messages?: { content: unknown }[];
+    }) => {
+      h.llmCalls++;
+      // Stage 2 (page classification) vs stage 3 (question enrichment,
+      // with a translation when the pipeline asks for one).
+      if (params.max_tokens === 600) {
+        const content = JSON.stringify({
+          hasImage: true,
+          captionEn: "diagram",
+          isAtPageEnd: false,
+        });
+        return { choices: [{ message: { content } }] };
+      }
+      const wantsTranslation =
+        params.response_format?.json_schema?.name?.includes("translation");
+      const userText = JSON.stringify(params.messages?.[1]?.content ?? "");
+      const optionCount = (userText.match(/\\n[A-D]\. /g) ?? []).length;
+      const content = JSON.stringify({
+        keywords: ["anatomy"],
+        explanationAr: "شرح تجريبي",
+        inferredAnswerIndex: 1,
+        ...(wantsTranslation
+          ? {
+              questionAr: "سؤال مترجم آليًا",
+              optionsAr: Array.from(
+                { length: optionCount },
+                (_, i) => `خيار ${i + 1}`
+              ),
+            }
+          : {}),
+      });
+      return { choices: [{ message: { content } }] };
+    }
+  ),
 }));
 vi.mock("@/lib/storage", () => ({
   storageObjectSize: vi.fn(async () => 2048),
@@ -213,6 +234,11 @@ describe("Protected Doctor Question Sets — end to end", () => {
       extractedAnswerIndex: 1,
       aiExplanationAr: "شرح تجريبي",
       keywords: ["anatomy"],
+      // An English-only PDF: translated once in the pipeline, marked for
+      // review, 1:1 with the options.
+      questionTextAr: "سؤال مترجم آليًا",
+      optionsAr: ["خيار 1", "خيار 2", "خيار 3", "خيار 4"],
+      translationSource: "machine",
     });
     // Q4 states no answer → the AI suggestion is kept separately, as today.
     expect(preview.questions[3]).toMatchObject({

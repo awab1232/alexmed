@@ -260,6 +260,148 @@ describe("POST /api/books/generate-question-content", () => {
     expect(mockClaim).toHaveBeenCalledTimes(15);
   });
 
+  function translatedResponse(questionAr: string, optionsAr: string[]) {
+    return {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              keywords: ["cell"],
+              explanationAr: "شرح",
+              inferredAnswerIndex: null,
+              questionAr,
+              optionsAr,
+            }),
+          },
+        },
+      ],
+    };
+  }
+
+  function oneQuestion(row: Record<string, unknown>) {
+    mockNextQuestion
+      .mockResolvedValueOnce({
+        id: "qt",
+        bookId: "b1",
+        extractedAnswerText: "Mitochondria",
+        extractedAnswerIndex: 1,
+        ...row,
+      })
+      .mockResolvedValueOnce(null);
+    mockClaim.mockResolvedValueOnce({
+      id: "qt",
+      bookId: "b1",
+      attemptCount: 1,
+    });
+    mockGetImages.mockResolvedValueOnce([]);
+  }
+
+  it("machine-translates a question the file gave no Arabic for, in the same call, marked for review", async () => {
+    oneQuestion({
+      questionText: "What is the powerhouse of the cell?",
+      options: ["Nucleus", "Mitochondria"],
+      questionTextAr: null,
+      optionsAr: null,
+    });
+    mockInvoke.mockResolvedValue(
+      translatedResponse("ما هو مصنع الطاقة في الخلية؟", [
+        "النواة",
+        "الميتوكوندريا",
+      ])
+    );
+
+    await POST(request({ bookId: "b1" }));
+
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    const call = mockInvoke.mock.calls[0][0];
+    expect(call.response_format.json_schema.name).toBe(
+      "extracted_question_enrichment_with_translation"
+    );
+    expect(JSON.stringify(call.messages)).toContain(
+      "translate the question stem"
+    );
+    expect(mockSaveEnrichment).toHaveBeenCalledWith(
+      "qt",
+      expect.objectContaining({
+        translation: {
+          questionTextAr: "ما هو مصنع الطاقة في الخلية؟",
+          optionsAr: ["النواة", "الميتوكوندريا"],
+        },
+      })
+    );
+  });
+
+  it("never re-translates a question whose Arabic came from the file", async () => {
+    oneQuestion({
+      questionText: "What is the powerhouse of the cell?",
+      options: ["Nucleus", "Mitochondria"],
+      questionTextAr: "ما هو مصنع الطاقة؟",
+      optionsAr: ["النواة", "الميتوكوندريا"],
+    });
+    mockInvoke.mockResolvedValue(enrichmentResponse(null));
+
+    await POST(request({ bookId: "b1" }));
+
+    const call = mockInvoke.mock.calls[0][0];
+    expect(call.response_format.json_schema.name).toBe(
+      "extracted_question_enrichment"
+    );
+    expect(call.max_tokens).toBe(800);
+    expect(mockSaveEnrichment.mock.calls[0][1]).not.toHaveProperty(
+      "translation"
+    );
+  });
+
+  it("fills only the missing options, keeping the file's own Arabic question", async () => {
+    oneQuestion({
+      questionText: "What is the powerhouse of the cell?",
+      options: ["Nucleus", "Mitochondria"],
+      questionTextAr: "سؤال من الملف",
+      optionsAr: null,
+    });
+    mockInvoke.mockResolvedValue(
+      translatedResponse("ترجمة لن تُستخدم", ["النواة", "الميتوكوندريا"])
+    );
+
+    await POST(request({ bookId: "b1" }));
+
+    expect(mockSaveEnrichment.mock.calls[0][1].translation).toEqual({
+      optionsAr: ["النواة", "الميتوكوندريا"],
+    });
+  });
+
+  it("drops a machine translation whose option count doesn't match", async () => {
+    oneQuestion({
+      questionText: "Q?",
+      options: ["a", "b", "c"],
+      questionTextAr: null,
+      optionsAr: null,
+    });
+    mockInvoke.mockResolvedValue(translatedResponse("س؟", ["أ", "ب"]));
+
+    await POST(request({ bookId: "b1" }));
+
+    expect(mockSaveEnrichment.mock.calls[0][1].translation).toEqual({
+      questionTextAr: "س؟",
+    });
+  });
+
+  it("an Arabic-only question is never translated", async () => {
+    oneQuestion({
+      questionText: "ما هي عاصمة الأردن؟",
+      options: ["إربد", "عمّان"],
+      questionTextAr: null,
+      optionsAr: null,
+    });
+    mockInvoke.mockResolvedValue(enrichmentResponse(null));
+
+    await POST(request({ bookId: "b1" }));
+
+    expect(mockInvoke.mock.calls[0][0].response_format.json_schema.name).toBe(
+      "extracted_question_enrichment"
+    );
+  });
+
   it("returns done with no publish once no questions remain pending", async () => {
     mockNextQuestion.mockResolvedValue(null);
 

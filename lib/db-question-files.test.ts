@@ -15,6 +15,7 @@ vi.mock("@/lib/db", () => ({
 import {
   getQuestionFileForUser,
   readQuestionFileContent,
+  saveExtractedQuestions,
 } from "./db-question-files";
 
 const OWNER = "11111111-1111-4111-8111-111111111111";
@@ -107,6 +108,48 @@ describe("getQuestionFileForUser — safe projection", () => {
         [BOOK]
       );
     }
+  });
+});
+
+describe("saveExtractedQuestions — the file's own Arabic", () => {
+  it("stores it with the question and marks it 'source'; English-only stays untranslated", async () => {
+    const bookId = "55555555-5555-4555-8555-555555555555";
+    await insertQuestionFile(test.client, { id: bookId, userId: OWNER });
+    await saveExtractedQuestions(bookId, [
+      {
+        orderIndex: 0,
+        questionText: "Bilingual?",
+        options: ["a", "b"],
+        extractedAnswerIndex: 0,
+        extractedAnswerText: "a",
+        explanationText: null,
+        sourcePage: 1,
+        questionTextAr: "ثنائي اللغة؟",
+        optionsAr: ["أ", "ب"],
+      },
+      {
+        orderIndex: 1,
+        questionText: "English only?",
+        options: ["a", "b"],
+        extractedAnswerIndex: null,
+        extractedAnswerText: null,
+        explanationText: null,
+        sourcePage: 1,
+        questionTextAr: null,
+        optionsAr: null,
+      },
+    ]);
+    const { questions } = await readQuestionFileContent(bookId, () => "");
+    expect(questions[0]).toMatchObject({
+      questionTextAr: "ثنائي اللغة؟",
+      optionsAr: ["أ", "ب"],
+      translationSource: "source",
+    });
+    expect(questions[1]).toMatchObject({
+      questionTextAr: null,
+      optionsAr: null,
+      translationSource: null,
+    });
   });
 });
 

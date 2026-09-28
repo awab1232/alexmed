@@ -140,7 +140,9 @@ export function buildExtractedQuestionEnrichmentMessages(
   // A URL the vision model can fetch — a signed object-storage GET url or a
   // base64 data: URI both work identically here (OpenAI-compatible
   // image_url.url accepts either).
-  imageUrl: string | null
+  imageUrl: string | null,
+  // True when the file gave no (or incomplete) Arabic for this question.
+  options: { translate?: boolean } = {}
 ): Message[] {
   const hasStatedAnswer = !!question.extractedAnswerText;
   const optionsBlock = question.options?.length
@@ -155,6 +157,7 @@ export function buildExtractedQuestionEnrichmentMessages(
     "Do not invent facts beyond what the question, its options, and (if given) the image actually support.",
     "Return JSON only, matching the given schema exactly.",
   ];
+  if (options.translate) systemLines.push(TRANSLATION_INSTRUCTION);
 
   if (hasStatedAnswer) {
     systemLines.push(
@@ -181,6 +184,50 @@ export function buildExtractedQuestionEnrichmentMessages(
     { role: "user", content: userContent },
   ];
 }
+
+// ── Stage 3 translation (only for questions the file gave no Arabic for) ──
+// The same enrichment call, with two more fields. Asked only when a
+// question is missing its Arabic version, so a bilingual file costs nothing
+// extra; the result is stored once and marked "machine" for review.
+export type ExtractedQuestionTranslation = {
+  questionAr: string;
+  optionsAr: string[];
+};
+
+export const extractedQuestionEnrichmentWithTranslationResponseSchema = {
+  type: "json_schema" as const,
+  json_schema: {
+    name: "extracted_question_enrichment_with_translation",
+    strict: true,
+    schema: {
+      ...extractedQuestionEnrichmentResponseSchema.json_schema.schema,
+      properties: {
+        ...extractedQuestionEnrichmentResponseSchema.json_schema.schema
+          .properties,
+        questionAr: {
+          type: "string",
+          description:
+            "A faithful Arabic translation of the question stem, keeping English medical/technical terms inline in English.",
+        },
+        optionsAr: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "A faithful Arabic translation of each option, in the SAME order and the SAME count as the given options (empty if there are none), keeping English medical/technical terms inline. Never mark or hint which option is correct.",
+        },
+      },
+      required: [
+        ...extractedQuestionEnrichmentResponseSchema.json_schema.schema
+          .required,
+        "questionAr",
+        "optionsAr",
+      ],
+    },
+  },
+};
+
+export const TRANSLATION_INSTRUCTION =
+  "Also translate the question stem and every option into Arabic (questionAr, optionsAr): faithful, not simplified, same option order and count, English medical/technical terms kept inline in English, and without revealing the answer.";
 
 export function parseExtractedQuestionEnrichment(
   content: unknown

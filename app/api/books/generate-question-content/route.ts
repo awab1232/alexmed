@@ -8,8 +8,11 @@ import {
 import {
   buildExtractedQuestionEnrichmentMessages,
   extractedQuestionEnrichmentResponseSchema,
+  extractedQuestionEnrichmentWithTranslationResponseSchema,
   parseExtractedQuestionEnrichment,
+  type ExtractedQuestionTranslation,
 } from "@/lib/question-file-analysis";
+import { isArabicText } from "@/lib/question-extraction";
 import { invokeLLM, DEFAULT_VISION_MODEL } from "@/lib/llm";
 import { claimExtractedQuestion } from "@/lib/queue/claim";
 import { publishMessage } from "@/lib/queue/client";
@@ -75,28 +78,61 @@ export async function POST(request: Request) {
           : null;
 
         const hasStatedAnswer = !!candidate.extractedAnswerText;
+        // Translate only what the file itself didn't give in Arabic — a
+        // bilingual file (or an Arabic-only one) is never re-translated.
+        const optionCount = candidate.options?.length ?? 0;
+        const missingQuestionAr =
+          !candidate.questionTextAr && !isArabicText(candidate.questionText);
+        const missingOptionsAr =
+          optionCount > 0 &&
+          !candidate.optionsAr &&
+          !isArabicText(candidate.questionText);
+        const translate = missingQuestionAr || missingOptionsAr;
         const response = await invokeLLM({
           model: DEFAULT_VISION_MODEL,
-          max_tokens: 800,
+          max_tokens: translate ? 1600 : 800,
           messages: buildExtractedQuestionEnrichmentMessages(
             {
               questionText: candidate.questionText,
               options: candidate.options,
               extractedAnswerText: candidate.extractedAnswerText,
             },
-            imageUrl
+            imageUrl,
+            { translate }
           ),
-          response_format: extractedQuestionEnrichmentResponseSchema,
+          response_format: translate
+            ? extractedQuestionEnrichmentWithTranslationResponseSchema
+            : extractedQuestionEnrichmentResponseSchema,
         });
         const enrichment = parseExtractedQuestionEnrichment(
           response.choices[0]?.message.content
-        );
+        ) as ReturnType<typeof parseExtractedQuestionEnrichment> &
+          Partial<ExtractedQuestionTranslation>;
+
+        const questionAr =
+          missingQuestionAr && typeof enrichment.questionAr === "string"
+            ? enrichment.questionAr.trim()
+            : "";
+        const optionsAr =
+          missingOptionsAr &&
+          Array.isArray(enrichment.optionsAr) &&
+          enrichment.optionsAr.length === optionCount
+            ? enrichment.optionsAr.map(option => String(option).trim())
+            : undefined;
 
         await saveExtractedQuestionEnrichment(candidate.id, {
           keywords: enrichment.keywords,
           aiExplanationAr: enrichment.explanationAr,
           inferredAnswerIndex: enrichment.inferredAnswerIndex,
           hasStatedAnswer,
+          ...(questionAr || optionsAr
+            ? {
+                translation: {
+                  ...(questionAr ? { questionTextAr: questionAr } : {}),
+                  ...(optionsAr ? { optionsAr } : {}),
+                },
+              }
+            : {}),
         });
       } catch (questionError) {
         console.error(

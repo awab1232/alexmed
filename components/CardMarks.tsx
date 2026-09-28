@@ -65,24 +65,58 @@ const MarkContext = createContext<{ highlights: Highlight[]; tool: Tool }>({
   tool: "none",
 });
 
+// The active marking tool — lets a card turn off its own click behavior
+// (e.g. answering by tapping an option) while the student is marking.
+export function useMarkTool(): Tool {
+  return useContext(MarkContext).tool;
+}
+
+// Pure (unit-tested): the highlights that fall inside `range` of a field,
+// clipped to it and shifted so offsets count from range.start.
+export function highlightsInRange(
+  highlights: Highlight[],
+  range: { start: number; end: number }
+): Highlight[] {
+  return highlights
+    .filter(h => h.end > range.start && h.start < range.end)
+    .map(h => ({
+      ...h,
+      start: Math.max(h.start, range.start) - range.start,
+      end: Math.min(h.end, range.end) - range.start,
+    }));
+}
+
 // One highlightable text field of the card. Renders `text` unchanged when
 // nothing is highlighted, so it is safe to use everywhere a card field is
 // shown. `data-mark-field` is what selection handling uses to turn a DOM
 // selection back into character offsets into `text`.
+//
+// `range` renders only part of the field (a question's stem, or one of its
+// options) — highlights are still stored as offsets into the WHOLE field,
+// so they stay where they were however the field is split on screen.
 export function MarkableText({
   field,
   text,
+  range,
 }: {
   field: MarkField;
   text: string;
+  range?: { start: number; end: number };
 }) {
   const { highlights, tool } = useContext(MarkContext);
-  const own = highlights.filter(h => h.field === field);
+  const shown = range ? text.slice(range.start, range.end) : text;
+  const fieldHighlights = highlights.filter(h => h.field === field);
+  const own = range
+    ? highlightsInRange(fieldHighlights, range)
+    : fieldHighlights;
   return (
-    <span data-mark-field={field}>
+    <span
+      data-mark-field={field}
+      data-mark-offset={range ? range.start : undefined}
+    >
       {own.length === 0
-        ? text
-        : segmentText(text, own).map((segment, index) =>
+        ? shown
+        : segmentText(shown, own).map((segment, index) =>
             segment.highlight ? (
               <mark
                 key={index}
@@ -130,7 +164,10 @@ function selectionToHighlights(root: HTMLElement, color: string): Highlight[] {
     const before = document.createRange();
     before.selectNodeContents(element);
     before.setEnd(clip.startContainer, clip.startOffset);
-    const start = before.toString().length;
+    // A part of a field (see MarkableText's `range`) counts from where that
+    // part starts in the whole field.
+    const start =
+      before.toString().length + Number(element.dataset.markOffset ?? 0);
     const text = clip.toString();
     if (!text.trim()) return;
     // Don't paint the whitespace a drag selection tends to grab at its ends.

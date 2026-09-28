@@ -18,7 +18,6 @@ import {
   Languages,
   Layers3,
   Library,
-  Lightbulb,
   Loader2,
   Plus,
   RotateCcw,
@@ -32,7 +31,8 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 import BottomNav from "@/components/BottomNav";
-import { MarkableText, MarkingSurface } from "@/components/CardMarks";
+import { MarkingSurface } from "@/components/CardMarks";
+import MirrorQuestionCard from "@/components/questions/MirrorQuestionCard";
 import MirrorTextInput from "@/components/MirrorTextInput";
 import SubjectPicker from "@/components/SubjectPicker";
 import {
@@ -1119,132 +1119,14 @@ export default function Home() {
                     </span>
                   </div>
                   <MarkingSurface cardId={selectedCard.id}>
-                    <article className="flashcard">
-                      <div className="flashcard-topline">
-                        <span className="card-tag">
-                          QUESTION · {cardOrigin(selectedCard).tag}
-                        </span>
-                        <span className="card-confidence">
-                          {selectedCard.confidence} confidence
-                        </span>
-                      </div>
-                      <div className="question-block">
-                        {selectedCard.imageUrl && (
-                          <img
-                            src={selectedCard.imageUrl}
-                            alt=""
-                            style={{
-                              display: "block",
-                              width: "100%",
-                              maxWidth: 420,
-                              borderRadius: 10,
-                              marginBottom: 12,
-                              border: "1px solid #e4ded5",
-                            }}
-                          />
-                        )}
-                        <span className="micro-label">QUESTION / السؤال</span>
-                        <h2 dir="ltr">
-                          <MarkableText
-                            field="question"
-                            text={selectedCard.question}
-                          />
-                        </h2>
-                        <p dir="rtl">
-                          <MarkableText
-                            field="questionArabic"
-                            text={selectedCard.questionArabic}
-                          />
-                        </p>
-                      </div>
-                      <div
-                        className={
-                          showAnswer ? "answer-block revealed" : "answer-block"
-                        }
-                      >
-                        {showAnswer ? (
-                          <>
-                            <span className="micro-label">
-                              الإجابة والشرح / ANSWER & WHY
-                            </span>
-                            <div className="answer-pair">
-                              <strong dir="ltr">
-                                <MarkableText
-                                  field="answer"
-                                  text={selectedCard.answer}
-                                />
-                              </strong>
-                              <span dir="rtl">
-                                <MarkableText
-                                  field="answerArabic"
-                                  text={selectedCard.answerArabic}
-                                />
-                              </span>
-                            </div>
-                            <div className="explanation-pair">
-                              <p dir="ltr">
-                                <MarkableText
-                                  field="explanation"
-                                  text={selectedCard.explanation}
-                                />
-                              </p>
-                              <p dir="rtl">
-                                <MarkableText
-                                  field="explanationArabic"
-                                  text={selectedCard.explanationArabic}
-                                />
-                              </p>
-                            </div>
-                            <div className="concept-grid">
-                              <div>
-                                <span>
-                                  <Lightbulb size={14} /> الفكرة الأساسية
-                                </span>
-                                <strong dir="ltr">
-                                  <MarkableText
-                                    field="keyIdea"
-                                    text={selectedCard.keyIdea}
-                                  />
-                                </strong>
-                                <small dir="rtl">
-                                  <MarkableText
-                                    field="keyIdeaArabic"
-                                    text={selectedCard.keyIdeaArabic}
-                                  />
-                                </small>
-                              </div>
-                              <div>
-                                <span>
-                                  <KeyRound size={14} /> الكلمة المفتاحية
-                                </span>
-                                <strong dir="ltr">
-                                  <MarkableText
-                                    field="keyword"
-                                    text={selectedCard.keyword}
-                                  />
-                                </strong>
-                                <small dir="rtl">
-                                  <MarkableText
-                                    field="keywordArabic"
-                                    text={selectedCard.keywordArabic}
-                                  />
-                                </small>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <button
-                            className="reveal-button"
-                            type="button"
-                            onClick={() => setShowAnswer(true)}
-                          >
-                            <span className="reveal-icon">?</span>
-                            <strong>اظهر الإجابة والشرح</strong>
-                            <small>Reveal answer & explanation</small>
-                          </button>
-                        )}
-                      </div>
-                    </article>
+                    <MirrorQuestionCard
+                      key={selectedCard.id}
+                      card={selectedCard}
+                      originTag={cardOrigin(selectedCard).tag}
+                      showAnswer={showAnswer}
+                      onReveal={() => setShowAnswer(true)}
+                      onReset={() => setShowAnswer(false)}
+                    />
                   </MarkingSurface>
                   <div className="card-navigation">
                     <button type="button" onClick={() => goToCard(-1)}>

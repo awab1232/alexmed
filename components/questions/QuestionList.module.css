@@ -1,0 +1,291 @@
+/* Question-file cards: answer by tapping an option (green = correct,
+   red = wrong, the correct one always shown green after answering), with the
+   Arabic version behind "عرض الترجمة". Ink & highlighter tokens from
+   app/base.css. The English part is set LTR; the Arabic part RTL. */
+
+.list {
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.label {
+  color: var(--nl-ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.labelEn {
+  letter-spacing: 0.08em;
+}
+.counter {
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--nl-paper);
+  color: var(--nl-ink-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-md);
+}
+
+.question {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-paper);
+  color: var(--nl-ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--nl-ease),
+    background-color 0.15s var(--nl-ease);
+}
+.option:hover:not(:disabled) {
+  border-color: var(--nl-ink-2);
+}
+.option:focus-visible {
+  outline: 2px solid var(--nl-niro);
+  outline-offset: 2px;
+}
+.option:disabled {
+  cursor: default;
+}
+.num {
+  flex: 0 0 auto;
+  min-width: 26px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--nl-rule);
+  color: var(--nl-ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.optionText {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mark {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  align-self: center;
+}
+
+.correct {
+  border-color: var(--nl-correct);
+  background: var(--nl-correct-soft);
+}
+.correct .num {
+  background: var(--nl-correct);
+  color: #fff;
+}
+.wrong {
+  border-color: var(--nl-wrong);
+  background: var(--nl-wrong-soft);
+}
+.wrong .num {
+  background: var(--nl-wrong);
+  color: #fff;
+}
+.chosen {
+  border-color: var(--nl-ink);
+}
+.dimmed {
+  opacity: 0.65;
+}
+
+.result {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.resultCorrect {
+  color: var(--nl-correct);
+}
+.resultWrong {
+  color: var(--nl-wrong);
+}
+.resultNeutral {
+  color: var(--nl-ink-2);
+  font-weight: 400;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--nl-rule);
+}
+.footerStart {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill {
+  padding: 8px 18px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: 999px;
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.pill:hover {
+  border-color: var(--nl-ink-2);
+}
+.pill:focus-visible {
+  outline: 2px solid var(--nl-niro);
+  outline-offset: 2px;
+}
+.textButton {
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--nl-ink-2);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.translation {
+  display: grid;
+  gap: 10px;
+  color: var(--nl-ink-2);
+  font-family: var(--nl-font-read);
+}
+.translationQuestion {
+  margin: 0;
+  color: var(--nl-ink);
+  font-size: 16px;
+  line-height: 1.8;
+}
+.translationOptions {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+.translationOptions li {
+  display: flex;
+  gap: 8px;
+}
+.machineTag {
+  justify-self: start;
+  padding: 1px 9px;
+  border: 1px dashed var(--nl-rule-strong);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.explain {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--nl-r-md);
+  background: var(--nl-paper);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.explain p {
+  margin: 0;
+}
+.explainAr {
+  font-family: var(--nl-font-read);
+}
+.aiNote {
+  color: var(--nl-ink-2);
+  font-size: 12.5px;
+}
+.keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.keyword {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--nl-sheet);
+  border: 1px solid var(--nl-rule);
+  color: var(--nl-ink-2);
+  font-size: 12px;
+}
+
+.watermark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+  background-repeat: repeat;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 16px;
+  }
+  .question {
+    font-size: 16.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .option {
+    transition: none;
+  }
+}
