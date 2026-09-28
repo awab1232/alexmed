@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/globals.css";
 import { useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";

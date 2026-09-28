@@ -9119,28 +9119,7 @@ button.sh-student:focus-visible {
    for study text (summaries, notes). Arabic is never letter-spaced.
    ════════════════════════════════════════════════════════════════════════ */
 :root {
-  --nl-ink: #1b2340;
-  --nl-ink-2: #454c66;
-  --nl-ink-3: #6b7188;
-  --nl-paper: #f2f4f9;
-  --nl-sheet: #ffffff;
-  --nl-rule: #dfe3ec;
-  --nl-rule-strong: #c9cedb;
-  --nl-niro: #3355ff;
-  --nl-niro-deep: #2440c7;
-  --nl-niro-soft: #e9eeff;
-  --nl-marker: #ffd43b;
-  --nl-marker-soft: #fff3c4;
-  --nl-correct: #0e9f6e;
-  --nl-correct-soft: #e2f5ec;
-  --nl-wrong: #dc3f46;
-  --nl-wrong-soft: #fdecee;
-  --nl-font-ui: var(--font-readex), system-ui, sans-serif;
-  --nl-font-read: var(--font-naskh), var(--font-readex), serif;
-  --nl-r-sm: 6px;
-  --nl-r-md: 12px;
-  --nl-r-lg: 20px;
-  --nl-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  /* --nl-* tokens are defined in app/base.css (loaded on every page). */
 
   /* shadcn / Tailwind bridge */
   --primary: var(--nl-ink);

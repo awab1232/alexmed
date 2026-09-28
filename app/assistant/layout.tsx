@@ -1,3 +1,4 @@
+import "@/app/globals.css";
 import BottomNav from "@/components/BottomNav";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";

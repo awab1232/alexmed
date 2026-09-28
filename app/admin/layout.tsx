@@ -1,3 +1,4 @@
+import "@/app/globals.css";
 import AdminSidebar from "@/components/AdminSidebar";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
