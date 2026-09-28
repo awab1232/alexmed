@@ -10,7 +10,7 @@ import LegalPage, {
 // the same contact email as the privacy policy and terms.
 export const metadata: Metadata = {
   title: `تواصل معنا | ${LEGAL_APP_NAME}`,
-  description: `كيف تتواصل مع فريق ${LEGAL_APP_NAME} بخصوص حسابك أو ملفاتك أو اشتراكك.`,
+  description: `تواصل مع فريق ${LEGAL_APP_NAME} بخصوص حسابك أو ملفاتك أو اشتراكك، أو لأي سؤال واقتراح حول منصة المذاكرة بالذكاء الاصطناعي.`,
   alternates: { canonical: "/contact" },
 };
 

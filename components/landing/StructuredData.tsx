@@ -20,6 +20,8 @@ export default function StructuredData() {
         url: `${SITE_URL}/`,
         logo: `${SITE_URL}/icon.svg`,
         email: LEGAL_CONTACT_EMAIL,
+        description:
+          "NiroLearn منصة مذاكرة عربية بالذكاء الاصطناعي تحوّل ملفات PDF للطلاب إلى ملخصات وفلاش كارد واختبارات وخرائط ذهنية.",
       },
       {
         "@type": "WebSite",
@@ -38,6 +40,22 @@ export default function StructuredData() {
         applicationCategory: "EducationalApplication",
         operatingSystem: "Web, Android",
         inLanguage: "ar",
+        // What the product does today — the same list the page shows.
+        featureList: [
+          "تلخيص ملفات PDF (كتب ومحاضرات) في ملخص منظم لكل جزء",
+          "Exam Focus: أهم معلومات الامتحان من الملف كاملًا مع أرقام الصفحات",
+          "فلاش كارد بجدولة تكرار متباعد",
+          "اختبارات اختيار من متعدد من محتوى الملف مع شرح لكل إجابة",
+          "خريطة ذهنية لكل جزء من الملف",
+          "مساعد دراسة يجيب بالاعتماد على صفحات الملف",
+          "قارئ PDF مع تظليل وملاحظات",
+          "تحويل ملفات الأسئلة السابقة إلى بطاقات مراجعة",
+          "مشاركة حزمة مذاكرة مع الزملاء",
+        ],
+        audience: {
+          "@type": "EducationalAudience",
+          educationalRole: "student",
+        },
         publisher: { "@id": `${SITE_URL}/#organization` },
         offers: {
           "@type": "Offer",

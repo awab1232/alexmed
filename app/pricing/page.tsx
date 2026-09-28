@@ -78,37 +78,46 @@ export default function PricingPage() {
             <h2 id="compare-title">مقارنة سريعة</h2>
             <PlanComparison plans={catalog.data.plans} />
           </section>
-
-          <section
-            className="pricing-section pricing-faq"
-            aria-labelledby="faq-title"
-          >
-            <h2 id="faq-title">أسئلة شائعة</h2>
-            <details>
-              <summary>ماذا يحدث عند انتهاء اشتراكي؟</summary>
-              <p>
-                ترجع تلقائيًا إلى الباقة المجانية. ملفاتك وبطاقاتك وملخصاتك وكل
-                ما أنشأته يبقى كما هو، وتعود حدود الاستخدام إلى حدود الباقة
-                المجانية.
-              </p>
-            </details>
-            <details>
-              <summary>هل يتجدد الاشتراك تلقائيًا؟</summary>
-              <p>
-                لا. الدفع حاليًا يدوي، فلن يُسحب منك أي مبلغ تلقائيًا. عند
-                انتهاء المدة تقدر تجدّد بنفس الطريقة.
-              </p>
-            </details>
-            <details>
-              <summary>متى يتجدد الاستخدام اليومي؟</summary>
-              <p>
-                الحدود اليومية تبدأ من جديد كل يوم عند منتصف الليل (بتوقيت
-                عمّان)، والحدود الشهرية أول كل شهر.
-              </p>
-            </details>
-          </section>
         </>
       )}
+
+      {/* Outside the loading branch so it's in the prerendered HTML —
+          otherwise crawlers see only the heading of this page. */}
+      <section
+        className="pricing-section pricing-faq"
+        aria-labelledby="faq-title"
+      >
+        <h2 id="faq-title">أسئلة شائعة</h2>
+        <details>
+          <summary>هل أستطيع استخدام NiroLearn مجانًا؟</summary>
+          <p>
+            نعم. الباقة المجانية تشمل كل أدوات الدراسة: الملخصات وExam Focus
+            والبطاقات والاختبارات والخرائط الذهنية ومساعد Niro، بحدود استخدام
+            أقل، ودون بطاقة دفع.
+          </p>
+        </details>
+        <details>
+          <summary>ماذا يحدث عند انتهاء اشتراكي؟</summary>
+          <p>
+            ترجع تلقائيًا إلى الباقة المجانية. ملفاتك وبطاقاتك وملخصاتك وكل ما
+            أنشأته يبقى كما هو، وتعود حدود الاستخدام إلى حدود الباقة المجانية.
+          </p>
+        </details>
+        <details>
+          <summary>هل يتجدد الاشتراك تلقائيًا؟</summary>
+          <p>
+            لا. الدفع حاليًا يدوي، فلن يُسحب منك أي مبلغ تلقائيًا. عند انتهاء
+            المدة تقدر تجدّد بنفس الطريقة.
+          </p>
+        </details>
+        <details>
+          <summary>متى يتجدد الاستخدام اليومي؟</summary>
+          <p>
+            الحدود اليومية تبدأ من جديد كل يوم عند منتصف الليل (بتوقيت عمّان)،
+            والحدود الشهرية أول كل شهر.
+          </p>
+        </details>
+      </section>
       {dialog}
     </div>
   );
