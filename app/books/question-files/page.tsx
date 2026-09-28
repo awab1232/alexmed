@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { CircleAlert, ClipboardList, Loader2, Plus } from "lucide-react";
+import {
+  CircleAlert,
+  ClipboardList,
+  KeyRound,
+  Loader2,
+  Plus,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc-client";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -19,6 +25,9 @@ const STATUS_LABELS: Record<string, string> = {
 export default function QuestionFilesPage() {
   const filesQuery = trpc.questionFiles.list.useQuery();
   const files = filesQuery.data ?? [];
+  // 🔒 Protected Doctor Question Sets live next to the student's own
+  // question files (same question cards), behind their feature flag.
+  const doctorSetsOn = trpc.questionSets.enabled.useQuery().data === true;
 
   return (
     <section className="cards-view">
@@ -36,6 +45,11 @@ export default function QuestionFilesPage() {
           <Link href="/books/upload" className="secondary-button">
             <Plus size={16} /> رفع ملف أسئلة
           </Link>
+          {doctorSetsOn ? (
+            <Link href="/question-sets" className="secondary-button">
+              <KeyRound size={16} /> مجموعات الدكاترة
+            </Link>
+          ) : null}
         </div>
       </div>
 

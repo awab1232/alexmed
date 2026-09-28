@@ -8,12 +8,14 @@ import {
   FolderPlus,
   Gamepad2,
   Home,
+  KeyRound,
   ListChecks,
   Plus,
   Sparkles,
   User,
 } from "lucide-react";
 import NiroAvatar from "@/components/niro/NiroAvatar";
+import { trpc } from "@/lib/trpc-client";
 import { NIRO_NAME } from "@/lib/niro";
 
 // Replaces AppSidebar as the persistent student-facing navigation (PR9).
@@ -97,9 +99,28 @@ const UPLOAD_CHOICES = [
   },
 ] as const;
 
+const ACCESS_CODE_CHOICE = {
+  href: "/question-sets",
+  title: "كود من دكتورك",
+  description: "أضف مجموعة أسئلة محمية بكود الوصول.",
+  icon: KeyRound,
+} as const;
+
 export default function BottomNav() {
   const pathname = usePathname();
   const [chooserOpen, setChooserOpen] = useState(false);
+  // 🔒 "كود من دكتورك" joins the choices only while Protected Doctor
+  // Question Sets is switched on — asked for when the sheet opens, not on
+  // every page load.
+  const doctorSetsOn =
+    trpc.questionSets.enabled.useQuery(undefined, {
+      enabled: chooserOpen,
+      staleTime: Infinity,
+      retry: false,
+    }).data === true;
+  const choices = doctorSetsOn
+    ? [...UPLOAD_CHOICES, ACCESS_CODE_CHOICE]
+    : UPLOAD_CHOICES;
 
   return (
     <>
@@ -175,7 +196,7 @@ export default function BottomNav() {
           >
             <div className="upload-chooser-handle" />
             <h2>ماذا تريد أن تضيف؟</h2>
-            {UPLOAD_CHOICES.map(choice => {
+            {choices.map(choice => {
               const Icon = choice.icon;
               return (
                 <Link

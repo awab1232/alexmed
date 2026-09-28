@@ -7,6 +7,7 @@ import {
   listUsersForAdmin,
   setUserSuspendedForAdmin,
 } from "../db-admin-users";
+import { hasLiveQuestionSets } from "../db-question-sets";
 import { adminProcedure, router } from "./trpc";
 
 export const adminUsersRouter = router({
@@ -60,6 +61,15 @@ export const adminUsersRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Cannot delete your own account",
+        });
+      }
+      // Deleting a doctor would cascade their published question sets and
+      // every student's access to them — archive the sets first.
+      if (await hasLiveQuestionSets(input.userId)) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "لهذا الحساب مجموعات أسئلة منشورة لطلاب. أرشفها أولًا من المجموعات المحمية.",
         });
       }
       const deleted = await deleteUserForAdmin(input.userId);

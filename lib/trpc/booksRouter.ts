@@ -41,6 +41,7 @@ import {
   enqueueChapterGeneration,
   listGenerationJobsForBook,
 } from "../generation-jobs";
+import { bookHasPublishedQuestionSet } from "../db-question-sets";
 import {
   buildExplainCardMessages,
   explainCardResponseSchema,
@@ -274,6 +275,14 @@ export const booksRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // A question file backing a published protected set holds its
+      // students' questions — it's archived from /doctor, never deleted.
+      if (await bookHasPublishedQuestionSet(input.id)) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "هذا الملف مرتبط بمجموعة أسئلة منشورة لطلاب، ولا يمكن حذفه.",
+        });
+      }
       const ok = await deleteBook(ctx.user.id, input.id);
       if (!ok) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Book not found" });

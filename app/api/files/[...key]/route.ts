@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { isFileKeyAccessibleToUser } from "@/lib/db-file-access";
 import { storageGetSignedUrl } from "@/lib/storage";
+import { streamStoredObject } from "@/lib/storage-stream";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -35,33 +36,9 @@ export async function GET(
   // PDF looked stuck on "جاري تحميل" for minutes). Proxying keeps the
   // request same-origin, so pdf.js can fetch only the bytes it needs.
   if (new URL(request.url).searchParams.get("stream") === "1") {
-    try {
-      const url = await storageGetSignedUrl(relKey);
-      const range = request.headers.get("range");
-      const upstream = await fetch(url, {
-        headers: range ? { Range: range } : undefined,
-        signal: request.signal,
-      });
-      if (!upstream.ok || !upstream.body) {
-        console.error("[Files] Storage stream failed:", upstream.status);
-        return NextResponse.json({ error: "Storage error" }, { status: 502 });
-      }
-      const headers = new Headers({
-        "Content-Type":
-          upstream.headers.get("content-type") || "application/octet-stream",
-        "Accept-Ranges": "bytes",
-        "Cache-Control": "private, max-age=3600",
-      });
-      for (const name of ["content-length", "content-range", "etag"]) {
-        const value = upstream.headers.get(name);
-        if (value) headers.set(name, value);
-      }
-      return new Response(upstream.body, { status: upstream.status, headers });
-    } catch (error) {
-      if (request.signal.aborted) return new Response(null, { status: 499 });
-      console.error("[Files] Failed to stream from storage:", error);
-      return NextResponse.json({ error: "Storage error" }, { status: 502 });
-    }
+    return streamStoredObject(relKey, request, {
+      cacheControl: "private, max-age=3600",
+    });
   }
 
   try {

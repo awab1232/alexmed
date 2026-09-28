@@ -85,6 +85,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
+    "@electric-sql/pglite": "0.3",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/typography": "^0.5.15",
     "@types/bcryptjs": "^2.4.6",

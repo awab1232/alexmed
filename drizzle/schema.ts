@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -2677,3 +2678,281 @@ export const aiModelHealth = pgTable("ai_model_health", {
     .defaultNow()
     .notNull(),
 });
+
+// ── 🔒 Protected Doctor Question Sets ────────────────────────────────────
+// An access layer over the EXISTING question-file pipeline: a doctor's
+// question file is an ordinary books row (sourceType = question_file) with
+// its extracted_questions / images, processed once. These tables only say
+// who may read it. Nothing here copies or re-generates question content.
+// Authorization lives in lib/question-set-access.ts.
+
+// "Doctor" is a capability on top of a normal account, never a users.role
+// value: approval state is read from this table on every doctor request
+// (lib/trpc/trpc.ts's doctorProcedure), not from the session JWT.
+export const doctorStatusEnum = pgEnum("doctor_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "suspended",
+]);
+
+export const doctorProfiles = pgTable(
+  "doctor_profiles",
+  {
+    userId: uuid("userId")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: doctorStatusEnum("status").default("pending").notNull(),
+    fullName: text("fullName").notNull(),
+    university: text("university").notNull(),
+    faculty: text("faculty").notNull(),
+    department: text("department").notNull(),
+    universityEmail: varchar("universityEmail", { length: 320 }),
+    note: text("note"),
+    reviewedById: uuid("reviewedById").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewedAt", { withTimezone: true }),
+    rejectionReason: text("rejectionReason"),
+    suspendedAt: timestamp("suspendedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    statusCreatedIdx: index("doctor_profiles_status_created_at_idx").on(
+      table.status,
+      table.createdAt
+    ),
+  })
+);
+
+// "expired" / "not started" are never stored: they're derived from
+// startsAt/endsAt against the database clock at read time. Processing
+// state comes from the underlying books row, not from here.
+export const questionSetStatusEnum = pgEnum("question_set_status", [
+  "draft",
+  "published",
+  "disabled",
+  "archived",
+]);
+
+export const questionSetVisibilityEnum = pgEnum("question_set_visibility", [
+  "listed",
+  "unlisted",
+]);
+
+export const questionSets = pgTable(
+  "question_sets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    // One set = one existing question-file book. Deleting that book (or
+    // the doctor's account) is refused in app code once the set has been
+    // published (lib/db-question-sets.ts's hasLiveQuestionSets).
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    ownerId: uuid("ownerId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    subjectLabel: text("subjectLabel"),
+    academicYear: text("academicYear"),
+    examType: text("examType"),
+    visibility: questionSetVisibilityEnum("visibility")
+      .default("unlisted")
+      .notNull(),
+    status: questionSetStatusEnum("status").default("draft").notNull(),
+    startsAt: timestamp("startsAt", { withTimezone: true }),
+    endsAt: timestamp("endsAt", { withTimezone: true }),
+    publishedAt: timestamp("publishedAt", { withTimezone: true }),
+    disabledAt: timestamp("disabledAt", { withTimezone: true }),
+    // "doctor" | "admin": an admin's disable can only be lifted by an admin.
+    disabledByRole: varchar("disabledByRole", { length: 16 }),
+    archivedAt: timestamp("archivedAt", { withTimezone: true }),
+    // Snapshot taken at publish time (the questions can't change after).
+    questionCount: integer("questionCount").default(0).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    bookUnique: uniqueIndex("question_sets_book_id_idx").on(table.bookId),
+    ownerCreatedIdx: index("question_sets_owner_id_created_at_idx").on(
+      table.ownerId,
+      table.createdAt
+    ),
+    listedIdx: index("question_sets_listed_published_idx")
+      .on(table.publishedAt)
+      .where(sql`"visibility" = 'listed' AND "status" = 'published'`),
+    windowCheck: check(
+      "question_sets_window_check",
+      sql`"startsAt" IS NULL OR "endsAt" IS NULL OR "endsAt" > "startsAt"`
+    ),
+  })
+);
+
+export const questionSetCodeStatusEnum = pgEnum("question_set_code_status", [
+  "unused",
+  "claimed",
+  "revoked",
+]);
+
+// Codes are never stored in plaintext: codeHash is HMAC-SHA256 of the
+// normalized code under QUESTION_SET_CODE_HMAC_KEY
+// (lib/question-set-codes.ts). The doctor sees the plaintext once, when the
+// batch is generated.
+export const questionSetAccessCodes = pgTable(
+  "question_set_access_codes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    setId: uuid("setId")
+      .notNull()
+      .references(() => questionSets.id, { onDelete: "cascade" }),
+    batchId: uuid("batchId").notNull(),
+    codeHash: varchar("codeHash", { length: 64 }).notNull(),
+    codeHint: varchar("codeHint", { length: 4 }).notNull(),
+    status: questionSetCodeStatusEnum("status").default("unused").notNull(),
+    claimedById: uuid("claimedById").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    claimedAt: timestamp("claimedAt", { withTimezone: true }),
+    revokedAt: timestamp("revokedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    hashUnique: uniqueIndex("question_set_access_codes_code_hash_idx").on(
+      table.codeHash
+    ),
+    setStatusIdx: index("question_set_access_codes_set_id_status_idx").on(
+      table.setId,
+      table.status
+    ),
+  })
+);
+
+export const questionSetEntitlementStatusEnum = pgEnum(
+  "question_set_entitlement_status",
+  ["active", "revoked"]
+);
+
+// What actually grants a student access; a code is only how one is
+// obtained. Revoking never deletes the row (history for the doctor).
+export const questionSetEntitlements = pgTable(
+  "question_set_entitlements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    setId: uuid("setId")
+      .notNull()
+      .references(() => questionSets.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    codeId: uuid("codeId").references(() => questionSetAccessCodes.id, {
+      onDelete: "set null",
+    }),
+    // "code" | "admin"
+    source: varchar("source", { length: 16 }).default("code").notNull(),
+    status: questionSetEntitlementStatusEnum("status")
+      .default("active")
+      .notNull(),
+    grantedAt: timestamp("grantedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    revokedAt: timestamp("revokedAt", { withTimezone: true }),
+    revokedById: uuid("revokedById").references(() => users.id, {
+      onDelete: "set null",
+    }),
+  },
+  table => ({
+    // At most one live entitlement per student per set: the DB-level guard
+    // behind "same student, second code" and concurrent redeems.
+    activeUnique: uniqueIndex("question_set_entitlements_active_set_user_idx")
+      .on(table.setId, table.userId)
+      .where(sql`"status" = 'active'`),
+    codeUnique: uniqueIndex("question_set_entitlements_code_id_idx").on(
+      table.codeId
+    ),
+    userStatusIdx: index("question_set_entitlements_user_id_status_idx").on(
+      table.userId,
+      table.status
+    ),
+    setStatusIdx: index("question_set_entitlements_set_id_status_idx").on(
+      table.setId,
+      table.status
+    ),
+  })
+);
+
+// One row per redeem attempt: drives the brute-force limits (same DB-backed
+// counting as login_attempts). ipHash is a salted SHA-256 of the requester's
+// IP (lib/db-phone.ts's hashIp), never the raw address. Pruned after ~30
+// days.
+export const questionSetRedeemAttempts = pgTable(
+  "question_set_redeem_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    ipHash: varchar("ipHash", { length: 64 }),
+    // "success" | "already" | "invalid" | "rate_limited"
+    outcome: varchar("outcome", { length: 16 }).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    userCreatedIdx: index("question_set_redeem_attempts_user_created_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    ipCreatedIdx: index("question_set_redeem_attempts_ip_created_idx").on(
+      table.ipHash,
+      table.createdAt
+    ),
+  })
+);
+
+// Who did what to a set. Deliberately not foreign-keyed (same reasoning as
+// admin_material_audit_logs: the log outlives what it describes). ids,
+// event names and counts only; never a plaintext code or a raw IP.
+export const questionSetAuditEvents = pgTable(
+  "question_set_audit_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    setId: uuid("setId"),
+    actorId: uuid("actorId"),
+    event: varchar("event", { length: 48 }).notNull(),
+    targetId: uuid("targetId"),
+    meta: jsonb("meta").$type<Record<string, string | number | boolean>>(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    setCreatedIdx: index("question_set_audit_events_set_created_idx").on(
+      table.setId,
+      table.createdAt
+    ),
+    actorCreatedIdx: index("question_set_audit_events_actor_created_idx").on(
+      table.actorId,
+      table.createdAt
+    ),
+  })
+);
+
+export type DoctorProfile = typeof doctorProfiles.$inferSelect;
+export type QuestionSet = typeof questionSets.$inferSelect;
+export type QuestionSetAccessCode = typeof questionSetAccessCodes.$inferSelect;
+export type QuestionSetEntitlement =
+  typeof questionSetEntitlements.$inferSelect;

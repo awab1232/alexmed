@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   LogOut,
   Settings,
+  Stethoscope,
   ShieldCheck,
   Trash2,
   UserRound,
@@ -54,6 +55,27 @@ const HELP_LINKS: LinkRow[] = [
   { href: "/contact", label: "تواصل معنا", icon: LifeBuoy },
 ];
 
+function doctorRowLabel(
+  data:
+    | {
+        approved: boolean;
+        profile: { status: string } | null;
+      }
+    | undefined
+) {
+  if (data?.approved) return "لوحة الدكتور";
+  switch (data?.profile?.status) {
+    case "pending":
+      return "طلب الدكتور قيد المراجعة";
+    case "rejected":
+      return "طلب الدكتور لم يُقبل";
+    case "suspended":
+      return "صلاحيات الدكتور موقوفة";
+    default:
+      return "انضم كدكتور";
+  }
+}
+
 export default function AccountPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "admin";
@@ -64,6 +86,12 @@ export default function AccountPage() {
   const statsQuery = trpc.books.stats.useQuery();
   const planQuery = trpc.billing.mine.useQuery();
   const sharingQuery = trpc.sharing.profile.useQuery();
+  // 🔒 Doctor capability (Protected Doctor Question Sets) — only asked for
+  // while the feature is on.
+  const doctorSetsOn = trpc.questionSets.enabled.useQuery().data === true;
+  const doctorQuery = trpc.doctor.status.useQuery(undefined, {
+    enabled: doctorSetsOn,
+  });
   const updateProfile = trpc.auth.updateProfile.useMutation({
     onSuccess: () => profileQuery.refetch(),
   });
@@ -230,6 +258,20 @@ export default function AccountPage() {
             </li>
           ))}
         </Group>
+
+        {doctorSetsOn ? (
+          <Group title="التدريس">
+            <li>
+              <LinkRowItem
+                href={
+                  doctorQuery.data?.approved ? "/doctor" : "/account/doctor"
+                }
+                label={doctorRowLabel(doctorQuery.data)}
+                icon={Stethoscope}
+              />
+            </li>
+          </Group>
+        ) : null}
 
         {isAdmin ? (
           <Group title="الإدارة">

@@ -34,6 +34,8 @@ export async function isFileKeyAccessibleToUser(
   // 📤 A study book's PDF is also readable by a student holding an ACCEPTED
   // share of it (lib/book-access.ts's rule) — pending/revoked/removed
   // shares grant nothing, so revoking immediately stops new signed URLs.
+  // Study books only, matching lib/book-access.ts: sharing never applies to
+  // a question file, so a share row must never open one's PDF either.
   const [sharedBook] = await db
     .select({ id: books.id })
     .from(books)
@@ -41,6 +43,7 @@ export async function isFileKeyAccessibleToUser(
     .where(
       and(
         eq(books.fileKey, fileKey),
+        eq(books.sourceType, "study_book"),
         eq(bookShares.recipientId, userId),
         eq(bookShares.status, "accepted")
       )
