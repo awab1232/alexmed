@@ -12,7 +12,7 @@ import {
   type BookChapterAnalysis,
   type BookPageInput,
 } from "@/lib/book-analysis";
-import { AiRateLimitError } from "@/lib/ai/types";
+import { AiRateLimitError, isPermanentAiError } from "@/lib/ai/types";
 import { summaryCoverageFromSections } from "@/lib/chapter-generation";
 import {
   buildChapterManifest,
@@ -31,6 +31,7 @@ import {
   getSafeChapterVisualAssets,
   hasSafePendingChapterVisualAnalysis,
 } from "@/lib/chapter-visual-context";
+import { enqueueChapterGeneration } from "@/lib/generation-jobs";
 import { invokeLLM } from "@/lib/llm";
 import { publishMessage } from "@/lib/queue/client";
 import { isUserConcurrencyExceeded } from "@/lib/queue/concurrency";
@@ -326,10 +327,15 @@ export async function POST(request: Request) {
     // failure here is logged but doesn't fail this route: the chapter is
     // already durably complete, and the reader's own "بناء الخريطة
     // الهرمية" button remains available as a fallback.
+    // Through the generation-job table (lib/generation-jobs.ts), so this
+    // automatic run and a student's own click share one job instead of
+    // racing each other into two AI runs.
     try {
-      await publishMessage({
-        type: "generate_chapter_mindmap_sections",
+      await enqueueChapterGeneration({
         chapterId,
+        bookId: chapter.bookId,
+        userId: chapter.userId,
+        kind: "mindmap",
       });
     } catch (publishError) {
       console.error(
@@ -341,6 +347,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ chapterId, status: "complete" });
   } catch (error) {
     console.error("[Books] Chapter analysis failed", error);
+    // A permanent failure (the gateway key is rejected, or the request
+    // itself is) fails the same way on every retry — stop now instead of
+    // spending the remaining attempts (and AI calls) on it.
+    if (isPermanentAiError(error)) {
+      await markBookChapterFailedTerminal(chapterId, "تعذر تحليل هذا الفصل.");
+      await finalizeBookIfDone(chapter.bookId);
+      return NextResponse.json({
+        chapterId,
+        status: "failed",
+        error: "تعذر تحليل هذا الفصل.",
+      });
+    }
     if (error instanceof AiRateLimitError) {
       return await retryOrFail(
         "تجاوزنا الحد المؤقت لمزوّد الذكاء الاصطناعي.",

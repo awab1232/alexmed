@@ -80,8 +80,12 @@ export function buildSelectionAssistantMessages(input: {
   ];
 }
 
-// Simple in-memory sliding window per user (single app instance on
-// Railway). Every call is a real LLM request, so a student can't hammer it.
+// Cheap first line only: an in-memory sliding window per user, per server
+// instance — it turns away a student hammering the button without a
+// database round-trip. It is NOT the limit that holds across replicas:
+// that is lib/ai/interactive-limit.ts (Postgres-backed, same 40 per 10
+// minutes plus concurrency caps), which every interactive route checks
+// after this.
 const WINDOW_MS = 10 * 60_000;
 const MAX_REQUESTS_PER_WINDOW = 40;
 const recent = new Map<string, number[]>();

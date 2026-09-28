@@ -1,4 +1,8 @@
 import { auth } from "@/lib/auth";
+import {
+  acquireInteractiveSlot,
+  INTERACTIVE_LIMIT_MESSAGE_AR,
+} from "@/lib/ai/interactive-limit";
 import { admitAssistantMessage } from "@/lib/billing/assistant-guard";
 import { streamFastAnswer } from "@/lib/fast-answer-stream";
 import {
@@ -79,9 +83,21 @@ export async function POST(request: Request) {
       { status: 429 }
     );
   }
+  // Load guard across every replica (lib/ai/interactive-limit.ts) — taken
+  // before the quota, so a refusal here costs the student nothing.
+  const slot = await acquireInteractiveSlot(session.user.id, "assistant");
+  if (!slot.ok) {
+    return NextResponse.json(
+      { error: INTERACTIVE_LIMIT_MESSAGE_AR[slot.reason] },
+      { status: 429 }
+    );
+  }
   // 💳 One message from the plan's daily assistant quota.
   const admitted = await admitAssistantMessage(session.user.id);
-  if (admitted instanceof NextResponse) return admitted;
+  if (admitted instanceof NextResponse) {
+    await slot.release();
+    return admitted;
+  }
   const { message, image, history } = parsed.data;
   const hasImage = !!image || history.some(turn => turn.image);
   const messages = buildGeneralAssistantMessages({
@@ -95,6 +111,7 @@ export async function POST(request: Request) {
     maxTokens: 4000,
     onNoAnswer: admitted.refund,
     onComplete: admitted.recordAnswer,
+    onSettled: slot.release,
     ...(hasImage ? { model: DEFAULT_VISION_MODEL } : {}),
   });
 }

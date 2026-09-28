@@ -11,12 +11,16 @@ import {
   adminMaterials,
   books,
   bookChapters,
+  chapterGenerationJobs,
   mirrorBatches,
   mirrorJobs,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { getUserPlan } from "../billing/entitlement";
-import { staleBookChapterProcessingCutoff } from "./claim";
+import {
+  STALE_GENERATION_JOB_MS,
+  staleBookChapterProcessingCutoff,
+} from "./claim";
 import {
   getAdminMaterialsQueueConcurrency,
   getQueueGlobalConcurrency,
@@ -24,6 +28,38 @@ import {
 } from "./types";
 
 type ConcurrencyKind = "mirror" | "books" | "admin_materials";
+
+// On-demand chapter generation (lib/generation-jobs.ts): how many of this
+// student's jobs are running right now, across every replica. A job whose
+// worker died stops counting once it's stale (same rule as the claim).
+export async function countProcessingGenerationForUser(
+  userId: string
+): Promise<number> {
+  const db = getDb();
+  if (!db) return 0;
+  const t = chapterGenerationJobs;
+  const [row] = await db
+    .select({ c: count() })
+    .from(t)
+    .where(
+      and(
+        eq(t.userId, userId),
+        eq(t.status, "processing"),
+        gte(t.startedAt, new Date(Date.now() - STALE_GENERATION_JOB_MS))
+      )
+    );
+  return Number(row?.c ?? 0);
+}
+
+// Same per-student budget as their file processing (the plan's
+// processingConcurrency, never below QUEUE_PER_USER_CONCURRENCY), so one
+// student with a long book can't hold every generation slot.
+export async function isUserGenerationConcurrencyExceeded(
+  userId: string
+): Promise<boolean> {
+  const current = await countProcessingGenerationForUser(userId);
+  return current >= (await studentConcurrencyLimit(userId));
+}
 
 export async function countProcessingGlobal(
   kind: ConcurrencyKind

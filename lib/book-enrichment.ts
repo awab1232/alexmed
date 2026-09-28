@@ -232,9 +232,12 @@ function knowledgeOutputCoverage(
   };
 }
 
-// Requests for a part that is already being generated on this server join
-// that run instead of paying for a second one (the database check in
-// saveChapterOutputOnce covers requests landing on another instance).
+// Local optimization only: calls for a part already being generated in
+// THIS process join that run. Correctness across replicas does not depend
+// on it — on-demand generation runs as chapter_generation_jobs claimed
+// atomically in the database (lib/generation-jobs.ts), so two instances
+// never run the same (chapter, kind); saveChapterOutputOnce then still
+// refuses a second save.
 const inFlight = new Map<string, Promise<unknown>>();
 function once<T>(key: string, run: () => Promise<T>): Promise<T> {
   const running = inFlight.get(key) as Promise<T> | undefined;

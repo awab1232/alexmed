@@ -16,6 +16,10 @@ import {
   listChatMessages,
   type ChatTarget,
 } from "../db-chat";
+import {
+  acquireInteractiveSlot,
+  INTERACTIVE_LIMIT_MESSAGE_AR,
+} from "../ai/interactive-limit";
 import { invokeLLM } from "../llm";
 import {
   assertChatMessageAllowed,
@@ -80,34 +84,54 @@ export const chatRouter = router({
         });
       }
 
-      // 💳 Same assistant quota as the streamed routes (this procedure is
-      // callable directly, so it must not be a way around the limit).
-      let receipt;
-      try {
-        receipt = await consumeUsage(ctx.user.id, "ASSISTANT_MESSAGE");
-      } catch (error) {
-        toTrpcError(error);
+      // Same cross-replica load guard as the streamed routes
+      // (lib/ai/interactive-limit.ts), held until the answer is back.
+      const slot = await acquireInteractiveSlot(ctx.user.id, "study_chat");
+      if (!slot.ok) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: INTERACTIVE_LIMIT_MESSAGE_AR[slot.reason],
+        });
       }
 
-      const userMessage = await appendChatMessage(session.id, {
-        role: "user",
-        content: input.question,
-      });
-
-      // Always answers: the file's overview + best-matching pages ground it
-      // when they're relevant, and the model's own knowledge (marked as
-      // outside the file) covers the rest — see lib/rag.ts's prompt.
-      const { messages, chunks } = await prepareStudyChatTurn(
-        ctx.user.id,
-        session,
-        input.question
-      );
+      let userMessage: Awaited<ReturnType<typeof appendChatMessage>>;
+      let chunks: Awaited<ReturnType<typeof prepareStudyChatTurn>>["chunks"];
       let response;
+      let receipt;
       try {
-        response = await invokeLLM({ messages, max_tokens: 2500 });
-      } catch (error) {
-        await releaseUsage(receipt);
-        throw error;
+        // 💳 Same assistant quota as the streamed routes (this procedure is
+        // callable directly, so it must not be a way around the limit).
+        try {
+          receipt = await consumeUsage(ctx.user.id, "ASSISTANT_MESSAGE");
+        } catch (error) {
+          toTrpcError(error);
+        }
+
+        userMessage = await appendChatMessage(session.id, {
+          role: "user",
+          content: input.question,
+        });
+
+        // Always answers: the file's overview + best-matching pages ground
+        // it when they're relevant, and the model's own knowledge (marked as
+        // outside the file) covers the rest — see lib/rag.ts's prompt.
+        const turn = await prepareStudyChatTurn(
+          ctx.user.id,
+          session,
+          input.question
+        );
+        chunks = turn.chunks;
+        try {
+          response = await invokeLLM({
+            messages: turn.messages,
+            max_tokens: 2500,
+          });
+        } catch (error) {
+          await releaseUsage(receipt);
+          throw error;
+        }
+      } finally {
+        await slot.release();
       }
       const reply = response.choices[0]?.message.content?.trim();
       if (!reply) await releaseUsage(receipt);

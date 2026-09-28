@@ -12,7 +12,6 @@ import {
   getBookStatsForUser,
   getChapterContentForUser,
   getChapterForUser,
-  getChapterMcqsForValidation,
   getDueCardsForUser,
   getUpcomingReviewForecastForUser,
   getWeakPointsForUser,
@@ -27,8 +26,6 @@ import {
   resetBookExtractionForRetry,
   resetBookPageTextForRetry,
   resetBookPageVisualForRetry,
-  saveMcqValidationResults,
-  insertBookMcqs,
 } from "../db-books";
 import {
   getBookAccess,
@@ -41,29 +38,21 @@ import {
 } from "../book-access";
 import { assignBookToSubject } from "../db-subjects";
 import {
-  generateAndSaveChapterFlashcards,
-  generateAndSaveChapterMcqs,
-  generateAndSaveMindMapSections,
-  generateAndSaveMedicalNotePages,
-  generateAndSaveVisualInsights,
-} from "../book-enrichment";
+  enqueueChapterGeneration,
+  listGenerationJobsForBook,
+} from "../generation-jobs";
 import {
   buildExplainCardMessages,
-  buildGapQuestionsMessages,
-  buildMcqValidationMessages,
   explainCardResponseSchema,
-  findDuplicateMcqIds,
-  findUncoveredPages,
-  gapQuestionsResponseSchema,
-  mcqValidationResponseSchema,
   parseExplainCard,
-  parseGapQuestions,
-  parseMcqValidation,
 } from "../book-analysis";
 import { toTrpcError } from "../billing/http";
 import { consumeUsage, releaseUsage } from "../billing/usage";
+import {
+  acquireInteractiveSlot,
+  INTERACTIVE_LIMIT_MESSAGE_AR,
+} from "../ai/interactive-limit";
 import { invokeLLM } from "../llm";
-import { generationBudget } from "../chapter-generation";
 import {
   getBookOutputSources,
   getKnowledgeCoverageMatrix,
@@ -116,6 +105,18 @@ async function requireOwnedChapter(userId: string, chapterId: string) {
   const chapter = await getChapterForUser(userId, chapterId);
   if (!chapter) {
     return throwOwnerOnlyOrNotFound(userId, { chapterId }, "Chapter not found");
+  }
+  return chapter;
+}
+
+// Generation needs an analysed chapter the caller owns.
+async function requireCompleteOwnedChapter(userId: string, chapterId: string) {
+  const chapter = await requireOwnedChapter(userId, chapterId);
+  if (chapter.status !== "complete") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Chapter analysis must complete first",
+    });
   }
   return chapter;
 }
@@ -342,24 +343,38 @@ export const booksRouter = router({
       if (!card) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
       }
-      // 💳 An AI answer on demand, like the assistant — same quota
-      // (lib/trpc/chatRouter.ts's ask), handed back if the call fails.
-      let receipt;
-      try {
-        receipt = await consumeUsage(ctx.user.id, "ASSISTANT_MESSAGE");
-      } catch (error) {
-        toTrpcError(error);
+      // Short and answered live, so it stays a direct call — behind the
+      // same cross-replica load guard as the assistant
+      // (lib/ai/interactive-limit.ts), taken before the quota.
+      const slot = await acquireInteractiveSlot(ctx.user.id, "explain_card");
+      if (!slot.ok) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: INTERACTIVE_LIMIT_MESSAGE_AR[slot.reason],
+        });
       }
       let response;
       try {
-        response = await invokeLLM({
-          max_tokens: 400,
-          messages: buildExplainCardMessages(card.questionEn, card.answerEn),
-          response_format: explainCardResponseSchema,
-        });
-      } catch (error) {
-        await releaseUsage(receipt);
-        throw error;
+        // 💳 An AI answer on demand, like the assistant — same quota
+        // (lib/trpc/chatRouter.ts's ask), handed back if the call fails.
+        let receipt;
+        try {
+          receipt = await consumeUsage(ctx.user.id, "ASSISTANT_MESSAGE");
+        } catch (error) {
+          toTrpcError(error);
+        }
+        try {
+          response = await invokeLLM({
+            max_tokens: 400,
+            messages: buildExplainCardMessages(card.questionEn, card.answerEn),
+            response_format: explainCardResponseSchema,
+          });
+        } catch (error) {
+          await releaseUsage(receipt);
+          throw error;
+        }
+      } finally {
+        await slot.release();
       }
       const explanationAr = parseExplainCard(
         response.choices[0]?.message.content
@@ -504,216 +519,121 @@ export const booksRouter = router({
       return getBookCoverageDetail(input.bookId);
     }),
 
-  // Audit Phase 6 — generates (and caches) this chapter's hierarchical mind
-  // map sections on first request (or returns whatever the automatic
-  // QStash trigger already generated — see app/api/books/analyze-chapter/
-  // route.ts and app/api/books/generate-mindmap-sections/route.ts). The
-  // actual generation is shared with that automatic path via
-  // lib/book-enrichment.ts; this procedure's own job is just the ownership/
-  // status checks a worker route doesn't need.
+  // Audit Phase 6 — this chapter's hierarchical mind map. Generated in the
+  // background (lib/generation-jobs.ts): this procedure only checks
+  // ownership/status and queues the job (or returns the one already
+  // queued/running, or the automatic one analyze-chapter queued); the page
+  // polls generationJobs and refetches the map when it completes.
   generateMindMapSections: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
-      if (chapter.status !== "complete") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Chapter analysis must complete first",
-        });
-      }
-      return generateAndSaveMindMapSections(chapter.id);
+      const chapter = await requireCompleteOwnedChapter(
+        ctx.user.id,
+        input.chapterId
+      );
+      return enqueueChapterGeneration({
+        chapterId: chapter.id,
+        bookId: chapter.bookId,
+        userId: ctx.user.id,
+        kind: "mindmap",
+      });
     }),
 
   // Audit Phase 7 — connects this chapter's explanation to its real visual
-  // assets (images/diagrams/tables). Lazy + idempotent; only meaningful
-  // once BOTH chapter analysis AND page-visual analysis have produced
-  // something, which finish on independent schedules — so this stays a
-  // student-triggered action here rather than an automatic one (unlike
-  // generateMindMapSections above, which only needs the chapter itself).
-  // Generation logic shared via lib/book-enrichment.ts.
+  // assets (images/diagrams/tables). Only meaningful once BOTH chapter
+  // analysis AND page-visual analysis have produced something, which
+  // finish on independent schedules — so this stays a student-triggered
+  // action. Runs as a background job like the rest.
   generateVisualInsights: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
-      if (chapter.status !== "complete") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Chapter analysis must complete first",
-        });
-      }
-      const visualInsightsAr = await generateAndSaveVisualInsights(chapter.id);
-      return { visualInsightsAr: visualInsightsAr ?? "" };
+      const chapter = await requireCompleteOwnedChapter(
+        ctx.user.id,
+        input.chapterId
+      );
+      return enqueueChapterGeneration({
+        chapterId: chapter.id,
+        bookId: chapter.bookId,
+        userId: ctx.user.id,
+        kind: "visual_insights",
+      });
     }),
 
   // البطاقات والاختبار صاروا اختياريين — لا يتولّدون تلقائيًا مع تحليل
-  // الفصل، بس عند طلب الطالب. نفس نمط generateVisualInsights فوق تمامًا.
+  // الفصل، بس عند طلب الطالب، كمهمة في الخلفية.
   // `rebuild`: replace this chapter's V1 (page-text) cards with cards
   // derived from the book's Knowledge Items — explicit student action only.
   generateChapterFlashcards: protectedProcedure
     .input(z.object({ chapterId: z.string(), rebuild: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
-      if (chapter.status !== "complete") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Chapter analysis must complete first",
-        });
-      }
-      const flashcards = await generateAndSaveChapterFlashcards(chapter.id, {
+      const chapter = await requireCompleteOwnedChapter(
+        ctx.user.id,
+        input.chapterId
+      );
+      return enqueueChapterGeneration({
+        chapterId: chapter.id,
+        bookId: chapter.bookId,
+        userId: ctx.user.id,
+        kind: "flashcards",
         rebuild: input.rebuild,
       });
-      return { count: flashcards?.length ?? 0 };
     }),
 
   generateChapterMcqs: protectedProcedure
     .input(z.object({ chapterId: z.string(), rebuild: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
-      if (chapter.status !== "complete") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Chapter analysis must complete first",
-        });
-      }
-      const mcqs = await generateAndSaveChapterMcqs(chapter.id, {
+      const chapter = await requireCompleteOwnedChapter(
+        ctx.user.id,
+        input.chapterId
+      );
+      return enqueueChapterGeneration({
+        chapterId: chapter.id,
+        bookId: chapter.bookId,
+        userId: ctx.user.id,
+        kind: "mcqs",
         rebuild: input.rebuild,
       });
-      return { count: mcqs?.length ?? 0 };
     }),
 
   generateMedicalNotePages: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
-      if (chapter.status !== "complete") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Chapter analysis must complete first",
-        });
-      }
-      return { pages: await generateAndSaveMedicalNotePages(chapter.id) };
+      const chapter = await requireCompleteOwnedChapter(
+        ctx.user.id,
+        input.chapterId
+      );
+      return enqueueChapterGeneration({
+        chapterId: chapter.id,
+        bookId: chapter.bookId,
+        userId: ctx.user.id,
+        kind: "medical_notes",
+      });
     }),
 
-  // Audit Phase 5 — Question Validation Agent. Lazy + idempotent, same
-  // pattern as generateMindMapSections above: skips straight to using the
-  // cached statuses once every MCQ in the chapter has already been checked,
-  // so re-opening a quiz never re-runs (or re-pays for) validation.
-  // Duplicates are caught deterministically first (findDuplicateMcqIds, no
-  // LLM needed); only the remaining, non-duplicate MCQs go through the LLM
-  // correctness/grounding check against this chapter's own explanation.
-  //
-  // Coverage-based gap-filling (audit Phase 5's "generate additional
-  // questions for uncovered sections") then runs on every call, using the
-  // FINAL statuses above: a page whose only MCQ just got flagged is a gap
-  // again just as much as a page that never had one. New questions are
-  // generated only from this chapter's own already-stored page text (never
-  // invented), and only for the exact pages still missing coverage.
+  // Audit Phase 5 — Question Validation Agent (lib/mcq-validation.ts), as a
+  // background job: validates the chapter's still-pending MCQs and fills
+  // coverage gaps from the chapter's own page text.
   validateChapterMcqs: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const chapter = await requireOwnedChapter(ctx.user.id, input.chapterId);
-      if (chapter.status !== "complete") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Chapter analysis must complete first",
-        });
-      }
-
-      let mcqs = await getChapterMcqsForValidation(chapter.id);
-      const alreadyValidated = mcqs.every(
-        mcq => mcq.validationStatus !== "pending"
+      const chapter = await requireCompleteOwnedChapter(
+        ctx.user.id,
+        input.chapterId
       );
+      return enqueueChapterGeneration({
+        chapterId: chapter.id,
+        bookId: chapter.bookId,
+        userId: ctx.user.id,
+        kind: "mcq_validation",
+      });
+    }),
 
-      if (!alreadyValidated) {
-        // Only the still-pending ones — duplicates are checked across the
-        // WHOLE chapter (a fresh gap-filled question can duplicate an
-        // already-valid older one), but an already-valid/flagged MCQ is
-        // never re-sent to the LLM just because some other MCQ in the same
-        // chapter is still pending.
-        const duplicateIds = new Set(findDuplicateMcqIds(mcqs));
-        const toValidate = mcqs.filter(
-          mcq => !duplicateIds.has(mcq.id) && mcq.validationStatus === "pending"
-        );
-
-        const results: {
-          id: string;
-          status: "valid" | "flagged";
-          note: string | null;
-        }[] = Array.from(duplicateIds, id => ({
-          id,
-          status: "flagged" as const,
-          note: "سؤال مكرر داخل هذا الفصل.",
-        }));
-
-        if (toValidate.length) {
-          // Reasoning models spend hidden tokens first — the old flat 2000
-          // could end before any JSON was written, flagging every question.
-          const response = await invokeLLM({
-            max_tokens: generationBudget(toValidate.length * 120),
-            messages: buildMcqValidationMessages(
-              chapter.explanationEn ?? "",
-              toValidate
-            ),
-            response_format: mcqValidationResponseSchema,
-          });
-          const validation = parseMcqValidation(
-            response.choices[0]?.message.content
-          );
-          const validationById = new Map(validation.map(v => [v.id, v]));
-          for (const mcq of toValidate) {
-            const result = validationById.get(mcq.id);
-            results.push({
-              id: mcq.id,
-              status: result?.valid ? "valid" : "flagged",
-              note: result?.valid ? null : (result?.note ?? "لم يجتز التحقق."),
-            });
-          }
-        }
-
-        await saveMcqValidationResults(results);
-        const resultById = new Map(results.map(r => [r.id, r]));
-        mcqs = mcqs.map(mcq => {
-          const result = resultById.get(mcq.id);
-          return result ? { ...mcq, validationStatus: result.status } : mcq;
-        });
-      }
-
-      const coveredPages = mcqs
-        .filter(mcq => mcq.validationStatus !== "flagged")
-        .map(mcq => mcq.sourcePage);
-      const uncoveredPages = findUncoveredPages(
-        chapter.startPage,
-        chapter.endPage,
-        coveredPages
-      );
-      let generatedCount = 0;
-      if (uncoveredPages.length && chapter.pageTexts?.length) {
-        const gapPages = chapter.pageTexts.filter(page =>
-          uncoveredPages.includes(page.page)
-        );
-        if (gapPages.length) {
-          const response = await invokeLLM({
-            max_tokens: generationBudget(gapPages.length * 500),
-            messages: buildGapQuestionsMessages(chapter.title, gapPages),
-            response_format: gapQuestionsResponseSchema,
-          });
-          const generated = parseGapQuestions(
-            response.choices[0]?.message.content,
-            uncoveredPages
-          );
-          if (generated.length) {
-            await insertBookMcqs(chapter.id, generated);
-            generatedCount = generated.length;
-          }
-        }
-      }
-
-      return {
-        total: mcqs.length + generatedCount,
-        valid: mcqs.filter(mcq => mcq.validationStatus === "valid").length,
-        flagged: mcqs.filter(mcq => mcq.validationStatus === "flagged").length,
-        generated: generatedCount,
-      };
+  // What the study / mind-map pages poll while generation runs: every job
+  // of this book (owner only — a shared recipient never generates).
+  generationJobs: protectedProcedure
+    .input(z.object({ bookId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return listGenerationJobsForBook(ctx.user.id, input.bookId);
     }),
 
   // Student/admin-initiated retry for a page whose visual analysis failed —

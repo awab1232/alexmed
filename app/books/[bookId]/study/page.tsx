@@ -36,8 +36,25 @@ export default function BookStudyPage() {
   const generateMcqs = trpc.books.generateChapterMcqs.useMutation();
   const submitMcqAttempt = trpc.books.submitMcqAttempt.useMutation();
   const rateCard = trpc.books.rateCard.useMutation();
+  // Generation runs as background jobs (lib/generation-jobs.ts): clicks and
+  // the automatic pass below only queue them, and the page follows their
+  // status here — polled every few seconds while anything is waiting.
+  const [waitingJobs, setWaitingJobs] = useState<{
+    kind: "flashcards" | "mcqs";
+    chapters: { id: string; title: string }[];
+    rebuild: boolean;
+    errors: string[];
+  } | null>(null);
+  const [notesChapterId, setNotesChapterId] = useState<string | null>(null);
+  const jobsQuery = trpc.books.generationJobs.useQuery(
+    { bookId },
+    { enabled: !!waitingJobs || !!notesChapterId, refetchInterval: 3000 }
+  );
   const composeNotes = trpc.books.generateMedicalNotePages.useMutation({
-    onSuccess: () => utils.books.getStudyContent.invalidate({ bookId }),
+    onSuccess: (_job, variables) => {
+      setNotesChapterId(variables.chapterId);
+      void utils.books.generationJobs.invalidate({ bookId });
+    },
   });
 
   const [progress, setProgress] = useState<{
@@ -151,44 +168,104 @@ export default function BookStudyPage() {
     }
     startedRef.current = true;
     (async () => {
+      // Queue every chapter's job up front — each call returns as soon as
+      // the job is queued (the server's queue decides how many run at once).
       const errors: string[] = [];
-      for (let i = 0; i < jobs.length; i++) {
-        setProgress({
-          done: i,
-          total: jobs.length,
-          current: jobs[i].chapter.title,
-          errors,
-          rebuild: jobs[i].rebuild,
-        });
+      const queued: { id: string; title: string }[] = [];
+      const rebuild = jobs.some(job => job.rebuild);
+      setProgress({
+        done: 0,
+        total: jobs.length,
+        current: "",
+        errors,
+        rebuild,
+      });
+      const mutation = tool === "cards" ? generateFlashcards : generateMcqs;
+      for (const job of jobs) {
         try {
-          const mutation = tool === "cards" ? generateFlashcards : generateMcqs;
           await mutation.mutateAsync({
-            chapterId: jobs[i].chapter.id,
-            rebuild: jobs[i].rebuild || undefined,
+            chapterId: job.chapter.id,
+            rebuild: job.rebuild || undefined,
           });
+          queued.push({ id: job.chapter.id, title: job.chapter.title });
         } catch {
-          errors.push(jobs[i].chapter.title);
+          errors.push(job.chapter.title);
         }
       }
-      await Promise.all([
-        utils.books.getStudyContent.invalidate({ bookId }),
-        utils.books.getKnowledgeCoverage.invalidate({ bookId }),
-      ]);
-      setRebuildRequested(false);
-      setProgress(
-        errors.length
-          ? {
-              done: jobs.length,
-              total: jobs.length,
-              current: "",
-              errors,
-              rebuild: false,
-            }
-          : null
-      );
+      // A fresh read, so a previous run's "completed" row can't be taken
+      // for this one's.
+      await utils.books.generationJobs.fetch({ bookId });
+      setWaitingJobs({
+        kind: tool === "cards" ? "flashcards" : "mcqs",
+        chapters: queued,
+        rebuild,
+        errors,
+      });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, tool, deckSettled, rebuildRequested]);
+
+  // Follow the queued jobs: live progress while any is waiting or running,
+  // then refresh the content once every one has finished or failed.
+  useEffect(() => {
+    if (!waitingJobs || !jobsQuery.data) return;
+    const rows = waitingJobs.chapters.map(chapter => ({
+      chapter,
+      job: jobsQuery.data.find(
+        job => job.chapterId === chapter.id && job.kind === waitingJobs.kind
+      ),
+    }));
+    const failed = rows
+      .filter(row => row.job?.status === "failed")
+      .map(row => row.chapter.title);
+    const settled = rows.filter(
+      row => row.job?.status === "completed" || row.job?.status === "failed"
+    ).length;
+    const errors = [...waitingJobs.errors, ...failed];
+    const total = rows.length + waitingJobs.errors.length;
+    if (settled < rows.length) {
+      const running = rows.find(row => row.job?.status === "processing");
+      const waiting = rows.filter(
+        row => !row.job || row.job.status === "queued"
+      ).length;
+      setProgress({
+        done: settled + waitingJobs.errors.length,
+        total,
+        current: running
+          ? running.chapter.title
+          : `في قائمة الانتظار (${waiting})`,
+        errors,
+        rebuild: waitingJobs.rebuild,
+      });
+      return;
+    }
+    setWaitingJobs(null);
+    void Promise.all([
+      utils.books.getStudyContent.invalidate({ bookId }),
+      utils.books.getKnowledgeCoverage.invalidate({ bookId }),
+    ]).then(() => {
+      setRebuildRequested(false);
+      setProgress(
+        errors.length
+          ? { done: total, total, current: "", errors, rebuild: false }
+          : null
+      );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobsQuery.data, waitingJobs]);
+
+  // Medical notes for one chapter: refresh when its job settles.
+  useEffect(() => {
+    if (!notesChapterId || !jobsQuery.data) return;
+    const job = jobsQuery.data.find(
+      row => row.chapterId === notesChapterId && row.kind === "medical_notes"
+    );
+    if (job && (job.status === "completed" || job.status === "failed")) {
+      setNotesChapterId(null);
+      void utils.books.getStudyContent.invalidate({ bookId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobsQuery.data, notesChapterId]);
 
   function requestRebuild() {
     const message =
@@ -401,7 +478,8 @@ export default function BookStudyPage() {
             {knowledgeReady ? "من قاعدة المعرفة" : "من الملف كاملاً"}
           </h3>
           <p>
-            الجزء {progress.done + 1} من {progress.total}: {progress.current}
+            {progress.done} من {progress.total} جاهز
+            {progress.current ? ` · جاري الآن: ${progress.current}` : ""}
           </p>
           <div className="flash-progress-track" style={{ width: "70%" }}>
             <i
@@ -515,7 +593,7 @@ export default function BookStudyPage() {
       composingChapterId={
         composeNotes.isPending
           ? (composeNotes.variables?.chapterId ?? null)
-          : null
+          : notesChapterId
       }
     />
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -33,9 +33,50 @@ export default function BookMindMapPage() {
   const params = useParams<{ bookId: string }>();
   const mapQuery = trpc.books.getMindMap.useQuery({ id: params.bookId });
   const utils = trpc.useUtils();
+  // Building a map is a background job (lib/generation-jobs.ts): the click
+  // queues it, and the page follows the job's status — polling only while
+  // a mind-map job (a click, or the automatic one queued when a chapter's
+  // analysis finished) is still waiting or running.
+  const isOwner = mapQuery.data?.access.role === "owner";
+  const jobsQuery = trpc.books.generationJobs.useQuery(
+    { bookId: params.bookId },
+    {
+      enabled: isOwner,
+      refetchInterval: query =>
+        (query.state.data ?? []).some(
+          job =>
+            job.kind === "mindmap" &&
+            (job.status === "queued" || job.status === "processing")
+        )
+          ? 3000
+          : false,
+    }
+  );
   const generateSections = trpc.books.generateMindMapSections.useMutation({
-    onSuccess: () => utils.books.getMindMap.invalidate({ id: params.bookId }),
+    onSuccess: () =>
+      utils.books.generationJobs.invalidate({ bookId: params.bookId }),
   });
+  const mindmapJobs = useMemo(
+    () =>
+      new Map(
+        (jobsQuery.data ?? [])
+          .filter(job => job.kind === "mindmap")
+          .map(job => [job.chapterId, job])
+      ),
+    [jobsQuery.data]
+  );
+  // A job that just finished: fetch the map it built.
+  const activeRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const active = new Set(
+      [...mindmapJobs.values()]
+        .filter(job => job.status === "queued" || job.status === "processing")
+        .map(job => job.chapterId)
+    );
+    const finished = [...activeRef.current].some(id => !active.has(id));
+    activeRef.current = active;
+    if (finished) void utils.books.getMindMap.invalidate({ id: params.bookId });
+  }, [mindmapJobs, params.bookId, utils]);
   const [openChapters, setOpenChapters] = useState<Set<string>>(new Set());
 
   const chapters = mapQuery.data?.chapters ?? [];
@@ -168,9 +209,13 @@ export default function BookMindMapPage() {
           {chapters.map((chapter, chapterIndex) => {
             const isOpen = openChapters.has(chapter.id);
             const sections = chapter.mindMapSections ?? [];
-            const generating =
-              generateSections.isPending &&
-              generateSections.variables?.chapterId === chapter.id;
+            const job = mindmapJobs.get(chapter.id);
+            const queued =
+              (generateSections.isPending &&
+                generateSections.variables?.chapterId === chapter.id) ||
+              job?.status === "queued";
+            const generating = queued || job?.status === "processing";
+            const failed = !generating && job?.status === "failed";
             return (
               <article
                 className={`mindmap-chapter ${isOpen ? "is-open" : ""}`}
@@ -213,8 +258,10 @@ export default function BookMindMapPage() {
                 {!sections.length && mapQuery.data?.access.role === "owner" && (
                   <div className="mindmap-generate-row">
                     <p>
-                      اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة
-                      في خريطة واحدة.
+                      {failed
+                        ? (job?.errorMessage ??
+                          "تعذر بناء الخريطة، حاول مرة أخرى.")
+                        : "اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة في خريطة واحدة."}
                     </p>
                     <button
                       type="button"
@@ -229,7 +276,13 @@ export default function BookMindMapPage() {
                       ) : (
                         <Sparkles size={15} />
                       )}{" "}
-                      {generating ? "جاري البناء..." : "بناء الخريطة"}
+                      {queued
+                        ? "في قائمة الانتظار..."
+                        : generating
+                          ? "جاري البناء..."
+                          : failed
+                            ? "إعادة المحاولة"
+                            : "بناء الخريطة"}
                     </button>
                   </div>
                 )}

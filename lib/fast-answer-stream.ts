@@ -19,6 +19,9 @@ export function streamFastAnswer(
     // Called instead when no model produced an answer at all (the student
     // only saw an error line) — used to give the plan's message back.
     onNoAnswer?: () => Promise<void>;
+    // Called last, once the stream is done however it ended — used to
+    // release the interactive AI slot (lib/ai/interactive-limit.ts).
+    onSettled?: () => Promise<void>;
   }
 ): Response {
   const maxTokens = options.maxTokens ?? 2500;
@@ -89,6 +92,13 @@ export function streamFastAnswer(
             await options.onComplete(full);
           } catch (saveError) {
             console.error(`[${options.logTag}] onComplete failed`, saveError);
+          }
+        }
+        if (options.onSettled) {
+          try {
+            await options.onSettled();
+          } catch (settleError) {
+            console.error(`[${options.logTag}] onSettled failed`, settleError);
           }
         }
         try {

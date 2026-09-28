@@ -792,6 +792,15 @@ export const books = pgTable(
     extractionAttemptCount: integer("extractionAttemptCount")
       .default(0)
       .notNull(),
+    // Ownership of the current extraction invocation (lib/queue/claim.ts's
+    // claimBookExtraction): set to "now + lease" by the one worker that wins
+    // the claim, cleared when it finishes. A duplicate QStash delivery that
+    // arrives while an invocation is still running sees a live lease and
+    // does no OCR/AI work; a lease left behind by a killed worker simply
+    // expires.
+    extractionLeaseUntil: timestamp("extractionLeaseUntil", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -2560,6 +2569,110 @@ export const appSettings = pgTable("app_settings", {
   updatedBy: uuid("updatedBy").references(() => users.id, {
     onDelete: "set null",
   }),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// ── Scalability hardening ────────────────────────────────────────────────
+
+// On-demand AI generation for an already-analysed chapter (flashcards,
+// MCQs, mind map, visual insights, medical notes, MCQ validation). One row
+// per (chapter, kind): enqueueing re-uses the row, and the QStash worker
+// (app/api/books/generation-job) claims it atomically — UPDATE ... WHERE
+// status = 'queued' — before any AI call, so duplicate deliveries, double
+// clicks and requests landing on different replicas never generate twice.
+// The page polls this row instead of holding an HTTP request open.
+export const chapterGenerationJobs = pgTable(
+  "chapter_generation_jobs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    chapterId: uuid("chapterId")
+      .notNull()
+      .references(() => bookChapters.id, { onDelete: "cascade" }),
+    bookId: uuid("bookId")
+      .notNull()
+      .references(() => books.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // "flashcards" | "mcqs" | "mindmap" | "visual_insights" |
+    // "medical_notes" | "mcq_validation" (lib/generation-jobs.ts)
+    kind: varchar("kind", { length: 32 }).notNull(),
+    // "queued" | "processing" | "completed" | "failed"
+    status: varchar("status", { length: 16 }).default("queued").notNull(),
+    rebuild: boolean("rebuild").default(false).notNull(),
+    attemptCount: integer("attemptCount").default(0).notNull(),
+    errorType: varchar("errorType", { length: 32 }),
+    errorMessage: text("errorMessage"),
+    queuedAt: timestamp("queuedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    startedAt: timestamp("startedAt", { withTimezone: true }),
+    completedAt: timestamp("completedAt", { withTimezone: true }),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  table => ({
+    chapterKindUnique: uniqueIndex(
+      "chapter_generation_jobs_chapter_id_kind_idx"
+    ).on(table.chapterId, table.kind),
+    bookIdx: index("chapter_generation_jobs_book_id_idx").on(table.bookId),
+    userStatusIdx: index("chapter_generation_jobs_user_id_status_idx").on(
+      table.userId,
+      table.status
+    ),
+    statusIdx: index("chapter_generation_jobs_status_idx").on(table.status),
+  })
+);
+
+// Leases for interactive AI requests that must answer live (assistant,
+// study chat, "اسأل AI", card explanation) and so can't wait in QStash.
+// A row is one request in flight; the limiter (lib/ai/interactive-limit.ts)
+// counts live leases across ALL replicas — a per-user and a global cap —
+// and rows older than the rate window double as the per-user request
+// history. expiresAt bounds a lease whose worker died mid-request.
+export const aiRequestLeases = pgTable(
+  "ai_request_leases",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    scope: varchar("scope", { length: 32 }).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
+    releasedAt: timestamp("releasedAt", { withTimezone: true }),
+  },
+  table => ({
+    userCreatedIdx: index("ai_request_leases_user_id_created_at_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    liveIdx: index("ai_request_leases_live_idx")
+      .on(table.expiresAt)
+      .where(sql`"releasedAt" IS NULL`),
+  })
+);
+
+// Shared circuit-breaker state per AI model (lib/ai/circuit-breaker.ts),
+// so every replica skips a model that is failing instead of each one
+// discovering it separately. closed -> open after repeated transient
+// failures; after the cooldown one caller wins the half-open probe.
+export const aiModelHealth = pgTable("ai_model_health", {
+  model: varchar("model", { length: 200 }).primaryKey(),
+  // "closed" | "open" | "half_open"
+  state: varchar("state", { length: 16 }).default("closed").notNull(),
+  consecutiveFailures: integer("consecutiveFailures").default(0).notNull(),
+  openedUntil: timestamp("openedUntil", { withTimezone: true }),
+  probeStartedAt: timestamp("probeStartedAt", { withTimezone: true }),
+  lastErrorType: varchar("lastErrorType", { length: 32 }),
   updatedAt: timestamp("updatedAt", { withTimezone: true })
     .defaultNow()
     .notNull(),

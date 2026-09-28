@@ -70,6 +70,95 @@ export class AiRateLimitError extends Error {
   }
 }
 
+// The rest of the failure taxonomy, so callers (queue workers above all)
+// can tell a failure worth retrying from one that will fail the same way
+// every time:
+//   transient  — AiUpstreamError (5xx), AiTimeoutError, AiCircuitOpenError,
+//                and AiRateLimitError above: retry later, with backoff.
+//   permanent  — AiAuthError (401/403: the one shared gateway key is wrong
+//                or revoked, so every model fails the same way) and
+//                AiInvalidRequestError (the request itself was rejected):
+//                retrying only repeats the failure and the spend.
+export class AiAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AiAuthError";
+  }
+}
+
+export class AiInvalidRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AiInvalidRequestError";
+  }
+}
+
+export class AiUpstreamError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AiUpstreamError";
+  }
+}
+
+export class AiTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AiTimeoutError";
+  }
+}
+
+// Every candidate model's circuit is open (lib/ai/circuit-breaker.ts):
+// nothing was sent upstream. Transient — the circuits close again after
+// their cooldown.
+export class AiCircuitOpenError extends Error {
+  readonly retryAfterMs: number;
+  constructor(message: string, retryAfterMs = 30_000) {
+    super(message);
+    this.name = "AiCircuitOpenError";
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+export type AiErrorType =
+  | "rate_limit"
+  | "timeout"
+  | "upstream"
+  | "network"
+  | "circuit_open"
+  | "auth"
+  | "invalid_request"
+  | "unknown";
+
+export function classifyAiError(error: unknown): AiErrorType {
+  if (error instanceof AiRateLimitError) return "rate_limit";
+  if (error instanceof AiTimeoutError) return "timeout";
+  if (error instanceof AiUpstreamError) return "upstream";
+  if (error instanceof AiCircuitOpenError) return "circuit_open";
+  if (error instanceof AiAuthError) return "auth";
+  if (error instanceof AiInvalidRequestError) return "invalid_request";
+  if (error instanceof Error) {
+    if (error.name === "TimeoutError") return "timeout";
+    if (error.name === "TypeError" || error.name === "AbortError")
+      return "network";
+  }
+  return "unknown";
+}
+
+// Retrying these repeats the same failure (and, for invalid requests, the
+// same spend) — a worker should fail the job right away instead.
+export function isPermanentAiError(error: unknown): boolean {
+  const type = classifyAiError(error);
+  return type === "auth" || type === "invalid_request";
+}
+
+// How long a transient failure asks the caller to wait before retrying, if
+// the failure said so (Retry-After, circuit cooldown); undefined otherwise.
+export function aiRetryAfterMs(error: unknown): number | undefined {
+  if (error instanceof AiRateLimitError) return error.retryAfterMs;
+  if (error instanceof AiCircuitOpenError) return error.retryAfterMs;
+  return undefined;
+}
+
 export interface AiProvider {
   generateText(params: GenerateParams): Promise<GenerateResult>;
   streamText(params: GenerateParams): AsyncGenerator<StreamChunk, void, void>;

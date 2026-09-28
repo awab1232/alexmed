@@ -7,6 +7,10 @@ vi.mock("@/lib/storage", () => ({
     .mockResolvedValue("https://signed.example/file.pdf"),
 }));
 vi.mock("@/lib/queue/client", () => ({ publishMessage: vi.fn() }));
+vi.mock("@/lib/queue/claim", () => ({
+  claimBookExtraction: vi.fn().mockResolvedValue(true),
+  releaseBookExtraction: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/lib/pdf-ocr", () => ({ ocrPages: vi.fn() }));
 vi.mock("@/lib/db-books", () => ({
   getBookById: vi.fn(),
@@ -33,7 +37,13 @@ import {
   updateBookExtractionProgress,
   upsertBookPagesText,
 } from "@/lib/db-books";
+import { claimBookExtraction, releaseBookExtraction } from "@/lib/queue/claim";
 import { POST } from "./route";
+
+const mockClaim = claimBookExtraction as unknown as ReturnType<typeof vi.fn>;
+const mockRelease = releaseBookExtraction as unknown as ReturnType<
+  typeof vi.fn
+>;
 
 const mockVerify = verifyQStashRequest as unknown as ReturnType<typeof vi.fn>;
 const mockPublish = publishMessage as unknown as ReturnType<typeof vi.fn>;
@@ -208,5 +218,56 @@ describe("POST /api/books/extract", () => {
       expect.objectContaining({ page: 41, textStatus: "complete" }),
     ]);
     expect(mockOcrPages).toHaveBeenCalledWith(expect.anything(), [41]);
+  });
+
+  // Idempotency: a second delivery for a book another invocation holds
+  // must not download, OCR or call AI — and must not drop the book either
+  // (the holder may have died), so it re-checks later.
+  it("does no OCR when another invocation holds the book, and re-checks later", async () => {
+    mockGetBook.mockResolvedValue({
+      id: "b1",
+      fileKey: "books/b1.pdf",
+      status: "extracting",
+      pageTexts: null,
+    });
+    mockClaim.mockResolvedValueOnce(false);
+
+    const response = await POST(request({ bookId: "b1" }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ status: "lease_held" });
+    expect(mockOcrPages).not.toHaveBeenCalled();
+    expect(mockUpdateProgress).not.toHaveBeenCalled();
+    expect(mockPublish).toHaveBeenCalledWith(
+      { type: "extract_book_job", bookId: "b1" },
+      expect.objectContaining({ delay: 60 })
+    );
+  });
+
+  it("releases the book before publishing its next OCR step", async () => {
+    mockGetBook.mockResolvedValue({
+      id: "b1",
+      fileKey: "books/b1.pdf",
+      status: "extracting",
+      pageTexts: Array.from({ length: 20 }, (_, i) => ({
+        page: i + 1,
+        text: "",
+        hasText: false,
+      })),
+      pagesNeedingOcr: Array.from({ length: 20 }, (_, i) => i + 1),
+      ocrFailedPages: [],
+      ocrAttemptCounts: {},
+      pageCount: 20,
+    });
+    mockOcrPages.mockResolvedValue({ pages: [], failedPages: [] });
+    const order: string[] = [];
+    mockRelease.mockImplementation(async () => {
+      order.push("release");
+    });
+    mockPublish.mockImplementation(async () => {
+      order.push("publish");
+    });
+
+    await POST(request({ bookId: "b1" }));
+    expect(order.slice(0, 2)).toEqual(["release", "publish"]);
   });
 });

@@ -1,4 +1,8 @@
 import { auth } from "@/lib/auth";
+import {
+  acquireInteractiveSlot,
+  INTERACTIVE_LIMIT_MESSAGE_AR,
+} from "@/lib/ai/interactive-limit";
 import { admitAssistantMessage } from "@/lib/billing/assistant-guard";
 import { getBookAccess } from "@/lib/book-access";
 import { getBookPageForUser } from "@/lib/db-books";
@@ -70,9 +74,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "الصفحة غير موجودة." }, { status: 404 });
   }
 
+  // Load guard across every replica (lib/ai/interactive-limit.ts) — taken
+  // before the quota, so a refusal here costs the student nothing.
+  const slot = await acquireInteractiveSlot(session.user.id, "selection");
+  if (!slot.ok) {
+    return NextResponse.json(
+      { error: INTERACTIVE_LIMIT_MESSAGE_AR[slot.reason] },
+      { status: 429 }
+    );
+  }
+
   // 💳 One message from the plan's daily assistant quota.
   const admitted = await admitAssistantMessage(session.user.id);
-  if (admitted instanceof NextResponse) return admitted;
+  if (admitted instanceof NextResponse) {
+    await slot.release();
+    return admitted;
+  }
 
   const messages = buildSelectionAssistantMessages({
     fileName: input.fileName ?? "PDF",
@@ -88,5 +105,6 @@ export async function POST(request: Request) {
     logTag: "ask-selection",
     onNoAnswer: admitted.refund,
     onComplete: admitted.recordAnswer,
+    onSettled: slot.release,
   });
 }

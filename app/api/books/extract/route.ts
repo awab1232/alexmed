@@ -8,6 +8,7 @@ import {
 } from "@/lib/db-books";
 import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages } from "@/lib/pdf-ocr";
+import { claimBookExtraction, releaseBookExtraction } from "@/lib/queue/claim";
 import { publishMessage } from "@/lib/queue/client";
 import { getQueueMaxAttempts } from "@/lib/queue/types";
 import { storageGetSignedUrl } from "@/lib/storage";
@@ -32,6 +33,9 @@ const OCR_BATCH_SIZE = 12;
 // to it. A round with zero failures (just more pages left in a big book)
 // publishes immediately — no reason to slow down a healthy book.
 const OCR_RETRY_BACKOFF_CAP_SECONDS = 90;
+// A delivery that finds another invocation holding the book re-checks after
+// this long (see claimBookExtraction).
+const LEASE_RECHECK_DELAY_SECONDS = 60;
 function ocrRetryBackoffSeconds(attemptNumber: number): number {
   return Math.min(
     OCR_RETRY_BACKOFF_CAP_SECONDS,
@@ -79,6 +83,25 @@ export async function POST(request: Request) {
     }
     if (book.status !== "extracting") {
       return NextResponse.json({ bookId, status: "already_done" });
+    }
+
+    // Atomic ownership before any download/OCR/AI work: a duplicate QStash
+    // delivery (or a retry arriving while a slow OCR batch is still
+    // running) must not run the same batch twice. The loser doesn't just
+    // drop the message — if the holder died mid-run, this message may be
+    // the book's only way forward — it re-checks once the lease could have
+    // expired. Whoever holds the lease publishes the next step, so the
+    // chain continues either way; extra messages only ever find the book
+    // done or claim it in turn.
+    if (!(await claimBookExtraction(bookId))) {
+      await publishMessage(
+        { type: "extract_book_job", bookId },
+        {
+          flowControl: { key: `books-extract-${bookId}`, parallelism: 1 },
+          delay: LEASE_RECHECK_DELAY_SECONDS,
+        }
+      );
+      return NextResponse.json({ bookId, status: "lease_held" });
     }
   } catch (error) {
     console.error("[Books] Extraction lookup failed", error);
@@ -238,6 +261,9 @@ export async function POST(request: Request) {
       });
 
       if (remainingOcr.length) {
+        // Hand the book back BEFORE publishing the next step, so that step
+        // can never arrive to find this invocation's lease still live.
+        await releaseBookExtraction(bookId);
         const highestAttemptThisRound = Math.max(
           0,
           ...stillRetryable.map(
@@ -319,5 +345,10 @@ export async function POST(request: Request) {
     );
   } finally {
     await parser?.destroy().catch(() => undefined);
+    // Idempotent: also covers every error path, so the next delivery (a
+    // QStash retry after a 502) can claim the book at once.
+    await releaseBookExtraction(bookId).catch(error =>
+      console.error("[Books] Failed to release extraction lease", error)
+    );
   }
 }
