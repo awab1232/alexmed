@@ -15,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
         "/assistant",
         "/books",
         "/games",
+        "/home",
         "/materials",
         "/mirror",
         "/review",

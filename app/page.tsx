@@ -3,11 +3,7 @@ import StructuredData from "@/components/landing/StructuredData";
 import { auth } from "@/lib/auth";
 import { BASE_OPEN_GRAPH, SITE_DESCRIPTION, SITE_TITLE } from "@/lib/site";
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
-
-// Loaded only for signed-in students, so visitors on the landing page
-// don't download the app home's client code.
-const Home = dynamic(() => import("@/components/Home"));
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -21,11 +17,13 @@ export const metadata: Metadata = {
   },
 };
 
-// Signed-in students get the app home exactly as before; everyone else gets
-// the public landing page (which links to /register and /login).
+// The public landing page. Signed-in students are served the app home
+// (app/home) at this same URL by middleware.ts; the redirect below only
+// catches a session the middleware's cookie check didn't see. Nothing here
+// imports the app home, so this route ships none of its CSS or JS.
 export default async function Page() {
   const session = await auth();
-  if (session?.user) return <Home />;
+  if (session?.user) redirect("/home");
 
   return (
     <>

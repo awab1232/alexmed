@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { RotateCcw, TriangleAlert } from "lucide-react";
+import s from "./status.module.css";
 
 // Next.js App Router convention file — catches any render/runtime error
 // thrown inside a page (or its layout, other than the root one) that isn't
@@ -21,20 +22,17 @@ export default function ErrorBoundary({
   }, [error]);
 
   return (
-    <section className="upload-view">
-      <div className="empty-state">
-        <TriangleAlert size={28} />
-        <h3>حدث خطأ غير متوقع</h3>
-        <p>الصفحة ما قدرت تكمل تحميلها. جرّب مرة ثانية.</p>
-        <button
-          type="button"
-          className="secondary-button"
-          style={{ marginTop: 14 }}
-          onClick={reset}
-        >
-          <RotateCcw size={16} /> إعادة المحاولة
+    <main className={`${s.screen} ${s.inline}`}>
+      <div className={s.panel}>
+        <span className={s.icon}>
+          <TriangleAlert size={28} aria-hidden="true" />
+        </span>
+        <h1 className={s.title}>حدث خطأ غير متوقع</h1>
+        <p className={s.text}>الصفحة ما قدرت تكمل تحميلها. جرّب مرة ثانية.</p>
+        <button type="button" className={s.action} onClick={reset}>
+          <RotateCcw size={16} aria-hidden="true" /> إعادة المحاولة
         </button>
       </div>
-    </section>
+    </main>
   );
 }

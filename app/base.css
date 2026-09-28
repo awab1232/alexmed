@@ -1,0 +1,57 @@
+/* Loaded on every page by the root layout. Deliberately small: the public
+   marketing pages (/, /pdf-summary, /flashcards, /mind-map, /how-to-study)
+   need only this plus their CSS modules. The app's stylesheet
+   (app/globals.css, ~250KB with Tailwind) is imported by the app's own
+   layouts and entry points instead; lib/globals-css-entrypoints.test.ts
+   checks that every app page still gets it.
+
+   Same cascade layers as Tailwind, so the reset stays in "base" and never
+   outranks utility classes on app pages, which load Tailwind again. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/preflight.css" layer(base);
+
+/* Design tokens (the "ink & highlighter" language). globals.css maps the
+   shadcn/Tailwind variables onto these in its @nl-design block. */
+:root {
+  --nl-ink: #1b2340;
+  --nl-ink-2: #454c66;
+  --nl-ink-3: #6b7188;
+  --nl-paper: #f2f4f9;
+  --nl-sheet: #ffffff;
+  --nl-rule: #dfe3ec;
+  --nl-rule-strong: #c9cedb;
+  --nl-niro: #3355ff;
+  --nl-niro-deep: #2440c7;
+  --nl-niro-soft: #e9eeff;
+  --nl-marker: #ffd43b;
+  --nl-marker-soft: #fff3c4;
+  --nl-correct: #0e9f6e;
+  --nl-correct-soft: #e2f5ec;
+  --nl-wrong: #dc3f46;
+  --nl-wrong-soft: #fdecee;
+  --nl-font-ui: var(--font-readex), system-ui, sans-serif;
+  --nl-font-read: var(--font-naskh), var(--font-readex), serif;
+  --nl-r-sm: 6px;
+  --nl-r-md: 12px;
+  --nl-r-lg: 20px;
+  --nl-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+@layer base {
+  html {
+    background: var(--nl-paper);
+  }
+  body {
+    min-width: 320px;
+    background: var(--nl-paper);
+    color: var(--nl-ink);
+    font-family: var(--nl-font-ui);
+  }
+}
+
+/* Niro character (components/niro/NiroCharacter.tsx): the one rule the
+   marketing pages need. The animation rules live in globals.css. */
+.niro-character {
+  display: block;
+  overflow: hidden;
+}

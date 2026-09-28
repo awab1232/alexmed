@@ -8,7 +8,10 @@ import {
 } from "@/lib/site";
 import type { Metadata, Viewport } from "next";
 import { Noto_Naskh_Arabic, Readex_Pro } from "next/font/google";
-import "./globals.css";
+// Only the small shared base here; the app stylesheet (globals.css) is
+// imported by the app's own layouts and pages, so the public marketing
+// pages don't download and parse it.
+import "./base.css";
 
 // Self-hosted by next/font: no render-blocking Google Fonts stylesheet, and
 // a size-matched fallback so text doesn't jump when the font arrives.

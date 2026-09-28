@@ -1,3 +1,4 @@
+import "@/app/globals.css";
 import BottomNav from "@/components/BottomNav";
 import GamesBackdrop from "@/components/brain-games/GamesBackdrop";
 import { auth } from "@/lib/auth";

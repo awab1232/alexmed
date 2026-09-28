@@ -1,3 +1,4 @@
+import "@/app/globals.css";
 import type { Metadata } from "next";
 
 // /pricing is a client page, so its metadata lives here.

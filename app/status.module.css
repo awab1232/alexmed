@@ -1,0 +1,74 @@
+/* Root error and 404 screens. These sit above every route (public pages
+   included), so they are styled here with the base tokens instead of the
+   app stylesheet (app/globals.css), which would otherwise load everywhere. */
+.screen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  background: var(--nl-paper);
+  color: var(--nl-ink);
+  font-family: var(--nl-font-ui);
+}
+.panel {
+  width: 100%;
+  max-width: 460px;
+  padding: 32px 24px;
+  border: 1px solid var(--nl-rule);
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+  text-align: center;
+}
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--nl-marker-soft);
+  color: var(--nl-ink);
+}
+.code {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.title {
+  margin: 6px 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+}
+.text {
+  margin: 0 0 22px;
+  color: var(--nl-ink-2);
+  font-size: 16px;
+  line-height: 1.8;
+}
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: 0;
+  border-radius: var(--nl-r-md);
+  background: var(--nl-ink);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.action:hover {
+  background: #2a3458;
+}
+.action:focus-visible {
+  outline: 3px solid var(--nl-niro);
+  outline-offset: 3px;
+}
+/* error.tsx renders inside the app shell, next to the sidebar. */
+.inline {
+  min-height: 60vh;
+  background: transparent;
+}
