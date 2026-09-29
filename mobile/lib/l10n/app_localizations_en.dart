@@ -801,8 +801,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String mirrorBatchPages(int from, int to) {
-    return 'Pages $from–$to';
+  String mirrorBatchPages(String range) {
+    return 'Pages $range';
   }
 
   @override
@@ -1484,4 +1484,125 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get summaryEmptyShared =>
       'The owner hasn\'t prepared the summary yet.';
+
+  @override
+  String get efSubtitle => 'The exam\'s key facts';
+
+  @override
+  String efCardCount(int count) {
+    return '$count key facts';
+  }
+
+  @override
+  String get efPreparing => 'Preparing Exam Focus…';
+
+  @override
+  String get efStartFailed => 'Couldn\'t start Exam Focus';
+
+  @override
+  String get efTryAgain => 'Try again';
+
+  @override
+  String get efUnavailable => 'Exam Focus unavailable';
+
+  @override
+  String get efCannotOpen => 'This file can\'t be opened.';
+
+  @override
+  String get efAnalysisFailed => 'The file couldn\'t be analysed';
+
+  @override
+  String get efNothingFound => 'No clear exam facts found 🤔';
+
+  @override
+  String get efTryRegenerate => 'Try regenerating.';
+
+  @override
+  String get efRegenerate => 'Regenerate';
+
+  @override
+  String get efRegenerateConfirm =>
+      'Regenerate Exam Focus? The current and saved cards will be deleted.';
+
+  @override
+  String get efSearch => 'Search cards';
+
+  @override
+  String get efSearchHint => 'Search: chemical burns, 15–30 minutes…';
+
+  @override
+  String get efClearSearch => 'Clear search';
+
+  @override
+  String get efAll => 'All';
+
+  @override
+  String get efSaved => 'Review later';
+
+  @override
+  String get efSave => 'Save to review later';
+
+  @override
+  String get efUnsave => 'Remove from saved';
+
+  @override
+  String get efProgress => 'Your progress through the cards';
+
+  @override
+  String get efNoMatch => 'No matching cards 🔎';
+
+  @override
+  String get efNoMatchHint => 'Try another word or choose “All”.';
+
+  @override
+  String efPartial(String ranges) {
+    return '⚠️ Couldn\'t analyse pp. $ranges.';
+  }
+
+  @override
+  String efCoverage(int covered, int total) {
+    return '📊 Cards cover $covered/$total content pages';
+  }
+
+  @override
+  String efNoTextPages(int count) {
+    return '$count pages without readable text';
+  }
+
+  @override
+  String get efProgressTitle => '⏳ Analysing your whole file…';
+
+  @override
+  String get efProgressBody =>
+      'We read every page and pull out what matters for the exam. You can leave and come back; the work continues on the server.';
+
+  @override
+  String get efStageAnalyse => 'Analysing every page';
+
+  @override
+  String efStageUnits(int done, int total) {
+    return '$done/$total parts';
+  }
+
+  @override
+  String get efStageExtract => 'Extracting high-yield facts';
+
+  @override
+  String efStageFacts(int count) {
+    return '$count facts';
+  }
+
+  @override
+  String get efStageDedupe => 'Removing duplicates';
+
+  @override
+  String get efStageBuild => 'Building Exam Focus cards';
+
+  @override
+  String get efStageCoverage => 'Checking the whole file is covered';
+
+  @override
+  String efUnitPages(String range) {
+    return 'pp. $range';
+  }
 }

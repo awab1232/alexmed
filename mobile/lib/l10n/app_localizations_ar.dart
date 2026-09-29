@@ -791,8 +791,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String mirrorBatchPages(int from, int to) {
-    return 'صفحة $from–$to';
+  String mirrorBatchPages(String range) {
+    return 'صفحة $range';
   }
 
   @override
@@ -1466,4 +1466,125 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get summaryEmptyShared => 'لم يجهّز صاحب الملف الملخص بعد.';
+
+  @override
+  String get efSubtitle => 'أهم معلومات الامتحان';
+
+  @override
+  String efCardCount(int count) {
+    return '$count معلومة مركّزة';
+  }
+
+  @override
+  String get efPreparing => 'نجهّز Exam Focus…';
+
+  @override
+  String get efStartFailed => 'ما قدرنا نبدأ Exam Focus';
+
+  @override
+  String get efTryAgain => 'حاول مرة ثانية';
+
+  @override
+  String get efUnavailable => 'Exam Focus غير متاح';
+
+  @override
+  String get efCannotOpen => 'تعذر فتح هذا الملف.';
+
+  @override
+  String get efAnalysisFailed => 'تعذر تحليل الملف';
+
+  @override
+  String get efNothingFound => 'لم نجد معلومات امتحانية واضحة 🤔';
+
+  @override
+  String get efTryRegenerate => 'جرّب إعادة التوليد.';
+
+  @override
+  String get efRegenerate => 'إعادة التوليد';
+
+  @override
+  String get efRegenerateConfirm =>
+      'إعادة توليد Exam Focus من جديد؟ البطاقات الحالية والمحفوظة رح تنحذف.';
+
+  @override
+  String get efSearch => 'بحث في البطاقات';
+
+  @override
+  String get efSearchHint => 'ابحث: chemical burns، 15–30 minutes…';
+
+  @override
+  String get efClearSearch => 'مسح البحث';
+
+  @override
+  String get efAll => 'الكل';
+
+  @override
+  String get efSaved => 'راجعها لاحقًا';
+
+  @override
+  String get efSave => 'احفظ للمراجعة لاحقًا';
+
+  @override
+  String get efUnsave => 'إزالة من المحفوظة';
+
+  @override
+  String get efProgress => 'تقدّمك في البطاقات';
+
+  @override
+  String get efNoMatch => 'ما في بطاقات تطابق 🔎';
+
+  @override
+  String get efNoMatchHint => 'جرّب كلمة ثانية أو اختر «الكل».';
+
+  @override
+  String efPartial(String ranges) {
+    return '⚠️ تعذر تحليل ص $ranges.';
+  }
+
+  @override
+  String efCoverage(int covered, int total) {
+    return '📊 البطاقات غطّت $covered/$total صفحة محتوى';
+  }
+
+  @override
+  String efNoTextPages(int count) {
+    return '$count صفحة بدون نص مقروء';
+  }
+
+  @override
+  String get efProgressTitle => '⏳ نحلل ملفك كاملًا…';
+
+  @override
+  String get efProgressBody =>
+      'نقرأ كل الصفحات من أولها لآخرها ونستخرج المعلومات المهمة للامتحان. تقدر تطلع وترجع، الشغل مستمر على الخادم.';
+
+  @override
+  String get efStageAnalyse => 'تحليل كل صفحات الملف';
+
+  @override
+  String efStageUnits(int done, int total) {
+    return '$done/$total جزء';
+  }
+
+  @override
+  String get efStageExtract => 'استخراج المعلومات عالية الأهمية';
+
+  @override
+  String efStageFacts(int count) {
+    return '$count معلومة';
+  }
+
+  @override
+  String get efStageDedupe => 'إزالة التكرار';
+
+  @override
+  String get efStageBuild => 'بناء بطاقات Exam Focus';
+
+  @override
+  String get efStageCoverage => 'التحقق من تغطية الملف كاملًا';
+
+  @override
+  String efUnitPages(String range) {
+    return 'ص $range';
+  }
 }

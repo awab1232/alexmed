@@ -393,7 +393,7 @@ class _BookScreenState extends ConsumerState<BookScreen>
                 failed: chapter.status == ChapterStatus.failed,
                 title: chapter.title,
                 detail:
-                    '${l10n.mirrorBatchPages(chapter.startPage, chapter.endPage)} · '
+                    '${l10n.mirrorBatchPages(pageRange(chapter.startPage, chapter.endPage))} · '
                     '${chapter.status == ChapterStatus.failed ? (chapter.errorMessage ?? l10n.chapterFailedDefault) : l10n.chapterAnalyzing}',
                 busy: _retrying.contains(chapter.id),
                 onRetry: chapter.status == ChapterStatus.failed && book.isOwner

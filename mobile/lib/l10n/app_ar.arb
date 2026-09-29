@@ -462,14 +462,11 @@
       }
     }
   },
-  "mirrorBatchPages": "صفحة {from}–{to}",
+  "mirrorBatchPages": "صفحة {range}",
   "@mirrorBatchPages": {
     "placeholders": {
-      "from": {
-        "type": "int"
-      },
-      "to": {
-        "type": "int"
+      "range": {
+        "type": "String"
       }
     }
   },
@@ -985,5 +982,95 @@
   "summaryCompose": "تجهيز ملخص منظم",
   "summaryComposeBody": "حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص، علاج، ونقاط خطر.",
   "summaryEmpty": "لا يوجد ملخص جاهز بعد",
-  "summaryEmptyShared": "لم يجهّز صاحب الملف الملخص بعد."
+  "summaryEmptyShared": "لم يجهّز صاحب الملف الملخص بعد.",
+  "efSubtitle": "أهم معلومات الامتحان",
+  "efCardCount": "{count} معلومة مركّزة",
+  "@efCardCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "efPreparing": "نجهّز Exam Focus…",
+  "efStartFailed": "ما قدرنا نبدأ Exam Focus",
+  "efTryAgain": "حاول مرة ثانية",
+  "efUnavailable": "Exam Focus غير متاح",
+  "efCannotOpen": "تعذر فتح هذا الملف.",
+  "efAnalysisFailed": "تعذر تحليل الملف",
+  "efNothingFound": "لم نجد معلومات امتحانية واضحة 🤔",
+  "efTryRegenerate": "جرّب إعادة التوليد.",
+  "efRegenerate": "إعادة التوليد",
+  "efRegenerateConfirm": "إعادة توليد Exam Focus من جديد؟ البطاقات الحالية والمحفوظة رح تنحذف.",
+  "efSearch": "بحث في البطاقات",
+  "efSearchHint": "ابحث: chemical burns، 15–30 minutes…",
+  "efClearSearch": "مسح البحث",
+  "efAll": "الكل",
+  "efSaved": "راجعها لاحقًا",
+  "efSave": "احفظ للمراجعة لاحقًا",
+  "efUnsave": "إزالة من المحفوظة",
+  "efProgress": "تقدّمك في البطاقات",
+  "efNoMatch": "ما في بطاقات تطابق 🔎",
+  "efNoMatchHint": "جرّب كلمة ثانية أو اختر «الكل».",
+  "efPartial": "⚠️ تعذر تحليل ص {ranges}.",
+  "@efPartial": {
+    "placeholders": {
+      "ranges": {
+        "type": "String"
+      }
+    }
+  },
+  "efCoverage": "📊 البطاقات غطّت {covered}/{total} صفحة محتوى",
+  "@efCoverage": {
+    "placeholders": {
+      "covered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "efNoTextPages": "{count} صفحة بدون نص مقروء",
+  "@efNoTextPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "efProgressTitle": "⏳ نحلل ملفك كاملًا…",
+  "efProgressBody": "نقرأ كل الصفحات من أولها لآخرها ونستخرج المعلومات المهمة للامتحان. تقدر تطلع وترجع، الشغل مستمر على الخادم.",
+  "efStageAnalyse": "تحليل كل صفحات الملف",
+  "efStageUnits": "{done}/{total} جزء",
+  "@efStageUnits": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "efStageExtract": "استخراج المعلومات عالية الأهمية",
+  "efStageFacts": "{count} معلومة",
+  "@efStageFacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "efStageDedupe": "إزالة التكرار",
+  "efStageBuild": "بناء بطاقات Exam Focus",
+  "efStageCoverage": "التحقق من تغطية الملف كاملًا",
+  "efUnitPages": "ص {range}",
+  "@efUnitPages": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -39,6 +39,10 @@ String isolate(String text) => '$_fsi$text$_pdi';
 /// `<bdi dir="ltr">`.
 String isolateLtr(String text) => '$_lri$text$_pdi';
 
+/// A page range ("12–30") that reads left-to-right inside Arabic text —
+/// otherwise the dash takes the right-to-left direction and shows "30–12".
+String pageRange(int from, int to) => isolateLtr('$from–$to');
+
 /// Text whose direction comes from its content (question text, options, AI
 /// answers), aligned to its own start.
 class AutoDirText extends StatelessWidget {

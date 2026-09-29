@@ -184,7 +184,9 @@ class _MirrorJobScreenState extends ConsumerState<MirrorJobScreen> {
                 NlRow(
                   icon: LucideIcons.circleAlert,
                   destructive: true,
-                  label: l10n.mirrorBatchPages(batch.startPage, batch.endPage),
+                  label: l10n.mirrorBatchPages(
+                    pageRange(batch.startPage, batch.endPage),
+                  ),
                   value: batch.errorMessage ?? l10n.mirrorBatchFailed,
                   trailing: IconButton(
                     tooltip: l10n.actionRetry,

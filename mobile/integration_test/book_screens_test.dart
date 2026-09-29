@@ -111,7 +111,11 @@ void main() {
     router.pop();
 
     books
-      ..book = detail('partial_failed', const ['complete', 'failed', 'complete'])
+      ..book = detail('partial_failed', const [
+        'complete',
+        'failed',
+        'complete',
+      ])
       ..coverageReport = const CoverageReport(
         totalPages: 120,
         pagesWithVisuals: 14,
@@ -123,9 +127,7 @@ void main() {
         coverage: 99,
         failedPages: [37],
       )
-      ..pageList = const [
-        BookPage(id: 'p37', pageNumber: 37, textFailed: true),
-      ]
+      ..pageList = const [BookPage(id: 'p37', pageNumber: 37, textFailed: true)]
       ..examFocusTile = const ExamFocusTile(status: 'complete', totalCards: 58);
     unawaited(router.push(Routes.book('b1')));
     await hold(tester, 'book-partial');

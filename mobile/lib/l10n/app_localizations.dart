@@ -1469,8 +1469,8 @@ abstract class AppLocalizations {
   /// No description provided for @mirrorBatchPages.
   ///
   /// In ar, this message translates to:
-  /// **'صفحة {from}–{to}'**
-  String mirrorBatchPages(int from, int to);
+  /// **'صفحة {range}'**
+  String mirrorBatchPages(String range);
 
   /// No description provided for @mirrorBatchFailed.
   ///
@@ -2611,6 +2611,216 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لم يجهّز صاحب الملف الملخص بعد.'**
   String get summaryEmptyShared;
+
+  /// No description provided for @efSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهم معلومات الامتحان'**
+  String get efSubtitle;
+
+  /// No description provided for @efCardCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} معلومة مركّزة'**
+  String efCardCount(int count);
+
+  /// No description provided for @efPreparing.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجهّز Exam Focus…'**
+  String get efPreparing;
+
+  /// No description provided for @efStartFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما قدرنا نبدأ Exam Focus'**
+  String get efStartFailed;
+
+  /// No description provided for @efTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول مرة ثانية'**
+  String get efTryAgain;
+
+  /// No description provided for @efUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'Exam Focus غير متاح'**
+  String get efUnavailable;
+
+  /// No description provided for @efCannotOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر فتح هذا الملف.'**
+  String get efCannotOpen;
+
+  /// No description provided for @efAnalysisFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحليل الملف'**
+  String get efAnalysisFailed;
+
+  /// No description provided for @efNothingFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نجد معلومات امتحانية واضحة 🤔'**
+  String get efNothingFound;
+
+  /// No description provided for @efTryRegenerate.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب إعادة التوليد.'**
+  String get efTryRegenerate;
+
+  /// No description provided for @efRegenerate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة التوليد'**
+  String get efRegenerate;
+
+  /// No description provided for @efRegenerateConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة توليد Exam Focus من جديد؟ البطاقات الحالية والمحفوظة رح تنحذف.'**
+  String get efRegenerateConfirm;
+
+  /// No description provided for @efSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث في البطاقات'**
+  String get efSearch;
+
+  /// No description provided for @efSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث: chemical burns، 15–30 minutes…'**
+  String get efSearchHint;
+
+  /// No description provided for @efClearSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح البحث'**
+  String get efClearSearch;
+
+  /// No description provided for @efAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get efAll;
+
+  /// No description provided for @efSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجعها لاحقًا'**
+  String get efSaved;
+
+  /// No description provided for @efSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ للمراجعة لاحقًا'**
+  String get efSave;
+
+  /// No description provided for @efUnsave.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة من المحفوظة'**
+  String get efUnsave;
+
+  /// No description provided for @efProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدّمك في البطاقات'**
+  String get efProgress;
+
+  /// No description provided for @efNoMatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما في بطاقات تطابق 🔎'**
+  String get efNoMatch;
+
+  /// No description provided for @efNoMatchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب كلمة ثانية أو اختر «الكل».'**
+  String get efNoMatchHint;
+
+  /// No description provided for @efPartial.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ تعذر تحليل ص {ranges}.'**
+  String efPartial(String ranges);
+
+  /// No description provided for @efCoverage.
+  ///
+  /// In ar, this message translates to:
+  /// **'📊 البطاقات غطّت {covered}/{total} صفحة محتوى'**
+  String efCoverage(int covered, int total);
+
+  /// No description provided for @efNoTextPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صفحة بدون نص مقروء'**
+  String efNoTextPages(int count);
+
+  /// No description provided for @efProgressTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏳ نحلل ملفك كاملًا…'**
+  String get efProgressTitle;
+
+  /// No description provided for @efProgressBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقرأ كل الصفحات من أولها لآخرها ونستخرج المعلومات المهمة للامتحان. تقدر تطلع وترجع، الشغل مستمر على الخادم.'**
+  String get efProgressBody;
+
+  /// No description provided for @efStageAnalyse.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل كل صفحات الملف'**
+  String get efStageAnalyse;
+
+  /// No description provided for @efStageUnits.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done}/{total} جزء'**
+  String efStageUnits(int done, int total);
+
+  /// No description provided for @efStageExtract.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخراج المعلومات عالية الأهمية'**
+  String get efStageExtract;
+
+  /// No description provided for @efStageFacts.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} معلومة'**
+  String efStageFacts(int count);
+
+  /// No description provided for @efStageDedupe.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة التكرار'**
+  String get efStageDedupe;
+
+  /// No description provided for @efStageBuild.
+  ///
+  /// In ar, this message translates to:
+  /// **'بناء بطاقات Exam Focus'**
+  String get efStageBuild;
+
+  /// No description provided for @efStageCoverage.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحقق من تغطية الملف كاملًا'**
+  String get efStageCoverage;
+
+  /// No description provided for @efUnitPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'ص {range}'**
+  String efUnitPages(String range);
 }
 
 class _AppLocalizationsDelegate

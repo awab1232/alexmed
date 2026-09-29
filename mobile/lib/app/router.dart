@@ -13,6 +13,7 @@ import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/welcome_screen.dart';
 import '../features/books/presentation/book_screen.dart';
 import '../features/books/presentation/book_upload_screen.dart';
+import '../features/exam_focus/presentation/exam_focus_screen.dart';
 import '../features/library/presentation/add_sheet.dart';
 import '../features/library/presentation/folder_screen.dart';
 import '../features/library/presentation/home_screen.dart';
@@ -120,7 +121,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           _placeholder('mindmap', (l) => l.toolMindmap, 'P7'),
           _placeholder('match', (l) => l.toolMatch, 'P7'),
-          _placeholder('exam-focus', (l) => l.examFocusOpen, 'P7'),
+          GoRoute(
+            path: 'exam-focus',
+            builder: (_, state) =>
+                ExamFocusScreen(bookId: state.pathParameters['id']!),
+          ),
           _placeholder('read', (l) => l.bookSource, 'P8'),
         ],
       ),

@@ -339,7 +339,7 @@ void main() {
         mirror: repo,
       );
       await tester.pumpAndSettle();
-      expect(find.text('صفحة 11–20'), findsOneWidget);
+      expect(find.text('صفحة ${pageRange(11, 20)}'), findsOneWidget);
       expect(find.text('انتهت المهلة'), findsOneWidget);
       await tester.tap(find.byTooltip('أعد المحاولة'));
       await tester.pumpAndSettle();
