@@ -259,3 +259,290 @@ describe("existing files keep working", () => {
     );
   });
 });
+
+describe("unnumbered questions (a stem, then A–D options, no question number)", () => {
+  const page = (n: number, lines: string[]) => ({ page: n, text: lines.join("\n") });
+
+  it("reads each stem + options block as a question, skipping the cover and instructions", () => {
+    const result = analyzeQuestionDocument([
+      page(1, ["Pharmacology Review", "Second Year"]),
+      page(2, [
+        "Pharmacology MCQs",
+        "Choose the single best answer for each question.",
+        "Which drug is a loop diuretic?",
+        "A. Furosemide",
+        "B. Spironolactone",
+        "C. Amiloride",
+        "D. Mannitol",
+        "Answer: A",
+        "Which drug reverses heparin?",
+        "A) Vitamin K",
+        "B) Protamine sulfate",
+        "C) Naloxone",
+        "D) Flumazenil",
+        "Answer: B",
+      ]),
+      page(3, [
+        "The antidote for paracetamol overdose is:",
+        "A. Atropine",
+        "B. Acetylcysteine",
+        "C. Deferoxamine",
+        "D. Glucagon",
+        "Answer: B",
+      ]),
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions.map(q => q.questionText)).toEqual([
+      "Which drug is a loop diuretic?",
+      "Which drug reverses heparin?",
+      "The antidote for paracetamol overdose is:",
+    ]);
+    expect(result.questions.map(q => q.extractedAnswerIndex)).toEqual([0, 1, 1]);
+    expect(result.questions.map(q => q.sourcePage)).toEqual([2, 2, 3]);
+    expect(result.questions[1].options).toEqual([
+      "Vitamin K",
+      "Protamine sulfate",
+      "Naloxone",
+      "Flumazenil",
+    ]);
+    const all = JSON.stringify(result.questions);
+    expect(all).not.toContain("Pharmacology MCQs");
+    expect(all).not.toContain("Choose the single best answer");
+    expect(all).not.toContain("Second Year");
+  });
+
+  it("keeps multi-line case stems whole and wrapped options with their option", () => {
+    const result = analyzeQuestionDocument([
+      page(1, [
+        "A 30-year-old man presents with fever and neck stiffness.",
+        "Lumbar puncture shows neutrophils and low glucose.",
+        "What is the most likely diagnosis?",
+        "A. Viral meningitis",
+        "B. Bacterial meningitis caused by",
+        "streptococcus pneumoniae",
+        "C. Tuberculous meningitis",
+        "D. Subarachnoid haemorrhage",
+        "A 5-year-old child has a barking cough.",
+        "Which virus is most likely?",
+        "A. Parainfluenza virus",
+        "B. RSV",
+        "C. Adenovirus",
+        "D. Rhinovirus",
+      ]),
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions).toHaveLength(2);
+    expect(result.questions[0].questionText).toBe(
+      "A 30-year-old man presents with fever and neck stiffness. Lumbar puncture shows neutrophils and low glucose. What is the most likely diagnosis?"
+    );
+    expect(result.questions[0].options![1]).toBe(
+      "Bacterial meningitis caused by streptococcus pneumoniae"
+    );
+    expect(result.questions[1].questionText).toBe(
+      "A 5-year-old child has a barking cough. Which virus is most likely?"
+    );
+  });
+
+  it("links an answer key at the end by the questions' order", () => {
+    const stems = ["Which is a beta blocker?", "Which is an ACE inhibitor?", "Which is a statin?"];
+    const result = analyzeQuestionDocument([
+      page(1, stems.flatMap(stem => [stem, "A. Propranolol", "B. Enalapril", "C. Atorvastatin", "D. Digoxin"])),
+      page(2, ["Answer Key", "1. A", "2. B", "3. C"]),
+    ]);
+    expect(result.questions.map(q => q.questionText)).toEqual(stems);
+    expect(result.questions.map(q => q.extractedAnswerIndex)).toEqual([0, 1, 2]);
+  });
+
+  it("a question whose stem is on the previous page's end stays one question", () => {
+    const result = analyzeQuestionDocument([
+      page(1, [
+        "Which vitamin deficiency causes scurvy?",
+        "A. Vitamin A",
+        "B. Vitamin B12",
+        "C. Vitamin C",
+        "D. Vitamin D",
+        "Which hormone lowers blood glucose?",
+      ]),
+      page(2, ["A. Glucagon", "B. Insulin", "C. Cortisol", "D. Adrenaline"]),
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions.map(q => q.questionText)).toEqual([
+      "Which vitamin deficiency causes scurvy?",
+      "Which hormone lowers blood glucose?",
+    ]);
+    expect(result.questions[1].options).toEqual(["Glucagon", "Insulin", "Cortisol", "Adrenaline"]);
+  });
+});
+
+describe("unnumbered questions with explanations between them", () => {
+  it("the explanation stays with its question; the next stem starts a new one", () => {
+    const result = analyzeQuestionDocument([
+      {
+        page: 1,
+        text: [
+          "Which nerve supplies the deltoid?",
+          "a) Radial nerve",
+          "b) Axillary nerve",
+          "c) Median nerve",
+          "d) Ulnar nerve",
+          "Answer: b",
+          "Explanation: the axillary nerve (C5, C6) supplies the deltoid",
+          "and teres minor.",
+          "Which muscle is the main flexor of the hip?",
+          "a) Iliopsoas",
+          "b) Gluteus maximus",
+          "c) Sartorius",
+          "d) Rectus femoris",
+          "Answer: a",
+        ].join("\n"),
+      },
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions.map(q => q.questionText)).toEqual([
+      "Which nerve supplies the deltoid?",
+      "Which muscle is the main flexor of the hip?",
+    ]);
+    expect(result.questions[0].explanationText).toBe(
+      "the axillary nerve (C5, C6) supplies the deltoid and teres minor."
+    );
+    expect(result.questions.map(q => q.extractedAnswerIndex)).toEqual([1, 0]);
+  });
+});
+
+describe("unnumbered questions with أ / ب / ج / د options", () => {
+  it("an Arabic bank: each stem + أ–د block is one question with its answer", () => {
+    const result = analyzeQuestionDocument([
+      { page: 1, text: ["بنك أسئلة علم الأدوية", "إعداد: د. أحمد"].join("\n") },
+      {
+        page: 2,
+        text: [
+          "اختر الإجابة الصحيحة لكل سؤال.",
+          "أي من الأدوية التالية مدر عروي؟",
+          "أ) فوروسيميد",
+          "ب) سبيرونولاكتون",
+          "ج) أميلوريد",
+          "د) مانيتول",
+          "الإجابة: أ",
+          "ما هو ترياق الهيبارين؟",
+          "أ- فيتامين ك",
+          "ب- كبريتات البروتامين",
+          "ج- نالوكسون",
+          "د- فلومازينيل",
+          "الإجابة: ب",
+        ].join("\n"),
+      },
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions.map(q => q.questionText)).toEqual([
+      "أي من الأدوية التالية مدر عروي؟",
+      "ما هو ترياق الهيبارين؟",
+    ]);
+    expect(result.questions[1].options).toEqual([
+      "فيتامين ك",
+      "كبريتات البروتامين",
+      "نالوكسون",
+      "فلومازينيل",
+    ]);
+    expect(result.questions.map(q => q.extractedAnswerIndex)).toEqual([0, 1]);
+    expect(JSON.stringify(result.questions)).not.toContain("د. أحمد");
+  });
+
+  it("Arabic letters with English option text", () => {
+    const result = analyzeQuestionDocument([
+      {
+        page: 1,
+        text: [
+          "أي من التالي يعتبر من حاصرات بيتا؟",
+          "أ) Propranolol",
+          "ب) Enalapril",
+          "ج) Atorvastatin",
+          "د) Digoxin",
+          "ما هو دواء الستاتين من بين التالي؟",
+          "أ) Propranolol",
+          "ب) Enalapril",
+          "ج) Atorvastatin",
+          "د) Digoxin",
+        ].join("\n"),
+      },
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions).toHaveLength(2);
+    expect(result.questions[0].options).toEqual([
+      "Propranolol",
+      "Enalapril",
+      "Atorvastatin",
+      "Digoxin",
+    ]);
+  });
+
+  it("an English question followed by its Arabic version stays ONE bilingual question", () => {
+    const result = analyzeQuestionDocument([
+      {
+        page: 1,
+        text: [
+          "Which drug is a loop diuretic?",
+          "A. Furosemide",
+          "B. Spironolactone",
+          "C. Amiloride",
+          "D. Mannitol",
+          "أي من الأدوية التالية مدر عروي؟",
+          "أ) فوروسيميد",
+          "ب) سبيرونولاكتون",
+          "ج) أميلوريد",
+          "د) مانيتول",
+          "Which drug reverses heparin?",
+          "A. Vitamin K",
+          "B. Protamine sulfate",
+          "C. Naloxone",
+          "D. Flumazenil",
+          "ما هو ترياق الهيبارين؟",
+          "أ) فيتامين ك",
+          "ب) كبريتات البروتامين",
+          "ج) نالوكسون",
+          "د) فلومازينيل",
+        ].join("\n"),
+      },
+    ]);
+    expect(result.needsReview).toEqual([]);
+    expect(result.questions.map(q => q.questionText)).toEqual([
+      "Which drug is a loop diuretic?",
+      "Which drug reverses heparin?",
+    ]);
+    expect(result.questions[0].questionTextAr).toBe("أي من الأدوية التالية مدر عروي؟");
+    expect(result.questions[1].optionsAr).toEqual([
+      "فيتامين ك",
+      "كبريتات البروتامين",
+      "نالوكسون",
+      "فلومازينيل",
+    ]);
+  });
+});
+
+describe("unnumbered: a stem whose first line is short", () => {
+  it("keeps 'Regarding the heart' / 'which is true?' together", () => {
+    const result = analyzeQuestionDocument([
+      {
+        page: 1,
+        text: [
+          "Regarding the heart",
+          "which statement is true?",
+          "A. It has three chambers",
+          "B. The SA node is the pacemaker",
+          "C. The aorta leaves the right ventricle",
+          "D. Valves are made of muscle",
+          "Answer: B",
+          "Which vessel carries oxygenated blood to the heart?",
+          "A. Pulmonary artery",
+          "B. Pulmonary vein",
+          "C. Vena cava",
+          "D. Aorta",
+          "Answer: B",
+        ].join("\n"),
+      },
+    ]);
+    expect(result.questions.map(q => q.questionText)).toEqual([
+      "Regarding the heart which statement is true?",
+      "Which vessel carries oxygenated blood to the heart?",
+    ]);
+  });
+});

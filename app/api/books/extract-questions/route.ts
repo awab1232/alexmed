@@ -227,7 +227,7 @@ export async function POST(request: Request) {
     if (!questions.length) {
       await markQuestionFileFailed(
         bookId,
-        "تعذر التعرف على أي أسئلة بالتنسيق المتوقع (رقم السؤال، ثم الخيارات). جرّب ملفًا آخر أو تواصل معنا."
+        "تعذر التعرف على أي أسئلة بالتنسيق المتوقع (نص السؤال، ثم الخيارات A، B، C…). جرّب ملفًا آخر أو تواصل معنا."
       );
       return NextResponse.json({ bookId, status: "failed" });
     }
