@@ -5,7 +5,7 @@
 // bookCards/bookMcqs — just extractedQuestions. Same conventions as
 // lib/db-books.ts: getDb() singleton, ownership-scoped via
 // and(eq(id,...), eq(userId,...)).
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import {
   books,
   extractedQuestionImageRelations,
@@ -71,7 +71,10 @@ export async function listQuestionFilesForUser(userId: string) {
       questionCount: count(extractedQuestions.id),
     })
     .from(books)
-    .leftJoin(extractedQuestions, eq(extractedQuestions.bookId, books.id))
+    .leftJoin(
+      extractedQuestions,
+      and(eq(extractedQuestions.bookId, books.id), studentVisibleQuestion)
+    )
     .where(and(eq(books.userId, userId), eq(books.sourceType, "question_file")))
     .groupBy(books.id)
     .orderBy(desc(books.createdAt));
@@ -108,6 +111,10 @@ const questionColumns = {
   questionTextAr: extractedQuestions.questionTextAr,
   optionsAr: extractedQuestions.optionsAr,
   translationSource: extractedQuestions.translationSource,
+  // null / "check_image" (image not attributed — flagged to the doctor);
+  // "needs_review" rows are filtered out of every student read.
+  reviewStatus: extractedQuestions.reviewStatus,
+  reviewReason: extractedQuestions.reviewReason,
 };
 
 export type QuestionFileBookView = {
@@ -154,18 +161,40 @@ export async function getQuestionFileForUser(userId: string, bookId: string) {
 // the caller has ALREADY been authorized for. Three queries whatever the
 // question count (no per-question lookups), and no AI or queue work — a
 // read of what the pipeline already produced.
+//
+// Needs-review blocks are NEVER in `questions`. With `includeNeedsReview`
+// (the doctor's preview only) they come back separately, with their reasons.
 export async function readQuestionFileContent(
   bookId: string,
-  imageUrl: QuestionImageUrlBuilder
+  imageUrl: QuestionImageUrlBuilder,
+  options: { includeNeedsReview?: boolean } = {}
 ) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
 
-  const questions = await db
+  const rows = await db
     .select(questionColumns)
     .from(extractedQuestions)
-    .where(eq(extractedQuestions.bookId, bookId))
+    .where(
+      and(
+        eq(extractedQuestions.bookId, bookId),
+        options.includeNeedsReview ? undefined : studentVisibleQuestion
+      )
+    )
     .orderBy(asc(extractedQuestions.orderIndex));
+  const questions = rows.filter(row => row.reviewStatus !== "needs_review");
+  const needsReview = options.includeNeedsReview
+    ? rows
+        .filter(row => row.reviewStatus === "needs_review")
+        .map(row => ({
+          id: row.id,
+          orderIndex: row.orderIndex,
+          questionText: row.questionText,
+          options: row.options,
+          sourcePage: row.sourcePage,
+          reasons: (row.reviewReason ?? "").split(",").filter(Boolean),
+        }))
+    : [];
 
   // One query for every question's associated image (if any), rather than
   // N+1 per question — a question with no row here just gets undefined,
@@ -194,14 +223,16 @@ export async function readQuestionFileContent(
     }
   }
 
-  const questionsWithImages = questions.map(question => ({
-    ...question,
-    imageUrl: imagesByQuestionId.get(question.id) ?? null,
-  }));
+  const questionsWithImages = questions.map(
+    ({ reviewReason: _reason, ...question }) => ({
+      ...question,
+      imageUrl: imagesByQuestionId.get(question.id) ?? null,
+    })
+  );
 
   const coverage = await getQuestionFileCoverage(bookId);
 
-  return { questions: questionsWithImages, coverage };
+  return { questions: questionsWithImages, needsReview, coverage };
 }
 
 export type QuestionFileContent = Awaited<
@@ -209,9 +240,15 @@ export type QuestionFileContent = Awaited<
 >;
 export type QuestionFileQuestion = QuestionFileContent["questions"][number];
 
+// Valid questions (reviewStatus null) and needs-review blocks, in file
+// order. Needs-review rows are kept for the doctor's review and are never
+// returned to students (see readQuestionFileContent).
 export async function saveExtractedQuestions(
   bookId: string,
-  questions: ExtractedQuestionInput[]
+  questions: (ExtractedQuestionInput & {
+    reviewStatus?: string | null;
+    reviewReason?: string | null;
+  })[]
 ): Promise<void> {
   const db = getDb();
   if (!db) throw new Error("Database not available");
@@ -240,9 +277,19 @@ export async function saveExtractedQuestions(
       questionTextAr: q.questionTextAr,
       optionsAr: q.optionsAr,
       translationSource: q.questionTextAr ? "source" : null,
+      reviewStatus: q.reviewStatus ?? null,
+      reviewReason: q.reviewReason ?? null,
+      // Needs-review blocks get no AI enrichment (stage 3 skips them).
+      ...(q.reviewStatus === "needs_review"
+        ? { aiStatus: "complete" as const }
+        : {}),
     }))
   );
 }
+
+// A question students may see: valid, or valid with an unattributed image
+// ("check_image"). Needs-review blocks never are.
+export const studentVisibleQuestion = sql`${extractedQuestions.reviewStatus} is distinct from 'needs_review'`;
 
 // The resumable OCR staging columns app/api/books/extract-questions uses —
 // cleared once the file completes, and on a retry so it starts fresh.

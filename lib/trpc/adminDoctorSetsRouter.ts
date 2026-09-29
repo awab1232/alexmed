@@ -83,8 +83,10 @@ export const adminQuestionSetsRouter = router({
         actorId: ctx.user.id,
         event: "admin_viewed",
       });
-      return readQuestionFileContent(access.bookId, image =>
-        questionSetImageUrl(input.setId, image.imageId)
+      return readQuestionFileContent(
+        access.bookId,
+        image => questionSetImageUrl(input.setId, image.imageId),
+        { includeNeedsReview: true }
       );
     }),
 

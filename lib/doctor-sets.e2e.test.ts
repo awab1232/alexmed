@@ -211,7 +211,7 @@ describe("Protected Doctor Question Sets — end to end", () => {
     expect(set.processingDone).toBe(true);
     expect(coverage).toMatchObject({ questionsTotal: 4, done: true });
     // One classification per page + one enrichment per question — once.
-    expect(h.llmCalls).toBe(2 + 4);
+    expect(h.llmCalls).toBe(4 + 4);
   }, 120_000);
 
   it("3. the doctor previews the real extracted questions (no watermark)", async () => {

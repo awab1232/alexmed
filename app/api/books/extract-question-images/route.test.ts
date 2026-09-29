@@ -12,7 +12,17 @@ vi.mock("@/lib/db-question-file-images", () => ({
   insertExtractedQuestionImage: vi.fn(),
   markQuestionFilePageComplete: vi.fn(),
   markQuestionFilePageFailed: vi.fn(),
-  associateAndSaveQuestionImages: vi.fn(),
+  saveImageOwnerDecision: vi.fn(),
+  // One question per page 1–5; they cover every page these tests use.
+  listQuestionsForImageOwnership: vi.fn().mockResolvedValue(
+    [1, 2, 3, 4, 5].map((page, i) => ({
+      id: `q${page}`,
+      sourcePage: page,
+      orderIndex: i,
+      questionText: `Question on page ${page}?`,
+    }))
+  ),
+  getQuestionFilePageRange: vi.fn().mockResolvedValue({ first: 1, last: 999 }),
 }));
 vi.mock("@/lib/storage", () => ({
   storageGetSignedUrl: vi.fn().mockResolvedValue("https://signed.example/pdf"),
@@ -46,12 +56,12 @@ import { claimQuestionFilePage } from "@/lib/queue/claim";
 import { publishMessage } from "@/lib/queue/client";
 import { getQuestionFileBookById } from "@/lib/db-question-files";
 import {
-  associateAndSaveQuestionImages,
   ensureQuestionFilePages,
   getNextPendingQuestionFilePage,
   insertExtractedQuestionImage,
   markQuestionFilePageComplete,
   markQuestionFilePageFailed,
+  saveImageOwnerDecision,
 } from "@/lib/db-question-file-images";
 import { invokeLLM } from "@/lib/llm";
 import { POST } from "./route";
@@ -77,7 +87,7 @@ const mockMarkComplete = markQuestionFilePageComplete as unknown as ReturnType<
 const mockMarkFailed = markQuestionFilePageFailed as unknown as ReturnType<
   typeof vi.fn
 >;
-const mockAssociate = associateAndSaveQuestionImages as unknown as ReturnType<
+const mockSaveDecision = saveImageOwnerDecision as unknown as ReturnType<
   typeof vi.fn
 >;
 const mockInvoke = invokeLLM as unknown as ReturnType<typeof vi.fn>;
@@ -119,10 +129,10 @@ describe("POST /api/books/extract-question-images", () => {
       .mockResolvedValue({ id: "b1", fileKey: "books/b1.pdf", pageCount: 20 });
     mockEnsurePages.mockReset();
     mockNextPage.mockReset();
-    mockInsertImage.mockReset();
+    mockInsertImage.mockReset().mockResolvedValue({ id: "img1" });
     mockMarkComplete.mockReset();
     mockMarkFailed.mockReset();
-    mockAssociate.mockReset();
+    mockSaveDecision.mockReset();
     mockInvoke.mockReset();
   });
 
@@ -212,6 +222,30 @@ describe("POST /api/books/extract-question-images", () => {
     expect(mockMarkComplete).toHaveBeenCalledWith("p1");
   });
 
+  it("F: never classifies a page outside the questions' pages (cover, front matter, answer key)", async () => {
+    const { getQuestionFilePageRange } = await import(
+      "@/lib/db-question-file-images"
+    );
+    (
+      getQuestionFilePageRange as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValueOnce({ first: 4, last: 9 });
+    mockNextPage
+      .mockResolvedValueOnce({ id: "cover", bookId: "b1", pageNumber: 1 })
+      .mockResolvedValueOnce(null);
+    mockClaim.mockResolvedValueOnce({
+      id: "cover",
+      bookId: "b1",
+      pageNumber: 1,
+      attemptCount: 1,
+    });
+
+    await POST(request({ bookId: "b1" }));
+
+    expect(mockInvoke).not.toHaveBeenCalled();
+    expect(mockInsertImage).not.toHaveBeenCalled();
+    expect(mockMarkComplete).toHaveBeenCalledWith("cover");
+  });
+
   it("marks a page failed (not thrown) when its own classification call errors", async () => {
     mockNextPage
       .mockResolvedValueOnce({ id: "p1", bookId: "b1", pageNumber: 3 })
@@ -253,24 +287,82 @@ describe("POST /api/books/extract-question-images", () => {
       { type: "extract_question_file_images", bookId: "b1" },
       { flowControl: { key: "question-file-images-b1", parallelism: 1 } }
     );
-    expect(mockAssociate).not.toHaveBeenCalled();
+    // Text-only pages: no image, so no ownership decision to save.
+    expect(mockSaveDecision).not.toHaveBeenCalled();
     // Exactly PAGES_PER_INVOCATION (12) claims per invocation, never more —
     // the batch cap is what makes self-chaining necessary in the first
     // place, and what keeps one invocation's AI-call volume bounded.
     expect(mockClaim).toHaveBeenCalledTimes(12);
   });
 
-  it("runs the association pass and hands off to stage 3 once no pages remain pending", async () => {
+  it("hands off to stage 3 once no pages remain pending", async () => {
     mockNextPage.mockResolvedValue(null); // nothing pending from the start
 
     const response = await POST(request({ bookId: "b1" }));
     const body = await response.json();
 
     expect(body.status).toBe("images_done");
-    expect(mockAssociate).toHaveBeenCalledWith("b1");
     expect(mockPublish).toHaveBeenCalledWith({
       type: "generate_question_file_content",
       bookId: "b1",
     });
+  });
+
+  function onPage(page: number, verdict: Record<string, unknown>) {
+    mockNextPage
+      .mockResolvedValueOnce({ id: `p${page}`, bookId: "b1", pageNumber: page })
+      .mockResolvedValueOnce(null);
+    mockClaim.mockResolvedValueOnce({
+      id: `p${page}`,
+      bookId: "b1",
+      pageNumber: page,
+      attemptCount: 1,
+    });
+    mockInvoke.mockResolvedValue({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              hasImage: true,
+              captionEn: "a figure",
+              isAtPageEnd: false,
+              owner: "UNCLEAR",
+              confidence: "low",
+              ...verdict,
+            }),
+          },
+        },
+      ],
+    });
+  }
+
+  it("links a page's figure to that page's ONE question, asking the model with the page's questions", async () => {
+    onPage(2, {});
+    await POST(request({ bookId: "b1" }));
+    const call = mockInvoke.mock.calls[0][0];
+    expect(call.response_format.json_schema.name).toBe(
+      "question_file_page_image_owner"
+    );
+    expect(JSON.stringify(call.messages)).toContain("Question on page 2?");
+    expect(mockSaveDecision).toHaveBeenCalledWith("img1", 2, {
+      kind: "question",
+      questionId: "q2",
+    });
+  });
+
+  it("an ambiguous figure (bottom of page, unclear owner) is stored unlinked and flagged", async () => {
+    onPage(2, { isAtPageEnd: true });
+    await POST(request({ bookId: "b1" }));
+    expect(mockSaveDecision).toHaveBeenCalledWith("img1", 2, {
+      kind: "review",
+      questionIds: ["q2", "q3"],
+    });
+  });
+
+  it("cover art / decoration on a question page is not even stored", async () => {
+    onPage(2, { owner: "NONE", confidence: "high" });
+    await POST(request({ bookId: "b1" }));
+    expect(mockInsertImage).not.toHaveBeenCalled();
+    expect(mockSaveDecision).not.toHaveBeenCalled();
   });
 });

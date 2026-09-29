@@ -37,6 +37,8 @@ export async function seedPeople(client: PGlite) {
 // lib/question-extraction.ts parses. Same minimal PDF writer as
 // forty-page-medical-pdf.ts (no PDF library in the project), one line per
 // text row so the parser sees the real line structure.
+// One question per page, as in image-bearing banks (a page image can then
+// be tied to exactly one question).
 export const QUESTION_BANK_PAGES: string[][] = [
   [
     "1. Which nerve supplies the deltoid muscle?",
@@ -46,6 +48,8 @@ export const QUESTION_BANK_PAGES: string[][] = [
     "D. Ulnar nerve",
     "Answer: B",
     "Explanation: The axillary nerve (C5-C6) innervates the deltoid.",
+  ],
+  [
     "2. Which bone forms the point of the elbow?",
     "A. Radius",
     "B. Humerus",
@@ -60,6 +64,8 @@ export const QUESTION_BANK_PAGES: string[][] = [
     "C. Left atrium",
     "D. Left ventricle",
     "Answer: D",
+  ],
+  [
     "4. What is the normal resting heart rate range in adults?",
     "A. 20-40 beats per minute",
     "B. 60-100 beats per minute",

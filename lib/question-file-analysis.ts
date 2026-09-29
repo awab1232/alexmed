@@ -90,6 +90,216 @@ export function parsePageImageClassification(
   return parseJsonResponse(content) as unknown as PageImageClassification;
 }
 
+// ── Question files: figure → question, by layout (stage 2) ──────────────
+// مِرآة keeps the classification above. A question file's page is looked
+// at together with the questions already extracted for it (stage 1), so
+// the model can say, from the page's LAYOUT, which of them a figure sits
+// with — and how sure it is. It only ever chooses among the given
+// questions, never describes new ones.
+export type QuestionFilePageImageVerdict = PageImageClassification & {
+  // "Q1".."Qn" (a listed question), "PREV" (text continuing from the
+  // previous page), "NEXT" (the question starting the next page), "NONE"
+  // (not a question figure: cover art, logo, decoration), or "UNCLEAR".
+  owner: string;
+  confidence: "high" | "medium" | "low";
+};
+
+export const questionFilePageImageResponseSchema = {
+  type: "json_schema" as const,
+  json_schema: {
+    name: "question_file_page_image_owner",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        ...pageImageClassificationResponseSchema.json_schema.schema.properties,
+        owner: {
+          type: "string",
+          description:
+            'Which listed question the figure belongs to, judged ONLY from the page layout (where the figure sits relative to each question\'s text): "Q1".."Qn", "PREV" if it sits in the text continuing from the previous page (above Q1), "NEXT" if it belongs to the question listed as NEXT (on the following page), "NONE" if it is not a question figure (cover art, logo, decoration, banner), or "UNCLEAR" if the layout does not make it clear. Empty string when hasImage is false.',
+        },
+        confidence: {
+          type: "string",
+          enum: ["high", "medium", "low"],
+          description:
+            'How clear the layout makes the owner. "high" only when the figure is unmistakably part of that one question (inside it, or directly attached to it with no other question between).',
+        },
+      },
+      required: [
+        ...pageImageClassificationResponseSchema.json_schema.schema.required,
+        "owner",
+        "confidence",
+      ],
+    },
+  },
+};
+
+export type PageQuestionCandidates = {
+  // The questions starting on this page, top to bottom (or, if none does,
+  // the one continuing through it).
+  onPage: { id: string; excerpt: string }[];
+  // The question before them, whose text may run onto the top of the page.
+  previous: { id: string; excerpt: string } | null;
+  // The first question of the next page (a figure at the very bottom may
+  // introduce it).
+  next: { id: string; excerpt: string } | null;
+};
+
+export function buildQuestionFilePageImageMessages(
+  pageNumber: number,
+  imageUrl: string,
+  candidates: PageQuestionCandidates
+): Message[] {
+  const listed = candidates.onPage.length
+    ? candidates.onPage.map((q, i) => `Q${i + 1}: ${q.excerpt}`).join("\n")
+    : "(no question text starts or continues on this page)";
+  return [
+    {
+      role: "system",
+      content: [
+        `You are looking at page ${pageNumber} of an exam question-bank PDF.`,
+        "1) Decide whether this page contains a real figure — a photo, X-ray/scan, diagram, chart, table or instrument image — as opposed to printed text only (logos, borders, watermarks and page numbers are not figures).",
+        "2) If it does, decide from the page LAYOUT which one of the listed questions the figure belongs to: the one whose text it sits inside or directly beside, with no other question between them. Use NEXT only if the figure is at the very bottom with no question text below it and it clearly introduces the next page's question.",
+        "3) Never guess: if two questions could own it, answer UNCLEAR. If it is cover art or decoration, answer NONE.",
+        "Also set isAtPageEnd as described in the schema. Return JSON only, matching the schema exactly.",
+      ].join("\n"),
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: `PREV (text continuing from the previous page, if any): ${candidates.previous?.excerpt ?? "(none)"}\nQuestions starting on this page (top to bottom):\n${listed}\nNEXT: ${candidates.next?.excerpt ?? "(none)"}`,
+        },
+        { type: "image_url", image_url: { url: imageUrl, detail: "low" } },
+      ],
+    },
+  ];
+}
+
+export function parseQuestionFilePageImageVerdict(
+  content: unknown
+): QuestionFilePageImageVerdict {
+  const parsed = parseJsonResponse(content) as Record<string, unknown>;
+  const confidence = parsed.confidence;
+  return {
+    hasImage: parsed.hasImage === true,
+    captionEn: typeof parsed.captionEn === "string" ? parsed.captionEn : "",
+    isAtPageEnd: parsed.isAtPageEnd === true,
+    owner:
+      typeof parsed.owner === "string"
+        ? parsed.owner.trim().toUpperCase()
+        : "UNCLEAR",
+    confidence:
+      confidence === "high" || confidence === "medium" ? confidence : "low",
+  };
+}
+
+export type ImageOwnerDecision =
+  | { kind: "question"; questionId: string }
+  // Not attached to anything; these questions are flagged for review.
+  | { kind: "review"; questionIds: string[] }
+  | { kind: "none" };
+
+// Pure (unit-tested): who owns a page's figure. Structure first (which
+// questions are on the page), the model's layout verdict second, and only
+// with enough confidence — otherwise NO question gets the image and the
+// candidates are flagged. Never more than one question per image.
+export function decideImageOwner(
+  candidates: PageQuestionCandidates,
+  verdict: Pick<
+    QuestionFilePageImageVerdict,
+    "owner" | "confidence" | "isAtPageEnd"
+  >
+): ImageOwnerDecision {
+  const onPage = candidates.onPage.map(q => q.id);
+  const pointsPrev = verdict.owner === "PREV";
+  const pointsNext = verdict.owner === "NEXT";
+  const involved = [
+    ...(pointsPrev && candidates.previous ? [candidates.previous.id] : []),
+    ...onPage,
+    ...(candidates.next && (verdict.isAtPageEnd || pointsNext)
+      ? [candidates.next.id]
+      : []),
+  ];
+  if (verdict.owner === "NONE") return { kind: "none" };
+  // No question on or around this page: nothing to attach to.
+  if (!involved.length) return { kind: "none" };
+
+  const listed = verdict.owner.match(/^Q(\d+)$/);
+  const index = listed ? Number(listed[1]) - 1 : -1;
+  const confident = verdict.confidence === "high";
+
+  // A confident layout verdict pointing off this page's own questions.
+  if (confident && pointsPrev && candidates.previous) {
+    return { kind: "question", questionId: candidates.previous.id };
+  }
+  if (confident && pointsNext && candidates.next) {
+    return { kind: "question", questionId: candidates.next.id };
+  }
+  if (pointsPrev || pointsNext) {
+    return { kind: "review", questionIds: involved };
+  }
+
+  // Exactly one question on the page and the figure not stranded at the
+  // bottom: the page structure places it (unless the layout contradicts).
+  if (onPage.length === 1 && !verdict.isAtPageEnd) {
+    if (index > 0) return { kind: "review", questionIds: involved };
+    return { kind: "question", questionId: onPage[0] };
+  }
+
+  // Several questions (or a figure at the page bottom): only a confident
+  // layout verdict decides. Never the same image for several questions.
+  if (confident && index >= 0 && index < onPage.length) {
+    return { kind: "question", questionId: onPage[index] };
+  }
+  return { kind: "review", questionIds: involved };
+}
+
+// Which questions a page holds, from the stored questions' start pages.
+//   onPage   — the questions that START on this page, top to bottom; if
+//              none does, the one the page lies inside (a question runs
+//              until the page its successor starts on).
+//   previous — the question before the first one here (its text may run
+//              onto the top of this page).
+//   next     — the first question of the following page.
+export function pageQuestionCandidates(
+  questions: {
+    id: string;
+    sourcePage: number;
+    orderIndex: number;
+    questionText: string;
+  }[],
+  page: number
+): PageQuestionCandidates {
+  const ordered = [...questions].sort((a, b) => a.orderIndex - b.orderIndex);
+  const excerpt = (text: string) => text.replace(/\s+/g, " ").slice(0, 160);
+  const ref = (q: (typeof ordered)[number]) => ({
+    id: q.id,
+    excerpt: excerpt(q.questionText),
+  });
+  const startingHere = ordered.filter(q => q.sourcePage === page);
+  const before = ordered.filter(q => q.sourcePage < page);
+  const last = before[before.length - 1];
+  const successor = last ? ordered[ordered.indexOf(last) + 1] : undefined;
+  // No question starts here: the page lies inside the last one started
+  // before it — while its successor starts later, or (for the file's last
+  // question) on the page right after it.
+  const inside =
+    !startingHere.length &&
+    last &&
+    (successor ? successor.sourcePage > page : page === last.sourcePage + 1)
+      ? last
+      : null;
+  const next = ordered.find(q => q.sourcePage === page + 1);
+  return {
+    onPage: (inside ? [inside] : startingHere).map(ref),
+    previous: startingHere.length && last ? ref(last) : null,
+    next: next ? ref(next) : null,
+  };
+}
+
 // ── Stage 3: per-question enrichment ────────────────────────────────────
 export type ExtractedQuestionEnrichment = {
   keywords: string[];
@@ -235,7 +445,21 @@ export function parseExtractedQuestionEnrichment(
   return parseJsonResponse(content) as unknown as ExtractedQuestionEnrichment;
 }
 
-// ── Image <-> question association (pure, no AI) ────────────────────────
+// The page range a question file's questions cover — stage 2 only looks
+// for figures there, so a cover / front-matter / answer-key page is never
+// even classified.
+export function questionPageRange(
+  sourcePages: number[]
+): { first: number; last: number } | null {
+  if (!sourcePages.length) return null;
+  return {
+    first: Math.min(...sourcePages),
+    // The last question may run onto the following page.
+    last: Math.max(...sourcePages) + 1,
+  };
+}
+
+// ── مِرآة image <-> card association (pure, no AI) ──────────────────────
 // Sort images by pageNumber; each image at page P owns every question whose
 // sourcePage is in [P, nextImagePage) — see the approved plan's TEST A-D.
 // Deliberately page-position-based, never text-phrase matching ("the

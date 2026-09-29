@@ -266,6 +266,97 @@
   font-size: 12px;
 }
 
+/* ── Deck: one question at a time ──────────────────────────────────── */
+.deck {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+  margin-inline: auto;
+  width: 100%;
+}
+.progress {
+  display: grid;
+  gap: 8px;
+}
+.progressText {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--nl-ink-2);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+.tally {
+  color: var(--nl-ink);
+  font-weight: 600;
+}
+.progressBar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--nl-rule);
+  overflow: hidden;
+}
+.progressBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--nl-ink);
+  transition: width 0.2s var(--nl-ease);
+}
+.deckNav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.navNext {
+  border-color: var(--nl-ink);
+  background: var(--nl-ink);
+  color: var(--nl-sheet);
+}
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.navButton:focus-visible,
+.jump select:focus-visible {
+  outline: 2px solid var(--nl-niro);
+  outline-offset: 2px;
+}
+.jump select {
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-md);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  font: inherit;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressBar span {
+    transition: none;
+  }
+}
+
 .watermark {
   position: absolute;
   inset: 0;
