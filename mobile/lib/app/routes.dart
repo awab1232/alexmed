@@ -5,10 +5,31 @@ abstract final class Routes {
   static const welcome = '/welcome';
   static const login = '/login';
   static const register = '/register';
+
+  // Tab roots.
   static const home = '/home';
   static const games = '/games';
   static const assistant = '/assistant';
   static const account = '/account';
+
+  // Inside the Home tab (keeps the bottom bar).
+  static String folder(String id) => '/home/folders/$id';
+
+  // Inside the Account tab.
+  static const plan = '/account/plan';
+  static const stats = '/account/stats';
+  static const doctorApply = '/account/doctor';
+
+  // Full-screen (built in later phases — placeholders until then).
+  static String book(String id) => '/books/$id';
+  static String deck(String id) => '/decks/$id';
+  static const review = '/review';
+  static const questionFiles = '/question-files';
+  static const uploadBook = '/upload/book';
+  static const uploadQuestionFile = '/upload/question-file';
+  static const shared = '/shared';
+  static const redeemCode = '/question-sets/redeem';
+  static const doctor = '/doctor';
 
   /// Debug builds only — the design-system gallery.
   static const gallery = '/dev/gallery';

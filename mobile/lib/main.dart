@@ -10,6 +10,7 @@ void main() {
   final env = AppEnv.fromDefines();
   runApp(
     ProviderScope(
+      retry: noAutomaticRetry,
       overrides: [envProvider.overrideWithValue(env)],
       child: const NiroLearnApp(),
     ),

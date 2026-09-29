@@ -199,19 +199,22 @@ Flutter:
 ## Phase 5 — Navigation shell, Home, folders, account, deep links
 **Objective:** the app's frame and first real screens. **Depends on:** P4; backend G6, G9.
 
-- [ ] 5.1 MainShell bottom nav (الرئيسية · ألعاب · ＋ · Niro · حسابي) — BP §5
-- [ ] 5.2 ＋ sheet (book, question file, folder, doctor code when `questionSets.enabled`)
-- [ ] 5.3 Home (folders, recent files, shared summary, question files, sets section)
-- [ ] 5.4 Folder screen (list, rename, delete, move file via `books.setSubject`)
-- [ ] 5.5 Account screen groups (as web 2026-09-29) + profile/username/plan (read-only)/stats/blocked users/legal/contact
-- [ ] 5.6 Delete account (type «حذف») → logout
-- [ ] 5.7 **G6** assetlinks.json + AASA on nirolearn.com (web change, additive) + app link handling
-- [ ] 5.8 **G9** `/api/mobile/config` + forced-update screen
-- [ ] 5.9 Back behaviour (Android predictive back, iOS swipe) per BP §5
+- [x] 5.1 MainShell bottom nav with translated labels (`NlBottomNav`) — verified on emulator
+- [x] 5.2 ＋ sheet (`features/library/presentation/add_sheet.dart`): study book, question file, new folder, doctor code only when `questionSets.enabled` (widget-tested both ways; seen on emulator). Upload / redeem targets are placeholders for P6 / P9 / P11
+- [x] 5.3 Home (`home_screen.dart`) = web /subjects: greeting + first name (`auth.me`), ink "next step" panel in the web's priority order (due cards → book being prepared → ready book → first upload) with nearest exam, "كتبك" (4, spine = state), sharing row (`sharing.homeSummary`), folders with colour tabs, search from 5 folders, create folder, pull to refresh, inline error + retry. Widget-tested (9) + emulator
+- [x] 5.4 Folder screen (`folder_screen.dart`): its books + question files (separate section with badge), move to another folder / none (`books.setSubject`, `decks.setSubject`), rename, delete with confirmation (only the folder — books keep existing: FK is `onDelete: set null`, checked in schema). Widget-tested + emulator
+- [~] 5.5 Account (`account_screen.dart`): identity card, الحساب (study profile edit, username, plan), دراستي, الإدارة only for an approved doctor (`doctor.status` asked only while the flag is on), المساعدة (privacy / terms / contact open the web pages in an in-app browser), sign out with confirmation, quiet doctor-apply link. Plan screen read-only (no upgrade / payment UI). Widget-tested (9) + emulator. **Left:** username editing and stats / blocked users screens (placeholders; P13 / P7)
+- [x] 5.6 Delete account: inside الملف الدراسي, dialog disabled until «حذف» is typed → `auth.deleteAccount({confirm:"حذف"})` → signed out. Widget-tested
+- [!] 5.7 **G6** App Links / AASA — blocked: web change + deploy need owner approval; deep-link handling comes with it
+- [!] 5.8 **G9** `/api/mobile/config` + forced update — blocked: backend addition not deployed (owner approval)
+- [x] 5.9 Back: inside a tab pops first; at another tab's root back goes to الرئيسية; at الرئيسية's root it leaves the app (PopScope in `MainShell`). Widget-tested. iOS swipe: not verifiable without an iOS build
 
 **Tests:** widget tests per screen; navigation tests (every route reachable, back stack); deep-link tests (adb / xcrun simctl openurl).
 **Security:** deep links only from verified domain; unknown links → browser.
 **DoD:** every screen in BP §6 has a route (placeholders allowed only for later phases, marked in code with the phase number).
+
+**Status: `[~]` implemented and verified locally** — 5.1–5.4, 5.6, 5.9 done; 5.5 partly (username / stats / blocked users in later phases); 5.7–5.8 blocked on owner-approved backend changes. **Live data not verified:** every screen was checked with in-memory data (widget tests + `integration_test/phase5_screens_test.dart` on the emulator) because signing in needs the undeployed mobile auth endpoints (staging D1).
+Quality gate: analyze clean · 100/100 unit + widget · on-device visual run passed (7 screens) · no backend change · security: no new secrets, external pages only from the configured API origin, delete needs the typed word, account data rebuilt on every sign-in / sign-out · UI: RTL, touch targets ≥ 48, Arabic/English mixed titles isolated · found & fixed: retry button clipped inside a fixed-height box (would have been hidden on phones); row chevrons pointed the wrong way in RTL; Riverpod 3's automatic retries turned off (10 silent retries per failure, and a 401 would sign out repeatedly).
 
 ---
 
@@ -483,7 +486,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 5 — navigation shell, Home, folders, account (`[~]`). Phases 2, 3 and 4-implementation `[x]`; Phase 4 live verification `[!]` (staging). Phase 1 not started (owner actions) |
+| Current Phase | Phase 5 — navigation shell, Home, folders, account (`[~]`, implemented locally; G6/G9 blocked). Phases 2, 3 and 4-implementation `[x]`; Phase 4 live verification `[!]` (staging). Phase 1 not started (owner actions) |
 | Current Task | Phase 4 — email/phone login + registration done and tested; waiting for a server that runs G1/G4 |
 | Last Completed Task | 4.1–4.3 + 4.6 backend (shared credentials check, mobile login + refresh endpoints, 21 tests) and 4.8–4.10, 4.12, 4.14 Flutter (welcome, login, register, refresh) |
 | Next Task | Phase 5 (Home, folders, account + sign-out). Rule: no production deployment and no merge to `main` without the owner's explicit approval; live auth waits for staging (D1) |
@@ -544,3 +547,6 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 - **2026-09-29** — Owner accepted Phases 2 and 3 and the Phase 4 implementation;
   live authentication stays blocked until staging exists. No merge / deploy
   of `ee1c391`. D1, D2, D5 pending. Phase 5 started.
+- **2026-09-30** — Phase 5 implemented: Home, folder, account, plan, ＋ sheet,
+  delete account, back behaviour. Verified with in-memory data only (live data
+  needs staging). Decision: Riverpod automatic retry disabled app-wide.

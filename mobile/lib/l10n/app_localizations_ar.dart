@@ -204,4 +204,424 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get registerTerms =>
       'بإنشاء الحساب توافق على سياسة الاستخدام وسياسة الخصوصية.';
+
+  @override
+  String get greetingNight => 'سهرة دراسة';
+
+  @override
+  String get greetingMorning => 'صباح الخير';
+
+  @override
+  String get greetingEvening => 'مساء الخير';
+
+  @override
+  String greetingWithName(String greeting, String name) {
+    return '$greeting، $name';
+  }
+
+  @override
+  String nextDueTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count بطاقة جاهزة للمراجعة',
+      one: 'بطاقة واحدة جاهزة للمراجعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nextDueDetail(int minutes) {
+    return 'حوالي $minutes دقيقة، والمراجعة في وقتها تثبّت المعلومة.';
+  }
+
+  @override
+  String get nextDueAction => 'ابدأ المراجعة';
+
+  @override
+  String nextPreparingTitle(String title) {
+    return 'نجهّز «$title»';
+  }
+
+  @override
+  String get nextPreparingDetail =>
+      'نقرأ الصفحات ونقسّمها لفصول. تقدر تفتحه وتتابع التقدّم.';
+
+  @override
+  String get nextOpenBook => 'افتح الكتاب';
+
+  @override
+  String nextContinueTitle(String title) {
+    return 'تابع «$title»';
+  }
+
+  @override
+  String get nextContinueDetail =>
+      'لا يوجد شيء مستحق للمراجعة الآن. أكمل من حيث توقفت.';
+
+  @override
+  String get nextContinueAction => 'تابع الدراسة';
+
+  @override
+  String get nextFirstTitle => 'ارفع أول كتاب لك';
+
+  @override
+  String get nextFirstDetail =>
+      'ملف PDF من مقرّرك يكفي. نحوّله لبطاقات وأسئلة وملخص وخريطة ذهنية.';
+
+  @override
+  String get nextFirstAction => 'ارفع كتابًا';
+
+  @override
+  String examIn(String name, String when) {
+    return 'امتحان $name $when';
+  }
+
+  @override
+  String get daysToday => 'اليوم';
+
+  @override
+  String get daysTomorrow => 'غدًا';
+
+  @override
+  String get daysTwo => 'بعد يومين';
+
+  @override
+  String daysFew(int days) {
+    return 'بعد $days أيام';
+  }
+
+  @override
+  String daysMany(int days) {
+    return 'بعد $days يومًا';
+  }
+
+  @override
+  String get yourBooks => 'كتبك';
+
+  @override
+  String get bookReady => 'جاهز للدراسة';
+
+  @override
+  String bookPartsReady(int done, int total) {
+    return '$done من $total أجزاء جاهزة';
+  }
+
+  @override
+  String get bookPreparing => 'نجهّز أدوات الدراسة…';
+
+  @override
+  String get bookReading => 'نقرأ الصفحات…';
+
+  @override
+  String sharedPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لديك $count طلبات مشاركة جديدة',
+      one: 'لديك طلب مشاركة جديد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sharedPendingDetail => 'زميلك يريد مشاركة ملف دراسي جاهز معك';
+
+  @override
+  String get sharedWithMe => 'مشترك معي';
+
+  @override
+  String get sharedWithMeDetail => 'ملفات شاركها معك زملاؤك';
+
+  @override
+  String sharedFrom(String owner) {
+    return 'مشترك من $owner';
+  }
+
+  @override
+  String get sharedColleague => 'زميل';
+
+  @override
+  String get myFolders => 'مجلداتي';
+
+  @override
+  String get newFolder => 'مجلد جديد';
+
+  @override
+  String get foldersEmpty =>
+      'لا توجد مجلدات بعد. المجلد يجمع كتب مادة واحدة وملفات أسئلتها.';
+
+  @override
+  String get createFolder => 'أنشئ مجلدًا';
+
+  @override
+  String folderBooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count كتب',
+      one: 'كتاب واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String folderDecks(int count) {
+    return '، $count ملف أسئلة';
+  }
+
+  @override
+  String folderUpdated(String date) {
+    return '، آخر تحديث $date';
+  }
+
+  @override
+  String get searchFolders => 'ابحث عن مجلد...';
+
+  @override
+  String get noMatches => 'لا نتائج مطابقة';
+
+  @override
+  String get noMatchesDetail => 'جرّب اسمًا آخر للبحث.';
+
+  @override
+  String get folderName => 'اسم المجلد';
+
+  @override
+  String get folderNameHint => 'مثال: تشريح، رياضيات 1';
+
+  @override
+  String get folderType => 'نوع المادة';
+
+  @override
+  String get folderCreate => 'إنشاء';
+
+  @override
+  String get folderCreateError =>
+      'تعذّر إنشاء المجلد. تحقق من الاسم وحاول مرة أخرى.';
+
+  @override
+  String get folderLoadError => 'تعذر تحميل ملفاتك';
+
+  @override
+  String get folderEmpty => 'لا توجد ملفات في هذا المجلد بعد';
+
+  @override
+  String get addFile => 'إضافة ملف';
+
+  @override
+  String folderSummary(String type, int count) {
+    return '$type · $count ملف';
+  }
+
+  @override
+  String get questionFilesSection => 'ملفات الأسئلة';
+
+  @override
+  String get questionFileBadge => 'ملف أسئلة';
+
+  @override
+  String deckMeta(int cards, int pages) {
+    return '$cards بطاقة · $pages صفحة';
+  }
+
+  @override
+  String bookMeta(int pages) {
+    return '$pages صفحة';
+  }
+
+  @override
+  String get moveTo => 'نقل إلى مجلد';
+
+  @override
+  String get noFolder => 'بدون مادة';
+
+  @override
+  String get moved => 'تم النقل.';
+
+  @override
+  String get renameFolder => 'إعادة التسمية';
+
+  @override
+  String get deleteFolder => 'حذف المجلد';
+
+  @override
+  String get deleteFolderTitle => 'حذف المجلد؟';
+
+  @override
+  String get deleteFolderBody =>
+      'يُحذف المجلد فقط. الكتب وملفات الأسئلة التي فيه تبقى في حسابك بدون مادة.';
+
+  @override
+  String get folderActions => 'خيارات المجلد';
+
+  @override
+  String get saved => 'تم الحفظ.';
+
+  @override
+  String get addSheetTitle => 'ماذا تريد أن تضيف؟';
+
+  @override
+  String get addBook => 'كتاب دراسي';
+
+  @override
+  String get addBookDetail => 'فصول، شرح، بطاقات، اختبارات وملخص لكل فصل.';
+
+  @override
+  String get addQuestionFile => 'ملف أسئلة';
+
+  @override
+  String get addQuestionFileDetail => 'حوّل ملف أسئلة إلى بطاقات مذاكرة سريعة.';
+
+  @override
+  String get addFolderDetail => 'نظّم ملفاتك حسب المادة.';
+
+  @override
+  String get addDoctorCode => 'كود من دكتورك';
+
+  @override
+  String get addDoctorCodeDetail => 'أضف مجموعة أسئلة محمية بكود الوصول.';
+
+  @override
+  String get accountGroup => 'الحساب';
+
+  @override
+  String get studyGroup => 'دراستي';
+
+  @override
+  String get adminGroup => 'الإدارة';
+
+  @override
+  String get helpGroup => 'المساعدة';
+
+  @override
+  String get studyProfile => 'الملف الدراسي';
+
+  @override
+  String get studyProfileEmpty => 'أضف تخصصك وسنتك';
+
+  @override
+  String get academicYear => 'السنة الدراسية';
+
+  @override
+  String get academicYearHint => 'مثال: السنة الثالثة';
+
+  @override
+  String get specialty => 'التخصص';
+
+  @override
+  String get specialtyHint => 'مثال: طب بشري';
+
+  @override
+  String get usernameRow => 'اسم المستخدم للمشاركة';
+
+  @override
+  String get usernameEmpty => 'لم تختره بعد';
+
+  @override
+  String get planRow => 'الباقة والاستخدام';
+
+  @override
+  String get questionFilesRow => 'ملفات الأسئلة';
+
+  @override
+  String get statsRow => 'إحصائياتي';
+
+  @override
+  String get doctorDashboard => 'لوحة الدكتور';
+
+  @override
+  String get doctorApply => 'انضم كدكتور';
+
+  @override
+  String get doctorPending => 'طلب الدكتور قيد المراجعة';
+
+  @override
+  String get doctorRejected => 'طلب الدكتور لم يُقبل';
+
+  @override
+  String get doctorSuspended => 'صلاحيات الدكتور موقوفة';
+
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get termsOfUse => 'سياسة الاستخدام';
+
+  @override
+  String get contactUs => 'تواصل معنا';
+
+  @override
+  String get signOut => 'تسجيل الخروج';
+
+  @override
+  String get signOutConfirmTitle => 'تسجيل الخروج؟';
+
+  @override
+  String get signOutConfirmBody =>
+      'ستحتاج لتسجيل الدخول مرة أخرى على هذا الجهاز.';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountTitle => 'حذف الحساب نهائيًا؟';
+
+  @override
+  String get deleteAccountBody =>
+      'يُحذف حسابك مع كل ملفاتك وصورها، والملخصات والبطاقات والأسئلة، وتقدّمك ومحادثاتك ومشاركاتك. لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get deleteAccountTypeWord => 'للتأكيد اكتب كلمة «حذف»';
+
+  @override
+  String get deleteAccountConfirmWord => 'حذف';
+
+  @override
+  String get deleteAccountSubmit => 'حذف نهائي';
+
+  @override
+  String get planTitle => 'باقتك في NiroLearn';
+
+  @override
+  String get planFree => 'أنت تستخدم الباقة المجانية.';
+
+  @override
+  String planActiveUntil(String date) {
+    return 'فعّالة حتى $date';
+  }
+
+  @override
+  String get planActive => 'فعّالة';
+
+  @override
+  String get usageAssistant => 'مساعد Niro';
+
+  @override
+  String get usageQuestionFiles => 'ملفات الأسئلة';
+
+  @override
+  String get usageStudyFiles => 'ملفات الدراسة';
+
+  @override
+  String get usageToday => 'اليوم';
+
+  @override
+  String usageOf(int used, int limit) {
+    return '$used من $limit';
+  }
+
+  @override
+  String get usageUnlimited => 'غير محدود';
+
+  @override
+  String get usageResets => 'يتجدد غدًا';
+
+  @override
+  String maxFileSize(int mb) {
+    return 'أقصى حجم للملف: $mb ميغابايت';
+  }
+
+  @override
+  String get openInBrowserFailed => 'تعذّر فتح الصفحة.';
 }

@@ -221,9 +221,10 @@ class _StateSamples extends StatelessWidget {
         const NlOfflineBanner(),
         const SizedBox(height: NlSpace.md),
         const NlListSkeleton(rows: 2),
-        SizedBox(
-          height: 360,
-          child: NlErrorView(error: const NetworkException(), onRetry: () {}),
+        NlErrorView(
+          error: const NetworkException(),
+          inline: true,
+          onRetry: () {},
         ),
       ],
     );

@@ -25,7 +25,11 @@
   "errorRejected": "تعذّر تنفيذ الطلب.",
   "underConstruction": "قيد البناء — {phase}",
   "@underConstruction": {
-    "placeholders": { "phase": { "type": "String" } }
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
   },
   "welcomeTitle": "مرحبًا",
   "welcomeHeadline": "ذاكر بذكاء مع Niro",
@@ -54,14 +58,22 @@
   "registerCodeStep": "أدخل الكود",
   "registerCodeSentTo": "أرسلنا كودًا من 6 أرقام إلى {phone}",
   "@registerCodeSentTo": {
-    "placeholders": { "phone": { "type": "String" } }
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
   },
   "registerCode": "الكود",
   "registerVerify": "تأكيد",
   "registerResend": "أعد إرسال الكود",
   "registerResendIn": "إعادة الإرسال بعد {seconds} ث",
   "@registerResendIn": {
-    "placeholders": { "seconds": { "type": "int" } }
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
   },
   "registerChangePhone": "غيّر الرقم",
   "registerDetailsStep": "بياناتك",
@@ -70,5 +82,281 @@
   "registerPasswordError": "كلمة المرور لازم تكون 8 أحرف على الأقل.",
   "registerSubmit": "إنشاء الحساب",
   "registerHaveAccount": "لديك حساب؟",
-  "registerTerms": "بإنشاء الحساب توافق على سياسة الاستخدام وسياسة الخصوصية."
+  "registerTerms": "بإنشاء الحساب توافق على سياسة الاستخدام وسياسة الخصوصية.",
+  "greetingNight": "سهرة دراسة",
+  "greetingMorning": "صباح الخير",
+  "greetingEvening": "مساء الخير",
+  "greetingWithName": "{greeting}، {name}",
+  "@greetingWithName": {
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nextDueTitle": "{count, plural, =1{بطاقة واحدة جاهزة للمراجعة} other{{count} بطاقة جاهزة للمراجعة}}",
+  "@nextDueTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nextDueDetail": "حوالي {minutes} دقيقة، والمراجعة في وقتها تثبّت المعلومة.",
+  "@nextDueDetail": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "nextDueAction": "ابدأ المراجعة",
+  "nextPreparingTitle": "نجهّز «{title}»",
+  "@nextPreparingTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "nextPreparingDetail": "نقرأ الصفحات ونقسّمها لفصول. تقدر تفتحه وتتابع التقدّم.",
+  "nextOpenBook": "افتح الكتاب",
+  "nextContinueTitle": "تابع «{title}»",
+  "@nextContinueTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "nextContinueDetail": "لا يوجد شيء مستحق للمراجعة الآن. أكمل من حيث توقفت.",
+  "nextContinueAction": "تابع الدراسة",
+  "nextFirstTitle": "ارفع أول كتاب لك",
+  "nextFirstDetail": "ملف PDF من مقرّرك يكفي. نحوّله لبطاقات وأسئلة وملخص وخريطة ذهنية.",
+  "nextFirstAction": "ارفع كتابًا",
+  "examIn": "امتحان {name} {when}",
+  "@examIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "daysToday": "اليوم",
+  "daysTomorrow": "غدًا",
+  "daysTwo": "بعد يومين",
+  "daysFew": "بعد {days} أيام",
+  "@daysFew": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysMany": "بعد {days} يومًا",
+  "@daysMany": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "yourBooks": "كتبك",
+  "bookReady": "جاهز للدراسة",
+  "bookPartsReady": "{done} من {total} أجزاء جاهزة",
+  "@bookPartsReady": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bookPreparing": "نجهّز أدوات الدراسة…",
+  "bookReading": "نقرأ الصفحات…",
+  "sharedPending": "{count, plural, =1{لديك طلب مشاركة جديد} other{لديك {count} طلبات مشاركة جديدة}}",
+  "@sharedPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharedPendingDetail": "زميلك يريد مشاركة ملف دراسي جاهز معك",
+  "sharedWithMe": "مشترك معي",
+  "sharedWithMeDetail": "ملفات شاركها معك زملاؤك",
+  "sharedFrom": "مشترك من {owner}",
+  "@sharedFrom": {
+    "placeholders": {
+      "owner": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedColleague": "زميل",
+  "myFolders": "مجلداتي",
+  "newFolder": "مجلد جديد",
+  "foldersEmpty": "لا توجد مجلدات بعد. المجلد يجمع كتب مادة واحدة وملفات أسئلتها.",
+  "createFolder": "أنشئ مجلدًا",
+  "folderBooks": "{count, plural, =1{كتاب واحد} other{{count} كتب}}",
+  "@folderBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderDecks": "، {count} ملف أسئلة",
+  "@folderDecks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderUpdated": "، آخر تحديث {date}",
+  "@folderUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "searchFolders": "ابحث عن مجلد...",
+  "noMatches": "لا نتائج مطابقة",
+  "noMatchesDetail": "جرّب اسمًا آخر للبحث.",
+  "folderName": "اسم المجلد",
+  "folderNameHint": "مثال: تشريح، رياضيات 1",
+  "folderType": "نوع المادة",
+  "folderCreate": "إنشاء",
+  "folderCreateError": "تعذّر إنشاء المجلد. تحقق من الاسم وحاول مرة أخرى.",
+  "folderLoadError": "تعذر تحميل ملفاتك",
+  "folderEmpty": "لا توجد ملفات في هذا المجلد بعد",
+  "addFile": "إضافة ملف",
+  "folderSummary": "{type} · {count} ملف",
+  "@folderSummary": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "questionFilesSection": "ملفات الأسئلة",
+  "questionFileBadge": "ملف أسئلة",
+  "deckMeta": "{cards} بطاقة · {pages} صفحة",
+  "@deckMeta": {
+    "placeholders": {
+      "cards": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "bookMeta": "{pages} صفحة",
+  "@bookMeta": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "moveTo": "نقل إلى مجلد",
+  "noFolder": "بدون مادة",
+  "moved": "تم النقل.",
+  "renameFolder": "إعادة التسمية",
+  "deleteFolder": "حذف المجلد",
+  "deleteFolderTitle": "حذف المجلد؟",
+  "deleteFolderBody": "يُحذف المجلد فقط. الكتب وملفات الأسئلة التي فيه تبقى في حسابك بدون مادة.",
+  "folderActions": "خيارات المجلد",
+  "saved": "تم الحفظ.",
+  "addSheetTitle": "ماذا تريد أن تضيف؟",
+  "addBook": "كتاب دراسي",
+  "addBookDetail": "فصول، شرح، بطاقات، اختبارات وملخص لكل فصل.",
+  "addQuestionFile": "ملف أسئلة",
+  "addQuestionFileDetail": "حوّل ملف أسئلة إلى بطاقات مذاكرة سريعة.",
+  "addFolderDetail": "نظّم ملفاتك حسب المادة.",
+  "addDoctorCode": "كود من دكتورك",
+  "addDoctorCodeDetail": "أضف مجموعة أسئلة محمية بكود الوصول.",
+  "accountGroup": "الحساب",
+  "studyGroup": "دراستي",
+  "adminGroup": "الإدارة",
+  "helpGroup": "المساعدة",
+  "studyProfile": "الملف الدراسي",
+  "studyProfileEmpty": "أضف تخصصك وسنتك",
+  "academicYear": "السنة الدراسية",
+  "academicYearHint": "مثال: السنة الثالثة",
+  "specialty": "التخصص",
+  "specialtyHint": "مثال: طب بشري",
+  "usernameRow": "اسم المستخدم للمشاركة",
+  "usernameEmpty": "لم تختره بعد",
+  "planRow": "الباقة والاستخدام",
+  "questionFilesRow": "ملفات الأسئلة",
+  "statsRow": "إحصائياتي",
+  "doctorDashboard": "لوحة الدكتور",
+  "doctorApply": "انضم كدكتور",
+  "doctorPending": "طلب الدكتور قيد المراجعة",
+  "doctorRejected": "طلب الدكتور لم يُقبل",
+  "doctorSuspended": "صلاحيات الدكتور موقوفة",
+  "privacyPolicy": "سياسة الخصوصية",
+  "termsOfUse": "سياسة الاستخدام",
+  "contactUs": "تواصل معنا",
+  "signOut": "تسجيل الخروج",
+  "signOutConfirmTitle": "تسجيل الخروج؟",
+  "signOutConfirmBody": "ستحتاج لتسجيل الدخول مرة أخرى على هذا الجهاز.",
+  "deleteAccount": "حذف الحساب",
+  "deleteAccountTitle": "حذف الحساب نهائيًا؟",
+  "deleteAccountBody": "يُحذف حسابك مع كل ملفاتك وصورها، والملخصات والبطاقات والأسئلة، وتقدّمك ومحادثاتك ومشاركاتك. لا يمكن التراجع عن ذلك.",
+  "deleteAccountTypeWord": "للتأكيد اكتب كلمة «حذف»",
+  "deleteAccountConfirmWord": "حذف",
+  "deleteAccountSubmit": "حذف نهائي",
+  "planTitle": "باقتك في NiroLearn",
+  "planFree": "أنت تستخدم الباقة المجانية.",
+  "planActiveUntil": "فعّالة حتى {date}",
+  "@planActiveUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planActive": "فعّالة",
+  "usageAssistant": "مساعد Niro",
+  "usageQuestionFiles": "ملفات الأسئلة",
+  "usageStudyFiles": "ملفات الدراسة",
+  "usageToday": "اليوم",
+  "usageOf": "{used} من {limit}",
+  "@usageOf": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "usageUnlimited": "غير محدود",
+  "usageResets": "يتجدد غدًا",
+  "maxFileSize": "أقصى حجم للملف: {mb} ميغابايت",
+  "@maxFileSize": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "openInBrowserFailed": "تعذّر فتح الصفحة."
 }

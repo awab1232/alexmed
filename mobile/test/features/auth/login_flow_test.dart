@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nirolearn/app/app.dart';
+import 'package:nirolearn/app/providers.dart';
 import 'package:nirolearn/core/api/api_error.dart';
-import 'package:nirolearn/core/auth/session_controller.dart';
 import 'package:nirolearn/core/auth/session_store.dart';
 import 'package:nirolearn/core/ui/ui.dart';
+import 'package:nirolearn/features/account/data/account_repository.dart';
 import 'package:nirolearn/features/auth/data/auth_repository.dart';
+import 'package:nirolearn/features/library/data/library_repository.dart';
 
+import '../../helpers/app_harness.dart';
 import '../../helpers/fake_http.dart';
 
 class FakeAuthRepository implements AuthRepository {
@@ -56,9 +59,13 @@ Future<(FakeAuthRepository, MemorySessionStore)> pumpApp(
   final store = MemorySessionStore(stored);
   await tester.pumpWidget(
     ProviderScope(
+      retry: noAutomaticRetry,
       overrides: [
         authRepositoryProvider.overrideWithValue(repo),
         sessionStoreProvider.overrideWithValue(store),
+        envProvider.overrideWithValue(testEnv),
+        libraryRepositoryProvider.overrideWithValue(FakeLibraryRepository()),
+        accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),
       ],
       child: const NiroLearnApp(),
     ),

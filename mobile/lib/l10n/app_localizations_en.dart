@@ -209,4 +209,428 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get registerTerms =>
       'By creating an account you agree to the Terms of Use and Privacy Policy.';
+
+  @override
+  String get greetingNight => 'Late-night study';
+
+  @override
+  String get greetingMorning => 'Good morning';
+
+  @override
+  String get greetingEvening => 'Good evening';
+
+  @override
+  String greetingWithName(String greeting, String name) {
+    return '$greeting, $name';
+  }
+
+  @override
+  String nextDueTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cards ready for review',
+      one: '1 card ready for review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nextDueDetail(int minutes) {
+    return 'About $minutes min — reviewing on time makes it stick.';
+  }
+
+  @override
+  String get nextDueAction => 'Start review';
+
+  @override
+  String nextPreparingTitle(String title) {
+    return 'Preparing “$title”';
+  }
+
+  @override
+  String get nextPreparingDetail =>
+      'We\'re reading the pages and splitting them into chapters. You can open it and follow along.';
+
+  @override
+  String get nextOpenBook => 'Open book';
+
+  @override
+  String nextContinueTitle(String title) {
+    return 'Continue “$title”';
+  }
+
+  @override
+  String get nextContinueDetail =>
+      'Nothing is due right now. Pick up where you left off.';
+
+  @override
+  String get nextContinueAction => 'Continue studying';
+
+  @override
+  String get nextFirstTitle => 'Upload your first book';
+
+  @override
+  String get nextFirstDetail =>
+      'A PDF from your course is enough. We turn it into cards, questions, a summary and a mind map.';
+
+  @override
+  String get nextFirstAction => 'Upload a book';
+
+  @override
+  String examIn(String name, String when) {
+    return '$name exam $when';
+  }
+
+  @override
+  String get daysToday => 'today';
+
+  @override
+  String get daysTomorrow => 'tomorrow';
+
+  @override
+  String get daysTwo => 'in 2 days';
+
+  @override
+  String daysFew(int days) {
+    return 'in $days days';
+  }
+
+  @override
+  String daysMany(int days) {
+    return 'in $days days';
+  }
+
+  @override
+  String get yourBooks => 'Your books';
+
+  @override
+  String get bookReady => 'Ready to study';
+
+  @override
+  String bookPartsReady(int done, int total) {
+    return '$done of $total parts ready';
+  }
+
+  @override
+  String get bookPreparing => 'Preparing study tools…';
+
+  @override
+  String get bookReading => 'Reading the pages…';
+
+  @override
+  String sharedPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You have $count new share requests',
+      one: 'You have a new share request',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sharedPendingDetail =>
+      'A classmate wants to share a study pack with you';
+
+  @override
+  String get sharedWithMe => 'Shared with me';
+
+  @override
+  String get sharedWithMeDetail => 'Files your classmates shared with you';
+
+  @override
+  String sharedFrom(String owner) {
+    return 'Shared by $owner';
+  }
+
+  @override
+  String get sharedColleague => 'a classmate';
+
+  @override
+  String get myFolders => 'My folders';
+
+  @override
+  String get newFolder => 'New folder';
+
+  @override
+  String get foldersEmpty =>
+      'No folders yet. A folder groups one subject\'s books and question files.';
+
+  @override
+  String get createFolder => 'Create a folder';
+
+  @override
+  String folderBooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count books',
+      one: '1 book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String folderDecks(int count) {
+    return ', $count question files';
+  }
+
+  @override
+  String folderUpdated(String date) {
+    return ', updated $date';
+  }
+
+  @override
+  String get searchFolders => 'Search folders...';
+
+  @override
+  String get noMatches => 'No matches';
+
+  @override
+  String get noMatchesDetail => 'Try another name.';
+
+  @override
+  String get folderName => 'Folder name';
+
+  @override
+  String get folderNameHint => 'e.g. Anatomy, Maths 1';
+
+  @override
+  String get folderType => 'Subject type';
+
+  @override
+  String get folderCreate => 'Create';
+
+  @override
+  String get folderCreateError =>
+      'Couldn\'t create the folder. Check the name and try again.';
+
+  @override
+  String get folderLoadError => 'Couldn\'t load your files';
+
+  @override
+  String get folderEmpty => 'No files in this folder yet';
+
+  @override
+  String get addFile => 'Add a file';
+
+  @override
+  String folderSummary(String type, int count) {
+    return '$type · $count files';
+  }
+
+  @override
+  String get questionFilesSection => 'Question files';
+
+  @override
+  String get questionFileBadge => 'Question file';
+
+  @override
+  String deckMeta(int cards, int pages) {
+    return '$cards cards · $pages pages';
+  }
+
+  @override
+  String bookMeta(int pages) {
+    return '$pages pages';
+  }
+
+  @override
+  String get moveTo => 'Move to folder';
+
+  @override
+  String get noFolder => 'No subject';
+
+  @override
+  String get moved => 'Moved.';
+
+  @override
+  String get renameFolder => 'Rename';
+
+  @override
+  String get deleteFolder => 'Delete folder';
+
+  @override
+  String get deleteFolderTitle => 'Delete this folder?';
+
+  @override
+  String get deleteFolderBody =>
+      'Only the folder is deleted. Its books and question files stay in your account without a subject.';
+
+  @override
+  String get folderActions => 'Folder options';
+
+  @override
+  String get saved => 'Saved.';
+
+  @override
+  String get addSheetTitle => 'What do you want to add?';
+
+  @override
+  String get addBook => 'Study book';
+
+  @override
+  String get addBookDetail =>
+      'Chapters, explanations, cards, quizzes and a summary per chapter.';
+
+  @override
+  String get addQuestionFile => 'Question file';
+
+  @override
+  String get addQuestionFileDetail =>
+      'Turn a question file into quick study cards.';
+
+  @override
+  String get addFolderDetail => 'Organise your files by subject.';
+
+  @override
+  String get addDoctorCode => 'Code from your doctor';
+
+  @override
+  String get addDoctorCodeDetail =>
+      'Add a protected question set with an access code.';
+
+  @override
+  String get accountGroup => 'Account';
+
+  @override
+  String get studyGroup => 'My study';
+
+  @override
+  String get adminGroup => 'Management';
+
+  @override
+  String get helpGroup => 'Help';
+
+  @override
+  String get studyProfile => 'Study profile';
+
+  @override
+  String get studyProfileEmpty => 'Add your specialty and year';
+
+  @override
+  String get academicYear => 'Academic year';
+
+  @override
+  String get academicYearHint => 'e.g. Third year';
+
+  @override
+  String get specialty => 'Specialty';
+
+  @override
+  String get specialtyHint => 'e.g. Medicine';
+
+  @override
+  String get usernameRow => 'Username for sharing';
+
+  @override
+  String get usernameEmpty => 'Not chosen yet';
+
+  @override
+  String get planRow => 'Plan and usage';
+
+  @override
+  String get questionFilesRow => 'Question files';
+
+  @override
+  String get statsRow => 'My statistics';
+
+  @override
+  String get doctorDashboard => 'Doctor dashboard';
+
+  @override
+  String get doctorApply => 'Join as a doctor';
+
+  @override
+  String get doctorPending => 'Doctor application under review';
+
+  @override
+  String get doctorRejected => 'Doctor application not accepted';
+
+  @override
+  String get doctorSuspended => 'Doctor access suspended';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get termsOfUse => 'Terms of use';
+
+  @override
+  String get contactUs => 'Contact us';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get signOutConfirmTitle => 'Sign out?';
+
+  @override
+  String get signOutConfirmBody =>
+      'You\'ll need to sign in again on this device.';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete your account permanently?';
+
+  @override
+  String get deleteAccountBody =>
+      'Your account is deleted with all your files and their images, summaries, cards and questions, your progress, chats and shares. This can\'t be undone.';
+
+  @override
+  String get deleteAccountTypeWord => 'To confirm, type the word «حذف»';
+
+  @override
+  String get deleteAccountConfirmWord => 'حذف';
+
+  @override
+  String get deleteAccountSubmit => 'Delete permanently';
+
+  @override
+  String get planTitle => 'Your NiroLearn plan';
+
+  @override
+  String get planFree => 'You\'re on the free plan.';
+
+  @override
+  String planActiveUntil(String date) {
+    return 'Active until $date';
+  }
+
+  @override
+  String get planActive => 'Active';
+
+  @override
+  String get usageAssistant => 'Niro assistant';
+
+  @override
+  String get usageQuestionFiles => 'Question files';
+
+  @override
+  String get usageStudyFiles => 'Study files';
+
+  @override
+  String get usageToday => 'Today';
+
+  @override
+  String usageOf(int used, int limit) {
+    return '$used of $limit';
+  }
+
+  @override
+  String get usageUnlimited => 'Unlimited';
+
+  @override
+  String get usageResets => 'Resets tomorrow';
+
+  @override
+  String maxFileSize(int mb) {
+    return 'Max file size: $mb MB';
+  }
+
+  @override
+  String get openInBrowserFailed => 'Couldn\'t open the page.';
 }

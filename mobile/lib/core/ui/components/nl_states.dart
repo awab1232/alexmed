@@ -35,7 +35,12 @@ class NlEmptyState extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.expression = NiroExpression.normal,
+    this.inline = false,
   });
+
+  /// Inside a scrolling list (a section of a page): sized to its content,
+  /// no own scroll view or centring — so it never gets clipped.
+  final bool inline;
 
   final String title;
   final String? message;
@@ -45,35 +50,42 @@ class NlEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          NiroImage(expression: expression, size: 120),
+          const SizedBox(height: 14),
+          Text(title, style: NlText.title, textAlign: TextAlign.center),
+          if (message != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              message!,
+              style: NlText.secondary,
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: NlSpace.xl),
+            NlButton(label: actionLabel!, onPressed: onAction),
+          ],
+        ],
+      ),
+    );
+    if (inline) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: NlSpace.xxl),
+        child: Center(child: content),
+      );
+    }
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: NlSpace.xl,
           vertical: 56,
         ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NiroImage(expression: expression, size: 120),
-              const SizedBox(height: 14),
-              Text(title, style: NlText.title, textAlign: TextAlign.center),
-              if (message != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  message!,
-                  style: NlText.secondary,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: NlSpace.xl),
-                NlButton(label: actionLabel!, onPressed: onAction),
-              ],
-            ],
-          ),
-        ),
+        child: content,
       ),
     );
   }
@@ -81,10 +93,18 @@ class NlEmptyState extends StatelessWidget {
 
 /// A failed load: what went wrong, in words, and how to fix it (retry).
 class NlErrorView extends StatelessWidget {
-  const NlErrorView({super.key, required this.error, this.onRetry});
+  const NlErrorView({
+    super.key,
+    required this.error,
+    this.onRetry,
+    this.inline = false,
+  });
 
   final Object error;
   final VoidCallback? onRetry;
+
+  /// See [NlEmptyState.inline].
+  final bool inline;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +116,7 @@ class NlErrorView extends StatelessWidget {
       message: apiErrorText(context, error),
       actionLabel: onRetry == null ? null : l10n.actionRetry,
       onAction: onRetry,
+      inline: inline,
     );
   }
 }
