@@ -1,5 +1,4 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import bcrypt from "bcryptjs";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
@@ -9,19 +8,9 @@ import {
   users,
   verificationTokens,
 } from "../drizzle/schema";
-import {
-  getUserByEmail,
-  getUserByPhone,
-  requireDb,
-  touchLastSignedIn,
-} from "./db";
-import { looksLikePhone, parsePhone } from "./phone";
+import { verifyCredentials } from "./credentials-login";
+import { getUserByEmail, requireDb } from "./db";
 import { getSessionUserState } from "./session-user";
-import {
-  LoginRateLimitedError,
-  assertLoginAllowed,
-  recordFailedLogin,
-} from "./auth-rate-limit";
 
 // Distinct error code (rather than the generic "CredentialsSignin" from
 // returning null) so LoginForm can show "حسابك معلّق" instead of "بيانات
@@ -71,8 +60,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+      // The check itself is shared with the mobile app's login endpoint
+      // (lib/credentials-login.ts); this only maps its result onto Auth.js.
       async authorize(credentials) {
-        const raw =
+        const identifier =
           typeof credentials?.identifier === "string" && credentials.identifier
             ? credentials.identifier
             : typeof credentials?.email === "string"
@@ -80,58 +71,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               : "";
         const password =
           typeof credentials?.password === "string" ? credentials.password : "";
-        if (!raw.trim() || !password) return null;
 
-        // The rate-limit key is the normalized identifier (E.164 number or
-        // lower-cased email), so "079…" and "+96279…" share one budget.
-        let key: string;
-        let byPhone = false;
-        if (looksLikePhone(raw)) {
-          const phone = parsePhone(raw);
-          if (!phone.ok) return null;
-          key = phone.e164;
-          byPhone = true;
-        } else {
-          key = raw.toLowerCase().trim();
-        }
-
-        try {
-          await assertLoginAllowed(key);
-        } catch (error) {
-          if (error instanceof LoginRateLimitedError) {
+        const result = await verifyCredentials({ identifier, password });
+        if (!result.ok) {
+          if (result.reason === "too_many_attempts") {
             throw new TooManyAttemptsError();
           }
-          throw error;
-        }
-
-        const user = byPhone
-          ? await getUserByPhone(key)
-          : await getUserByEmail(key);
-        if (!user) {
-          await recordFailedLogin(key);
+          if (result.reason === "suspended") throw new AccountSuspendedError();
           return null;
         }
-        // Google-only accounts have no password to compare against.
-        if (!user.passwordHash) {
-          await recordFailedLogin(key);
-          return null;
-        }
-
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) {
-          await recordFailedLogin(key);
-          return null;
-        }
-
-        if (user.suspendedAt) throw new AccountSuspendedError();
-
-        await touchLastSignedIn(user.id);
-
         return {
-          id: user.id,
-          email: user.email ?? undefined,
-          name: user.name ?? undefined,
-          role: user.role,
+          id: result.user.id,
+          email: result.user.email ?? undefined,
+          name: result.user.name ?? undefined,
+          role: result.user.role,
         };
       },
     }),
