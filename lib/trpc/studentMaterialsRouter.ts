@@ -8,15 +8,16 @@ import {
   rateAdminMaterialCard,
   recordAdminMaterialView,
 } from "../db-admin-materials";
-import { protectedProcedure, router } from "./trpc";
+import { adminProcedure, router } from "./trpc";
 
-// Student-facing مكتبة الأدمن router — protectedProcedure only (any logged
-// -in user, not necessarily an admin). Every read goes through
+// مكتبة الأدمن reader router — 🔒 admins only (adminProcedure), like the
+// /materials pages (app/materials/layout.tsx); a student gets FORBIDDEN
+// even calling it directly (owner's decision, 2026-09-29). Every read goes through
 // lib/db-admin-materials.ts functions that enforce status="published"
 // themselves; no procedure here ever accepts a status/visibility flag from
 // the client.
 export const studentMaterialsRouter = router({
-  list: protectedProcedure
+  list: adminProcedure
     .input(
       z
         .object({
@@ -28,7 +29,7 @@ export const studentMaterialsRouter = router({
     )
     .query(async ({ input }) => listPublishedAdminMaterialsForStudents(input)),
 
-  get: protectedProcedure
+  get: adminProcedure
     .input(z.object({ materialId: z.string() }))
     .query(async ({ ctx, input }) => {
       const material = await getPublishedAdminMaterialForStudent(
@@ -48,13 +49,13 @@ export const studentMaterialsRouter = router({
       return { material, progress };
     }),
 
-  cards: protectedProcedure
+  cards: adminProcedure
     .input(z.object({ materialId: z.string() }))
     .query(async ({ ctx, input }) =>
       getPublishedAdminMaterialCardsForStudent(input.materialId, ctx.user.id)
     ),
 
-  rateCard: protectedProcedure
+  rateCard: adminProcedure
     .input(
       z.object({
         materialCardId: z.string(),

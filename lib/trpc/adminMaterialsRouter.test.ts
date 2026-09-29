@@ -73,25 +73,46 @@ describe("adminMaterialsRouter permissions", () => {
 });
 
 describe("studentMaterialsRouter visibility", () => {
-  it("returns NOT_FOUND for a material that isn't published, even a normal user's own request by id", async () => {
-    // Simulates a draft/processing/failed/archived material — the DB helper
-    // itself is what enforces status="published"; here it returns null,
-    // proving the router never overrides that with the requested id.
-    mockGetPublished.mockResolvedValue(null);
-    const caller = studentMaterialsRouter.createCaller({
+  const as = (role: "user" | "admin") =>
+    studentMaterialsRouter.createCaller({
       user: {
         id: "u2",
-        email: "student@example.com",
-        name: "Student",
-        role: "user",
+        email: `${role}@example.com`,
+        name: role,
+        role,
         passwordHash: "",
         createdAt: new Date(),
         updatedAt: new Date(),
         lastSignedIn: null,
       },
     });
+
+  it("🔒 a student is refused every procedure, even calling it directly", async () => {
+    mockGetPublished.mockResolvedValue({ id: "m1" });
+    const student = as("user");
+    await expect(student.list()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(student.get({ materialId: "m1" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(student.cards({ materialId: "m1" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
     await expect(
-      caller.get({ materialId: "some-draft-material-id" })
+      student.rateCard({ materialCardId: "c1", rating: "good" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      studentMaterialsRouter.createCaller({ user: null }).list()
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(mockGetPublished).not.toHaveBeenCalled();
+  });
+
+  it("returns NOT_FOUND for a material that isn't published, even to an admin by id", async () => {
+    // Simulates a draft/processing/failed/archived material — the DB helper
+    // itself is what enforces status="published"; here it returns null,
+    // proving the router never overrides that with the requested id.
+    mockGetPublished.mockResolvedValue(null);
+    await expect(
+      as("admin").get({ materialId: "some-draft-material-id" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

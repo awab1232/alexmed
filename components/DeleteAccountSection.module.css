@@ -1,0 +1,135 @@
+/* حذف الحساب — a quiet link, then a confirmation dialog. Ink & highlighter
+   tokens (--nl-*) from app/globals.css. */
+
+.link {
+  justify-self: start;
+  margin-top: 6px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--nl-ink-3);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.link:hover {
+  color: var(--nl-ink-2);
+}
+.link:focus-visible {
+  outline: 3px solid var(--nl-niro);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(20 24 40 / 0.45);
+}
+.dialog {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 22px 20px 20px;
+  border-radius: var(--nl-r-lg);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  box-shadow: 0 18px 50px rgb(20 24 40 / 0.25);
+}
+.close {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--nl-ink-3);
+  cursor: pointer;
+}
+.close:hover {
+  background: var(--nl-paper);
+}
+.title {
+  margin: 0 0 8px;
+  padding-inline-end: 36px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.body {
+  margin: 0 0 16px;
+  color: var(--nl-ink-2);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--nl-rule-strong);
+  border-radius: var(--nl-r-sm);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+  font: inherit;
+  font-weight: 400;
+}
+.field input:focus-visible {
+  outline: 3px solid var(--nl-niro-soft);
+  border-color: var(--nl-niro);
+}
+.error {
+  margin: 10px 0 0;
+  color: var(--nl-wrong);
+  font-size: 13px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.confirm,
+.cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: var(--nl-r-sm);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.confirm {
+  border: 1px solid var(--nl-wrong);
+  background: var(--nl-wrong);
+  color: #fff;
+}
+.confirm:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cancel {
+  border: 1px solid var(--nl-rule-strong);
+  background: var(--nl-sheet);
+  color: var(--nl-ink);
+}
+.cancel:disabled {
+  opacity: 0.55;
+}

@@ -153,7 +153,7 @@ const sections: LegalSection[] = [
       <ul>
         <li>
           يمكنك حذف حسابك في أي وقت من{" "}
-          <Link href="/account#delete-account">حسابي ← حذف حسابي</Link>.
+          <Link href="/account#delete-account">حسابي ← الملف الدراسي ← حذف الحساب</Link>.
         </li>
         <li>
           قد نوقف أو نحذف أي حساب يخالف هذه الشروط أو يسيء للخدمة أو للمستخدمين

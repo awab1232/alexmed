@@ -221,11 +221,28 @@ a.row:focus-visible {
   gap: 8px;
   flex-wrap: wrap;
 }
+/* Radios / checkboxes inside a .field keep their own size — the text-input
+   rule above (width: 100%, padding, border) squeezed the label text into a
+   one-word column outside the card. */
+.field .choice input[type="radio"],
+.field .choice input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--nl-ink);
+}
 .choice label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  display: flex;
+  flex: 1 1 240px;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
   border: 1px solid var(--nl-rule-strong);
   border-radius: var(--nl-r-md);
   font-weight: 400;
