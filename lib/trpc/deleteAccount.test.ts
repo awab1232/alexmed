@@ -27,6 +27,20 @@ beforeEach(() => {
 });
 
 describe("auth.deleteAccount (حذف حسابي)", () => {
+  it("deletes only the signed-in account once «حذف» is typed", async () => {
+    await caller().auth.deleteAccount({ confirm: " حذف " });
+    expect(deleteAccountCompletely).toHaveBeenCalledWith("user-1");
+  });
+
+  it("refuses anything else typed in the dialog and deletes nothing", async () => {
+    for (const confirm of ["", "حذ", "delete", "احذف"]) {
+      await expect(
+        caller().auth.deleteAccount({ confirm })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+    expect(deleteAccountCompletely).not.toHaveBeenCalled();
+  });
+
   it("deletes only the signed-in account once its email is re-typed", async () => {
     await caller().auth.deleteAccount({
       confirmEmail: " student@example.com ",
@@ -63,6 +77,9 @@ describe("auth.deleteAccount (حذف حسابي)", () => {
     const anonymous = appRouter.createCaller({ user: null } as never);
     await expect(
       anonymous.auth.deleteAccount({ confirmEmail: "x@y.com" })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(
+      anonymous.auth.deleteAccount({ confirm: "حذف" })
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(deleteAccountCompletely).not.toHaveBeenCalled();
   });

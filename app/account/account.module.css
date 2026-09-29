@@ -281,29 +281,33 @@
 
 /* Components that bring their own card: sit flush inside the panel. */
 .nested :global(.plan-summary),
-.nested :global(.sh-username),
-.nested :global(.account-danger) {
+.nested :global(.sh-username) {
   margin: 0;
   padding: 0;
   border: 0;
   background: none;
   box-shadow: none;
 }
-.nested :global(.plan-summary header h2),
-.nested :global(.account-danger > h2) {
+.nested :global(.plan-summary header h2) {
   display: none;
 }
 
-/* Sign out and the danger zone */
+/* Sign out */
 .signOut {
   justify-content: center;
   color: var(--nl-ink);
   font-weight: 700;
 }
-.danger .rowLabel,
-.danger .rowIcon {
-  color: var(--nl-wrong);
+
+/* A quiet text link under the lists (the doctor application). */
+.quietLink {
+  justify-self: center;
+  padding: 4px 8px;
+  color: var(--nl-ink-3);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-.danger .rowIcon {
-  background: var(--nl-wrong-soft);
+.quietLink:hover {
+  color: var(--nl-ink-2);
 }

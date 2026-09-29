@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import {
@@ -16,7 +16,6 @@ import {
   Settings,
   Stethoscope,
   ShieldCheck,
-  Trash2,
   UserRound,
   Users,
   type LucideIcon,
@@ -34,6 +33,11 @@ import s from "./account.module.css";
 // open a page. Everything the old page offered is still here; only the
 // arrangement changed. لوحة اليوم / المراجعة اليومية / اختباراتي / نقاط
 // الضعف stay off this menu at the owner's request (2026-09-24).
+// Since 2026-09-29: "الإدارة" (مكتبة الأدمن, لوحة الأدمن, لوحة الدكتور) is
+// shown only to admins / approved doctors — and each of those routes is
+// also gated on the server (app/admin, app/materials, app/doctor layouts),
+// so hiding the row is never the only protection. حذف الحساب is a quiet
+// link inside الملف الدراسي, confirmed by typing «حذف».
 
 type LinkRow = { href: string; label: string; icon: LucideIcon };
 
@@ -41,21 +45,15 @@ const STUDY_LINKS: LinkRow[] = [
   { href: "/?view=library", label: "ملفات الأسئلة", icon: BookOpen },
   { href: "/books/stats", label: "إحصائياتي", icon: BarChart3 },
   { href: "/shared", label: "مشترك معي", icon: Users },
-  { href: "/materials", label: "مكتبة الأدمن", icon: GraduationCap },
 ];
 
 const HELP_LINKS: LinkRow[] = [
   { href: "/privacy", label: "سياسة الخصوصية", icon: ShieldCheck },
-  {
-    href: "/privacy#permissions",
-    label: "لماذا نطلب الكاميرا والإشعارات",
-    icon: ShieldCheck,
-  },
   { href: "/terms", label: "سياسة الاستخدام", icon: FileText },
   { href: "/contact", label: "تواصل معنا", icon: LifeBuoy },
 ];
 
-function doctorRowLabel(
+function doctorApplicationLabel(
   data:
     | {
         approved: boolean;
@@ -63,7 +61,6 @@ function doctorRowLabel(
       }
     | undefined
 ) {
-  if (data?.approved) return "لوحة الدكتور";
   switch (data?.profile?.status) {
     case "pending":
       return "طلب الدكتور قيد المراجعة";
@@ -96,6 +93,15 @@ export default function AccountPage() {
     onSuccess: () => profileQuery.refetch(),
   });
 
+  // /account#delete-account (privacy policy, terms): open الملف الدراسي,
+  // where the delete link lives.
+  const profileRowRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (window.location.hash === "#delete-account" && profileRowRef.current) {
+      profileRowRef.current.open = true;
+    }
+  }, []);
+
   const [academicYear, setAcademicYear] = useState("");
   const [specialty, setSpecialty] = useState("");
   useEffect(() => {
@@ -113,6 +119,7 @@ export default function AccountPage() {
     .join("، ");
   const username = sharingQuery.data?.username;
   const stats = statsQuery.data;
+  const isDoctor = doctorSetsOn && doctorQuery.data?.approved === true;
 
   return (
     <section className="upload-view">
@@ -175,7 +182,7 @@ export default function AccountPage() {
         {/* ── Account settings (expand in place) ───────────────────── */}
         <Group title="الحساب">
           <li>
-            <details className={s.expand}>
+            <details className={s.expand} ref={profileRowRef}>
               <RowSummary
                 icon={UserRound}
                 label="الملف الدراسي"
@@ -220,6 +227,7 @@ export default function AccountPage() {
                     </span>
                   ) : null}
                 </div>
+                {profile ? <DeleteAccountSection /> : null}
               </div>
             </details>
           </li>
@@ -259,33 +267,39 @@ export default function AccountPage() {
           ))}
         </Group>
 
-        {doctorSetsOn ? (
-          <Group title="التدريس">
-            <li>
-              <LinkRowItem
-                href={
-                  doctorQuery.data?.approved ? "/doctor" : "/account/doctor"
-                }
-                label={doctorRowLabel(doctorQuery.data)}
-                icon={Stethoscope}
-              />
-            </li>
-          </Group>
-        ) : null}
-
-        {isAdmin ? (
+        {isAdmin || isDoctor ? (
           <Group title="الإدارة">
-            <li>
-              <LinkRowItem
-                href="/admin"
-                label="لوحة تحكم الأدمن"
-                icon={Settings}
-              />
-            </li>
+            {isAdmin ? (
+              <li>
+                <LinkRowItem
+                  href="/materials"
+                  label="مكتبة الأدمن"
+                  icon={GraduationCap}
+                />
+              </li>
+            ) : null}
+            {isDoctor ? (
+              <li>
+                <LinkRowItem
+                  href="/doctor"
+                  label="لوحة الدكتور"
+                  icon={Stethoscope}
+                />
+              </li>
+            ) : null}
+            {isAdmin ? (
+              <li>
+                <LinkRowItem
+                  href="/admin"
+                  label="لوحة تحكم الأدمن"
+                  icon={Settings}
+                />
+              </li>
+            ) : null}
           </Group>
         ) : null}
 
-        <Group title="المساعدة والخصوصية">
+        <Group title="المساعدة">
           {HELP_LINKS.map(link => (
             <li key={link.href}>
               <LinkRowItem {...link} />
@@ -306,28 +320,11 @@ export default function AccountPage() {
           </li>
         </ul>
 
-        {/* ── Danger zone: collapsed until asked for ───────────────── */}
-        {profile?.email || profile?.phone ? (
-          <Group title="منطقة الخطر">
-            <li>
-              <details className={`${s.expand} ${s.danger}`}>
-                <RowSummary icon={Trash2} label="حذف الحساب" value="" />
-                <div className={`${s.panel} ${s.nested}`}>
-                  {profile.email ? (
-                    <DeleteAccountSection
-                      identifier={profile.email}
-                      kind="email"
-                    />
-                  ) : (
-                    <DeleteAccountSection
-                      identifier={profile.phone!}
-                      kind="phone"
-                    />
-                  )}
-                </div>
-              </details>
-            </li>
-          </Group>
+        {/* Doctors apply here; the dashboard row above appears once approved. */}
+        {doctorSetsOn && doctorQuery.data && !isDoctor ? (
+          <Link href="/account/doctor" className={s.quietLink}>
+            {doctorApplicationLabel(doctorQuery.data)}
+          </Link>
         ) : null}
       </div>
     </section>

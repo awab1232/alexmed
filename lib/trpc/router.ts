@@ -75,16 +75,16 @@ export const appRouter = router({
         const email = profile?.email ?? ctx.user.email ?? "";
         const phone = profile?.phone ?? null;
         const typedPhone = parsePhone(typed);
+        // The confirmation dialog asks for the word «حذف»; the account's
+        // own email / phone is still accepted (older app builds send it).
         const matches =
+          typed === "حذف" ||
           (!!email && typed.toLowerCase() === email.toLowerCase()) ||
           (!!phone && typedPhone.ok && typedPhone.e164 === phone);
         if (!typed || !matches) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message:
-              phone && !email
-                ? "رقم الهاتف غير مطابق لرقم حسابك."
-                : "البريد الإلكتروني غير مطابق لبريد حسابك.",
+            message: "للتأكيد اكتب كلمة «حذف».",
           });
         }
         // A doctor's published question sets would be deleted with the
