@@ -1,17 +1,21 @@
 import { getQuestionFileBookById } from "@/lib/db-question-files";
 import {
-  associateAndSaveQuestionImages,
   ensureQuestionFilePages,
   getNextPendingQuestionFilePage,
+  getQuestionFilePageRange,
   insertExtractedQuestionImage,
+  listQuestionsForImageOwnership,
   markQuestionFilePageComplete,
   markQuestionFilePageFailed,
+  saveImageOwnerDecision,
 } from "@/lib/db-question-file-images";
 import {
-  buildPageImageClassificationMessages,
+  buildQuestionFilePageImageMessages,
+  decideImageOwner,
   PAGE_IMAGE_CLASSIFICATION_MAX_TOKENS,
-  pageImageClassificationResponseSchema,
-  parsePageImageClassification,
+  pageQuestionCandidates,
+  parseQuestionFilePageImageVerdict,
+  questionFilePageImageResponseSchema,
 } from "@/lib/question-file-analysis";
 import { invokeLLM, DEFAULT_VISION_MODEL } from "@/lib/llm";
 import { claimQuestionFilePage } from "@/lib/queue/claim";
@@ -30,8 +34,15 @@ import { PDFParse } from "pdf-parse";
 // contain a real figure. Self-chaining (per-book Flow Control key,
 // parallelism 1) exactly like that route, so every page of even a very long
 // PDF is eventually processed — never silently stopping after the first
-// batch. Once no pending pages remain, runs the deterministic (no-AI)
-// image-to-questions association pass and hands off to stage 3.
+// batch.
+//
+// Each figure's owner is decided right here, per page
+// (lib/question-file-analysis.ts's decideImageOwner): the page's questions
+// (from stage 1) → the model's reading of the LAYOUT, among those questions
+// only → a link to ONE question when the structure or a confident verdict
+// supports it; otherwise no link and the candidates are flagged for the
+// doctor. A cover / introduction / answer-key page is never looked at.
+// When no pages remain, stage 3 takes over.
 const PAGES_PER_INVOCATION = 12;
 
 export async function POST(request: Request) {
@@ -67,6 +78,8 @@ export async function POST(request: Request) {
   // getNextPendingQuestionFilePage below always has real, claimable rows for
   // every page, same convention as bookPages being created up front.
   await ensureQuestionFilePages(bookId, book.pageCount);
+  const questionRange = await getQuestionFilePageRange(bookId);
+  const questions = await listQuestionsForImageOwnership(bookId);
 
   let parser: PDFParse | undefined;
   try {
@@ -76,6 +89,18 @@ export async function POST(request: Request) {
 
       const claimed = await claimQuestionFilePage(candidate.id);
       if (!claimed) continue; // lost the race to another delivery — move on
+
+      // A page no question covers (cover, introduction, contents, answer
+      // key): never classified, so its pictures can't become question
+      // images — and no AI call is spent on it.
+      if (
+        !questionRange ||
+        candidate.pageNumber < questionRange.first ||
+        candidate.pageNumber > questionRange.last
+      ) {
+        await markQuestionFilePageComplete(candidate.id);
+        continue;
+      }
 
       try {
         if (!parser) {
@@ -92,31 +117,45 @@ export async function POST(request: Request) {
           throw new Error("Page screenshot generation failed");
         }
 
+        const pageCandidates = pageQuestionCandidates(
+          questions,
+          candidate.pageNumber
+        );
         const response = await invokeLLM({
           model: DEFAULT_VISION_MODEL,
           max_tokens: PAGE_IMAGE_CLASSIFICATION_MAX_TOKENS,
-          messages: buildPageImageClassificationMessages(
+          messages: buildQuestionFilePageImageMessages(
             candidate.pageNumber,
-            shot.dataUrl
+            shot.dataUrl,
+            pageCandidates
           ),
-          response_format: pageImageClassificationResponseSchema,
+          response_format: questionFilePageImageResponseSchema,
         });
-        const classification = parsePageImageClassification(
+        const verdict = parseQuestionFilePageImageVerdict(
           response.choices[0]?.message.content
         );
 
-        if (classification.hasImage && shot.data) {
-          const { key: storageKey } = await storagePut(
-            `question-files/${bookId}/${candidate.pageNumber}.png`,
-            shot.data,
-            "image/png"
-          );
-          await insertExtractedQuestionImage(
-            bookId,
-            candidate.pageNumber,
-            storageKey,
-            classification.isAtPageEnd
-          );
+        if (verdict.hasImage && shot.data) {
+          const decision = decideImageOwner(pageCandidates, verdict);
+          // Cover art / decoration: not stored at all.
+          if (decision.kind !== "none") {
+            const { key: storageKey } = await storagePut(
+              `question-files/${bookId}/${candidate.pageNumber}.png`,
+              shot.data,
+              "image/png"
+            );
+            const image = await insertExtractedQuestionImage(
+              bookId,
+              candidate.pageNumber,
+              storageKey,
+              verdict.isAtPageEnd
+            );
+            await saveImageOwnerDecision(
+              image.id,
+              candidate.pageNumber,
+              decision
+            );
+          }
         }
 
         await markQuestionFilePageComplete(candidate.id);
@@ -146,10 +185,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ bookId, status: "processing" });
     }
 
-    // Every page has reached a terminal status — the pure, no-AI association
-    // pass can now run once against the complete picture, then stage 3 takes
-    // over per-question AI enrichment.
-    await associateAndSaveQuestionImages(bookId);
+    // Every page has reached a terminal status (each figure's owner was
+    // decided with its page) — stage 3 takes over per-question enrichment.
     await publishMessage({ type: "generate_question_file_content", bookId });
     return NextResponse.json({ bookId, status: "images_done" });
   } catch (error) {

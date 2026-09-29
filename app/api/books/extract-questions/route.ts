@@ -10,7 +10,7 @@ import {
 } from "@/lib/db-question-files";
 import { findMissingPageNumbers, normalizePageText } from "@/lib/pdf-cards";
 import { ocrPages, OCR_PAGES_PER_BATCH } from "@/lib/pdf-ocr";
-import { extractQuestionsFromPages } from "@/lib/question-extraction";
+import { analyzeQuestionDocument } from "@/lib/question-extraction";
 import { claimBookExtraction, releaseBookExtraction } from "@/lib/queue/claim";
 import { storageGetSignedUrl } from "@/lib/storage";
 import { publishMessage } from "@/lib/queue/client";
@@ -208,7 +208,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ bookId, status: "failed" });
     }
 
-    const questions = extractQuestionsFromPages(readable);
+    // Document understanding first (lib/question-document.ts): cover /
+    // front matter / answer key are never parsed as questions, and an
+    // incomplete block is held back instead of saved.
+    const analysis = analyzeQuestionDocument(readable);
+    const questions = analysis.questions;
+    if (analysis.needsReview.length) {
+      console.warn(
+        JSON.stringify({
+          event: "question_file_needs_review",
+          bookId,
+          valid: questions.length,
+          needsReview: analysis.needsReview.length,
+          reasons: [...new Set(analysis.needsReview.flatMap(q => q.reasons))],
+        })
+      );
+    }
     if (!questions.length) {
       await markQuestionFileFailed(
         bookId,
@@ -217,7 +232,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ bookId, status: "failed" });
     }
 
-    await saveExtractedQuestions(bookId, questions);
+    // Valid questions AND needs-review blocks (with their reasons), in file
+    // order — the doctor reviews the latter; students never see them.
+    await saveExtractedQuestions(bookId, analysis.all);
     await markQuestionFileComplete(bookId, totalPages);
 
     // Multimodal pipeline, stages 2+3 (lib/question-file-analysis.ts) — a

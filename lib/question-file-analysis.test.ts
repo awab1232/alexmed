@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   associateImagesWithQuestions,
+  decideImageOwner,
+  pageQuestionCandidates,
+  questionPageRange,
   parseExtractedQuestionEnrichment,
   parsePageImageClassification,
 } from "./question-file-analysis";
@@ -193,5 +196,138 @@ describe("parseExtractedQuestionEnrichment", () => {
     expect(
       parseExtractedQuestionEnrichment(content).inferredAnswerIndex
     ).toBeNull();
+  });
+});
+
+// Question files (and doctor sets): a figure belongs to ONE question, and
+// only when the page structure or a confident layout verdict says so —
+// otherwise to none, with the candidates flagged for review.
+describe("decideImageOwner", () => {
+  const q = (id: string, sourcePage: number, orderIndex: number) => ({
+    id,
+    sourcePage,
+    orderIndex,
+  });
+
+  const bank = (pages: number[]) =>
+    pages.map((sourcePage, orderIndex) => ({
+      ...q(`q${orderIndex + 1}`, sourcePage, orderIndex),
+      questionText: `Question ${orderIndex + 1}?`,
+    }));
+  const decide = (
+    pages: number[],
+    page: number,
+    verdict: Partial<{
+      owner: string;
+      confidence: "high" | "medium" | "low";
+      isAtPageEnd: boolean;
+    }> = {}
+  ) =>
+    decideImageOwner(pageQuestionCandidates(bank(pages), page), {
+      owner: "UNCLEAR",
+      confidence: "low",
+      isAtPageEnd: false,
+      ...verdict,
+    });
+
+  // Questions: q1 p4 · q2 p5 · q3 p6 · q4 p6 · q5 p8 (q4 runs through p7).
+  const PAGES = [4, 5, 6, 6, 8];
+
+  it("cover image → zero question links (and cover art is dropped, not flagged)", () => {
+    // The cover page is outside the questions' pages: nothing on it.
+    expect(decide(PAGES, 1)).toEqual({ kind: "none" });
+    // Even on a question page, art the model calls NONE is never attached.
+    expect(decide(PAGES, 4, { owner: "NONE", confidence: "high" })).toEqual({
+      kind: "none",
+    });
+  });
+
+  it("introduction image → zero question links", () => {
+    expect(decide(PAGES, 3)).toEqual({ kind: "none" });
+    expect(decide(PAGES, 2, { owner: "Q1", confidence: "high" })).toEqual({
+      kind: "none",
+    });
+  });
+
+  it("a question with its own image → only that question", () => {
+    expect(decide(PAGES, 5)).toEqual({ kind: "question", questionId: "q2" });
+    expect(decide(PAGES, 5, { owner: "Q1", confidence: "high" })).toEqual({
+      kind: "question",
+      questionId: "q2",
+    });
+  });
+
+  it("a page inside a question that continues over it → that question", () => {
+    expect(decide(PAGES, 7)).toEqual({ kind: "question", questionId: "q4" });
+  });
+
+  it("several questions on the page → only a CONFIDENT layout verdict picks one", () => {
+    expect(decide(PAGES, 6, { owner: "Q2", confidence: "high" })).toEqual({
+      kind: "question",
+      questionId: "q4",
+    });
+    // Never both, never guessed.
+    for (const verdict of [
+      { owner: "Q2", confidence: "medium" as const },
+      { owner: "UNCLEAR", confidence: "high" as const },
+      { owner: "Q9", confidence: "high" as const },
+    ]) {
+      expect(decide(PAGES, 6, verdict)).toEqual({
+        kind: "review",
+        questionIds: ["q3", "q4"],
+      });
+    }
+  });
+
+  it("a figure at the page bottom is NOT automatically the next page's question", () => {
+    // Not confident → no image, both candidates flagged.
+    expect(decide(PAGES, 5, { isAtPageEnd: true, owner: "UNCLEAR" })).toEqual({
+      kind: "review",
+      questionIds: ["q2", "q3"],
+    });
+    expect(
+      decide(PAGES, 5, {
+        isAtPageEnd: true,
+        owner: "NEXT",
+        confidence: "medium",
+      })
+    ).toEqual({ kind: "review", questionIds: ["q2", "q3"] });
+    // Only a confident layout verdict links it forward.
+    expect(
+      decide(PAGES, 5, { isAtPageEnd: true, owner: "NEXT", confidence: "high" })
+    ).toEqual({ kind: "question", questionId: "q3" });
+  });
+
+  it("text continuing from the previous page (PREV) only with confidence", () => {
+    expect(decide(PAGES, 6, { owner: "PREV", confidence: "high" })).toEqual({
+      kind: "question",
+      questionId: "q2",
+    });
+    expect(decide(PAGES, 6, { owner: "PREV", confidence: "low" })).toEqual({
+      kind: "review",
+      questionIds: ["q2", "q3", "q4"],
+    });
+  });
+
+  it("a question without an image → no image (nothing is attached without a figure)", () => {
+    // Pages with no figure never reach decideImageOwner; and a figure on
+    // q2's page is never given to q1 or q3.
+    const decision = decide(PAGES, 5);
+    expect(decision).toEqual({ kind: "question", questionId: "q2" });
+  });
+
+  it("the production failure: an introduction figure never becomes every question's image", () => {
+    const pages = [4, 4, 5, 5, 6, 6, 7, 7];
+    expect(decide(pages, 3)).toEqual({ kind: "none" });
+    // Two questions per page and an unclear layout → no image at all.
+    expect(decide(pages, 5)).toEqual({
+      kind: "review",
+      questionIds: ["q3", "q4"],
+    });
+  });
+
+  it("questionPageRange: first question page to one page past the last", () => {
+    expect(questionPageRange([4, 5, 5, 8])).toEqual({ first: 4, last: 9 });
+    expect(questionPageRange([])).toBeNull();
   });
 });

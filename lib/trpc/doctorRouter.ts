@@ -120,8 +120,12 @@ const setsRouter = router({
         input.setId
       );
       if (!access || access.role !== "owner") notFound();
-      return readQuestionFileContent(access.bookId, image =>
-        questionSetImageUrl(input.setId, image.imageId)
+      // The doctor also gets the needs-review blocks (with their reasons),
+      // which students never receive.
+      return readQuestionFileContent(
+        access.bookId,
+        image => questionSetImageUrl(input.setId, image.imageId),
+        { includeNeedsReview: true }
       );
     }),
 

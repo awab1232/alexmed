@@ -117,7 +117,7 @@ export async function createQuestionSet(
 
 const processingDone = sql<boolean>`(
   ${books.status} = 'complete'
-  and exists (select 1 from extracted_questions q where q."bookId" = ${questionSets.bookId})
+  and exists (select 1 from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."reviewStatus" is distinct from 'needs_review')
   and not exists (select 1 from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."aiStatus" in ('pending', 'processing'))
   and exists (select 1 from question_file_pages p where p."bookId" = ${questionSets.bookId})
   and not exists (select 1 from question_file_pages p where p."bookId" = ${questionSets.bookId} and p.status in ('pending', 'processing'))
@@ -147,7 +147,9 @@ const setSummaryColumns = {
   extractionError: books.extractionError,
   processingDone,
   windowOpen: questionSetWindowOpen,
-  extractedQuestions: sql<number>`(select count(*)::int from extracted_questions q where q."bookId" = ${questionSets.bookId})`,
+  // Valid questions only; needs-review blocks are counted apart.
+  extractedQuestions: sql<number>`(select count(*)::int from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."reviewStatus" is distinct from 'needs_review')`,
+  needsReviewCount: sql<number>`(select count(*)::int from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."reviewStatus" is not null)`,
   codesTotal: sql<number>`(select count(*)::int from question_set_access_codes c where c."setId" = ${questionSets.id})`,
   codesClaimed: sql<number>`(select count(*)::int from question_set_access_codes c where c."setId" = ${questionSets.id} and c.status = 'claimed')`,
   activeStudents: sql<number>`(select count(*)::int from question_set_entitlements e where e."setId" = ${questionSets.id} and e.status = 'active')`,
@@ -264,7 +266,8 @@ export async function publishQuestionSet(
       status: "published",
       publishedAt: sql`now()`,
       updatedAt: sql`now()`,
-      questionCount: sql`(select count(*)::int from extracted_questions q where q."bookId" = ${questionSets.bookId})`,
+      // What students will see: valid questions only.
+      questionCount: sql`(select count(*)::int from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."reviewStatus" is distinct from 'needs_review')`,
     })
     .where(
       and(
@@ -272,7 +275,7 @@ export async function publishQuestionSet(
         eq(questionSets.ownerId, ownerId),
         eq(questionSets.status, "draft"),
         sql`exists (select 1 from books where books.id = ${questionSets.bookId} and books.status = 'complete')`,
-        sql`exists (select 1 from extracted_questions q where q."bookId" = ${questionSets.bookId})`,
+        sql`exists (select 1 from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."reviewStatus" is distinct from 'needs_review')`,
         sql`not exists (select 1 from extracted_questions q where q."bookId" = ${questionSets.bookId} and q."aiStatus" in ('pending', 'processing'))`,
         sql`exists (select 1 from question_file_pages p where p."bookId" = ${questionSets.bookId})`,
         sql`not exists (select 1 from question_file_pages p where p."bookId" = ${questionSets.bookId} and p.status in ('pending', 'processing'))`

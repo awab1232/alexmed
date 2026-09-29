@@ -306,6 +306,28 @@ describe("student reads", () => {
   });
 });
 
+describe("needs-review questions", () => {
+  it("the doctor sees them with their reasons; students never receive them", async () => {
+    const { setId, bookId } = await publishedSetWithStudent();
+    await test.client.query(
+      `INSERT INTO extracted_questions ("bookId", "orderIndex", "questionText", options, "sourcePage", "aiStatus", "reviewStatus", "reviewReason")
+       VALUES ($1, 99, 'What is the most likely', '["x"]', 2, 'complete', 'needs_review', 'incomplete_stem,single_option')`,
+      [bookId]
+    );
+    const preview = await doctor().sets.preview({ setId });
+    expect(preview.needsReview).toEqual([
+      expect.objectContaining({
+        questionText: "What is the most likely",
+        reasons: ["incomplete_stem", "single_option"],
+      }),
+    ]);
+    const studentView = await student().get({ setId });
+    expect(studentView.questions).toHaveLength(3);
+    expect(JSON.stringify(studentView)).not.toContain("most likely");
+    expect(JSON.stringify(studentView)).not.toContain("needsReview");
+  });
+});
+
 describe("doctor IDOR", () => {
   it("doctor B can't manage doctor A's set by id", async () => {
     const { setId } = await publishedSetWithStudent();

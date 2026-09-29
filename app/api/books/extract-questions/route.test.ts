@@ -13,6 +13,7 @@ import {
   type TestDb,
 } from "@/lib/test-fixtures/pglite-db";
 import { buildQuestionBankPdf } from "@/lib/test-fixtures/question-sets";
+import { FULL_BANK } from "@/lib/test-fixtures/question-documents";
 
 const h = vi.hoisted(() => ({
   db: null as unknown,
@@ -208,6 +209,41 @@ describe("POST /api/books/extract-questions", () => {
     const row = await book(id);
     expect(row.status).toBe("failed");
     expect(row.extractionError).toMatch(/القراءة الضوئية/);
+  });
+
+  async function savedQuestions(id: string) {
+    const { rows } = await test.client.query<{ questionText: string }>(
+      `SELECT "questionText" FROM extracted_questions WHERE "bookId" = $1 ORDER BY "orderIndex"`,
+      [id]
+    );
+    return rows.map(r => r.questionText);
+  }
+
+  it("B: a SCANNED bank (cover + contents + intro + 10 questions + key) yields exactly the 10 questions", async () => {
+    process.env.QUEUE_MAX_ATTEMPTS = "3";
+    usePdf(FULL_BANK.map(() => [])); // every page image-only
+    for (const p of FULL_BANK) h.ocrText.set(p.page, p.text);
+    const id = await newBook();
+    await run(id);
+    const status = (await book(id)).status;
+    expect(status).toBe("complete");
+    const saved = await savedQuestions(id);
+    expect(saved).toHaveLength(10);
+    expect(saved.join(" ")).not.toMatch(
+      /FINAL MCQs|Page \d|Read every question/
+    );
+  });
+
+  it("C: a MIXED bank (text pages + scanned pages) yields the same 10 questions", async () => {
+    // Pages 4–6 scanned, the rest text.
+    const scanned = new Set([4, 5, 6]);
+    usePdf(FULL_BANK.map(p => (scanned.has(p.page) ? [] : p.text.split("\n"))));
+    for (const p of FULL_BANK)
+      if (scanned.has(p.page)) h.ocrText.set(p.page, p.text);
+    const id = await newBook();
+    await run(id);
+    expect(mockOcr.mock.calls.flatMap(call => call[1])).toEqual([4, 5, 6]);
+    expect(await savedQuestions(id)).toHaveLength(10);
   });
 
   it("a second delivery while one is running re-checks later instead of working twice", async () => {

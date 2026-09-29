@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, Sparkles, XCircle } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  XCircle,
+} from "lucide-react";
 import s from "./QuestionList.module.css";
 
 // One question-file question as the cards render it — the safe projection
@@ -77,28 +83,166 @@ function arabicNumber(n: number): string {
 // line of text over each card, image included. It makes a screenshot
 // traceable to the account it came from; it cannot stop one being taken.
 // `revealAll` (the doctor's review) shows every answer at once.
+//
+// layout "deck" (default): one question at a time — progress, previous /
+// next, a question picker, and ← → keys; each question keeps its answer
+// while the student moves around. layout "list": every card, stacked (the
+// doctor's all-answers review).
 export default function QuestionList({
   questions,
   watermark,
   revealAll = false,
+  layout = "deck",
 }: {
   questions: QuestionListItem[];
   watermark?: string;
   revealAll?: boolean;
+  layout?: "deck" | "list";
 }) {
   const watermarkImage = watermark ? watermarkTile(watermark) : null;
+  const [answers, setAnswers] = useState<Record<string, CardAnswer>>({});
+  const answerFor = (id: string) =>
+    answers[id] ?? { selected: null, revealed: false };
+  const setAnswer = (id: string) => (next: CardAnswer) =>
+    setAnswers(current => ({ ...current, [id]: next }));
+
+  const card = (question: QuestionListItem, i: number) => (
+    <QuestionCard
+      key={question.id}
+      question={question}
+      position={i + 1}
+      total={questions.length}
+      watermarkImage={watermarkImage}
+      revealAll={revealAll}
+      answer={answerFor(question.id)}
+      onAnswer={setAnswer(question.id)}
+    />
+  );
+
+  if (layout === "list") {
+    return <div className={s.list}>{questions.map(card)}</div>;
+  }
   return (
-    <div className={s.list}>
-      {questions.map((question, i) => (
-        <QuestionCard
-          key={question.id}
-          question={question}
-          position={i + 1}
-          total={questions.length}
-          watermarkImage={watermarkImage}
-          revealAll={revealAll}
-        />
-      ))}
+    <QuestionDeck questions={questions} answers={answers} renderCard={card} />
+  );
+}
+
+type CardAnswer = { selected: number | null; revealed: boolean };
+
+// Pure (unit-tested): the student's running tally for the progress line.
+export function deckProgress(
+  questions: QuestionListItem[],
+  answers: Record<string, CardAnswer>
+) {
+  let answered = 0;
+  let correctCount = 0;
+  for (const question of questions) {
+    const answer = answers[question.id];
+    if (!answer || answer.selected === null) continue;
+    answered++;
+    if (answer.selected === correctAnswerOf(question).index) correctCount++;
+  }
+  return { answered, correct: correctCount };
+}
+
+function QuestionDeck({
+  questions,
+  answers,
+  renderCard,
+}: {
+  questions: QuestionListItem[];
+  answers: Record<string, CardAnswer>;
+  renderCard: (question: QuestionListItem, i: number) => ReactNode;
+}) {
+  const [index, setIndex] = useState(0);
+  const total = questions.length;
+  const safeIndex = Math.min(index, Math.max(0, total - 1));
+  const go = (next: number) => setIndex(Math.max(0, Math.min(total - 1, next)));
+  const { answered, correct } = deckProgress(questions, answers);
+
+  // ← / → between questions (RTL: ← is "next"), unless typing somewhere.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable]")) {
+        return;
+      }
+      if (event.key === "ArrowLeft") setIndex(i => Math.min(total - 1, i + 1));
+      if (event.key === "ArrowRight") setIndex(i => Math.max(0, i - 1));
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [total]);
+
+  if (!total) return null;
+  return (
+    <div className={s.deck}>
+      <div className={s.progress}>
+        <div className={s.progressText}>
+          <span>
+            السؤال {safeIndex + 1} من {total}
+          </span>
+          {answered > 0 && (
+            <span className={s.tally}>
+              أجبت {answered} · صحيح {correct}
+            </span>
+          )}
+        </div>
+        <div
+          className={s.progressBar}
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={total}
+          aria-valuenow={safeIndex + 1}
+          aria-label="التقدم في الأسئلة"
+        >
+          <span style={{ width: `${((safeIndex + 1) / total) * 100}%` }} />
+        </div>
+      </div>
+
+      {renderCard(questions[safeIndex], safeIndex)}
+
+      <nav className={s.deckNav} aria-label="التنقل بين الأسئلة">
+        <button
+          type="button"
+          className={s.navButton}
+          disabled={safeIndex === 0}
+          onClick={() => go(safeIndex - 1)}
+        >
+          <ChevronRight size={17} aria-hidden="true" /> السابق
+        </button>
+        <label className={s.jump}>
+          <span className="sr-only">انتقل إلى سؤال</span>
+          <select
+            value={safeIndex}
+            onChange={event => go(Number(event.target.value))}
+          >
+            {questions.map((question, i) => {
+              const answer = answers[question.id];
+              const mark =
+                answer?.selected == null
+                  ? ""
+                  : answer.selected === correctAnswerOf(question).index
+                    ? " ✓"
+                    : " ✗";
+              return (
+                <option key={question.id} value={i}>
+                  {i + 1}
+                  {mark}
+                </option>
+              );
+            })}
+          </select>
+        </label>
+        <button
+          type="button"
+          className={`${s.navButton} ${s.navNext}`}
+          disabled={safeIndex === total - 1}
+          onClick={() => go(safeIndex + 1)}
+        >
+          التالي <ChevronLeft size={17} aria-hidden="true" />
+        </button>
+      </nav>
     </div>
   );
 }
@@ -109,16 +253,19 @@ function QuestionCard({
   total,
   watermarkImage,
   revealAll,
+  answer,
+  onAnswer,
 }: {
   question: QuestionListItem;
   position: number;
   total: number;
   watermarkImage: string | null;
   revealAll: boolean;
+  answer: CardAnswer;
+  onAnswer: (next: CardAnswer) => void;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [revealedByUser, setRevealed] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
+  const { selected, revealed: revealedByUser } = answer;
   const revealed = revealAll || revealedByUser;
   const { index: correct, fromAi } = correctAnswerOf(question);
   const options = question.options ?? [];
@@ -168,10 +315,7 @@ function QuestionCard({
                   disabled={revealed}
                   aria-pressed={selected === i}
                   data-state={state}
-                  onClick={() => {
-                    setSelected(i);
-                    setRevealed(true);
-                  }}
+                  onClick={() => onAnswer({ selected: i, revealed: true })}
                 >
                   <span className={s.num}>{i + 1}.</span>
                   <span className={s.optionText}>{option}</span>
@@ -266,7 +410,7 @@ function QuestionCard({
               <button
                 type="button"
                 className={s.textButton}
-                onClick={() => setRevealed(true)}
+                onClick={() => onAnswer({ selected, revealed: true })}
               >
                 أظهر الإجابة
               </button>
@@ -275,10 +419,7 @@ function QuestionCard({
               <button
                 type="button"
                 className={s.textButton}
-                onClick={() => {
-                  setSelected(null);
-                  setRevealed(false);
-                }}
+                onClick={() => onAnswer({ selected: null, revealed: false })}
               >
                 إعادة
               </button>

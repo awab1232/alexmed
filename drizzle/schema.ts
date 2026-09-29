@@ -1315,6 +1315,14 @@ export const extractedQuestions = pgTable(
     questionTextAr: text("questionTextAr"),
     optionsAr: jsonb("optionsAr").$type<string[]>(),
     translationSource: varchar("translationSource", { length: 16 }),
+    // Validation outcome (lib/question-document.ts): null = valid;
+    // "needs_review" = an incomplete / contaminated block, stored so the
+    // doctor sees it with its reason but NEVER shown to students;
+    // "check_image" = a valid question whose page image couldn't be
+    // attributed with confidence (so none is attached) — shown to
+    // students, flagged to the doctor. reviewReason lists the reasons.
+    reviewStatus: varchar("reviewStatus", { length: 16 }),
+    reviewReason: text("reviewReason"),
     createdAt: timestamp("createdAt", { withTimezone: true })
       .defaultNow()
       .notNull(),

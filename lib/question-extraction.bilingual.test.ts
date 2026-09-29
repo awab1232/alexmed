@@ -174,7 +174,7 @@ describe("bilingual question files", () => {
     const [q] = extractQuestionsFromPages([
       page(
         [
-          "1. Q?",
+          "1. Which vessel is affected?",
           "A. a",
           "B. b",
           "Answer: A",
@@ -192,7 +192,7 @@ describe("bilingual question files", () => {
     const [q] = extractQuestionsFromPages([
       page(
         [
-          "1. Q?",
+          "1. Which vessel is affected?",
           "A. a",
           "B. b",
           "C. c",

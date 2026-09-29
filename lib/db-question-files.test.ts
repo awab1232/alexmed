@@ -14,9 +14,14 @@ vi.mock("@/lib/db", () => ({
 
 import {
   getQuestionFileForUser,
+  listQuestionFilesForUser,
   readQuestionFileContent,
   saveExtractedQuestions,
 } from "./db-question-files";
+import {
+  insertExtractedQuestionImage,
+  saveImageOwnerDecision,
+} from "./db-question-file-images";
 
 const OWNER = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
@@ -150,6 +155,132 @@ describe("saveExtractedQuestions — the file's own Arabic", () => {
       optionsAr: null,
       translationSource: null,
     });
+  });
+});
+
+describe("needs-review questions and ambiguous images", () => {
+  const BOOK2 = "66666666-6666-4666-8666-666666666666";
+  const base = {
+    options: ["a", "b"],
+    extractedAnswerIndex: 0,
+    extractedAnswerText: "a",
+    explanationText: null,
+    questionTextAr: null,
+    optionsAr: null,
+  };
+
+  it("stores them, never shows them to students, and shows the doctor the exact reasons", async () => {
+    await insertQuestionFile(test.client, { id: BOOK2, userId: OWNER });
+    await saveExtractedQuestions(BOOK2, [
+      {
+        ...base,
+        orderIndex: 0,
+        questionText: "Valid question?",
+        sourcePage: 1,
+        reviewStatus: null,
+        reviewReason: null,
+      },
+      {
+        ...base,
+        orderIndex: 1,
+        questionText: "What is the most likely",
+        sourcePage: 1,
+        reviewStatus: "needs_review",
+        reviewReason: "incomplete_stem,single_option",
+      },
+    ]);
+
+    // Student / owner reads: the valid question only.
+    const student = await readQuestionFileContent(BOOK2, () => "");
+    expect(student.questions.map(q => q.questionText)).toEqual([
+      "Valid question?",
+    ]);
+    expect(student.needsReview).toEqual([]);
+    expect(JSON.stringify(student)).not.toContain("most likely");
+    const listed = (await listQuestionFilesForUser(OWNER)).find(
+      f => f.id === BOOK2
+    );
+    expect(listed?.questionCount).toBe(1);
+
+    // The doctor's review read.
+    const doctor = await readQuestionFileContent(BOOK2, () => "", {
+      includeNeedsReview: true,
+    });
+    expect(doctor.questions).toHaveLength(1);
+    expect(doctor.needsReview).toEqual([
+      expect.objectContaining({
+        questionText: "What is the most likely",
+        reasons: ["incomplete_stem", "single_option"],
+      }),
+    ]);
+
+    // Needs-review blocks get no AI enrichment.
+    const { rows } = await test.client.query<{ aiStatus: string }>(
+      `SELECT "aiStatus" FROM extracted_questions WHERE "bookId" = $1 AND "reviewStatus" = 'needs_review'`,
+      [BOOK2]
+    );
+    expect(rows[0].aiStatus).toBe("complete");
+  });
+
+  it("an ambiguous image links to NO question and flags the candidates (a needs-review block keeps its status)", async () => {
+    const { rows: qs } = await test.client.query<{
+      id: string;
+      reviewStatus: string | null;
+    }>(
+      `SELECT id, "reviewStatus" FROM extracted_questions WHERE "bookId" = $1 ORDER BY "orderIndex"`,
+      [BOOK2]
+    );
+    const image = await insertExtractedQuestionImage(
+      BOOK2,
+      1,
+      "question-files/x/1.png",
+      false
+    );
+    await saveImageOwnerDecision(image.id, 1, {
+      kind: "review",
+      questionIds: qs.map(q => q.id),
+    });
+    const { rows: after } = await test.client.query<{
+      reviewStatus: string;
+      reviewReason: string;
+    }>(
+      `SELECT "reviewStatus", "reviewReason" FROM extracted_questions WHERE "bookId" = $1 ORDER BY "orderIndex"`,
+      [BOOK2]
+    );
+    expect(after[0]).toEqual({
+      reviewStatus: "check_image",
+      reviewReason: "ambiguous_image_page_1",
+    });
+    expect(after[1].reviewStatus).toBe("needs_review");
+    const content = await readQuestionFileContent(
+      BOOK2,
+      img => `/img/${img.imageId}`
+    );
+    // Still visible to students — without any image.
+    expect(content.questions).toHaveLength(1);
+    expect(content.questions[0].imageUrl).toBeNull();
+  });
+
+  it("a confident decision links the image to exactly one question", async () => {
+    const { rows: qs } = await test.client.query<{ id: string }>(
+      `SELECT id FROM extracted_questions WHERE "bookId" = $1 ORDER BY "orderIndex" LIMIT 1`,
+      [BOOK2]
+    );
+    const image = await insertExtractedQuestionImage(
+      BOOK2,
+      1,
+      "question-files/x/2.png",
+      false
+    );
+    await saveImageOwnerDecision(image.id, 1, {
+      kind: "question",
+      questionId: qs[0].id,
+    });
+    const { rows } = await test.client.query(
+      `SELECT "questionId" FROM extracted_question_image_relations WHERE "imageId" = $1`,
+      [image.id]
+    );
+    expect(rows).toEqual([{ questionId: qs[0].id }]);
   });
 });
 

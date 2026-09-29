@@ -247,6 +247,7 @@ function QuestionsTab({
           <QuestionList
             questions={preview.data.questions}
             revealAll={showAll}
+            layout={showAll ? "list" : "deck"}
           />
         </>
       ) : preview.isLoading ? (
@@ -256,6 +257,104 @@ function QuestionsTab({
           <strong>لا توجد أسئلة مستخرجة بعد.</strong>
         </div>
       )}
+
+      {!!preview.data?.questions.some(
+        q => q.reviewStatus === "check_image"
+      ) && (
+        <div className={s.section}>
+          <h2 style={{ margin: 0, fontSize: 16 }}>صور تحتاج مراجعة</h2>
+          <p className={s.note}>
+            في هذه الصفحات صورة لم يكن واضحًا لأي سؤال تعود، فلم تُربط بأي سؤال
+            (الأسئلة نفسها ظاهرة للطلاب بدون صورة).
+          </p>
+          <ul className={s.list}>
+            {preview.data.questions
+              .map((q, i) => ({ q, i }))
+              .filter(({ q }) => q.reviewStatus === "check_image")
+              .map(({ q, i }) => (
+                <li key={q.id} className={s.row}>
+                  <span className={s.rowMain}>
+                    <span className={s.rowTitle}>
+                      سؤال {i + 1} · صفحة {q.sourcePage}
+                    </span>
+                    <span className={s.rowMeta} dir="auto">
+                      {q.questionText.slice(0, 140)}
+                    </span>
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
+
+      {!!preview.data?.needsReview.length && (
+        <NeedsReviewSection items={preview.data.needsReview} />
+      )}
+    </div>
+  );
+}
+
+const REVIEW_REASON_LABELS: Record<string, string> = {
+  empty_or_fragment_stem: "نص السؤال فارغ أو مجرد جزء",
+  incomplete_stem: "نص السؤال مقطوع قبل نهايته",
+  answer_inside_stem: "الإجابة مكتوبة داخل نص السؤال",
+  single_option: "خيار واحد فقط",
+  too_many_options: "خيارات أكثر من المعقول (قد يكون سؤالان مدموجان)",
+  empty_option: "خيار فارغ",
+  answer_or_explanation_inside_option: "إجابة أو شرح داخل أحد الخيارات",
+  next_question_inside_option: "بداية السؤال التالي داخل أحد الخيارات",
+  missing_options: "لا توجد خيارات لهذا السؤال",
+  options_out_of_order: "ترتيب الخيارات غير سليم",
+};
+
+// Blocks the pipeline found but couldn't validate: never shown to
+// students; the doctor sees exactly what was read and why it was held back
+// (fix the file and create a new set, or ignore them).
+function NeedsReviewSection({
+  items,
+}: {
+  items: {
+    id: string;
+    questionText: string;
+    options: string[] | null;
+    sourcePage: number;
+    reasons: string[];
+  }[];
+}) {
+  return (
+    <div className={s.section}>
+      <h2 style={{ margin: 0, fontSize: 16 }}>
+        تحتاج مراجعة (Needs Review) · {items.length}
+      </h2>
+      <p className={s.note}>
+        هذه الأجزاء لم تُعتبر أسئلة مكتملة، فلا يراها طلابك. لم يُكمل النظام أي
+        نص ناقص من عنده.
+      </p>
+      <ul className={s.list}>
+        {items.map(item => (
+          <li key={item.id} className={s.row} style={{ display: "grid" }}>
+            <span className={s.rowTitle}>صفحة {item.sourcePage}</span>
+            <span className={s.rowMeta} dir="auto">
+              {item.questionText || "(بدون نص سؤال)"}
+            </span>
+            {!!item.options?.length && (
+              <ol className={s.rowMeta} dir="auto" style={{ margin: 0 }}>
+                {item.options.map((option, i) => (
+                  <li key={i}>{option}</li>
+                ))}
+              </ol>
+            )}
+            <span className={s.chip}>
+              {item.reasons
+                .map(
+                  reason =>
+                    `${REVIEW_REASON_LABELS[reason] ?? reason} (${reason})`
+                )
+                .join(" · ")}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

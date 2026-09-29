@@ -15,7 +15,10 @@ import {
   questionFilePages,
 } from "../drizzle/schema";
 import { getDb } from "./db";
-import { associateImagesWithQuestions } from "./question-file-analysis";
+import {
+  questionPageRange,
+  type ImageOwnerDecision,
+} from "./question-file-analysis";
 
 // Ensures a `question_file_pages` row exists for every page 1..pageCount —
 // called once, right when stage 2 starts, so getNextPendingQuestionFilePage
@@ -44,6 +47,18 @@ export async function ensureQuestionFilePages(
   if (missing.length) {
     await db.insert(questionFilePages).values(missing);
   }
+}
+
+// Pages the file's questions actually cover (stage 1 has already run) —
+// stage 2 only looks for figures there.
+export async function getQuestionFilePageRange(bookId: string) {
+  const db = getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({ sourcePage: extractedQuestions.sourcePage })
+    .from(extractedQuestions)
+    .where(eq(extractedQuestions.bookId, bookId));
+  return questionPageRange(rows.map(row => row.sourcePage));
 }
 
 export async function getNextPendingQuestionFilePage(bookId: string) {
@@ -103,45 +118,53 @@ export async function insertExtractedQuestionImage(
   return row;
 }
 
-// Runs once, after every page in the book has reached a terminal status
-// (complete or permanently failed) — computes the deterministic page-range
-// association (lib/question-file-analysis.ts's associateImagesWithQuestions,
-// no AI) and persists it. Safe to call more than once (e.g. a retried
-// invocation): clears this book's existing relations first rather than
-// risking duplicate rows.
-export async function associateAndSaveQuestionImages(
-  bookId: string
-): Promise<void> {
+// The file's questions (all of them, needs-review included — they still
+// occupy their pages) for working out which questions a page holds.
+export async function listQuestionsForImageOwnership(bookId: string) {
   const db = getDb();
-  if (!db) throw new Error("Database not available");
-
-  const images = await db
-    .select({
-      id: extractedQuestionImages.id,
-      pageNumber: extractedQuestionImages.pageNumber,
-      isAtPageEnd: extractedQuestionImages.isAtPageEnd,
-    })
-    .from(extractedQuestionImages)
-    .where(eq(extractedQuestionImages.bookId, bookId));
-
-  const questions = await db
+  if (!db) return [];
+  return db
     .select({
       id: extractedQuestions.id,
       sourcePage: extractedQuestions.sourcePage,
+      orderIndex: extractedQuestions.orderIndex,
+      questionText: extractedQuestions.questionText,
     })
     .from(extractedQuestions)
     .where(eq(extractedQuestions.bookId, bookId));
+}
 
-  const relations = associateImagesWithQuestions(images, questions);
-
-  const questionIds = questions.map(q => q.id);
-  if (questionIds.length) {
+// Persists one page figure's decision (lib/question-file-analysis.ts's
+// decideImageOwner): a link to exactly ONE question, or — when the layout
+// isn't clear enough — no link, and its candidate questions flagged
+// "check_image" for the doctor (a needs-review block keeps its status).
+export async function saveImageOwnerDecision(
+  imageId: string,
+  pageNumber: number,
+  decision: ImageOwnerDecision
+): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  if (decision.kind === "question") {
     await db
-      .delete(extractedQuestionImageRelations)
-      .where(inArray(extractedQuestionImageRelations.questionId, questionIds));
+      .insert(extractedQuestionImageRelations)
+      .values({ questionId: decision.questionId, imageId })
+      .onConflictDoNothing();
+    return;
   }
-  if (relations.length) {
-    await db.insert(extractedQuestionImageRelations).values(relations);
+  if (decision.kind === "review" && decision.questionIds.length) {
+    await db
+      .update(extractedQuestions)
+      .set({
+        reviewStatus: "check_image",
+        reviewReason: `ambiguous_image_page_${pageNumber}`,
+      })
+      .where(
+        and(
+          inArray(extractedQuestions.id, decision.questionIds),
+          sql`${extractedQuestions.reviewStatus} is null`
+        )
+      );
   }
 }
 

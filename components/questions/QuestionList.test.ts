@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import QuestionList, {
   correctAnswerOf,
+  deckProgress,
   optionState,
   watermarkTile,
   type QuestionListItem,
@@ -25,12 +26,17 @@ const question: QuestionListItem = {
 };
 
 function render(
-  props: { watermark?: string; revealAll?: boolean } = {},
+  props: {
+    watermark?: string;
+    revealAll?: boolean;
+    layout?: "deck" | "list";
+  } = {},
   q: QuestionListItem = question
 ) {
   return renderToStaticMarkup(
     createElement(QuestionList, {
       questions: [q, { ...q, id: "q2" }],
+      layout: "list",
       ...props,
     })
   );
@@ -164,5 +170,42 @@ describe("watermark", () => {
     const tile = decodeURIComponent(watermarkTile(`<a href="x">&'`));
     expect(tile).toContain("&lt;a href=&quot;x&quot;&gt;&amp;&apos;");
     expect(tile).not.toContain("<a href");
+  });
+});
+
+describe("QuestionList — deck (one question at a time)", () => {
+  const deck = () =>
+    renderToStaticMarkup(
+      createElement(QuestionList, {
+        questions: [
+          question,
+          { ...question, id: "q2", questionText: "Second one?" },
+        ],
+      })
+    );
+
+  it("shows only the current question, with progress and previous / next", () => {
+    const html = deck();
+    expect(html).toContain("Which nerve supplies the deltoid?");
+    expect(html).not.toContain("Second one?");
+    expect(html).toMatch(/السؤال (<!-- -->)?1(<!-- -->)? من (<!-- -->)?2/);
+    expect(html).toContain('role="progressbar"');
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>.*السابق/);
+    expect(html).toContain("التالي");
+    // The picker lists every question.
+    expect(html.match(/<option /g)).toHaveLength(2);
+  });
+});
+
+describe("deckProgress", () => {
+  it("counts answered and correct picks", () => {
+    const qs = [question, { ...question, id: "q2" }, { ...question, id: "q3" }];
+    expect(
+      deckProgress(qs, {
+        q1: { selected: 1, revealed: true },
+        q2: { selected: 0, revealed: true },
+        q3: { selected: null, revealed: true },
+      })
+    ).toEqual({ answered: 2, correct: 1 });
   });
 });
