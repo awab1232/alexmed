@@ -139,6 +139,8 @@ P15 ─► P17 (iOS) ─────┴─► P18 (QA + beta) ─► P19 (releas
 **Android:** debug build on emulator API 36 + low-end API 26. **iOS:** simulator build via CI.
 **DoD:** CI green on both platforms; contract tests pass on staging.
 
+**Status: `[x]` Completed** — accepted by the owner on 2026-09-29. Open items carried forward, not blocking: 2.2 staging URL (D1), 2.8 Sentry (task 1.5), 2.9 first CI run (needs a push), 2.10 contract tests (D1).
+
 ---
 
 ## Phase 3 — Design system, localization, RTL
@@ -157,6 +159,8 @@ P15 ─► P17 (iOS) ─────┴─► P18 (QA + beta) ─► P19 (releas
 **Tests:** widget + golden tests for every component in ar/en, small (360×640) & large (430×932) phones, dynamic type ×1.3.
 **UI/UX:** compare against web screenshots (browser verification of the live web app); touch targets; contrast AA.
 **DoD:** gallery reviewed; goldens committed; no hard-coded colors outside tokens.
+
+**Status: `[x]` Completed** — accepted by the owner on 2026-09-29. Carried forward: sheets / dialogs / inputs seen on a device as later screens use them; goldens once CI runs on Linux.
 
 ---
 
@@ -185,6 +189,10 @@ Flutter:
 **Security:** token never logged; secure storage verified on device; Google/Apple audience checks; replay of old token after suspension rejected; security review of new endpoints.
 **Performance:** cold start with session → Home < 2 s (mid-range Android).
 **DoD:** journeys 1–2 pass on both platforms; web login unchanged (web tests + manual check).
+
+**Status:**
+- **Phase 4 implementation: `[x]` Completed** — implemented and tested locally (owner, 2026-09-29). Commits kept separate: backend `ee1c391`, app `9616c5f`.
+- **Phase 4 live authentication verification: `[!]` Blocked** by the staging / live environment. `ee1c391` is **not** merged or deployed (owner: no merge / deploy without explicit approval). When staging exists, verify end to end: login, registration + OTP, refresh, logout, Google, Apple.
 
 ---
 
@@ -437,11 +445,11 @@ Doctor:
 
 | # | Decision | Options / recommendation | Status |
 |---|---|---|---|
-| D1 | Staging environment (own DB + bucket + deploy) | Required (B1). Recommend a separate Supabase project + Railway service | `[!]` waiting |
-| D2 | Apple Developer account + macOS CI | Required for iOS (B2). GitHub macOS runners or Codemagic | `[!]` waiting |
+| D1 | Staging environment (own DB + bucket + deploy) | Required (B1). Recommend a separate Supabase project + Railway service. Needed before any live-auth testing | **Pending** |
+| D2 | Apple Developer account + macOS CI | Required for iOS (B2). GitHub macOS runners or Codemagic | **Pending** |
 | D3 | Optional gaps in v1: G5 reset, G7 multipart, G8 reviewedAt, G10 report (needed for App Store), G12 push | Recommend v1: G5, G10; later: G7, G8, G12 | `[!]` waiting |
 | D4 | Flutter code location | `mobile/` in this repo | `[x]` adopted 2026-09-29 (owner: start building) |
-| D5 | Upgrade the existing Play listing in place (`com.nirolearn.app`, same keystore) | Applied tentatively (appId set). Still need: is it published, and its versionCode | `[~]` open |
+| D5 | Upgrade the existing Play listing in place (`com.nirolearn.app`, same keystore) | Applied tentatively (appId set). Still need: is it published, and its versionCode | **Pending** |
 | D6 | Google login on iOS (forces Sign in with Apple) | Recommend keep Google + add Apple | `[!]` waiting |
 | D7 | Block screenshots on protected sets (Android FLAG_SECURE) | Recommend yes for protected screens only | `[!]` waiting |
 | D8 | Niro history device-local (as web) | Recommend keep local for v1 | `[!]` waiting |
@@ -475,10 +483,10 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 4 — authentication (`[~]`). Phases 2–3 `[~]` only for owner-blocked / deferred items. Phase 1 not started (owner actions) |
+| Current Phase | Phase 5 — navigation shell, Home, folders, account (`[~]`). Phases 2, 3 and 4-implementation `[x]`; Phase 4 live verification `[!]` (staging). Phase 1 not started (owner actions) |
 | Current Task | Phase 4 — email/phone login + registration done and tested; waiting for a server that runs G1/G4 |
 | Last Completed Task | 4.1–4.3 + 4.6 backend (shared credentials check, mobile login + refresh endpoints, 21 tests) and 4.8–4.10, 4.12, 4.14 Flutter (welcome, login, register, refresh) |
-| Next Task | Owner decision: deploy G1/G4 (additive; web login unchanged) **or** provide staging (D1) → then a real sign-in on the emulator (journey 2). Meanwhile: Phase 5 (Home, folders, account + sign-out) |
+| Next Task | Phase 5 (Home, folders, account + sign-out). Rule: no production deployment and no merge to `main` without the owner's explicit approval; live auth waits for staging (D1) |
 | Blocked By | Live verification of login: G1/G4 not deployed and no staging (D1); Google (1.4, D6); Apple (D2); Sentry (2.8) |
 | Last Verification | 2026-09-29 — Flutter: analyze clean, 73/73 tests; welcome / login / register seen on the emulator. Web: vitest 842 passed + 1 known slow-test timeout, tsc clean, `next build` ok (new routes compiled) |
 | Tests | Flutter 73/73 unit + widget, 3/3 on-device integration. Web: 842 passed (1 brain-games timeout under full-suite load; passes alone), incl. 21 new auth tests |
@@ -533,3 +541,6 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
   `auth()` still accepts. Found by tests: a test assumed "07" is a phone
   number — the parser (unchanged) treats it as an email; test corrected.
   Found on device: hint text of LTR fields sat on the right — fixed.
+- **2026-09-29** — Owner accepted Phases 2 and 3 and the Phase 4 implementation;
+  live authentication stays blocked until staging exists. No merge / deploy
+  of `ee1c391`. D1, D2, D5 pending. Phase 5 started.
