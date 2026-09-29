@@ -458,8 +458,10 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 | Date | Files | Phase | Commit |
 |---|---|---|---|
 | 2026-09-29 | `docs/mobile/MOBILE_ARCHITECTURE_BLUEPRINT.md`, `docs/mobile/MOBILE_IMPLEMENTATION_ROADMAP.md` (new) | P0 | `57fff35` (branch `docs/mobile-roadmap`) |
-| 2026-09-29 | `mobile/` (new Flutter app: `lib/app/*`, `lib/core/api/*`, `lib/core/auth/*`, `lib/core/ui/tokens.dart`, `test/**`, `env/*.json`, Android/iOS identity), `.github/workflows/mobile.yml` | P2 | not committed yet (branch `feat/mobile-foundation`) |
-| 2026-09-29 | `mobile/lib/core/ui/**` (theme, tokens, bidi, components), `mobile/lib/l10n/*`, `mobile/l10n.yaml`, `mobile/lib/app/dev/component_gallery.dart`, `mobile/assets/{fonts,niro,brand}/`, `mobile/tool/export_niro_svgs.tsx`, generated Android/iOS icon + splash resources, `mobile/integration_test/` | P2–P3 | not committed yet (branch `feat/mobile-foundation`) |
+| 2026-09-29 | `mobile/` (new Flutter app: `lib/app/*`, `lib/core/api/*`, `lib/core/auth/*`, `lib/core/ui/tokens.dart`, `test/**`, `env/*.json`, Android/iOS identity), `.github/workflows/mobile.yml` | P2 | `9616c5f` (branch `feat/mobile-foundation`) |
+| 2026-09-29 | `mobile/lib/core/ui/**` (theme, tokens, bidi, components), `mobile/lib/l10n/*`, `mobile/l10n.yaml`, `mobile/lib/app/dev/component_gallery.dart`, `mobile/assets/{fonts,niro,brand}/`, `mobile/tool/export_niro_svgs.tsx`, generated Android/iOS icon + splash resources, `mobile/integration_test/` | P2–P3 | `9616c5f` (branch `feat/mobile-foundation`) |
+| 2026-09-29 | `lib/credentials-login.ts`, `lib/mobile-session.ts`, `lib/auth.ts`, `app/api/mobile/auth/{login,refresh}/` (+ tests) | P4 backend | `ee1c391` |
+| 2026-09-29 | `mobile/lib/features/auth/**`, `mobile/lib/core/phone.dart`, `mobile/lib/app/routes.dart`, auth tests | P4 client | `9616c5f` |
 
 ## Known issues (keep updated)
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
