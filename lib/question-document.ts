@@ -20,6 +20,7 @@
 // Nothing here generates text: every stored field is text the file states.
 
 import {
+  letterToIndex,
   normalize,
   parseKeyEntry,
   parseQuestionStream,
@@ -254,6 +255,150 @@ function pushWithSections(out: StreamLine[], page: number, line: string) {
   out.push({ page, text: line, index: out.length });
 }
 
+// ── 2b. Unnumbered questions ────────────────────────────────────────────
+
+// Many banks never number their questions: a stem, then A, B, C… options.
+// Where the document works that way, each block that opens an A → B option
+// run with plain text before it gets the next number put in front of its
+// stem, so every later stage (page classification, parsing, answer keys,
+// validation) treats it exactly like a numbered question. Numbered
+// documents are left untouched.
+const OPTION_MARK = /^\s*(?:\(([A-Ha-h])\)|([A-Ha-h])\s?[.):])\s+\S/;
+// أ) / (ب) / ج- / د.  — Arabic-lettered options.
+const ARABIC_OPTION_MARK = /^\s*(?:\(([أاإبجده])\)|([أاإبجده])\s?[.):\-])\s*\S/;
+const NUMBERED_START =
+  /^\s*(?:(?:question|q)\s*\.?\s*(\d{1,3})\b|(\d{1,3})\s*[.):\-](?:\s+\S|\s*$))/i;
+const SENTENCE_END = /[.?!؟:;]["'”)\]]*\s*$/;
+// "Choose the single best answer for each question." — the bank's
+// instructions, never part of the first stem.
+const INSTRUCTION_LINE =
+  /^\s*(?:instructions?\b|(?:please\s+)?(?:choose|select|pick|circle|mark|tick|answer)\b.*\b(?:best|correct|right|one|each|all)\b.*\.\s*$|(?:اختر|اختار|أجب)\s)/i;
+
+// "الإجابة: ب" / "الشرح: …" (\b doesn't work after Arabic letters).
+const ARABIC_LABEL_LINE =
+  /^\s*(?:الإجابة الصحيحة|الإجابة|الجواب|الشرح|التفسير|التعليل|السبب|ملاحظة|ملاحظات)\s*[:\-.]/;
+
+type LineKind = "question" | "key" | "option" | "label" | "plain";
+
+function lineKind(text: string): LineKind {
+  const ascii = toAsciiDigits(text);
+  if (parseKeyEntry(text)) return "key";
+  if (NUMBERED_START.test(ascii)) return "question";
+  if (OPTION_MARK.test(text) || ARABIC_OPTION_MARK.test(text)) return "option";
+  if (LABELLED_LINE.test(text) || ARABIC_LABEL_LINE.test(text)) return "label";
+  return "plain";
+}
+
+// The option's letter as a, b, c… (أ → a, ب → b, ج → c, د → d).
+function optionLetter(text: string): string | null {
+  const match = text.match(OPTION_MARK) ?? text.match(ARABIC_OPTION_MARK);
+  if (!match) return null;
+  const index = letterToIndex(match[1] ?? match[2]);
+  return index === null ? null : "abcdefgh"[index];
+}
+
+// A short heading line ("Cardiology", "Chapter 3 MCQs") — never a stem.
+function isTitleLine(text: string): boolean {
+  return (
+    FRONT_MATTER_HEADING.test(text) ||
+    (text.split(/\s+/).length <= 5 &&
+      !SENTENCE_END.test(text) &&
+      !/[?؟]/.test(text))
+  );
+}
+
+export function numberUnnumberedQuestions(stream: StreamLine[]): StreamLine[] {
+  const kinds = stream.map(line => lineKind(line.text));
+
+  // Every "A." that opens an A → B run (B within the next few lines).
+  const runStarts: number[] = [];
+  stream.forEach((line, a) => {
+    if (kinds[a] !== "option" || optionLetter(line.text) !== "a") return;
+    for (let i = a + 1; i < Math.min(stream.length, a + 7); i++) {
+      if (kinds[i] === "plain") continue;
+      if (kinds[i] === "option" && optionLetter(stream[i].text) === "b") {
+        runStarts.push(a);
+      }
+      return;
+    }
+  });
+  const numbered = kinds.filter(kind => kind === "question").length;
+  if (!runStarts.length || numbered >= runStarts.length * 0.5) return stream;
+
+  const stemStart = new Map<number, number>(); // line index → number
+  const dropped = new Set<number>();
+  let lastNumber = 0;
+  let cursor = 0;
+  let previousRunLatin = false;
+  for (const a of runStarts) {
+    for (; cursor < a; cursor++) {
+      const own = toAsciiDigits(stream[cursor].text).match(NUMBERED_START);
+      if (own && !parseKeyEntry(stream[cursor].text)) {
+        lastNumber = Number(own[1] ?? own[2]);
+      }
+    }
+    // An أ/ب/ج/د block right after an English question is its Arabic
+    // version (the parser pairs them), never a question of its own.
+    const arabicRun = ARABIC_OPTION_MARK.test(stream[a].text);
+    const translation = arabicRun && previousRunLatin;
+    previousRunLatin = !arabicRun;
+    if (translation) continue;
+    let p = a - 1;
+    while (p >= 0 && kinds[p] === "plain") p--;
+    if (p >= 0 && kinds[p] === "question") continue; // numbered already
+    const opensPage = p < 0 || stream[p].page !== stream[a].page;
+    let s = p + 1;
+    if (s >= a) continue; // no stem text at all
+
+    // The stem stays on its own page: lines left on the previous page after
+    // its last option / answer / explanation belong to that block.
+    const onPage = stream[a].page;
+    const firstOnPage = stream.findIndex(
+      (line, i) => i >= s && i < a && line.page === onPage
+    );
+    const pageBreak = firstOnPage > s;
+    if (pageBreak) s = firstOnPage;
+
+    // Wrapped lines of the previous block's last option / explanation.
+    if (!pageBreak && p >= 0) {
+      while (s < a - 1) {
+        const text = stream[s].text;
+        const prev = stream[s - 1].text;
+        const lowercase = /^[a-z(,;]/.test(text);
+        const continues =
+          kinds[p] === "option"
+            ? lowercase || /[,\-–]\s*$/.test(prev)
+            : lowercase || !SENTENCE_END.test(prev);
+        if (!continues) break;
+        s++;
+      }
+    }
+    // Headings / instructions before the first stem of a page.
+    while (
+      s < a - 1 &&
+      ((isTitleLine(stream[s].text) && !/^[a-z(,;]/.test(stream[s + 1].text)) ||
+        (opensPage && INSTRUCTION_LINE.test(stream[s].text)))
+    ) {
+      dropped.add(s++);
+    }
+
+    stemStart.set(s, ++lastNumber);
+  }
+  if (!stemStart.size) return stream;
+
+  const out: StreamLine[] = [];
+  stream.forEach((line, i) => {
+    if (dropped.has(i)) return;
+    const number = stemStart.get(i);
+    out.push({
+      page: line.page,
+      text: number === undefined ? line.text : `${number}. ${line.text}`,
+      index: out.length,
+    });
+  });
+  return out;
+}
+
 // ── 3. Page classification & segmentation ───────────────────────────────
 
 const FRONT_MATTER_HEADING =
@@ -320,7 +465,10 @@ function pageStats(lines: StreamLine[]): Stats {
       lastStart = i;
       optionsSinceStart = 0;
     }
-    if (/^\s*(?:\([A-Ha-h]\)|[A-Ha-h]\s?[.)])\s+\S/.test(text)) {
+    if (
+      /^\s*(?:\([A-Ha-h]\)|[A-Ha-h]\s?[.)])\s+\S/.test(text) ||
+      ARABIC_OPTION_MARK.test(text)
+    ) {
       stats.options++;
       if (lastStart >= 0 && i - lastStart <= 16) {
         optionsSinceStart++;
@@ -547,7 +695,7 @@ export function analyzeQuestionDocument(
 ): QuestionDocumentAnalysis {
   const pages = [...rawPages].sort((a, b) => a.page - b.page);
   const cleaned = cleanPages(pages);
-  const fullStream = relinePages(cleaned);
+  const fullStream = numberUnnumberedQuestions(relinePages(cleaned));
   const classes = classifyPages(
     fullStream,
     pages.map(p => p.page)

@@ -70,6 +70,7 @@ const NOTE_LINE =
 const KEY_ENTRY_BODY = /^\(?([A-Ha-h])\)?\s*\.?$/;
 const ARABIC_OPTION_LINE =
   /^\s*\(?([أاإبجده]|[١-٥]|[1-5]|[A-Ea-e])\)?\s*[.)\-:ـ]?\s+(.+)$/;
+const ARABIC_LETTER_OPTION = /^\s*(?:\([أاإبجده]\)|[أاإبجده]\s?[.):\-])\s*(?=\S)/;
 const INLINE_ARABIC_ANSWER =
   /\s*(?:الإجابة الصحيحة|الإجابة|الجواب)\s*[:\-]\s*(\(?[أاإبجدA-Da-d١-٤1-4]\)?\.?)\s*$/;
 
@@ -457,6 +458,18 @@ export function parseQuestionStream(
         mode = "notes";
         continue;
       }
+    }
+
+    // An Arabic question's أ/ب/ج/د option whose text is English
+    // ("أ) Aspirin") is still one of its options.
+    if (
+      current.primaryArabic &&
+      !current.pastOptions &&
+      ARABIC_LETTER_OPTION.test(text)
+    ) {
+      current.options.push(text.replace(ARABIC_LETTER_OPTION, "").trim());
+      mode = "options";
+      continue;
     }
 
     // Arabic options: of an Arabic-only question, or of the Arabic block.
