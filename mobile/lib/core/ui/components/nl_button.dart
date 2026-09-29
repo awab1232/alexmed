@@ -156,7 +156,11 @@ class _NlButtonState extends State<NlButton> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: NlSpace.xl),
-                  child: Center(widthFactor: 1, child: content),
+                  child: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: content,
+                  ),
                 ),
               ),
             ),

@@ -14,6 +14,10 @@ import '../features/auth/presentation/welcome_screen.dart';
 import '../features/library/presentation/add_sheet.dart';
 import '../features/library/presentation/folder_screen.dart';
 import '../features/library/presentation/home_screen.dart';
+import '../features/mirror/presentation/mirror_deck_screen.dart';
+import '../features/mirror/presentation/mirror_job_screen.dart';
+import '../features/mirror/presentation/mirror_library_screen.dart';
+import '../features/mirror/presentation/mirror_start_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'dev/component_gallery.dart';
 import 'placeholder_screen.dart';
@@ -100,11 +104,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // Screens of later phases — full-screen over the tabs.
       _placeholder('/books/:id', (l) => l.yourBooks, 'P7'),
-      _placeholder('/decks/:id', (l) => l.questionFileBadge, 'P9'),
+      GoRoute(
+        path: '/decks/:id',
+        builder: (_, state) =>
+            MirrorDeckScreen(deckId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/mirror/jobs/:id',
+        builder: (_, state) => MirrorJobScreen(
+          jobId: state.pathParameters['id']!,
+          detailsOnly: state.uri.queryParameters['details'] == '1',
+        ),
+      ),
       _placeholder(Routes.review, (l) => l.nextDueAction, 'P7'),
-      _placeholder(Routes.questionFiles, (l) => l.questionFilesRow, 'P9'),
+      GoRoute(
+        path: Routes.questionFiles,
+        builder: (_, _) => const MirrorLibraryScreen(),
+      ),
       _placeholder(Routes.uploadBook, (l) => l.addBook, 'P6'),
-      _placeholder(Routes.uploadQuestionFile, (l) => l.addQuestionFile, 'P9'),
+      GoRoute(
+        path: Routes.uploadQuestionFile,
+        builder: (_, state) => MirrorStartScreen(
+          appendToDeckId: state.uri.queryParameters['deck'],
+        ),
+      ),
       _placeholder(Routes.shared, (l) => l.sharedWithMe, 'P13'),
       _placeholder(Routes.redeemCode, (l) => l.addDoctorCode, 'P11'),
       _placeholder(Routes.doctor, (l) => l.doctorDashboard, 'P11'),

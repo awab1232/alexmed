@@ -633,4 +633,315 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openInBrowserFailed => 'Couldn\'t open the page.';
+
+  @override
+  String get mirrorTitle => 'Question file → cards';
+
+  @override
+  String get mirrorIntro =>
+      'Upload your questions and we turn them into cards: question, answer, explanation and keyword — in Arabic and English.';
+
+  @override
+  String get mirrorModePdf => 'PDF file';
+
+  @override
+  String get mirrorModeText => 'Paste questions';
+
+  @override
+  String get mirrorStepFile => 'File';
+
+  @override
+  String get mirrorStepText => 'Questions';
+
+  @override
+  String get mirrorStepDepth => 'Explanation depth';
+
+  @override
+  String get mirrorStepFolder => 'Folder';
+
+  @override
+  String get mirrorPickFile => 'Choose a PDF';
+
+  @override
+  String get mirrorPickHint => 'Large and scanned PDFs (OCR) are supported.';
+
+  @override
+  String mirrorFileReady(String size) {
+    return '$size · ready to analyse';
+  }
+
+  @override
+  String get mirrorChangeFile => 'Change';
+
+  @override
+  String mirrorMaxSize(int mb) {
+    return 'Your plan allows up to $mb MB';
+  }
+
+  @override
+  String get depthQuick => 'Quick';
+
+  @override
+  String get depthQuickCaption => 'Fast review';
+
+  @override
+  String get depthBalanced => 'Balanced';
+
+  @override
+  String get depthBalancedCaption => 'Best for exams';
+
+  @override
+  String get depthDetailed => 'Detailed';
+
+  @override
+  String get depthDetailedCaption => 'Deeper explanations';
+
+  @override
+  String get depthRecommended => 'Recommended';
+
+  @override
+  String get mirrorChooseFolder => 'Choose a folder';
+
+  @override
+  String get mirrorNoFolders => 'No folders yet — create one.';
+
+  @override
+  String get mirrorTextHint =>
+      'Paste the questions here, with options and answers if you have them…';
+
+  @override
+  String mirrorTextCount(int count) {
+    return '$count characters';
+  }
+
+  @override
+  String get mirrorTextTooShort =>
+      'Paste the questions first (text too short).';
+
+  @override
+  String get mirrorTextTooLong =>
+      'The text is over 60,000 characters. Split it in two and add the second part to the same file.';
+
+  @override
+  String get mirrorTextDestination => 'Where should the cards go?';
+
+  @override
+  String get mirrorTextNewFile => 'New file';
+
+  @override
+  String get mirrorTextAppend => 'Add to an existing file';
+
+  @override
+  String get mirrorTextTitle => 'File name (optional)';
+
+  @override
+  String get mirrorTextTitleHint => 'e.g. Chapter 3 questions';
+
+  @override
+  String get mirrorChooseDeck => 'Choose the file';
+
+  @override
+  String get mirrorSubmit => 'Turn into cards';
+
+  @override
+  String mirrorUploading(int percent) {
+    return 'Uploading… $percent%';
+  }
+
+  @override
+  String get mirrorStarting => 'Preparing the file…';
+
+  @override
+  String get mirrorCancelUpload => 'Cancel upload';
+
+  @override
+  String get mirrorDisclaimer =>
+      'A study aid, not a replacement for your course material. Check the cards marked for review.';
+
+  @override
+  String get mirrorJobReading => 'Reading your file…';
+
+  @override
+  String get mirrorJobReadingHint =>
+      'Scanned files take a little longer. You can leave and come back without losing progress.';
+
+  @override
+  String get mirrorJobGenerating => 'Preparing your cards';
+
+  @override
+  String mirrorJobProgress(int done, int total) {
+    return '$done of $total parts done';
+  }
+
+  @override
+  String mirrorJobMeta(int pages, int batches) {
+    return '$pages pages · $batches parts';
+  }
+
+  @override
+  String get mirrorStartStudying => 'Start studying';
+
+  @override
+  String get mirrorStartEarly =>
+      'The first cards are ready — start now, the rest arrive automatically.';
+
+  @override
+  String get mirrorJobComplete => 'All done.';
+
+  @override
+  String get mirrorJobFailed =>
+      'We couldn\'t read this file. Try uploading another copy of it.';
+
+  @override
+  String get mirrorRetryPages => 'Retry the failed pages';
+
+  @override
+  String mirrorPartial(int count) {
+    return 'Most of the file is done, but $count parts couldn\'t be generated.';
+  }
+
+  @override
+  String mirrorBatchPages(int from, int to) {
+    return 'Pages $from–$to';
+  }
+
+  @override
+  String get mirrorBatchFailed => 'Generation failed';
+
+  @override
+  String get mirrorUploadNew => 'Upload a new file';
+
+  @override
+  String deckCardOf(int index, int total) {
+    return 'Card $index of $total';
+  }
+
+  @override
+  String get deckAll => 'All';
+
+  @override
+  String get deckNeedsReview => 'Needs review';
+
+  @override
+  String get deckSearch => 'Search questions or keywords…';
+
+  @override
+  String get deckEmpty => 'No cards here';
+
+  @override
+  String get deckEmptyHint => 'Try clearing the search or filter.';
+
+  @override
+  String get deckWaiting => 'Preparing the first cards…';
+
+  @override
+  String deckLive(int count) {
+    return 'More on the way — $count cards ready so far.';
+  }
+
+  @override
+  String get deckAllReady => 'All cards are ready.';
+
+  @override
+  String deckFailedParts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count parts of the file couldn\'t be generated.',
+      one: 'One part of the file couldn\'t be generated.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deckDetails => 'Details';
+
+  @override
+  String get deckPrevious => 'Previous';
+
+  @override
+  String get deckNext => 'Next';
+
+  @override
+  String get deckAddQuestions => 'Add questions';
+
+  @override
+  String get deckDelete => 'Delete file';
+
+  @override
+  String get deckDeleteTitle => 'Delete this question file?';
+
+  @override
+  String get deckDeleteBody => 'All of its cards are deleted permanently.';
+
+  @override
+  String get deckMore => 'File options';
+
+  @override
+  String cardPage(int page) {
+    return 'Page $page';
+  }
+
+  @override
+  String get cardClear => 'Clear';
+
+  @override
+  String cardConfidence(String level) {
+    return '$level confidence';
+  }
+
+  @override
+  String get confidenceHigh => 'High';
+
+  @override
+  String get confidenceMedium => 'Medium';
+
+  @override
+  String get confidenceLow => 'Low';
+
+  @override
+  String get cardReveal => 'Show answer & explanation';
+
+  @override
+  String get cardCorrect => 'Correct';
+
+  @override
+  String get cardWrong => 'Not quite';
+
+  @override
+  String get cardAnswer => 'Answer';
+
+  @override
+  String get cardExplanation => 'Explanation';
+
+  @override
+  String get cardKeyIdea => 'Key idea';
+
+  @override
+  String get cardKeyword => 'Keyword';
+
+  @override
+  String get cardShowTranslation => 'Show translation';
+
+  @override
+  String get cardHideTranslation => 'Hide translation';
+
+  @override
+  String get cardTryAgain => 'Try again';
+
+  @override
+  String get cardImageFailed => 'Couldn\'t load the image';
+
+  @override
+  String get questionFilesTitle => 'Question files';
+
+  @override
+  String get questionFilesEmpty => 'No question files yet';
+
+  @override
+  String get questionFilesEmptyHint =>
+      'Upload your first file and it appears here once generated.';
+
+  @override
+  String get questionFilesNew => 'New file';
 }

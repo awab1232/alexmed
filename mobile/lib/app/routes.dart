@@ -27,6 +27,10 @@ abstract final class Routes {
   static const questionFiles = '/question-files';
   static const uploadBook = '/upload/book';
   static const uploadQuestionFile = '/upload/question-file';
+  static String mirrorAppend(String deckId) =>
+      '$uploadQuestionFile?deck=$deckId';
+  static String mirrorJob(String id, {bool detailsOnly = false}) =>
+      '/mirror/jobs/$id${detailsOnly ? '?details=1' : ''}';
   static const shared = '/shared';
   static const redeemCode = '/question-sets/redeem';
   static const doctor = '/doctor';

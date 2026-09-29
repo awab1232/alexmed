@@ -358,5 +358,198 @@
       }
     }
   },
-  "openInBrowserFailed": "تعذّر فتح الصفحة."
+  "openInBrowserFailed": "تعذّر فتح الصفحة.",
+  "mirrorTitle": "ملف أسئلة ← بطاقات",
+  "mirrorIntro": "ارفع أسئلة مادتك، ونرتّبها لك بطاقات: السؤال، الجواب، الشرح، والكلمة المفتاحية — بالعربي والإنجليزي.",
+  "mirrorModePdf": "ملف PDF",
+  "mirrorModeText": "نص أسئلة",
+  "mirrorStepFile": "الملف",
+  "mirrorStepText": "الأسئلة",
+  "mirrorStepDepth": "مستوى الشرح",
+  "mirrorStepFolder": "المجلد",
+  "mirrorPickFile": "اختر ملف PDF",
+  "mirrorPickHint": "يدعم الملفات الكبيرة وPDF المصوّر (OCR).",
+  "mirrorFileReady": "{size} · جاهز للتحليل",
+  "@mirrorFileReady": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "mirrorChangeFile": "تغيير",
+  "mirrorMaxSize": "الحد الأقصى في باقتك {mb} ميغابايت",
+  "@mirrorMaxSize": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "depthQuick": "سريع",
+  "depthQuickCaption": "مراجعة خاطفة",
+  "depthBalanced": "متوازن",
+  "depthBalancedCaption": "الأفضل للامتحان",
+  "depthDetailed": "مفصّل",
+  "depthDetailedCaption": "شرح أعمق",
+  "depthRecommended": "موصى به",
+  "mirrorChooseFolder": "اختر مجلدًا",
+  "mirrorNoFolders": "لا توجد مجلدات بعد — أنشئ واحدًا.",
+  "mirrorTextHint": "الصق الأسئلة هنا، مع خياراتها وإجاباتها إن وُجدت…",
+  "mirrorTextCount": "{count} حرف",
+  "@mirrorTextCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorTextTooShort": "الصق نص الأسئلة أولًا (نص قصير جدًا).",
+  "mirrorTextTooLong": "النص أطول من 60,000 حرف. قسّمه على دفعتين وأضف الثانية لنفس الملف.",
+  "mirrorTextDestination": "أين تُضاف البطاقات؟",
+  "mirrorTextNewFile": "ملف جديد",
+  "mirrorTextAppend": "إضافة لملف موجود",
+  "mirrorTextTitle": "اسم الملف (اختياري)",
+  "mirrorTextTitleHint": "مثال: أسئلة الفصل الثالث",
+  "mirrorChooseDeck": "اختر الملف",
+  "mirrorSubmit": "حوّل إلى بطاقات",
+  "mirrorUploading": "نرفع الملف… {percent}%",
+  "@mirrorUploading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorStarting": "نجهّز الملف للتوليد…",
+  "mirrorCancelUpload": "إلغاء الرفع",
+  "mirrorDisclaimer": "أداة مساعدة للمذاكرة وليست بديلًا عن مرجع المادة. راجع البطاقات المعلّمة للتدقيق.",
+  "mirrorJobReading": "نقرأ الملف ونجهّزه…",
+  "mirrorJobReadingHint": "قد يستغرق هذا وقتًا أطول للملفات الممسوحة ضوئيًا. تقدر تطلع وترجع لاحقًا دون فقدان التقدم.",
+  "mirrorJobGenerating": "نجهّز بطاقاتك",
+  "mirrorJobProgress": "تم {done} من {total} جزءًا",
+  "@mirrorJobProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorJobMeta": "{pages} صفحة · {batches} جزء",
+  "@mirrorJobMeta": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorStartStudying": "ابدأ المذاكرة",
+  "mirrorStartEarly": "أول البطاقات جاهزة — تقدر تبدأ الآن والباقي يوصل تلقائيًا.",
+  "mirrorJobComplete": "اكتمل التوليد.",
+  "mirrorJobFailed": "تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه.",
+  "mirrorRetryPages": "إعادة محاولة الصفحات الفاشلة",
+  "mirrorPartial": "اكتمل معظم الملف، لكن {count} جزءًا تعذّر توليده.",
+  "@mirrorPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorBatchPages": "صفحة {from}–{to}",
+  "@mirrorBatchPages": {
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorBatchFailed": "تعذّر التوليد",
+  "mirrorUploadNew": "ارفع ملفًا جديدًا",
+  "deckCardOf": "بطاقة {index} من {total}",
+  "@deckCardOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "deckAll": "الكل",
+  "deckNeedsReview": "تحتاج مراجعة",
+  "deckSearch": "ابحث في السؤال أو الكلمة المفتاحية…",
+  "deckEmpty": "لا توجد بطاقات هنا",
+  "deckEmptyHint": "جرّب إزالة البحث أو الفلتر.",
+  "deckWaiting": "نجهّز أول البطاقات…",
+  "deckLive": "جاري تجهيز المزيد — {count} بطاقة جاهزة حتى الآن.",
+  "@deckLive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deckAllReady": "اكتملت كل البطاقات.",
+  "deckFailedParts": "{count, plural, =1{تعذر توليد جزء واحد من الملف.} other{تعذر توليد {count} أجزاء من الملف.}}",
+  "@deckFailedParts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deckDetails": "التفاصيل",
+  "deckPrevious": "السابقة",
+  "deckNext": "التالية",
+  "deckAddQuestions": "إضافة أسئلة",
+  "deckDelete": "حذف الملف",
+  "deckDeleteTitle": "حذف ملف الأسئلة؟",
+  "deckDeleteBody": "تُحذف كل بطاقات هذا الملف نهائيًا.",
+  "deckMore": "خيارات الملف",
+  "cardPage": "صفحة {page}",
+  "@cardPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "cardClear": "واضحة",
+  "cardConfidence": "ثقة {level}",
+  "@cardConfidence": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "confidenceHigh": "عالية",
+  "confidenceMedium": "متوسطة",
+  "confidenceLow": "منخفضة",
+  "cardReveal": "اظهر الإجابة والشرح",
+  "cardCorrect": "إجابة صحيحة",
+  "cardWrong": "إجابة خاطئة",
+  "cardAnswer": "الإجابة",
+  "cardExplanation": "الشرح",
+  "cardKeyIdea": "الفكرة الأساسية",
+  "cardKeyword": "الكلمة المفتاحية",
+  "cardShowTranslation": "عرض الترجمة",
+  "cardHideTranslation": "إخفاء الترجمة",
+  "cardTryAgain": "إعادة",
+  "cardImageFailed": "تعذّر تحميل الصورة",
+  "questionFilesTitle": "ملفات الأسئلة",
+  "questionFilesEmpty": "لا توجد ملفات أسئلة بعد",
+  "questionFilesEmptyHint": "ارفع ملفك الأول وسيظهر هنا بعد التوليد.",
+  "questionFilesNew": "ملف جديد"
 }

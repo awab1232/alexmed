@@ -624,4 +624,314 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get openInBrowserFailed => 'تعذّر فتح الصفحة.';
+
+  @override
+  String get mirrorTitle => 'ملف أسئلة ← بطاقات';
+
+  @override
+  String get mirrorIntro =>
+      'ارفع أسئلة مادتك، ونرتّبها لك بطاقات: السؤال، الجواب، الشرح، والكلمة المفتاحية — بالعربي والإنجليزي.';
+
+  @override
+  String get mirrorModePdf => 'ملف PDF';
+
+  @override
+  String get mirrorModeText => 'نص أسئلة';
+
+  @override
+  String get mirrorStepFile => 'الملف';
+
+  @override
+  String get mirrorStepText => 'الأسئلة';
+
+  @override
+  String get mirrorStepDepth => 'مستوى الشرح';
+
+  @override
+  String get mirrorStepFolder => 'المجلد';
+
+  @override
+  String get mirrorPickFile => 'اختر ملف PDF';
+
+  @override
+  String get mirrorPickHint => 'يدعم الملفات الكبيرة وPDF المصوّر (OCR).';
+
+  @override
+  String mirrorFileReady(String size) {
+    return '$size · جاهز للتحليل';
+  }
+
+  @override
+  String get mirrorChangeFile => 'تغيير';
+
+  @override
+  String mirrorMaxSize(int mb) {
+    return 'الحد الأقصى في باقتك $mb ميغابايت';
+  }
+
+  @override
+  String get depthQuick => 'سريع';
+
+  @override
+  String get depthQuickCaption => 'مراجعة خاطفة';
+
+  @override
+  String get depthBalanced => 'متوازن';
+
+  @override
+  String get depthBalancedCaption => 'الأفضل للامتحان';
+
+  @override
+  String get depthDetailed => 'مفصّل';
+
+  @override
+  String get depthDetailedCaption => 'شرح أعمق';
+
+  @override
+  String get depthRecommended => 'موصى به';
+
+  @override
+  String get mirrorChooseFolder => 'اختر مجلدًا';
+
+  @override
+  String get mirrorNoFolders => 'لا توجد مجلدات بعد — أنشئ واحدًا.';
+
+  @override
+  String get mirrorTextHint =>
+      'الصق الأسئلة هنا، مع خياراتها وإجاباتها إن وُجدت…';
+
+  @override
+  String mirrorTextCount(int count) {
+    return '$count حرف';
+  }
+
+  @override
+  String get mirrorTextTooShort => 'الصق نص الأسئلة أولًا (نص قصير جدًا).';
+
+  @override
+  String get mirrorTextTooLong =>
+      'النص أطول من 60,000 حرف. قسّمه على دفعتين وأضف الثانية لنفس الملف.';
+
+  @override
+  String get mirrorTextDestination => 'أين تُضاف البطاقات؟';
+
+  @override
+  String get mirrorTextNewFile => 'ملف جديد';
+
+  @override
+  String get mirrorTextAppend => 'إضافة لملف موجود';
+
+  @override
+  String get mirrorTextTitle => 'اسم الملف (اختياري)';
+
+  @override
+  String get mirrorTextTitleHint => 'مثال: أسئلة الفصل الثالث';
+
+  @override
+  String get mirrorChooseDeck => 'اختر الملف';
+
+  @override
+  String get mirrorSubmit => 'حوّل إلى بطاقات';
+
+  @override
+  String mirrorUploading(int percent) {
+    return 'نرفع الملف… $percent%';
+  }
+
+  @override
+  String get mirrorStarting => 'نجهّز الملف للتوليد…';
+
+  @override
+  String get mirrorCancelUpload => 'إلغاء الرفع';
+
+  @override
+  String get mirrorDisclaimer =>
+      'أداة مساعدة للمذاكرة وليست بديلًا عن مرجع المادة. راجع البطاقات المعلّمة للتدقيق.';
+
+  @override
+  String get mirrorJobReading => 'نقرأ الملف ونجهّزه…';
+
+  @override
+  String get mirrorJobReadingHint =>
+      'قد يستغرق هذا وقتًا أطول للملفات الممسوحة ضوئيًا. تقدر تطلع وترجع لاحقًا دون فقدان التقدم.';
+
+  @override
+  String get mirrorJobGenerating => 'نجهّز بطاقاتك';
+
+  @override
+  String mirrorJobProgress(int done, int total) {
+    return 'تم $done من $total جزءًا';
+  }
+
+  @override
+  String mirrorJobMeta(int pages, int batches) {
+    return '$pages صفحة · $batches جزء';
+  }
+
+  @override
+  String get mirrorStartStudying => 'ابدأ المذاكرة';
+
+  @override
+  String get mirrorStartEarly =>
+      'أول البطاقات جاهزة — تقدر تبدأ الآن والباقي يوصل تلقائيًا.';
+
+  @override
+  String get mirrorJobComplete => 'اكتمل التوليد.';
+
+  @override
+  String get mirrorJobFailed =>
+      'تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه.';
+
+  @override
+  String get mirrorRetryPages => 'إعادة محاولة الصفحات الفاشلة';
+
+  @override
+  String mirrorPartial(int count) {
+    return 'اكتمل معظم الملف، لكن $count جزءًا تعذّر توليده.';
+  }
+
+  @override
+  String mirrorBatchPages(int from, int to) {
+    return 'صفحة $from–$to';
+  }
+
+  @override
+  String get mirrorBatchFailed => 'تعذّر التوليد';
+
+  @override
+  String get mirrorUploadNew => 'ارفع ملفًا جديدًا';
+
+  @override
+  String deckCardOf(int index, int total) {
+    return 'بطاقة $index من $total';
+  }
+
+  @override
+  String get deckAll => 'الكل';
+
+  @override
+  String get deckNeedsReview => 'تحتاج مراجعة';
+
+  @override
+  String get deckSearch => 'ابحث في السؤال أو الكلمة المفتاحية…';
+
+  @override
+  String get deckEmpty => 'لا توجد بطاقات هنا';
+
+  @override
+  String get deckEmptyHint => 'جرّب إزالة البحث أو الفلتر.';
+
+  @override
+  String get deckWaiting => 'نجهّز أول البطاقات…';
+
+  @override
+  String deckLive(int count) {
+    return 'جاري تجهيز المزيد — $count بطاقة جاهزة حتى الآن.';
+  }
+
+  @override
+  String get deckAllReady => 'اكتملت كل البطاقات.';
+
+  @override
+  String deckFailedParts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تعذر توليد $count أجزاء من الملف.',
+      one: 'تعذر توليد جزء واحد من الملف.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deckDetails => 'التفاصيل';
+
+  @override
+  String get deckPrevious => 'السابقة';
+
+  @override
+  String get deckNext => 'التالية';
+
+  @override
+  String get deckAddQuestions => 'إضافة أسئلة';
+
+  @override
+  String get deckDelete => 'حذف الملف';
+
+  @override
+  String get deckDeleteTitle => 'حذف ملف الأسئلة؟';
+
+  @override
+  String get deckDeleteBody => 'تُحذف كل بطاقات هذا الملف نهائيًا.';
+
+  @override
+  String get deckMore => 'خيارات الملف';
+
+  @override
+  String cardPage(int page) {
+    return 'صفحة $page';
+  }
+
+  @override
+  String get cardClear => 'واضحة';
+
+  @override
+  String cardConfidence(String level) {
+    return 'ثقة $level';
+  }
+
+  @override
+  String get confidenceHigh => 'عالية';
+
+  @override
+  String get confidenceMedium => 'متوسطة';
+
+  @override
+  String get confidenceLow => 'منخفضة';
+
+  @override
+  String get cardReveal => 'اظهر الإجابة والشرح';
+
+  @override
+  String get cardCorrect => 'إجابة صحيحة';
+
+  @override
+  String get cardWrong => 'إجابة خاطئة';
+
+  @override
+  String get cardAnswer => 'الإجابة';
+
+  @override
+  String get cardExplanation => 'الشرح';
+
+  @override
+  String get cardKeyIdea => 'الفكرة الأساسية';
+
+  @override
+  String get cardKeyword => 'الكلمة المفتاحية';
+
+  @override
+  String get cardShowTranslation => 'عرض الترجمة';
+
+  @override
+  String get cardHideTranslation => 'إخفاء الترجمة';
+
+  @override
+  String get cardTryAgain => 'إعادة';
+
+  @override
+  String get cardImageFailed => 'تعذّر تحميل الصورة';
+
+  @override
+  String get questionFilesTitle => 'ملفات الأسئلة';
+
+  @override
+  String get questionFilesEmpty => 'لا توجد ملفات أسئلة بعد';
+
+  @override
+  String get questionFilesEmptyHint =>
+      'ارفع ملفك الأول وسيظهر هنا بعد التوليد.';
+
+  @override
+  String get questionFilesNew => 'ملف جديد';
 }

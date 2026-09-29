@@ -1177,6 +1177,546 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذّر فتح الصفحة.'**
   String get openInBrowserFailed;
+
+  /// No description provided for @mirrorTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف أسئلة ← بطاقات'**
+  String get mirrorTitle;
+
+  /// No description provided for @mirrorIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع أسئلة مادتك، ونرتّبها لك بطاقات: السؤال، الجواب، الشرح، والكلمة المفتاحية — بالعربي والإنجليزي.'**
+  String get mirrorIntro;
+
+  /// No description provided for @mirrorModePdf.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف PDF'**
+  String get mirrorModePdf;
+
+  /// No description provided for @mirrorModeText.
+  ///
+  /// In ar, this message translates to:
+  /// **'نص أسئلة'**
+  String get mirrorModeText;
+
+  /// No description provided for @mirrorStepFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف'**
+  String get mirrorStepFile;
+
+  /// No description provided for @mirrorStepText.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسئلة'**
+  String get mirrorStepText;
+
+  /// No description provided for @mirrorStepDepth.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستوى الشرح'**
+  String get mirrorStepDepth;
+
+  /// No description provided for @mirrorStepFolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجلد'**
+  String get mirrorStepFolder;
+
+  /// No description provided for @mirrorPickFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ملف PDF'**
+  String get mirrorPickFile;
+
+  /// No description provided for @mirrorPickHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يدعم الملفات الكبيرة وPDF المصوّر (OCR).'**
+  String get mirrorPickHint;
+
+  /// No description provided for @mirrorFileReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'{size} · جاهز للتحليل'**
+  String mirrorFileReady(String size);
+
+  /// No description provided for @mirrorChangeFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير'**
+  String get mirrorChangeFile;
+
+  /// No description provided for @mirrorMaxSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى في باقتك {mb} ميغابايت'**
+  String mirrorMaxSize(int mb);
+
+  /// No description provided for @depthQuick.
+  ///
+  /// In ar, this message translates to:
+  /// **'سريع'**
+  String get depthQuick;
+
+  /// No description provided for @depthQuickCaption.
+  ///
+  /// In ar, this message translates to:
+  /// **'مراجعة خاطفة'**
+  String get depthQuickCaption;
+
+  /// No description provided for @depthBalanced.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوازن'**
+  String get depthBalanced;
+
+  /// No description provided for @depthBalancedCaption.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأفضل للامتحان'**
+  String get depthBalancedCaption;
+
+  /// No description provided for @depthDetailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفصّل'**
+  String get depthDetailed;
+
+  /// No description provided for @depthDetailedCaption.
+  ///
+  /// In ar, this message translates to:
+  /// **'شرح أعمق'**
+  String get depthDetailedCaption;
+
+  /// No description provided for @depthRecommended.
+  ///
+  /// In ar, this message translates to:
+  /// **'موصى به'**
+  String get depthRecommended;
+
+  /// No description provided for @mirrorChooseFolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر مجلدًا'**
+  String get mirrorChooseFolder;
+
+  /// No description provided for @mirrorNoFolders.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مجلدات بعد — أنشئ واحدًا.'**
+  String get mirrorNoFolders;
+
+  /// No description provided for @mirrorTextHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصق الأسئلة هنا، مع خياراتها وإجاباتها إن وُجدت…'**
+  String get mirrorTextHint;
+
+  /// No description provided for @mirrorTextCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} حرف'**
+  String mirrorTextCount(int count);
+
+  /// No description provided for @mirrorTextTooShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصق نص الأسئلة أولًا (نص قصير جدًا).'**
+  String get mirrorTextTooShort;
+
+  /// No description provided for @mirrorTextTooLong.
+  ///
+  /// In ar, this message translates to:
+  /// **'النص أطول من 60,000 حرف. قسّمه على دفعتين وأضف الثانية لنفس الملف.'**
+  String get mirrorTextTooLong;
+
+  /// No description provided for @mirrorTextDestination.
+  ///
+  /// In ar, this message translates to:
+  /// **'أين تُضاف البطاقات؟'**
+  String get mirrorTextDestination;
+
+  /// No description provided for @mirrorTextNewFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف جديد'**
+  String get mirrorTextNewFile;
+
+  /// No description provided for @mirrorTextAppend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة لملف موجود'**
+  String get mirrorTextAppend;
+
+  /// No description provided for @mirrorTextTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الملف (اختياري)'**
+  String get mirrorTextTitle;
+
+  /// No description provided for @mirrorTextTitleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: أسئلة الفصل الثالث'**
+  String get mirrorTextTitleHint;
+
+  /// No description provided for @mirrorChooseDeck.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الملف'**
+  String get mirrorChooseDeck;
+
+  /// No description provided for @mirrorSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حوّل إلى بطاقات'**
+  String get mirrorSubmit;
+
+  /// No description provided for @mirrorUploading.
+  ///
+  /// In ar, this message translates to:
+  /// **'نرفع الملف… {percent}%'**
+  String mirrorUploading(int percent);
+
+  /// No description provided for @mirrorStarting.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجهّز الملف للتوليد…'**
+  String get mirrorStarting;
+
+  /// No description provided for @mirrorCancelUpload.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الرفع'**
+  String get mirrorCancelUpload;
+
+  /// No description provided for @mirrorDisclaimer.
+  ///
+  /// In ar, this message translates to:
+  /// **'أداة مساعدة للمذاكرة وليست بديلًا عن مرجع المادة. راجع البطاقات المعلّمة للتدقيق.'**
+  String get mirrorDisclaimer;
+
+  /// No description provided for @mirrorJobReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقرأ الملف ونجهّزه…'**
+  String get mirrorJobReading;
+
+  /// No description provided for @mirrorJobReadingHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد يستغرق هذا وقتًا أطول للملفات الممسوحة ضوئيًا. تقدر تطلع وترجع لاحقًا دون فقدان التقدم.'**
+  String get mirrorJobReadingHint;
+
+  /// No description provided for @mirrorJobGenerating.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجهّز بطاقاتك'**
+  String get mirrorJobGenerating;
+
+  /// No description provided for @mirrorJobProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم {done} من {total} جزءًا'**
+  String mirrorJobProgress(int done, int total);
+
+  /// No description provided for @mirrorJobMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{pages} صفحة · {batches} جزء'**
+  String mirrorJobMeta(int pages, int batches);
+
+  /// No description provided for @mirrorStartStudying.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ المذاكرة'**
+  String get mirrorStartStudying;
+
+  /// No description provided for @mirrorStartEarly.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول البطاقات جاهزة — تقدر تبدأ الآن والباقي يوصل تلقائيًا.'**
+  String get mirrorStartEarly;
+
+  /// No description provided for @mirrorJobComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتمل التوليد.'**
+  String get mirrorJobComplete;
+
+  /// No description provided for @mirrorJobFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه.'**
+  String get mirrorJobFailed;
+
+  /// No description provided for @mirrorRetryPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة محاولة الصفحات الفاشلة'**
+  String get mirrorRetryPages;
+
+  /// No description provided for @mirrorPartial.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتمل معظم الملف، لكن {count} جزءًا تعذّر توليده.'**
+  String mirrorPartial(int count);
+
+  /// No description provided for @mirrorBatchPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحة {from}–{to}'**
+  String mirrorBatchPages(int from, int to);
+
+  /// No description provided for @mirrorBatchFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر التوليد'**
+  String get mirrorBatchFailed;
+
+  /// No description provided for @mirrorUploadNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع ملفًا جديدًا'**
+  String get mirrorUploadNew;
+
+  /// No description provided for @deckCardOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة {index} من {total}'**
+  String deckCardOf(int index, int total);
+
+  /// No description provided for @deckAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get deckAll;
+
+  /// No description provided for @deckNeedsReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحتاج مراجعة'**
+  String get deckNeedsReview;
+
+  /// No description provided for @deckSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث في السؤال أو الكلمة المفتاحية…'**
+  String get deckSearch;
+
+  /// No description provided for @deckEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بطاقات هنا'**
+  String get deckEmpty;
+
+  /// No description provided for @deckEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب إزالة البحث أو الفلتر.'**
+  String get deckEmptyHint;
+
+  /// No description provided for @deckWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجهّز أول البطاقات…'**
+  String get deckWaiting;
+
+  /// No description provided for @deckLive.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تجهيز المزيد — {count} بطاقة جاهزة حتى الآن.'**
+  String deckLive(int count);
+
+  /// No description provided for @deckAllReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتملت كل البطاقات.'**
+  String get deckAllReady;
+
+  /// No description provided for @deckFailedParts.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{تعذر توليد جزء واحد من الملف.} other{تعذر توليد {count} أجزاء من الملف.}}'**
+  String deckFailedParts(int count);
+
+  /// No description provided for @deckDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفاصيل'**
+  String get deckDetails;
+
+  /// No description provided for @deckPrevious.
+  ///
+  /// In ar, this message translates to:
+  /// **'السابقة'**
+  String get deckPrevious;
+
+  /// No description provided for @deckNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالية'**
+  String get deckNext;
+
+  /// No description provided for @deckAddQuestions.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة أسئلة'**
+  String get deckAddQuestions;
+
+  /// No description provided for @deckDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الملف'**
+  String get deckDelete;
+
+  /// No description provided for @deckDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف ملف الأسئلة؟'**
+  String get deckDeleteTitle;
+
+  /// No description provided for @deckDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُحذف كل بطاقات هذا الملف نهائيًا.'**
+  String get deckDeleteBody;
+
+  /// No description provided for @deckMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'خيارات الملف'**
+  String get deckMore;
+
+  /// No description provided for @cardPage.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحة {page}'**
+  String cardPage(int page);
+
+  /// No description provided for @cardClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'واضحة'**
+  String get cardClear;
+
+  /// No description provided for @cardConfidence.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثقة {level}'**
+  String cardConfidence(String level);
+
+  /// No description provided for @confidenceHigh.
+  ///
+  /// In ar, this message translates to:
+  /// **'عالية'**
+  String get confidenceHigh;
+
+  /// No description provided for @confidenceMedium.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسطة'**
+  String get confidenceMedium;
+
+  /// No description provided for @confidenceLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'منخفضة'**
+  String get confidenceLow;
+
+  /// No description provided for @cardReveal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اظهر الإجابة والشرح'**
+  String get cardReveal;
+
+  /// No description provided for @cardCorrect.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابة صحيحة'**
+  String get cardCorrect;
+
+  /// No description provided for @cardWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابة خاطئة'**
+  String get cardWrong;
+
+  /// No description provided for @cardAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجابة'**
+  String get cardAnswer;
+
+  /// No description provided for @cardExplanation.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشرح'**
+  String get cardExplanation;
+
+  /// No description provided for @cardKeyIdea.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفكرة الأساسية'**
+  String get cardKeyIdea;
+
+  /// No description provided for @cardKeyword.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكلمة المفتاحية'**
+  String get cardKeyword;
+
+  /// No description provided for @cardShowTranslation.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الترجمة'**
+  String get cardShowTranslation;
+
+  /// No description provided for @cardHideTranslation.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء الترجمة'**
+  String get cardHideTranslation;
+
+  /// No description provided for @cardTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة'**
+  String get cardTryAgain;
+
+  /// No description provided for @cardImageFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تحميل الصورة'**
+  String get cardImageFailed;
+
+  /// No description provided for @questionFilesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملفات الأسئلة'**
+  String get questionFilesTitle;
+
+  /// No description provided for @questionFilesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ملفات أسئلة بعد'**
+  String get questionFilesEmpty;
+
+  /// No description provided for @questionFilesEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع ملفك الأول وسيظهر هنا بعد التوليد.'**
+  String get questionFilesEmptyHint;
+
+  /// No description provided for @questionFilesNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف جديد'**
+  String get questionFilesNew;
 }
 
 class _AppLocalizationsDelegate

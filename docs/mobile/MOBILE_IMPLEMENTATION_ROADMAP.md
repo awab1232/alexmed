@@ -221,11 +221,11 @@ Quality gate: analyze clean · 100/100 unit + widget · on-device visual run pas
 ## Phase 6 — Upload manager, book upload, processing
 **Objective:** reliable native uploads to R2 through existing endpoints. **Depends on:** P5.
 
-- [ ] 6.1 PDF picker (MIME + `%PDF` check), image picker, camera permission flow (denied → settings)
-- [ ] 6.2 Upload manager: upload-url → background PUT (progress, cancel, backoff retry, URL re-request after expiry) → `*-and-plan`
+- [x] 6.1 PDF picker (`file_picker` 13, SAF / document picker, no storage permission) + `checkPdf` (`.pdf` name, `%PDF-` header, plan size limit). Image picker / camera: moved to P10 (Niro), the first screen that needs it
+- [~] 6.2 `core/upload/pdf_upload.dart` `PdfUploader`: upload-url → PUT to R2 streamed from disk with progress, cancel, 3 attempts with backoff, fresh signed URL on 403 (expired); session never sent to storage (tested). **Left:** background upload that survives leaving the app (`background_downloader`) — foreground only for now
 - [ ] 6.3 Duplicate warning (local fingerprint)
-- [ ] 6.4 Plan-limit handling (informational sheet, **no purchase UI**)
-- [ ] 6.5 Book upload flow (folder choice, profile, file kind) = web `app/books/upload`
+- [x] 6.4 Plan limits: size checked before upload; server `FILE_SIZE_LIMIT` / quota errors shown as text, no purchase UI (tested)
+- [ ] 6.5 Book upload flow (`/api/books/upload-url` → `extract-and-plan`) — uploader ready, screen next
 - [ ] 6.6 Processing status: poll `generationJobs` with backoff while visible; retries (`retryChapter`, `retryExtraction`, `retryPageText`)
 - [ ] 6.7 (optional, D3) **G7** multipart for large files
 
@@ -275,10 +275,10 @@ Quality gate: analyze clean · 100/100 unit + widget · on-device visual run pas
 ## Phase 9 — Question files, question cards, مِرآة
 **Objective:** native question experience. **Depends on:** P6.
 
-- [ ] 9.1 Question file upload path (`extract-questions-and-plan`) + مِرآة path (`mirror/upload-and-plan`, `submitText`)
+- [~] 9.1 مِرآة path done: PDF (`/api/pdf/upload-url` → `/api/mirror/upload-and-plan`) and pasted text (`mirror.submitText`, new file in a folder or added to an existing file), depth quick / balanced / detailed, folder required. **Left:** the كتبي question-file path (`extract-questions-and-plan`)
 - [ ] 9.2 List + detail with processing/OCR status and failure reasons; `retryExtraction`
 - [ ] 9.3 Question cards (BP §11): progress, picker, answer feedback + haptics, explanation, keywords, notes, translation toggle (source vs machine), images with zoom + failure placeholder, swipe/buttons/arrows, persisted answers
-- [ ] 9.4 مِرآة job screen (batches, retries)
+- [x] 9.4 مِرآة: job screen (polls 3 s while running, opens the deck once the first part is ready — same as the web —, failed pages / parts with retry), deck screen (one card at a time, swipe + buttons, progress, all / needs-review / section filters, search, live polling that appends cards without moving the student, add questions, delete), card (tap an option → green / red, reveal, bilingual answer + explanation + key idea + keyword, translation, image with zoom), library of question files. Question splitting ported from `lib/mirror-card-question.ts` and **proven identical** by a parity test on the web code's own output (11 cases). Widget-tested (8) + on-device run of 6 screens. **Not in the app yet:** CSV export, English read-aloud, card highlights (web card marks)
 - [ ] 9.5 Bidi verification with real bilingual fixtures (from `lib/test-fixtures/question-documents.ts` shapes, synthetic data only)
 
 **Tests:** widget tests for card states; E2E journey 4 on staging with synthetic scanned/mixed/bilingual/unnumbered/أبجد files; image-ownership check (image only on its question).
@@ -452,7 +452,7 @@ Doctor:
 | D2 | Apple Developer account + macOS CI | Required for iOS (B2). GitHub macOS runners or Codemagic | **Pending** |
 | D3 | Optional gaps in v1: G5 reset, G7 multipart, G8 reviewedAt, G10 report (needed for App Store), G12 push | Recommend v1: G5, G10; later: G7, G8, G12 | `[!]` waiting |
 | D4 | Flutter code location | `mobile/` in this repo | `[x]` adopted 2026-09-29 (owner: start building) |
-| D5 | Upgrade the existing Play listing in place (`com.nirolearn.app`, same keystore) | Applied tentatively (appId set). Still need: is it published, and its versionCode | **Pending** |
+| D5 | Play listing for `com.nirolearn.app` | Owner 2026-09-30: **not published, not in use** — the Flutter app owns the id from versionCode 1; no in-place upgrade needed | `[x]` decided |
 | D6 | Google login on iOS (forces Sign in with Apple) | Recommend keep Google + add Apple | `[!]` waiting |
 | D7 | Block screenshots on protected sets (Android FLAG_SECURE) | Recommend yes for protected screens only | `[!]` waiting |
 | D8 | Niro history device-local (as web) | Recommend keep local for v1 | `[!]` waiting |
@@ -550,3 +550,9 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 - **2026-09-30** — Phase 5 implemented: Home, folder, account, plan, ＋ sheet,
   delete account, back behaviour. Verified with in-memory data only (live data
   needs staging). Decision: Riverpod automatic retry disabled app-wide.
+- **2026-09-30** — D5 decided (package not published). P6 uploader + مِرآة built
+  with a clearer 3-step start screen, same server pipeline. Found by tests /
+  device and fixed: NlButton stretched to full height inside bottom bars
+  (Center without heightFactor); card header and footer rows overflowed on
+  narrow phones; pasted English text rendered right-to-left. Live data still
+  needs staging (D1).
