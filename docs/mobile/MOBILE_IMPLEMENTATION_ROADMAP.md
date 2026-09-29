@@ -85,10 +85,10 @@ P15 ─► P17 (iOS) ─────┴─► P18 (QA + beta) ─► P19 (releas
 - [x] Audit web design system (`app/base.css` `--nl-*` tokens, fonts, bottom nav) — BP §16
 - [x] Audit existing Capacitor implementation on emulator — BP §A
 - [x] Draft Flutter architecture blueprint — BP §0–§28
-- [!] **Owner approval of the blueprint** — blocked: waiting for owner review
-- [!] **Owner decisions D1–D8** (see Decision Register) — blocked: waiting for owner
+- [x] **Owner approval of the blueprint** — 2026-09-29 owner: «اعمل كومن وبعدها ابدا البناء» (commit, then start building)
+- [~] **Owner decisions D1–D8** (see Decision Register) — D4 adopted (recommended default); D1–D3, D5–D8 still open
 
-**DoD:** blueprint approved; decisions D1–D8 recorded. **Status:** `[~]`
+**DoD:** blueprint approved; decisions D1–D8 recorded. **Status:** `[~]` (only the open decisions remain)
 
 ---
 
@@ -116,20 +116,22 @@ P15 ─► P17 (iOS) ─────┴─► P18 (QA + beta) ─► P19 (releas
 ## Phase 2 — Flutter foundation
 **Objective:** a buildable, testable app skeleton. **Depends on:** P1 (staging, build paths).
 
-- [ ] 2.1 Create `mobile/` Flutter project (stable channel, record version), appId `com.nirolearn.app`, iOS bundle id (D5)
-- [ ] 2.2 Flavors dev/staging/prod via `--dart-define-from-file` (no secrets in files)
-- [ ] 2.3 Folder structure per BP §3.2; lint rules (`flutter_lints` + strict analysis)
-- [ ] 2.4 `core/api`
-  - [ ] tRPC client: query GET / mutation POST, error envelope → typed errors
-  - [ ] superjson decoder (Date, undefined, BigInt) + unit tests from real staging payloads
-  - [ ] REST client (upload-url, pipelines) + streaming reader (chunked text)
-  - [ ] interceptors: auth cookie injection, 401 → session-expired event, 429, plan-limit parsing
-- [ ] 2.5 Riverpod setup, error model (BP §3.5), Arabic error messages
-- [ ] 2.6 `core/auth/session_store` on flutter_secure_storage (Keychain this-device-only; Android backup disabled)
-- [ ] 2.7 go_router skeleton (AuthFlow / MainShell placeholders, redirect by session)
-- [ ] 2.8 Telemetry: Sentry with scrubbing (tokens, phones, emails, question text), release + dist
-- [ ] 2.9 CI: analyze + unit + widget tests; Android debug build; iOS unsigned build
-- [ ] 2.10 Contract test harness against staging (5 procedures: `auth.me`, `subjects.list`, `books.list`, `questionFiles.list`, `brainGames.overview`)
+- [x] 2.1 Create `mobile/` Flutter project — Flutter 3.47.5 / Dart 3.13.4 (stable), android + ios only, applicationId + iOS bundle id `com.nirolearn.app` (Kotlin namespace stays `com.nirolearn.nirolearn`), minSdk 24, iOS 15.0, display name "NiroLearn", INTERNET permission in the main manifest, Android backup + device transfer disabled — verified on the installed package (versionCode 1, minSdk 24, targetSdk 36, flags without ALLOW_BACKUP). D5 (Play state) still open.
+- [~] 2.2 Environments via `--dart-define-from-file`: `env/dev.json` (local `http://10.0.2.2:3000`), `env/prod.json` (`https://nirolearn.com`), `env/staging.example.json`; `AppEnv` rejects non-HTTPS non-local URLs. **Left:** staging URL (D1); Android productFlavors so staging and prod install side by side.
+- [x] 2.3 Folder structure per BP §3.2; strict analysis (strict-casts / strict-inference / strict-raw-types + extra lints) — `flutter analyze`: no issues
+- [~] 2.4 `core/api`
+  - [x] tRPC client (`lib/core/api/trpc_client.dart`): query GET / mutation POST, no batching, error envelope → typed errors; tested with a fake HTTP adapter using **real production envelopes** captured read-only
+  - [x] superjson decoder/encoder (`lib/core/api/superjson.dart`): Date, undefined, bigint, map, set, number, nested and escaped paths; tests use payloads produced by the server's superjson 1.13.3
+  - [~] REST error mapping done (`apiExceptionFromRest`, matches `lib/billing/http.ts`). **Left:** REST helper for upload-url / pipelines (phase 6) and the chunked streaming reader (phases 8/10)
+  - [x] interceptors (`lib/core/api/http_client.dart`): session sent as the Auth.js cookie **only to the API origin** (never to presigned R2 URLs — tested); 401 with a session → session rejected; 429 / plan limit (`data.billing`) parsed; transport failures classified network vs server (`apiExceptionFromDio`)
+- [x] 2.5 Riverpod 3 providers (`lib/app/providers.dart`); sealed `ApiException` model with Arabic messages (`lib/core/api/api_error.dart`); tRPC's English developer messages are never shown
+- [x] 2.6 Session store (`lib/core/auth/session_store.dart`, Keychain first_unlock_this_device) + `SessionController` (restore without network, expiry wipe, 401 → signed out as expired, sign-out hooks) — unit tested with the mock **and** on device: `integration_test/session_storage_test.dart` 3/3 on Pixel 6 Pro API 36 emulator (real Android Keystore round-trip, signed-out → welcome, stored session → Home). iOS Keychain: unverified until an iOS build exists
+- [x] 2.7 go_router skeleton (`lib/app/router.dart`): splash / welcome / login / 4-branch StatefulShellRoute + ＋ slot (not a tab); redirect rules as a pure function — unit + widget tested
+- [!] 2.8 Telemetry (Sentry) — blocked: needs the Sentry project (task 1.5)
+- [~] 2.9 CI workflow `.github/workflows/mobile.yml` written (format, analyze, test, Android debug build on ubuntu; unsigned iOS build on macOS; Flutter from the official repo at the pinned tag; read-only token). **Left:** never run (needs a push) — iOS compile unverified
+- [!] 2.10 Contract tests against staging — blocked: no staging environment (D1)
+- [x] 2.11 Android debug build — `flutter build apk --debug --dart-define-from-file=env/prod.json` succeeds; installed and launched on the emulator: signed-out → «مرحبًا» screen, RTL, paper background, no crash (screenshot checked). First failed with "not enough space on the disk"; owner asked to free space → `npm cache clean --force` + temp files older than 1 day (6.4 GB). Debug cold start ~16 s on the emulator (JIT debug build — not a performance figure; measure release in P16).
+- [x] 2.12 Launcher icon + native splash — **not** reused from `resources/` (those are the old orange "AlexMed" brand, which the design language excludes). Used the current web icon instead: the Niro Spark on ink (`app/icon.svg`), rendered to `mobile/assets/brand/*.png` with sharp; generated with `flutter_launcher_icons` + `flutter_native_splash` (dev-only). Splash = paper + Spark, and the first Flutter frame shows the same. Verified on the emulator (app drawer icon, splash). iOS icon/splash generated, not yet seen on a device.
 
 **Tests:** unit (client, decoder, interceptors, session store); widget smoke; contract (2.10).
 **Security:** secret scan of repo + build artefacts; verify no tokens in logs.
@@ -142,13 +144,15 @@ P15 ─► P17 (iOS) ─────┴─► P18 (QA + beta) ─► P19 (releas
 ## Phase 3 — Design system, localization, RTL
 **Objective:** NiroLearn look & feel as reusable Flutter components. **Depends on:** P2.
 
-- [ ] 3.1 Tokens from `app/base.css` (colors, radius, motion) — BP §16
-- [ ] 3.2 Bundle Readex Pro + Noto Naskh Arabic (check licences: OFL), type scale
-- [ ] 3.3 Components: buttons (ink/marker/outline/destructive), grouped rows, cards, inputs, chips/badges, dialogs, bottom sheets, bottom nav with raised ＋, progress, skeletons, empty/error states (Niro), toasts
-- [ ] 3.4 Lucide icons; RTL mirroring rules
-- [ ] 3.5 Localization ar (default) + en via ARB; `Directionality` handling
-- [ ] 3.6 Bidi helpers: direction by first strong char (port web `isArabicText`), FSI/PDI isolation for terms/numbers/usernames/codes/phones — BP §17
-- [ ] 3.7 Component gallery screen (dev flavor only)
+- [x] 3.1 Tokens (`lib/core/ui/tokens.dart`): all `--nl-*` colours from `app/base.css`, reading ink, radius, 4-pt spacing, `--nl-ease` motion, 48dp touch target
+- [x] 3.2 Fonts bundled (`assets/fonts/`): Readex Pro 400/500/600/700 + Noto Naskh Arabic 400/600/700 (static TTFs from Google Fonts, OFL licences included); type scale `NlText` from the web's @nl-design values (h1 28/700, title 18/700, row 16/600, body 15/1.7, reading Naskh 17/1.95). Verified rendering on the emulator
+- [~] 3.3 Components (`lib/core/ui/components/`): `NlButton` (primary / marker / secondary / destructive / ghost, loading, press scale, reduced motion), `NlGroup` + `NlRow`, `NlBadge`, `NlProgressBar`, `NlEmptyState`, `NlErrorView` (+ `apiErrorText`), `NlOfflineBanner`, `NlSkeleton` / `NlListSkeleton`, `NlBottomNav` (marker pill on the active tab, raised ink ＋), `NiroImage` — all widget-tested and seen on the emulator. **Left:** `showNlSheet`, `showNlConfirm`, text inputs (themed via `InputDecorationTheme`) are implemented but not yet seen on a device; a dedicated card component when a screen needs one
+- [x] 3.4 Lucide icons (`lucide_icons_flutter`, same set as the web's lucide-react); chevrons follow reading direction (tested RTL ← / LTR →)
+- [x] 3.5 Localization: gen-l10n with `lib/l10n/app_ar.arb` (template, default) + `app_en.arb`; shell, actions, errors, states localized; English verified in widget tests. New screens add their strings in their phase
+- [x] 3.6 Bidi (`lib/core/ui/bidi.dart`): `isArabicText` (same rule as the web), `contentDirection`, `AutoDirText`, `isolate` / `isolateLtr` (FSI / LRI … PDI built from code points) — unit + widget tested, and on the emulator: Arabic sentence with "ACE inhibitor" stays RTL, access code and phone render LTR inside Arabic
+- [x] 3.7 Component gallery (`lib/app/dev/component_gallery.dart`, route `/dev/gallery`, **debug builds only**: `kDebugMode`); open with `adb shell am start -n com.nirolearn.app/com.nirolearn.nirolearn.MainActivity --es route /dev/gallery` (Git Bash: prefix `MSYS_NO_PATHCONV=1`)
+- [x] 3.8 Niro character: the web's vector art exported to `assets/niro/*.svg` by `tool/export_niro_svgs.tsx` (renders `components/niro/NiroCharacter.tsx` with react-dom/server) — identical on web and app; all 9 load (test + emulator)
+- [~] 3.9 Golden (screenshot) tests — deferred: pixel output differs between Windows (here) and Linux (CI), so baselines must be generated on the CI runner. Visual review is done on emulator screenshots meanwhile
 
 **Tests:** widget + golden tests for every component in ar/en, small (360×640) & large (430×932) phones, dynamic type ×1.3.
 **UI/UX:** compare against web screenshots (browser verification of the live web app); touch targets; contrast AA.
@@ -160,22 +164,22 @@ P15 ─► P17 (iOS) ─────┴─► P18 (QA + beta) ─► P19 (releas
 **Objective:** native login/registration with the existing identity system. **Depends on:** P2, P3; backend G1–G4.
 
 Backend (additive; web unaffected):
-- [ ] 4.1 Extract the Credentials authorize logic into a reusable function (no behaviour change for web; existing tests stay green)
-- [ ] 4.2 **G1** `POST /api/mobile/auth/login` → session JWT (same encoding/salt as cookie) + expiresAt + user; login limiter; suspended/too-many-attempts codes
-- [ ] 4.3 **G4** `POST /api/mobile/auth/refresh`
-- [ ] 4.4 **G2** `POST /api/mobile/auth/google` (verify ID token signature + audience; link/create via `accounts` with the web provider's rules; suspended check)
-- [ ] 4.5 **G3** `POST /api/mobile/auth/apple` (same) — required on iOS if Google is offered
-- [ ] 4.6 vitest: token accepted by `auth()` via cookie header; suspended/deleted rejected; limiter; wrong audience rejected; linking rules
+- [x] 4.1 `lib/credentials-login.ts` `verifyCredentials()` — the Credentials check moved out of `lib/auth.ts` unchanged (same rate-limit key, same lookups, same "invalid" for unknown / Google-only / wrong password, suspended only revealed after the password matches); `authorize()` now maps its result to the same `null` / `TooManyAttemptsError` / `AccountSuspendedError`. Web suite 842 passed (1 known slow-test timeout), tsc clean, `next build` ok
+- [~] 4.2 **G1** `POST /api/mobile/auth/login` (`app/api/mobile/auth/login/route.ts`) → `{token, expiresAt, cookieName, user}`; 400 / 401 `invalid_credentials` / 403 `account_suspended` / 429 `too_many_attempts`, Arabic messages as the web form, `no-store`. Token = `next-auth/jwt` `encode` with `AUTH_SECRET`, salt = the session cookie name (`lib/mobile-session.ts`); tests prove Auth.js' own `getToken` reads it from the cookie. **Left:** not deployed (needs owner approval) → never exercised against a live server
+- [~] 4.3 **G4** `POST /api/mobile/auth/refresh` — requires a valid session via `auth()`, re-reads the user (suspended / deleted → 401), issues a new 30-day token. Tested; not deployed
+- [!] 4.4 **G2** Google — blocked: Android/iOS OAuth client IDs (task 1.4) and D6
+- [!] 4.5 **G3** Apple — blocked: Apple Developer account (D2)
+- [x] 4.6 vitest: `lib/credentials-login.test.ts` (7), `lib/mobile-session.test.ts` (6), `app/api/mobile/auth/login/route.test.ts` (5), `…/refresh/route.test.ts` (3) — 21/21. Audience / linking tests arrive with 4.4–4.5
 - [ ] 4.7 (optional, D3) **G5** SMS password reset (web + mobile); DB change needs approval
 
 Flutter:
-- [ ] 4.8 Splash + session restore (cold/warm), cached profile → Home without waiting
-- [ ] 4.9 Welcome, Login (phone/email + password), error messages
-- [ ] 4.10 Register: phone → SMS code (autofill) → details → auto-login
-- [ ] 4.11 Google sign-in; Apple sign-in (iOS; Android optional)
-- [ ] 4.12 Refresh scheduling; 401 handling → wipe + login («انتهت الجلسة»)
-- [ ] 4.13 Logout wipes token, drift, image caches, protected memory
-- [ ] 4.14 Suspended / deleted account handling (message, no loop)
+- [x] 4.8 Splash + session restore without network (P2) + **refresh when < 7 days left** (`features/auth/application/session_refresh.dart`): 401 → signed out with notice; offline → keeps the session
+- [~] 4.9 Welcome + Login (`features/auth/presentation/`) — widget-tested (success → Home + stored session, empty form, wrong password keeps signed out) and seen on the emulator (RTL, Niro, LTR identifier, back from login returns to welcome). **Left:** a real sign-in against a server running G1 (staging D1, or owner-approved deploy)
+- [~] 4.10 Register: phone (country list + parser ported from `lib/phone.ts`, 7 tests) → SMS code (6 digits, resend countdown, change number, one-time-code autofill hint) → name + password → register → auto sign-in. Repository tested against the web endpoints' real response shapes; invalid-number check seen on the emulator. **Left:** a real SMS round trip (needs staging with SMS; production would send real SMS)
+- [!] 4.11 Google / Apple buttons — blocked with 4.4 / 4.5
+- [x] 4.12 401 handling (P2) + refresh scheduling (4.8), widget-tested
+- [~] 4.13 Sign-out wipes token + registered caches (hooks, tested). **Left:** the sign-out button lives on the Account screen (P5)
+- [x] 4.14 Suspended: server message shown on login; a suspended session's next request / refresh → signed out with «انتهت الجلسة»
 
 **Tests:** backend vitest (4.6); Flutter unit (auth repository), widget (forms), E2E journeys 1–2 (BP §20) on Android + iOS against staging.
 **Security:** token never logged; secure storage verified on device; Google/Apple audience checks; replay of old token after suspension rejected; security review of new endpoints.
@@ -436,24 +440,32 @@ Doctor:
 | D1 | Staging environment (own DB + bucket + deploy) | Required (B1). Recommend a separate Supabase project + Railway service | `[!]` waiting |
 | D2 | Apple Developer account + macOS CI | Required for iOS (B2). GitHub macOS runners or Codemagic | `[!]` waiting |
 | D3 | Optional gaps in v1: G5 reset, G7 multipart, G8 reviewedAt, G10 report (needed for App Store), G12 push | Recommend v1: G5, G10; later: G7, G8, G12 | `[!]` waiting |
-| D4 | Flutter code location | Recommend `mobile/` in this repo | `[!]` waiting |
-| D5 | Upgrade the existing Play listing in place (`com.nirolearn.app`, same keystore) | Recommended; confirm whether it is already published and its versionCode | `[!]` waiting |
+| D4 | Flutter code location | `mobile/` in this repo | `[x]` adopted 2026-09-29 (owner: start building) |
+| D5 | Upgrade the existing Play listing in place (`com.nirolearn.app`, same keystore) | Applied tentatively (appId set). Still need: is it published, and its versionCode | `[~]` open |
 | D6 | Google login on iOS (forces Sign in with Apple) | Recommend keep Google + add Apple | `[!]` waiting |
 | D7 | Block screenshots on protected sets (Android FLAG_SECURE) | Recommend yes for protected screens only | `[!]` waiting |
 | D8 | Niro history device-local (as web) | Recommend keep local for v1 | `[!]` waiting |
 
 ## Backend contracts added (keep updated)
-_None yet._ Each entry: endpoint/procedure · phase · commit · tests · web impact.
+Each entry: endpoint/procedure · phase · commit · tests · web impact.
+
+| Endpoint | Phase | Request → response | Tests | Web impact | Deployed |
+|---|---|---|---|---|---|
+| `POST /api/mobile/auth/login` | P4 (G1) | `{identifier, password}` → 200 `{token, expiresAt, cookieName, user:{id,name,email,role}}`; 400 `bad_request`, 401 `invalid_credentials`, 403 `account_suspended`, 429 `too_many_attempts` (`{error, code}`) | 5 route + 7 shared-check + 6 token | none — web sign-in uses the same extracted check | **no** |
+| `POST /api/mobile/auth/refresh` | P4 (G4) | session cookie → 200 `{token, expiresAt, cookieName}`; 401 when the session / account is no longer valid | 3 | none | **no** |
 
 ## Files changed (keep updated)
 | Date | Files | Phase | Commit |
 |---|---|---|---|
-| 2026-09-29 | `docs/mobile/MOBILE_ARCHITECTURE_BLUEPRINT.md`, `docs/mobile/MOBILE_IMPLEMENTATION_ROADMAP.md` (new) | P0 | not committed (awaiting owner) |
+| 2026-09-29 | `docs/mobile/MOBILE_ARCHITECTURE_BLUEPRINT.md`, `docs/mobile/MOBILE_IMPLEMENTATION_ROADMAP.md` (new) | P0 | `57fff35` (branch `docs/mobile-roadmap`) |
+| 2026-09-29 | `mobile/` (new Flutter app: `lib/app/*`, `lib/core/api/*`, `lib/core/auth/*`, `lib/core/ui/tokens.dart`, `test/**`, `env/*.json`, Android/iOS identity), `.github/workflows/mobile.yml` | P2 | not committed yet (branch `feat/mobile-foundation`) |
+| 2026-09-29 | `mobile/lib/core/ui/**` (theme, tokens, bidi, components), `mobile/lib/l10n/*`, `mobile/l10n.yaml`, `mobile/lib/app/dev/component_gallery.dart`, `mobile/assets/{fonts,niro,brand}/`, `mobile/tool/export_niro_svgs.tsx`, generated Android/iOS icon + splash resources, `mobile/integration_test/` | P2–P3 | not committed yet (branch `feat/mobile-foundation`) |
 
 ## Known issues (keep updated)
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
 - Shared: `components/PdfViewer.tsx` never frees page canvases and does not cap DPR (web + mobile Safari memory risk) — not in mobile scope; track separately.
 - Web: no password reset (G5).
+- Dev machine: drive C: full (2026-09-29) — blocks Android builds and the emulator until space is freed.
 
 ---
 
@@ -461,19 +473,19 @@ _None yet._ Each entry: endpoint/procedure · phase · commit · tests · web im
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 0 — Repository & Architecture Audit (`[~]`) |
-| Current Task | Owner review of the blueprint + decisions D1–D8 |
-| Last Completed Task | Architecture blueprint drafted (BP) + Capacitor audit on emulator |
-| Next Task | After approval: Phase 1.1 staging environment (needs D1) |
-| Blocked By | Owner approval; D1 (staging), D2 (Apple account / macOS CI) |
-| Last Verification | 2026-09-29 — read-only audit; Capacitor debug APK built and exercised on Pixel 6 Pro API 36 emulator |
-| Tests | Web: vitest 821 passed / 1 failed (brain-games math test timeout under full-suite load; passes alone), tsc pass. Flutter: N/A (no code yet) |
-| Build | Web `next build` pass (2026-09-29). Flutter: N/A |
-| Security | Audit findings recorded (BP §A, §15); no mobile code yet |
-| Performance | Not measured for Flutter (no code yet) |
-| UI/UX | Design tokens extracted (BP §16); no screens yet |
-| Android | Flutter: not started. Capacitor: audited, not release-ready |
-| iOS | Not started; no Apple account / macOS build path yet |
+| Current Phase | Phase 4 — authentication (`[~]`). Phases 2–3 `[~]` only for owner-blocked / deferred items. Phase 1 not started (owner actions) |
+| Current Task | Phase 4 — email/phone login + registration done and tested; waiting for a server that runs G1/G4 |
+| Last Completed Task | 4.1–4.3 + 4.6 backend (shared credentials check, mobile login + refresh endpoints, 21 tests) and 4.8–4.10, 4.12, 4.14 Flutter (welcome, login, register, refresh) |
+| Next Task | Owner decision: deploy G1/G4 (additive; web login unchanged) **or** provide staging (D1) → then a real sign-in on the emulator (journey 2). Meanwhile: Phase 5 (Home, folders, account + sign-out) |
+| Blocked By | Live verification of login: G1/G4 not deployed and no staging (D1); Google (1.4, D6); Apple (D2); Sentry (2.8) |
+| Last Verification | 2026-09-29 — Flutter: analyze clean, 73/73 tests; welcome / login / register seen on the emulator. Web: vitest 842 passed + 1 known slow-test timeout, tsc clean, `next build` ok (new routes compiled) |
+| Tests | Flutter 73/73 unit + widget, 3/3 on-device integration. Web: 842 passed (1 brain-games timeout under full-suite load; passes alone), incl. 21 new auth tests |
+| Build | Android debug APK builds and runs on the emulator. iOS: not built (no macOS; CI job written, never run) |
+| Security | Token only in secure storage (device-verified) and only sent to the API origin (tested); Android backup / device transfer disabled (verified on the installed package); no secrets in `env/*.json` |
+| Performance | Not measured yet (debug build only; release measurement in P16) |
+| UI/UX | Design system reviewed on emulator screenshots against the web: type, buttons, rows, badges, progress (RTL), bidi, Niro, states, bottom nav, icon, splash |
+| Android | Runs on API 36 emulator; icon + splash verified. Low-end device check pending |
+| iOS | Not built |
 | Last Updated | 2026-09-29 |
 
 ## CHANGELOG / IMPLEMENTATION HISTORY
@@ -488,3 +500,34 @@ _None yet._ Each entry: endpoint/procedure · phase · commit · tests · web im
   no payments (extension point only); protected doctor sets memory-only.
 - **2026-09-29** — Roadmap created with phases P0–P20, quality gate, decision
   register D1–D8. Awaiting owner approval before any implementation.
+- **2026-09-29** — Owner approved («اعمل كومن وبعدها ابدا البناء»); docs committed
+  `57fff35`. Flutter 3.47.5 installed at `C:\Users\user\dev\flutter`. Phase 2
+  started on branch `feat/mobile-foundation`: project + identity, strict lints,
+  tRPC / superjson client verified against real production envelopes, typed
+  Arabic error model, secure session store + controller, router skeleton, CI
+  workflow. Decision: the session is sent as the Auth.js cookie and **only** to
+  the API origin. Found and fixed by the tests: a garbled server response was
+  reported as "no connection"; transport failures are now classified by cause.
+  Android build blocked: drive C: full.
+- **2026-09-29** — Owner asked to free space and continue: `npm cache clean --force`
+  and temp files older than a day (6.4 GB; nothing else touched). Android build
+  passes; app runs on the emulator; secure storage verified on device (3/3).
+  Note for this machine: never run the emulator and a Gradle build at the same
+  time (RAM exhausted once) — `./android/gradlew -p android --stop` after builds.
+- **2026-09-29** — Phase 3 design system. Decisions: fonts bundled as static
+  weights (no runtime download); Niro rendered from SVGs exported from the web
+  component so the art stays identical; app icon/splash = the web's current
+  Niro Spark on ink, **not** the old orange "AlexMed" assets in `resources/`;
+  goldens deferred until they can be generated on the Linux CI runner. Found
+  on device and fixed: gallery content ran under the gesture bar (explicit
+  ListView padding drops the automatic safe-area inset); adaptive icon Spark
+  too small (enlarged within the safe zone).
+- **2026-09-29** — Owner: commit, then continue. Phase 4 started (auth is a
+  security-sensitive area — kept additive and not deployed). Decisions: the
+  web's Credentials check extracted unchanged into `lib/credentials-login.ts`
+  so web and app share one implementation; the app receives the Auth.js
+  session JWT (same secret + cookie-name salt) and the response names the
+  cookie so the app never guesses it; refresh only works for a session
+  `auth()` still accepts. Found by tests: a test assumed "07" is a phone
+  number — the parser (unchanged) treats it as an email; test corrected.
+  Found on device: hint text of LTR fields sat on the right — fixed.
