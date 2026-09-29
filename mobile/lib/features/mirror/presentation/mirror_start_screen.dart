@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +15,7 @@ import '../../account/data/account_repository.dart';
 import '../../auth/presentation/auth_widgets.dart';
 import '../../library/data/library_models.dart';
 import '../../library/data/library_repository.dart';
-import '../../library/presentation/folder_sheets.dart';
+import '../../upload/upload_widgets.dart';
 import '../data/mirror_models.dart';
 import '../data/mirror_repository.dart';
 
@@ -63,11 +62,7 @@ class _MirrorStartScreenState extends ConsumerState<MirrorStartScreen> {
 
   Future<void> _pickPdf() async {
     setState(() => _error = null);
-    final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['pdf'],
-    );
-    final path = files.isEmpty ? null : files.single.path;
+    final path = await ref.read(pdfPathPickerProvider)();
     if (path == null) return;
     try {
       final plan = ref.read(planProvider).value;
@@ -148,159 +143,97 @@ class _MirrorStartScreenState extends ConsumerState<MirrorStartScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.mirrorTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          NlSpace.page,
-          0,
-          NlSpace.page,
-          NlSpace.xxxl,
-        ),
-        children: [
-          _Intro(text: l10n.mirrorIntro),
-          const SizedBox(height: NlSpace.xl),
-          _ModeToggle(
-            mode: _mode,
-            enabled: !_busy && widget.appendToDeckId == null,
-            onChanged: (mode) => setState(() {
-              _mode = mode;
-              _error = null;
-            }),
+    return PopScope(
+      canPop: !_busy,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || !_busy) return;
+        if (await confirmLeaveUpload(context) && context.mounted) {
+          _cancel?.cancel();
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.mirrorTitle)),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            NlSpace.page,
+            0,
+            NlSpace.page,
+            NlSpace.xxxl,
           ),
-          const SizedBox(height: NlSpace.xl),
-          _Step(
-            number: 1,
-            title: _mode == _Mode.pdf
-                ? l10n.mirrorStepFile
-                : l10n.mirrorStepText,
-            child: _mode == _Mode.pdf ? _pdfPicker(l10n) : _textInput(l10n),
-          ),
-          _Step(
-            number: 2,
-            title: l10n.mirrorStepDepth,
-            child: _DepthPicker(
-              value: _depth,
-              onChanged: _busy ? null : (d) => setState(() => _depth = d),
+          children: [
+            UploadIntro(text: l10n.mirrorIntro),
+            const SizedBox(height: NlSpace.xl),
+            _ModeToggle(
+              mode: _mode,
+              enabled: !_busy && widget.appendToDeckId == null,
+              onChanged: (mode) => setState(() {
+                _mode = mode;
+                _error = null;
+              }),
             ),
-          ),
-          _Step(
-            number: 3,
-            title: l10n.mirrorStepFolder,
-            last: true,
-            child: _destination(l10n),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: NlSpace.md),
-            AuthError(_error!),
-          ],
-          const SizedBox(height: NlSpace.lg),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                LucideIcons.shieldCheck,
-                size: 15,
-                color: NlColors.ink3,
+            const SizedBox(height: NlSpace.xl),
+            UploadStep(
+              number: 1,
+              title: _mode == _Mode.pdf
+                  ? l10n.mirrorStepFile
+                  : l10n.mirrorStepText,
+              child: _mode == _Mode.pdf ? _pdfPicker(l10n) : _textInput(l10n),
+            ),
+            UploadStep(
+              number: 2,
+              title: l10n.mirrorStepDepth,
+              child: _DepthPicker(
+                value: _depth,
+                onChanged: _busy ? null : (d) => setState(() => _depth = d),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(l10n.mirrorDisclaimer, style: NlText.caption),
-              ),
+            ),
+            UploadStep(
+              number: 3,
+              title: l10n.mirrorStepFolder,
+              last: true,
+              child: _destination(l10n),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: NlSpace.md),
+              AuthError(_error!),
             ],
-          ),
-        ],
-      ),
-      bottomNavigationBar: _SubmitBar(
-        progress: _progress,
-        busy: _busy,
-        enabled: _canSubmit,
-        onSubmit: _submit,
-        onCancel: () => _cancel?.cancel(),
+            const SizedBox(height: NlSpace.lg),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  LucideIcons.shieldCheck,
+                  size: 15,
+                  color: NlColors.ink3,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(l10n.mirrorDisclaimer, style: NlText.caption),
+                ),
+              ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: UploadSubmitBar(
+          label: l10n.mirrorSubmit,
+          icon: LucideIcons.sparkles,
+          startingLabel: l10n.mirrorStarting,
+          progress: _progress,
+          busy: _busy,
+          enabled: _canSubmit,
+          onSubmit: _submit,
+          onCancel: () => _cancel?.cancel(),
+        ),
       ),
     );
   }
 
-  Widget _pdfPicker(AppLocalizations l10n) {
-    final pdf = _pdf;
-    final maxMb = ref.watch(planProvider).value?.maxFileSizeMb;
-    if (pdf == null) {
-      return _DashedBox(
-        onTap: _busy ? null : _pickPdf,
-        child: Column(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: NlColors.niroSoft,
-                borderRadius: BorderRadius.circular(NlRadius.md),
-              ),
-              child: const Icon(LucideIcons.fileUp, color: NlColors.niroDeep),
-            ),
-            const SizedBox(height: NlSpace.md),
-            Text(l10n.mirrorPickFile, style: NlText.rowLabel),
-            const SizedBox(height: 2),
-            Text(
-              l10n.mirrorPickHint,
-              style: NlText.caption,
-              textAlign: TextAlign.center,
-            ),
-            if (maxMb != null)
-              Text(l10n.mirrorMaxSize(maxMb), style: NlText.caption),
-          ],
-        ),
-      );
-    }
-    return Container(
-      padding: const EdgeInsets.all(NlSpace.md),
-      decoration: BoxDecoration(
-        color: NlColors.sheet,
-        borderRadius: BorderRadius.circular(NlRadius.md),
-        border: Border.all(color: NlColors.ink, width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: NlColors.wrongSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              LucideIcons.fileText,
-              color: NlColors.wrong,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: NlSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isolate(pdf.name),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: NlText.rowLabel,
-                ),
-                Text(
-                  l10n.mirrorFileReady(isolateLtr(_formatBytes(pdf.size))),
-                  style: NlText.caption,
-                ),
-              ],
-            ),
-          ),
-          NlButton(
-            label: l10n.mirrorChangeFile,
-            kind: NlButtonKind.ghost,
-            onPressed: _busy ? null : _pickPdf,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _pdfPicker(AppLocalizations l10n) => PdfPickBox(
+    pdf: _pdf,
+    maxFileSizeMb: ref.watch(planProvider).value?.maxFileSizeMb,
+    onPick: _busy ? null : _pickPdf,
+  );
 
   Widget _textInput(AppLocalizations l10n) {
     return ListenableBuilder(
@@ -344,36 +277,10 @@ class _MirrorStartScreenState extends ConsumerState<MirrorStartScreen> {
   }
 
   Widget _destination(AppLocalizations l10n) {
-    final folders = ref.watch(subjectsProvider).value ?? const <Subject>[];
     final decks = ref.watch(decksProvider).value ?? const <DeckSummary>[];
-    final folderPicker = Row(
-      children: [
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            initialValue: _folderId,
-            isExpanded: true,
-            hint: Text(
-              folders.isEmpty ? l10n.mirrorNoFolders : l10n.mirrorChooseFolder,
-            ),
-            items: [
-              for (final f in folders)
-                DropdownMenuItem(value: f.id, child: Text(isolate(f.name))),
-            ],
-            onChanged: _busy ? null : (id) => setState(() => _folderId = id),
-          ),
-        ),
-        const SizedBox(width: NlSpace.sm),
-        IconButton.outlined(
-          tooltip: l10n.newFolder,
-          icon: const Icon(LucideIcons.folderPlus),
-          onPressed: _busy
-              ? null
-              : () async {
-                  final created = await showCreateFolderSheet(context);
-                  if (created != null) setState(() => _folderId = created.id);
-                },
-        ),
-      ],
+    final folderPicker = FolderPickerField(
+      value: _folderId,
+      onChanged: _busy ? null : (f) => setState(() => _folderId = f.id),
     );
     if (_mode == _Mode.pdf) return folderPicker;
 
@@ -415,27 +322,6 @@ class _MirrorStartScreenState extends ConsumerState<MirrorStartScreen> {
           maxLength: 120,
           enabled: !_busy,
         ),
-      ],
-    );
-  }
-}
-
-String _formatBytes(int bytes) => bytes < 1024 * 1024
-    ? '${(bytes / 1024).round()} KB'
-    : '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
-
-class _Intro extends StatelessWidget {
-  const _Intro({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const NiroImage(expression: NiroExpression.explaining, size: 72),
-        const SizedBox(width: NlSpace.md),
-        Expanded(child: Text(text, style: NlText.secondary)),
       ],
     );
   }
@@ -505,60 +391,6 @@ class _ModeToggle extends StatelessWidget {
         children: [
           option(_Mode.pdf, LucideIcons.fileText, l10n.mirrorModePdf),
           option(_Mode.text, LucideIcons.clipboardPaste, l10n.mirrorModeText),
-        ],
-      ),
-    );
-  }
-}
-
-/// A numbered step — the three steps really are a sequence.
-class _Step extends StatelessWidget {
-  const _Step({
-    required this.number,
-    required this.title,
-    required this.child,
-    this.last = false,
-  });
-
-  final int number;
-  final String title;
-  final Widget child;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: last ? 0 : NlSpace.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 26,
-                height: 26,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: NlColors.marker,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '$number',
-                  style: NlText.label.copyWith(
-                    color: NlColors.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: NlSpace.sm),
-              Semantics(
-                header: true,
-                child: Text(title, style: NlText.title.copyWith(fontSize: 17)),
-              ),
-            ],
-          ),
-          const SizedBox(height: NlSpace.md),
-          child,
         ],
       ),
     );
@@ -636,136 +468,6 @@ class _DepthPicker extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _DashedBox extends StatelessWidget {
-  const _DashedBox({required this.child, this.onTap});
-
-  final Widget child;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _DashPainter(),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(NlRadius.lg),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: NlSpace.xxl,
-              horizontal: NlSpace.lg,
-            ),
-            child: Center(child: child),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DashPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(NlRadius.lg),
-    );
-    canvas.drawRRect(rect, Paint()..color = NlColors.sheet);
-    final path = Path()..addRRect(rect);
-    final paint = Paint()
-      ..color = NlColors.ruleStrong
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    for (final metric in path.computeMetrics()) {
-      for (var d = 0.0; d < metric.length; d += 12) {
-        canvas.drawPath(metric.extractPath(d, d + 7), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// The one action, always reachable above the keyboard / gesture bar.
-class _SubmitBar extends StatelessWidget {
-  const _SubmitBar({
-    required this.progress,
-    required this.busy,
-    required this.enabled,
-    required this.onSubmit,
-    required this.onCancel,
-  });
-
-  final double? progress;
-  final bool busy;
-  final bool enabled;
-  final VoidCallback onSubmit;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final uploading = progress != null && progress! < 1;
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: NlColors.sheet,
-        border: Border(top: BorderSide(color: NlColors.rule)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            NlSpace.page,
-            NlSpace.md,
-            NlSpace.page,
-            NlSpace.md + MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: busy
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            uploading
-                                ? l10n.mirrorUploading(
-                                    (progress! * 100).round(),
-                                  )
-                                : l10n.mirrorStarting,
-                            style: NlText.rowLabel.copyWith(fontSize: 15),
-                          ),
-                        ),
-                        if (uploading)
-                          NlButton(
-                            label: l10n.mirrorCancelUpload,
-                            kind: NlButtonKind.ghost,
-                            onPressed: onCancel,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: NlSpace.sm),
-                    uploading
-                        ? NlProgressBar(value: progress!)
-                        : const LinearProgressIndicator(minHeight: 6),
-                  ],
-                )
-              : NlButton(
-                  label: l10n.mirrorSubmit,
-                  kind: NlButtonKind.marker,
-                  icon: LucideIcons.sparkles,
-                  expand: true,
-                  onPressed: enabled ? onSubmit : null,
-                ),
-        ),
-      ),
     );
   }
 }

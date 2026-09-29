@@ -934,4 +934,271 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get questionFilesNew => 'ملف جديد';
+
+  @override
+  String get bookUploadTitle => 'رفع كتاب دراسي';
+
+  @override
+  String get bookUploadIntro =>
+      'ارفع كتابك مهما كان حجمه، ونقسّمه لك لفصول صغيرة ونحلّل كل فصل على حدة.';
+
+  @override
+  String get bookStepFile => 'الكتاب';
+
+  @override
+  String get bookStepProfile => 'نوع المادة';
+
+  @override
+  String get bookProfileHint => 'يوجّه التحليل لطريقة مادتك.';
+
+  @override
+  String get bookSubmit => 'حوّل إلى فصول';
+
+  @override
+  String get bookStarting => 'جاري تجهيز الكتاب…';
+
+  @override
+  String get bookKeepOpen =>
+      'أبقِ التطبيق مفتوحًا حتى يكتمل الرفع — بعده يكمل التجهيز على الخادم.';
+
+  @override
+  String bookQuotaLeft(int remaining, int limit) {
+    return 'متبقي اليوم $remaining من $limit ملفات دراسة';
+  }
+
+  @override
+  String get bookDuplicateTitle => 'عندك ملف بنفس الاسم';
+
+  @override
+  String bookDuplicateBody(String title) {
+    return '«$title» موجود في مكتبتك. افتحه بدل رفعه مرة ثانية، أو ارفع هذا كنسخة جديدة.';
+  }
+
+  @override
+  String get bookDuplicateOpen => 'افتح الموجود';
+
+  @override
+  String bookMetaParts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أجزاء',
+      one: 'جزء واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookStudyTitle => 'ادرس هذا الكتاب';
+
+  @override
+  String get bookToolsAfterReading =>
+      'أدوات الدراسة تظهر هنا بعد ما نخلّص قراءة صفحات الملف.';
+
+  @override
+  String get bookGenerateBody =>
+      'جهّز البطاقات والأسئلة والملخص والخريطة الذهنية لهذا الكتاب بضغطة واحدة. تقدر تطلع من التطبيق، التجهيز يكمل لحاله.';
+
+  @override
+  String get bookGenerate => 'جهّز أدوات الدراسة';
+
+  @override
+  String get bookGenerateError =>
+      'تعذّر بدء التجهيز. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get bookSharedNotStarted => 'لم يبدأ صاحب الملف التجهيز بعد.';
+
+  @override
+  String bookSharedFrom(String name) {
+    return 'مشترك من $name';
+  }
+
+  @override
+  String get toolCards => 'بطاقات';
+
+  @override
+  String get toolCardsPurpose => 'احفظ بالتكرار المتباعد، بطاقة بطاقة';
+
+  @override
+  String toolCardsCount(int count) {
+    return '$count بطاقة';
+  }
+
+  @override
+  String get toolMcqs => 'اختبار';
+
+  @override
+  String get toolMcqsPurpose => 'أسئلة اختيار من متعدد كأنك في الامتحان';
+
+  @override
+  String toolMcqsCount(int count) {
+    return '$count سؤال';
+  }
+
+  @override
+  String get toolSummary => 'ملخص';
+
+  @override
+  String get toolSummaryPurpose => 'الشرح كاملًا في صفحة مرتبة للقراءة';
+
+  @override
+  String get toolMindmap => 'خريطة ذهنية';
+
+  @override
+  String get toolMindmapPurpose => 'كيف ترتبط المفاهيم ببعضها';
+
+  @override
+  String get toolMatch => 'لعبة المطابقة';
+
+  @override
+  String get toolMatchPurpose => 'طابق كل سؤال بجوابه قبل ما يخلص الوقت';
+
+  @override
+  String get toolPreparing => 'قيد التجهيز';
+
+  @override
+  String get toolLocked => 'غير جاهز بعد';
+
+  @override
+  String get examFocusHeadline => 'أهم ما يأتي في الامتحان من هذا الكتاب';
+
+  @override
+  String examFocusReadyCount(int count) {
+    return '$count معلومة مركّزة، مرتبة حسب الأهمية';
+  }
+
+  @override
+  String get examFocusBusy => 'نحلّل الكتاب ونستخرج المعلومات المهمة…';
+
+  @override
+  String get examFocusIdle => 'نستخرج المعلومات التي يتكرر سؤالها ونرتبها لك';
+
+  @override
+  String get examFocusOpen => 'افتح Exam Focus';
+
+  @override
+  String get examFocusPrepare => 'جهّز Exam Focus';
+
+  @override
+  String get examFocusSharedMissing => 'لم يُنشئه صاحب الملف بعد';
+
+  @override
+  String get bookSource => 'الملف الأصلي';
+
+  @override
+  String bookSourceMeta(int pages, String date) {
+    return '$pages صفحة، رُفع $date';
+  }
+
+  @override
+  String get bookSourceView => 'عرض';
+
+  @override
+  String get bookProcessing => 'تفاصيل المعالجة';
+
+  @override
+  String get bookProcessingDone => 'مكتملة';
+
+  @override
+  String get statVisualDone => 'صفحات مُجهّزة بصريًا';
+
+  @override
+  String get statWithVisuals => 'صفحات فيها صور أو مخططات';
+
+  @override
+  String get statNeedsReview => 'تحتاج مراجعة';
+
+  @override
+  String get statFailed => 'صفحات فشل تحليلها';
+
+  @override
+  String coverageLine(int coverage, int done, int total) {
+    return 'تغطية المعالجة $coverage% ($done من $total صفحة)';
+  }
+
+  @override
+  String coverageMissing(String pages) {
+    return 'صفحات تحتاج معالجة: $pages';
+  }
+
+  @override
+  String coverageFailed(String pages) {
+    return 'صفحات فشلت: $pages';
+  }
+
+  @override
+  String get bookLeaveHint =>
+      'تقدر تطلع وترجع بعدين من أي جهاز، ما راح يضيع أي تقدّم.';
+
+  @override
+  String get stageReading => 'قراءة الصفحات';
+
+  @override
+  String get stageChapters => 'تحليل الفصول (الشرح، البطاقات، الأسئلة)';
+
+  @override
+  String get stageWaiting => 'بانتظار اختيارك';
+
+  @override
+  String get stageVisuals => 'استخراج الصور والمخططات';
+
+  @override
+  String get stageCoverage => 'التحقق من اكتمال التغطية';
+
+  @override
+  String stageFraction(int done, int total) {
+    return '$done/$total';
+  }
+
+  @override
+  String get bookFailedDefault =>
+      'تعذّرت قراءة هذا الكتاب. جرّب إعادة المحاولة أو رفع نسخة أخرى منه.';
+
+  @override
+  String get bookRetryExtraction => 'إعادة محاولة الاستخراج';
+
+  @override
+  String get bookUploadAnother => 'ارفع كتابًا جديدًا';
+
+  @override
+  String bookPartialChapters(int count) {
+    return 'اكتمل معظم الكتاب، لكن $count فصل تعذّر تحليله. يمكنك إعادة المحاولة أدناه.';
+  }
+
+  @override
+  String bookPartialChaptersPages(int chapters, int pages) {
+    return 'اكتمل معظم الكتاب، لكن $chapters فصل تعذّر تحليله و$pages صفحة تعذّرت قراءتها. يمكنك إعادة المحاولة أدناه.';
+  }
+
+  @override
+  String get bookLowConfidence =>
+      'اكتشفنا تقسيم الكتاب بشكل تقريبي. يمكنك مراجعة أسماء الفصول وحدود الصفحات.';
+
+  @override
+  String pageNumber(int page) {
+    return 'صفحة $page';
+  }
+
+  @override
+  String get pageTextFailedDefault => 'تعذّرت قراءة هذه الصفحة ضوئيًا';
+
+  @override
+  String get chapterAnalyzing => 'جارٍ التحليل…';
+
+  @override
+  String get chapterFailedDefault => 'تعذر التحليل';
+
+  @override
+  String get bookNotFound => 'تعذر العثور على هذا الكتاب';
+
+  @override
+  String get uploadLeaveTitle => 'إيقاف الرفع؟';
+
+  @override
+  String get uploadLeaveBody =>
+      'الملف لم يكتمل رفعه بعد. إذا خرجت الآن يتوقف الرفع وتحتاج تبدأه من جديد.';
+
+  @override
+  String get uploadLeaveConfirm => 'إيقاف والخروج';
 }

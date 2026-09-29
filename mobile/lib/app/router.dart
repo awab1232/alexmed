@@ -11,6 +11,8 @@ import '../features/account/presentation/plan_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/welcome_screen.dart';
+import '../features/books/presentation/book_screen.dart';
+import '../features/books/presentation/book_upload_screen.dart';
 import '../features/library/presentation/add_sheet.dart';
 import '../features/library/presentation/folder_screen.dart';
 import '../features/library/presentation/home_screen.dart';
@@ -103,7 +105,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       // Screens of later phases — full-screen over the tabs.
-      _placeholder('/books/:id', (l) => l.yourBooks, 'P7'),
+      GoRoute(
+        path: '/books/:id',
+        builder: (_, state) => BookScreen(bookId: state.pathParameters['id']!),
+        routes: [
+          _placeholder('study', (l) => l.bookStudyTitle, 'P7'),
+          _placeholder('mindmap', (l) => l.toolMindmap, 'P7'),
+          _placeholder('match', (l) => l.toolMatch, 'P7'),
+          _placeholder('exam-focus', (l) => l.examFocusOpen, 'P7'),
+          _placeholder('read', (l) => l.bookSource, 'P8'),
+        ],
+      ),
       GoRoute(
         path: '/decks/:id',
         builder: (_, state) =>
@@ -121,7 +133,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.questionFiles,
         builder: (_, _) => const MirrorLibraryScreen(),
       ),
-      _placeholder(Routes.uploadBook, (l) => l.addBook, 'P6'),
+      GoRoute(
+        path: Routes.uploadBook,
+        builder: (_, state) =>
+            BookUploadScreen(subjectId: state.uri.queryParameters['subjectId']),
+      ),
       GoRoute(
         path: Routes.uploadQuestionFile,
         builder: (_, state) => MirrorStartScreen(

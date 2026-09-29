@@ -205,7 +205,7 @@ class _FolderBody extends StatelessWidget {
                 label: l10n.addFile,
                 kind: NlButtonKind.secondary,
                 icon: LucideIcons.plus,
-                onPressed: () => context.push(Routes.uploadBook),
+                onPressed: () => context.push(Routes.uploadBookIn(folder.id)),
               ),
             ],
           ),
@@ -215,7 +215,7 @@ class _FolderBody extends StatelessWidget {
               title: l10n.folderEmpty,
               actionLabel: l10n.addFile,
               inline: true,
-              onAction: () => context.push(Routes.uploadBook),
+              onAction: () => context.push(Routes.uploadBookIn(folder.id)),
             )
           else
             RuledList(

@@ -22,10 +22,18 @@ abstract final class Routes {
 
   // Full-screen (built in later phases — placeholders until then).
   static String book(String id) => '/books/$id';
+  static String bookStudy(String id, String tool) =>
+      '/books/$id/study?tool=$tool';
+  static String bookMindmap(String id) => '/books/$id/mindmap';
+  static String bookMatch(String id) => '/books/$id/match';
+  static String bookExamFocus(String id) => '/books/$id/exam-focus';
+  static String bookRead(String id) => '/books/$id/read';
   static String deck(String id) => '/decks/$id';
   static const review = '/review';
   static const questionFiles = '/question-files';
   static const uploadBook = '/upload/book';
+  static String uploadBookIn(String subjectId) =>
+      '$uploadBook?subjectId=$subjectId';
   static const uploadQuestionFile = '/upload/question-file';
   static String mirrorAppend(String deckId) =>
       '$uploadQuestionFile?deck=$deckId';

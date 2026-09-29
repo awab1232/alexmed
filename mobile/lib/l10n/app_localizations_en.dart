@@ -944,4 +944,276 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get questionFilesNew => 'New file';
+
+  @override
+  String get bookUploadTitle => 'Upload a study book';
+
+  @override
+  String get bookUploadIntro =>
+      'Upload your book, whatever its size. We split it into small parts and analyse each one.';
+
+  @override
+  String get bookStepFile => 'The book';
+
+  @override
+  String get bookStepProfile => 'Subject type';
+
+  @override
+  String get bookProfileHint => 'Tunes the analysis to your subject.';
+
+  @override
+  String get bookSubmit => 'Split into chapters';
+
+  @override
+  String get bookStarting => 'Preparing the book…';
+
+  @override
+  String get bookKeepOpen =>
+      'Keep the app open until the upload finishes — after that the server carries on.';
+
+  @override
+  String bookQuotaLeft(int remaining, int limit) {
+    return '$remaining of $limit study files left today';
+  }
+
+  @override
+  String get bookDuplicateTitle => 'You already have a file with this name';
+
+  @override
+  String bookDuplicateBody(String title) {
+    return '“$title” is already in your library. Open it instead, or upload this as a new copy.';
+  }
+
+  @override
+  String get bookDuplicateOpen => 'Open it';
+
+  @override
+  String bookMetaParts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count parts',
+      one: '1 part',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookStudyTitle => 'Study this book';
+
+  @override
+  String get bookToolsAfterReading =>
+      'Study tools appear here once we finish reading the pages.';
+
+  @override
+  String get bookGenerateBody =>
+      'Prepare cards, questions, summary and mind map for this book in one tap. You can leave the app; it carries on by itself.';
+
+  @override
+  String get bookGenerate => 'Prepare study tools';
+
+  @override
+  String get bookGenerateError =>
+      'Couldn\'t start. Check your connection and try again.';
+
+  @override
+  String get bookSharedNotStarted =>
+      'The owner hasn\'t prepared this file yet.';
+
+  @override
+  String bookSharedFrom(String name) {
+    return 'Shared by $name';
+  }
+
+  @override
+  String get toolCards => 'Flashcards';
+
+  @override
+  String get toolCardsPurpose =>
+      'Memorise with spaced repetition, card by card';
+
+  @override
+  String toolCardsCount(int count) {
+    return '$count cards';
+  }
+
+  @override
+  String get toolMcqs => 'Quiz';
+
+  @override
+  String get toolMcqsPurpose => 'Multiple-choice questions, like the exam';
+
+  @override
+  String toolMcqsCount(int count) {
+    return '$count questions';
+  }
+
+  @override
+  String get toolSummary => 'Summary';
+
+  @override
+  String get toolSummaryPurpose => 'The full explanation, laid out for reading';
+
+  @override
+  String get toolMindmap => 'Mind map';
+
+  @override
+  String get toolMindmapPurpose => 'How the ideas connect';
+
+  @override
+  String get toolMatch => 'Match game';
+
+  @override
+  String get toolMatchPurpose =>
+      'Match each question to its answer before time runs out';
+
+  @override
+  String get toolPreparing => 'Preparing';
+
+  @override
+  String get toolLocked => 'Not ready yet';
+
+  @override
+  String get examFocusHeadline => 'What the exam asks most from this book';
+
+  @override
+  String examFocusReadyCount(int count) {
+    return '$count key facts, ranked by importance';
+  }
+
+  @override
+  String get examFocusBusy => 'Analysing the book for the key facts…';
+
+  @override
+  String get examFocusIdle =>
+      'We pull out the facts exams keep asking and rank them';
+
+  @override
+  String get examFocusOpen => 'Open Exam Focus';
+
+  @override
+  String get examFocusPrepare => 'Prepare Exam Focus';
+
+  @override
+  String get examFocusSharedMissing => 'The owner hasn\'t made one yet';
+
+  @override
+  String get bookSource => 'Original file';
+
+  @override
+  String bookSourceMeta(int pages, String date) {
+    return '$pages pages, uploaded $date';
+  }
+
+  @override
+  String get bookSourceView => 'View';
+
+  @override
+  String get bookProcessing => 'Processing details';
+
+  @override
+  String get bookProcessingDone => 'Complete';
+
+  @override
+  String get statVisualDone => 'Pages visually processed';
+
+  @override
+  String get statWithVisuals => 'Pages with images or diagrams';
+
+  @override
+  String get statNeedsReview => 'Need review';
+
+  @override
+  String get statFailed => 'Pages that failed';
+
+  @override
+  String coverageLine(int coverage, int done, int total) {
+    return 'Processing coverage $coverage% ($done of $total pages)';
+  }
+
+  @override
+  String coverageMissing(String pages) {
+    return 'Pages still to process: $pages';
+  }
+
+  @override
+  String coverageFailed(String pages) {
+    return 'Failed pages: $pages';
+  }
+
+  @override
+  String get bookLeaveHint =>
+      'You can leave and come back later from any device; no progress is lost.';
+
+  @override
+  String get stageReading => 'Reading the pages';
+
+  @override
+  String get stageChapters =>
+      'Analysing chapters (explanation, cards, questions)';
+
+  @override
+  String get stageWaiting => 'Waiting for you';
+
+  @override
+  String get stageVisuals => 'Extracting images and diagrams';
+
+  @override
+  String get stageCoverage => 'Checking full coverage';
+
+  @override
+  String stageFraction(int done, int total) {
+    return '$done/$total';
+  }
+
+  @override
+  String get bookFailedDefault =>
+      'We couldn\'t read this book. Try again, or upload another copy.';
+
+  @override
+  String get bookRetryExtraction => 'Retry reading';
+
+  @override
+  String get bookUploadAnother => 'Upload another book';
+
+  @override
+  String bookPartialChapters(int count) {
+    return 'Most of the book is done, but $count chapter(s) couldn\'t be analysed. You can retry below.';
+  }
+
+  @override
+  String bookPartialChaptersPages(int chapters, int pages) {
+    return 'Most of the book is done, but $chapters chapter(s) couldn\'t be analysed and $pages page(s) couldn\'t be read. You can retry below.';
+  }
+
+  @override
+  String get bookLowConfidence =>
+      'We estimated how the book splits into chapters. Check the chapter names and page ranges.';
+
+  @override
+  String pageNumber(int page) {
+    return 'Page $page';
+  }
+
+  @override
+  String get pageTextFailedDefault => 'This page couldn\'t be read (OCR)';
+
+  @override
+  String get chapterAnalyzing => 'Analysing…';
+
+  @override
+  String get chapterFailedDefault => 'Analysis failed';
+
+  @override
+  String get bookNotFound => 'This book couldn\'t be found';
+
+  @override
+  String get uploadLeaveTitle => 'Stop the upload?';
+
+  @override
+  String get uploadLeaveBody =>
+      'The file hasn\'t finished uploading. Leaving now stops it and you\'ll need to start again.';
+
+  @override
+  String get uploadLeaveConfirm => 'Stop and leave';
 }

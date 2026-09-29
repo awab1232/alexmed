@@ -1717,6 +1717,450 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ملف جديد'**
   String get questionFilesNew;
+
+  /// No description provided for @bookUploadTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفع كتاب دراسي'**
+  String get bookUploadTitle;
+
+  /// No description provided for @bookUploadIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع كتابك مهما كان حجمه، ونقسّمه لك لفصول صغيرة ونحلّل كل فصل على حدة.'**
+  String get bookUploadIntro;
+
+  /// No description provided for @bookStepFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتاب'**
+  String get bookStepFile;
+
+  /// No description provided for @bookStepProfile.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع المادة'**
+  String get bookStepProfile;
+
+  /// No description provided for @bookProfileHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوجّه التحليل لطريقة مادتك.'**
+  String get bookProfileHint;
+
+  /// No description provided for @bookSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حوّل إلى فصول'**
+  String get bookSubmit;
+
+  /// No description provided for @bookStarting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري تجهيز الكتاب…'**
+  String get bookStarting;
+
+  /// No description provided for @bookKeepOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبقِ التطبيق مفتوحًا حتى يكتمل الرفع — بعده يكمل التجهيز على الخادم.'**
+  String get bookKeepOpen;
+
+  /// No description provided for @bookQuotaLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي اليوم {remaining} من {limit} ملفات دراسة'**
+  String bookQuotaLeft(int remaining, int limit);
+
+  /// No description provided for @bookDuplicateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك ملف بنفس الاسم'**
+  String get bookDuplicateTitle;
+
+  /// No description provided for @bookDuplicateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{title}» موجود في مكتبتك. افتحه بدل رفعه مرة ثانية، أو ارفع هذا كنسخة جديدة.'**
+  String bookDuplicateBody(String title);
+
+  /// No description provided for @bookDuplicateOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الموجود'**
+  String get bookDuplicateOpen;
+
+  /// No description provided for @bookMetaParts.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{جزء واحد} other{{count} أجزاء}}'**
+  String bookMetaParts(int count);
+
+  /// No description provided for @bookStudyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادرس هذا الكتاب'**
+  String get bookStudyTitle;
+
+  /// No description provided for @bookToolsAfterReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوات الدراسة تظهر هنا بعد ما نخلّص قراءة صفحات الملف.'**
+  String get bookToolsAfterReading;
+
+  /// No description provided for @bookGenerateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّز البطاقات والأسئلة والملخص والخريطة الذهنية لهذا الكتاب بضغطة واحدة. تقدر تطلع من التطبيق، التجهيز يكمل لحاله.'**
+  String get bookGenerateBody;
+
+  /// No description provided for @bookGenerate.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّز أدوات الدراسة'**
+  String get bookGenerate;
+
+  /// No description provided for @bookGenerateError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر بدء التجهيز. تحقق من اتصالك وحاول مرة أخرى.'**
+  String get bookGenerateError;
+
+  /// No description provided for @bookSharedNotStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يبدأ صاحب الملف التجهيز بعد.'**
+  String get bookSharedNotStarted;
+
+  /// No description provided for @bookSharedFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشترك من {name}'**
+  String bookSharedFrom(String name);
+
+  /// No description provided for @toolCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقات'**
+  String get toolCards;
+
+  /// No description provided for @toolCardsPurpose.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ بالتكرار المتباعد، بطاقة بطاقة'**
+  String get toolCardsPurpose;
+
+  /// No description provided for @toolCardsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} بطاقة'**
+  String toolCardsCount(int count);
+
+  /// No description provided for @toolMcqs.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختبار'**
+  String get toolMcqs;
+
+  /// No description provided for @toolMcqsPurpose.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة اختيار من متعدد كأنك في الامتحان'**
+  String get toolMcqsPurpose;
+
+  /// No description provided for @toolMcqsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} سؤال'**
+  String toolMcqsCount(int count);
+
+  /// No description provided for @toolSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص'**
+  String get toolSummary;
+
+  /// No description provided for @toolSummaryPurpose.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشرح كاملًا في صفحة مرتبة للقراءة'**
+  String get toolSummaryPurpose;
+
+  /// No description provided for @toolMindmap.
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة ذهنية'**
+  String get toolMindmap;
+
+  /// No description provided for @toolMindmapPurpose.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيف ترتبط المفاهيم ببعضها'**
+  String get toolMindmapPurpose;
+
+  /// No description provided for @toolMatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'لعبة المطابقة'**
+  String get toolMatch;
+
+  /// No description provided for @toolMatchPurpose.
+  ///
+  /// In ar, this message translates to:
+  /// **'طابق كل سؤال بجوابه قبل ما يخلص الوقت'**
+  String get toolMatchPurpose;
+
+  /// No description provided for @toolPreparing.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد التجهيز'**
+  String get toolPreparing;
+
+  /// No description provided for @toolLocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير جاهز بعد'**
+  String get toolLocked;
+
+  /// No description provided for @examFocusHeadline.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهم ما يأتي في الامتحان من هذا الكتاب'**
+  String get examFocusHeadline;
+
+  /// No description provided for @examFocusReadyCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} معلومة مركّزة، مرتبة حسب الأهمية'**
+  String examFocusReadyCount(int count);
+
+  /// No description provided for @examFocusBusy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحلّل الكتاب ونستخرج المعلومات المهمة…'**
+  String get examFocusBusy;
+
+  /// No description provided for @examFocusIdle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نستخرج المعلومات التي يتكرر سؤالها ونرتبها لك'**
+  String get examFocusIdle;
+
+  /// No description provided for @examFocusOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح Exam Focus'**
+  String get examFocusOpen;
+
+  /// No description provided for @examFocusPrepare.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّز Exam Focus'**
+  String get examFocusPrepare;
+
+  /// No description provided for @examFocusSharedMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُنشئه صاحب الملف بعد'**
+  String get examFocusSharedMissing;
+
+  /// No description provided for @bookSource.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف الأصلي'**
+  String get bookSource;
+
+  /// No description provided for @bookSourceMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{pages} صفحة، رُفع {date}'**
+  String bookSourceMeta(int pages, String date);
+
+  /// No description provided for @bookSourceView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض'**
+  String get bookSourceView;
+
+  /// No description provided for @bookProcessing.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل المعالجة'**
+  String get bookProcessing;
+
+  /// No description provided for @bookProcessingDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة'**
+  String get bookProcessingDone;
+
+  /// No description provided for @statVisualDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحات مُجهّزة بصريًا'**
+  String get statVisualDone;
+
+  /// No description provided for @statWithVisuals.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحات فيها صور أو مخططات'**
+  String get statWithVisuals;
+
+  /// No description provided for @statNeedsReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحتاج مراجعة'**
+  String get statNeedsReview;
+
+  /// No description provided for @statFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحات فشل تحليلها'**
+  String get statFailed;
+
+  /// No description provided for @coverageLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغطية المعالجة {coverage}% ({done} من {total} صفحة)'**
+  String coverageLine(int coverage, int done, int total);
+
+  /// No description provided for @coverageMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحات تحتاج معالجة: {pages}'**
+  String coverageMissing(String pages);
+
+  /// No description provided for @coverageFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحات فشلت: {pages}'**
+  String coverageFailed(String pages);
+
+  /// No description provided for @bookLeaveHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدر تطلع وترجع بعدين من أي جهاز، ما راح يضيع أي تقدّم.'**
+  String get bookLeaveHint;
+
+  /// No description provided for @stageReading.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الصفحات'**
+  String get stageReading;
+
+  /// No description provided for @stageChapters.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل الفصول (الشرح، البطاقات، الأسئلة)'**
+  String get stageChapters;
+
+  /// No description provided for @stageWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار اختيارك'**
+  String get stageWaiting;
+
+  /// No description provided for @stageVisuals.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخراج الصور والمخططات'**
+  String get stageVisuals;
+
+  /// No description provided for @stageCoverage.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحقق من اكتمال التغطية'**
+  String get stageCoverage;
+
+  /// No description provided for @stageFraction.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done}/{total}'**
+  String stageFraction(int done, int total);
+
+  /// No description provided for @bookFailedDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة هذا الكتاب. جرّب إعادة المحاولة أو رفع نسخة أخرى منه.'**
+  String get bookFailedDefault;
+
+  /// No description provided for @bookRetryExtraction.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة محاولة الاستخراج'**
+  String get bookRetryExtraction;
+
+  /// No description provided for @bookUploadAnother.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع كتابًا جديدًا'**
+  String get bookUploadAnother;
+
+  /// No description provided for @bookPartialChapters.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتمل معظم الكتاب، لكن {count} فصل تعذّر تحليله. يمكنك إعادة المحاولة أدناه.'**
+  String bookPartialChapters(int count);
+
+  /// No description provided for @bookPartialChaptersPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتمل معظم الكتاب، لكن {chapters} فصل تعذّر تحليله و{pages} صفحة تعذّرت قراءتها. يمكنك إعادة المحاولة أدناه.'**
+  String bookPartialChaptersPages(int chapters, int pages);
+
+  /// No description provided for @bookLowConfidence.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتشفنا تقسيم الكتاب بشكل تقريبي. يمكنك مراجعة أسماء الفصول وحدود الصفحات.'**
+  String get bookLowConfidence;
+
+  /// No description provided for @pageNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحة {page}'**
+  String pageNumber(int page);
+
+  /// No description provided for @pageTextFailedDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة هذه الصفحة ضوئيًا'**
+  String get pageTextFailedDefault;
+
+  /// No description provided for @chapterAnalyzing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحليل…'**
+  String get chapterAnalyzing;
+
+  /// No description provided for @chapterFailedDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر التحليل'**
+  String get chapterFailedDefault;
+
+  /// No description provided for @bookNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر العثور على هذا الكتاب'**
+  String get bookNotFound;
+
+  /// No description provided for @uploadLeaveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف الرفع؟'**
+  String get uploadLeaveTitle;
+
+  /// No description provided for @uploadLeaveBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف لم يكتمل رفعه بعد. إذا خرجت الآن يتوقف الرفع وتحتاج تبدأه من جديد.'**
+  String get uploadLeaveBody;
+
+  /// No description provided for @uploadLeaveConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف والخروج'**
+  String get uploadLeaveConfirm;
 }
 
 class _AppLocalizationsDelegate

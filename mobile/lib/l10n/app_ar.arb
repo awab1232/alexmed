@@ -551,5 +551,202 @@
   "questionFilesTitle": "ملفات الأسئلة",
   "questionFilesEmpty": "لا توجد ملفات أسئلة بعد",
   "questionFilesEmptyHint": "ارفع ملفك الأول وسيظهر هنا بعد التوليد.",
-  "questionFilesNew": "ملف جديد"
+  "questionFilesNew": "ملف جديد",
+  "bookUploadTitle": "رفع كتاب دراسي",
+  "bookUploadIntro": "ارفع كتابك مهما كان حجمه، ونقسّمه لك لفصول صغيرة ونحلّل كل فصل على حدة.",
+  "bookStepFile": "الكتاب",
+  "bookStepProfile": "نوع المادة",
+  "bookProfileHint": "يوجّه التحليل لطريقة مادتك.",
+  "bookSubmit": "حوّل إلى فصول",
+  "bookStarting": "جاري تجهيز الكتاب…",
+  "bookKeepOpen": "أبقِ التطبيق مفتوحًا حتى يكتمل الرفع — بعده يكمل التجهيز على الخادم.",
+  "bookQuotaLeft": "متبقي اليوم {remaining} من {limit} ملفات دراسة",
+  "@bookQuotaLeft": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "bookDuplicateTitle": "عندك ملف بنفس الاسم",
+  "bookDuplicateBody": "«{title}» موجود في مكتبتك. افتحه بدل رفعه مرة ثانية، أو ارفع هذا كنسخة جديدة.",
+  "@bookDuplicateBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bookDuplicateOpen": "افتح الموجود",
+  "bookMetaParts": "{count, plural, =1{جزء واحد} other{{count} أجزاء}}",
+  "@bookMetaParts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookStudyTitle": "ادرس هذا الكتاب",
+  "bookToolsAfterReading": "أدوات الدراسة تظهر هنا بعد ما نخلّص قراءة صفحات الملف.",
+  "bookGenerateBody": "جهّز البطاقات والأسئلة والملخص والخريطة الذهنية لهذا الكتاب بضغطة واحدة. تقدر تطلع من التطبيق، التجهيز يكمل لحاله.",
+  "bookGenerate": "جهّز أدوات الدراسة",
+  "bookGenerateError": "تعذّر بدء التجهيز. تحقق من اتصالك وحاول مرة أخرى.",
+  "bookSharedNotStarted": "لم يبدأ صاحب الملف التجهيز بعد.",
+  "bookSharedFrom": "مشترك من {name}",
+  "@bookSharedFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "toolCards": "بطاقات",
+  "toolCardsPurpose": "احفظ بالتكرار المتباعد، بطاقة بطاقة",
+  "toolCardsCount": "{count} بطاقة",
+  "@toolCardsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toolMcqs": "اختبار",
+  "toolMcqsPurpose": "أسئلة اختيار من متعدد كأنك في الامتحان",
+  "toolMcqsCount": "{count} سؤال",
+  "@toolMcqsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toolSummary": "ملخص",
+  "toolSummaryPurpose": "الشرح كاملًا في صفحة مرتبة للقراءة",
+  "toolMindmap": "خريطة ذهنية",
+  "toolMindmapPurpose": "كيف ترتبط المفاهيم ببعضها",
+  "toolMatch": "لعبة المطابقة",
+  "toolMatchPurpose": "طابق كل سؤال بجوابه قبل ما يخلص الوقت",
+  "toolPreparing": "قيد التجهيز",
+  "toolLocked": "غير جاهز بعد",
+  "examFocusHeadline": "أهم ما يأتي في الامتحان من هذا الكتاب",
+  "examFocusReadyCount": "{count} معلومة مركّزة، مرتبة حسب الأهمية",
+  "@examFocusReadyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "examFocusBusy": "نحلّل الكتاب ونستخرج المعلومات المهمة…",
+  "examFocusIdle": "نستخرج المعلومات التي يتكرر سؤالها ونرتبها لك",
+  "examFocusOpen": "افتح Exam Focus",
+  "examFocusPrepare": "جهّز Exam Focus",
+  "examFocusSharedMissing": "لم يُنشئه صاحب الملف بعد",
+  "bookSource": "الملف الأصلي",
+  "bookSourceMeta": "{pages} صفحة، رُفع {date}",
+  "@bookSourceMeta": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bookSourceView": "عرض",
+  "bookProcessing": "تفاصيل المعالجة",
+  "bookProcessingDone": "مكتملة",
+  "statVisualDone": "صفحات مُجهّزة بصريًا",
+  "statWithVisuals": "صفحات فيها صور أو مخططات",
+  "statNeedsReview": "تحتاج مراجعة",
+  "statFailed": "صفحات فشل تحليلها",
+  "coverageLine": "تغطية المعالجة {coverage}% ({done} من {total} صفحة)",
+  "@coverageLine": {
+    "placeholders": {
+      "coverage": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "coverageMissing": "صفحات تحتاج معالجة: {pages}",
+  "@coverageMissing": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "coverageFailed": "صفحات فشلت: {pages}",
+  "@coverageFailed": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "bookLeaveHint": "تقدر تطلع وترجع بعدين من أي جهاز، ما راح يضيع أي تقدّم.",
+  "stageReading": "قراءة الصفحات",
+  "stageChapters": "تحليل الفصول (الشرح، البطاقات، الأسئلة)",
+  "stageWaiting": "بانتظار اختيارك",
+  "stageVisuals": "استخراج الصور والمخططات",
+  "stageCoverage": "التحقق من اكتمال التغطية",
+  "stageFraction": "{done}/{total}",
+  "@stageFraction": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bookFailedDefault": "تعذّرت قراءة هذا الكتاب. جرّب إعادة المحاولة أو رفع نسخة أخرى منه.",
+  "bookRetryExtraction": "إعادة محاولة الاستخراج",
+  "bookUploadAnother": "ارفع كتابًا جديدًا",
+  "bookPartialChapters": "اكتمل معظم الكتاب، لكن {count} فصل تعذّر تحليله. يمكنك إعادة المحاولة أدناه.",
+  "@bookPartialChapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookPartialChaptersPages": "اكتمل معظم الكتاب، لكن {chapters} فصل تعذّر تحليله و{pages} صفحة تعذّرت قراءتها. يمكنك إعادة المحاولة أدناه.",
+  "@bookPartialChaptersPages": {
+    "placeholders": {
+      "chapters": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "bookLowConfidence": "اكتشفنا تقسيم الكتاب بشكل تقريبي. يمكنك مراجعة أسماء الفصول وحدود الصفحات.",
+  "pageNumber": "صفحة {page}",
+  "@pageNumber": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "pageTextFailedDefault": "تعذّرت قراءة هذه الصفحة ضوئيًا",
+  "chapterAnalyzing": "جارٍ التحليل…",
+  "chapterFailedDefault": "تعذر التحليل",
+  "bookNotFound": "تعذر العثور على هذا الكتاب",
+  "uploadLeaveTitle": "إيقاف الرفع؟",
+  "uploadLeaveBody": "الملف لم يكتمل رفعه بعد. إذا خرجت الآن يتوقف الرفع وتحتاج تبدأه من جديد.",
+  "uploadLeaveConfirm": "إيقاف والخروج"
 }

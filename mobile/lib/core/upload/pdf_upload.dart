@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
@@ -138,6 +139,20 @@ class PdfUploader {
     }
   }
 }
+
+/// Opens the system document picker for one PDF; null = cancelled. A
+/// provider so tests can hand in a local file.
+typedef PdfPathPicker = Future<String?> Function();
+
+final pdfPathPickerProvider = Provider<PdfPathPicker>(
+  (ref) => () async {
+    final files = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['pdf'],
+    );
+    return files.isEmpty ? null : files.single.path;
+  },
+);
 
 final restClientProvider = Provider<RestClient>(
   (ref) => RestClient(ref.watch(dioProvider)),

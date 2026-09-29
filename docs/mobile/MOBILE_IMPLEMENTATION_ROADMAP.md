@@ -222,24 +222,44 @@ Quality gate: analyze clean · 100/100 unit + widget · on-device visual run pas
 **Objective:** reliable native uploads to R2 through existing endpoints. **Depends on:** P5.
 
 - [x] 6.1 PDF picker (`file_picker` 13, SAF / document picker, no storage permission) + `checkPdf` (`.pdf` name, `%PDF-` header, plan size limit). Image picker / camera: moved to P10 (Niro), the first screen that needs it
-- [~] 6.2 `core/upload/pdf_upload.dart` `PdfUploader`: upload-url → PUT to R2 streamed from disk with progress, cancel, 3 attempts with backoff, fresh signed URL on 403 (expired); session never sent to storage (tested). **Left:** background upload that survives leaving the app (`background_downloader`) — foreground only for now
-- [ ] 6.3 Duplicate warning (local fingerprint)
+- [~] 6.2 `core/upload/pdf_upload.dart` `PdfUploader`: upload-url → PUT to R2 streamed from disk with progress, cancel, 3 attempts with backoff, fresh signed URL on 403 (expired); session never sent to storage (tested). Leaving a screen mid-upload asks first («إيقاف الرفع؟») because the transfer belongs to the screen. **Deferred by the owner (2026-09-30):** background / resumable upload that survives leaving the app — not before its own phase
+- [x] 6.3 Duplicate warning: the picked file's name is compared with the student's library (`books.list`, same title rule as the web) before anything is uploaded → notice with «افتح الموجود»; uploading a new copy stays allowed. Local only, no new dependency (a content hash would need `crypto` and a stored index — not worth it for v1). Widget-tested
 - [x] 6.4 Plan limits: size checked before upload; server `FILE_SIZE_LIMIT` / quota errors shown as text, no purchase UI (tested)
-- [ ] 6.5 Book upload flow (`/api/books/upload-url` → `extract-and-plan`) — uploader ready, screen next
-- [ ] 6.6 Processing status: poll `generationJobs` with backoff while visible; retries (`retryChapter`, `retryExtraction`, `retryPageText`)
-- [ ] 6.7 (optional, D3) **G7** multipart for large files
+- [x] 6.5 Study-book upload (`features/books/presentation/book_upload_screen.dart`, route `/upload/book[?subjectId=]`): same flow as the web's app/books/upload — PDF check → `/api/books/upload-url` → PUT → `/api/books/extract-and-plan {key, fileName, profile, subjectId}` → the book screen. Three steps (book, subject type = the web's 7 profiles, folder — required, create inline); a folder opened from its screen is preselected and its type becomes the default profile until the student picks one; today's remaining study files from `billing.mine`; plan-limit / server errors in Arabic; no purchase UI. The question-file kind is reached through مِرآة from the ＋ sheet (the web's كتبي question-file path stays in 9.1). Shared upload parts moved to `features/upload/upload_widgets.dart` (مِرآة uses them too). Widget-tested (4) + on-device
+- [x] 6.6 Processing status (`book_screen.dart`, route `/books/:id`): the web's book-page states — reading pages, «جهّز أدوات الدراسة» (`startChapterAnalysis`), preparing %, ready; stage list (pages, chapters n/N, images n/N, coverage %) with exact missing / failed page numbers; failure reason + `retryExtraction`; failed pages `retryPageText`; failed parts `retryChapter`; `resumeChapterAnalysis` once a minute while the owner's analysis runs (as the web). Polls `books.get` + coverage only while the screen is on top and the app is in the foreground: 3 s, slowing to 15 s while nothing changes, stopping at a terminal state. Shared books are read-only (no start / retries). Widget-tested (7) + on-device (6 states)
+- [ ] 6.7 (optional, D3) **G7** multipart for large files — deferred (owner: no resumable uploads now; D3 open)
+- [!] 6.8 Live upload against a real server (small + 100 MB PDF, airplane mode mid-upload, app kill) — **blocked: staging (D1)**; production must not be used
 
 **Tests:** unit (manager state machine incl. expiry/retry/cancel); integration with staging (small + 100 MB PDF); airplane-mode mid-upload; app kill mid-upload.
 **Security:** presigned URLs never logged/persisted beyond the upload record; only PDFs accepted.
 **Performance:** memory flat during 100 MB upload (streamed from file, not loaded in RAM).
 **DoD:** E2E journey 3 (upload part) on both platforms.
 
+**Status: `[~]` every buildable task done and verified locally** — 6.1, 6.3–6.6 `[x]`; 6.2 foreground only (background / resumable deferred by the owner); 6.7 deferred (D3); 6.8 live upload `[!]` blocked on staging (D1). iOS not built (D2).
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] feature works (in-memory)  [x] happy path  [x] error path  [x] loading  [x] empty
+             [x] retry  [~] session expiry (shared 401 handling, not re-tested live)  [x] permission (shared book: no start / retries)
+UI/UX        [x] design system  [x] RTL  [x] LTR where needed (English titles isolated)  [x] touch targets ≥48dp
+             [x] keyboard n/a  [x] loading/error states  [~] accessibility (semantics on steps / pills / progress; no screen-reader pass yet)
+             [x] no layout issues (1 found + fixed)  [x] native interaction (back asks before stopping an upload)
+SECURITY     [x] no secrets in client  [x] authz server-side (only existing checked routes)  [x] tokens in secure storage
+             [x] upload security (PDF header + plan size checked first; presigned URL never stored / logged; no cookie to storage)
+             [x] logs scrubbed (no logging in the new code)  [ ] deep links n/a (G6 blocked)
+PERFORMANCE  [x] no unnecessary requests (backoff, foreground + on-top only, page list only when a page failed)
+             [x] no leaks (timers cancelled on dispose / background)  [ ] large content (100 MB live upload blocked on D1)
+TESTING      [x] unit  [x] widget  [x] integration (on-device, in-memory)  [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend file changed (only mobile/ + docs)  [x] مِرآة tests still pass after the shared-widget refactor
+```
+Results: analyze clean · Flutter 149/149 unit + widget (22 new) · `integration_test/book_screens_test.dart` on the Pixel 6 Pro API 36 emulator: 8 screens captured and reviewed · found & fixed: the "processing details" header overflowed on narrow / large-font phones (now wraps); the coverage stage kept spinning forever after a permanent page failure (now shows failed, retry below); the integration run hung on `pumpAndSettle` because a book being read animates by design (test uses fixed pumps).
+Finding for the owner (backend, not changed): `books.get` returns the whole `pageTexts` column while a book is being read, and `books.listPages` returns every page's `extractedText`; the web polls `books.get` every 3 s. Proposed **G13** (additive, needs approval): leave these out of the polled responses. The app already limits the cost (backoff; page list only on failure).
+
 ---
 
 ## Phase 7 — Study features
 **Objective:** web parity for studying a book. **Depends on:** P5 (P6 for new books).
 
-- [ ] 7.1 Book overview (chapters, status, study tools grid)
+- [~] 7.1 Book overview built with 6.6 (`book_screen.dart`): title + pages / parts + state, Exam Focus ink panel (`examFocus.get`: ready count / preparing / not made — shared), study tools (cards n, questions n, summary, mind map, match — open when ready, «قيد التجهيز» / lock otherwise), original file row, processing details. Tools open placeholder routes `/books/:id/{study,mindmap,match,exam-focus}` (P7) and `/read` (P8). **Left:** move folder / share from this page (share = P13), remove a shared book
 - [ ] 7.2 Chapter content (markdown with per-paragraph direction, visual insights, note pages)
 - [ ] 7.3 Summary + share
 - [ ] 7.4 Flashcards (due, rate, explain sheet, marks)
@@ -473,12 +493,16 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 | 2026-09-29 | `mobile/lib/core/ui/**` (theme, tokens, bidi, components), `mobile/lib/l10n/*`, `mobile/l10n.yaml`, `mobile/lib/app/dev/component_gallery.dart`, `mobile/assets/{fonts,niro,brand}/`, `mobile/tool/export_niro_svgs.tsx`, generated Android/iOS icon + splash resources, `mobile/integration_test/` | P2–P3 | `9616c5f` (branch `feat/mobile-foundation`) |
 | 2026-09-29 | `lib/credentials-login.ts`, `lib/mobile-session.ts`, `lib/auth.ts`, `app/api/mobile/auth/{login,refresh}/` (+ tests) | P4 backend | `ee1c391` |
 | 2026-09-29 | `mobile/lib/features/auth/**`, `mobile/lib/core/phone.dart`, `mobile/lib/app/routes.dart`, auth tests | P4 client | `9616c5f` |
+| 2026-09-30 | `mobile/lib/features/{library,account}/**`, router, l10n, phase-5 tests | P5 | `d70fe1d` |
+| 2026-09-30 | `mobile/lib/core/upload/pdf_upload.dart`, `mobile/lib/features/mirror/**`, `mobile/tool/export_card_question_fixtures.ts`, tests | P6 uploader + P9 مِرآة | `4865df1` |
+| 2026-09-30 | `mobile/lib/features/books/**` (new), `mobile/lib/features/upload/upload_widgets.dart` (new), `mirror_start_screen.dart` (shared parts), `pdf_upload.dart` (picker provider), router / routes, folder screen, l10n, `test/features/books/**`, `integration_test/book_screens_test.dart` | P6 book upload + processing, P7.1 | commit "mobile: study-book upload and book screen (phase 6)" |
 
 ## Known issues (keep updated)
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
 - Shared: `components/PdfViewer.tsx` never frees page canvases and does not cap DPR (web + mobile Safari memory risk) — not in mobile scope; track separately.
 - Web: no password reset (G5).
-- Dev machine: drive C: full (2026-09-29) — blocks Android builds and the emulator until space is freed.
+- Dev machine: drive C: nearly full (~5 GB free, 2026-09-30) — run the emulator and Gradle one at a time.
+- Backend (G13 proposal): `books.get` sends `pageTexts` while a book is read and `books.listPages` sends every page's text — heavy on mobile data; the web polls it every 3 s.
 
 ---
 
@@ -486,20 +510,20 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 5 — navigation shell, Home, folders, account (`[~]`, implemented locally; G6/G9 blocked). Phases 2, 3 and 4-implementation `[x]`; Phase 4 live verification `[!]` (staging). Phase 1 not started (owner actions) |
-| Current Task | Phase 4 — email/phone login + registration done and tested; waiting for a server that runs G1/G4 |
-| Last Completed Task | 4.1–4.3 + 4.6 backend (shared credentials check, mobile login + refresh endpoints, 21 tests) and 4.8–4.10, 4.12, 4.14 Flutter (welcome, login, register, refresh) |
-| Next Task | Phase 5 (Home, folders, account + sign-out). Rule: no production deployment and no merge to `main` without the owner's explicit approval; live auth waits for staging (D1) |
-| Blocked By | Live verification of login: G1/G4 not deployed and no staging (D1); Google (1.4, D6); Apple (D2); Sentry (2.8) |
-| Last Verification | 2026-09-29 — Flutter: analyze clean, 73/73 tests; welcome / login / register seen on the emulator. Web: vitest 842 passed + 1 known slow-test timeout, tsc clean, `next build` ok (new routes compiled) |
-| Tests | Flutter 73/73 unit + widget, 3/3 on-device integration. Web: 842 passed (1 brain-games timeout under full-suite load; passes alone), incl. 21 new auth tests |
-| Build | Android debug APK builds and runs on the emulator. iOS: not built (no macOS; CI job written, never run) |
-| Security | Token only in secure storage (device-verified) and only sent to the API origin (tested); Android backup / device transfer disabled (verified on the installed package); no secrets in `env/*.json` |
-| Performance | Not measured yet (debug build only; release measurement in P16) |
-| UI/UX | Design system reviewed on emulator screenshots against the web: type, buttons, rows, badges, progress (RTL), bidi, Niro, states, bottom nav, icon, splash |
-| Android | Runs on API 36 emulator; icon + splash verified. Low-end device check pending |
+| Current Phase | Phase 7 — study features (starting; 7.1 book overview `[~]`). Phase 6 `[~]`: every buildable task done + quality gate passed; background / resumable upload deferred by the owner, G7 deferred (D3), live upload `[!]` (staging). Phases 2, 3, 4-implementation `[x]`; 5 `[~]`; 9.4 مِرآة `[x]` |
+| Current Task | 7.4 flashcards / 7.5 MCQ (`books.getStudyContent`, `dueCards`, `rateCard`, `submitMcqAttempt`) |
+| Last Completed Task | 6.3 duplicate warning, 6.5 study-book upload, 6.6 processing status + retries, 7.1 overview (first cut) |
+| Next Task | Phase 7 in order: 7.4 flashcards → 7.5 MCQ → 7.3 summary → 7.6 Exam Focus → 7.7 mind map → 7.8 match → 7.9 / 7.10. Rule: no push, no production deploy, no merge to `main` without explicit approval |
+| Blocked By | Live auth + upload + contract tests: staging (D1) — G1/G4 not deployed, production not to be used; iOS: D2; Sentry (2.8); G6 / G9 / G13 backend changes need approval; Google / Apple login (D6) |
+| Last Verification | 2026-09-30 — analyze clean, 149/149 unit + widget, book screens on the emulator (8 screens, in-memory data) |
+| Tests | Flutter 149/149 unit + widget; on-device integration runs: session storage, phase-5 screens, مِرآة screens, book screens. Web untouched since `ee1c391` (842 passed then) |
+| Build | Android debug APK builds and runs on the API 36 emulator. iOS: not built (no macOS) |
+| Security | Session only in secure storage and only to the API origin; uploads: PDF header + plan size checked first, presigned URL never stored / logged, no session to storage; no secrets in `env/*.json` |
+| Performance | Polling backs off (3 → 15 s) and stops in the background / under another screen; the heavy page list is fetched only on failure. Release-build measurement in P16 |
+| UI/UX | Upload and book screens reviewed on emulator screenshots (RTL, English titles isolated, progress fills from the right) |
+| Android | Runs on API 36 emulator. Low-end device check pending |
 | iOS | Not built |
-| Last Updated | 2026-09-29 |
+| Last Updated | 2026-09-30 |
 
 ## CHANGELOG / IMPLEMENTATION HISTORY
 
@@ -556,3 +580,12 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
   (Center without heightFactor); card header and footer rows overflowed on
   narrow phones; pasted English text rendered right-to-left. Live data still
   needs staging (D1).
+- **2026-09-30** — Phase 6 finished as far as it can go without staging: study-book
+  upload (same server flow as the web; folder preselected from its screen, its
+  type as default profile), duplicate-name warning, book screen with the web's
+  processing states and every retry, polling that backs off and pauses when not
+  visible. Leaving mid-upload now asks first (book + مِرآة). Upload parts shared
+  by both upload screens. Quality gate recorded under Phase 6. Found and fixed:
+  header overflow; never-ending coverage spinner after a permanent page failure.
+  Proposed G13 (lighter polled responses) — needs approval. Background /
+  resumable upload and G7 left for their phases per the owner. Next: Phase 7.
