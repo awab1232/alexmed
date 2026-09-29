@@ -1216,4 +1216,272 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get uploadLeaveConfirm => 'Stop and leave';
+
+  @override
+  String studyCoverageRead(int read, int total) {
+    return 'Read $read/$total pages';
+  }
+
+  @override
+  String studyCoverageAnalyzed(int done, int total) {
+    return 'Analysed $done/$total parts';
+  }
+
+  @override
+  String studyCoverageChunks(int covered, int required) {
+    return 'Coverage $covered/$required sections';
+  }
+
+  @override
+  String studyCoverageFailedPages(String pages) {
+    return 'Unreadable pages $pages';
+  }
+
+  @override
+  String studyCoverageGenFailed(String titles) {
+    return 'Generation failed for: $titles';
+  }
+
+  @override
+  String get studyKnowledgeTitle => 'Collecting every fact in the file first';
+
+  @override
+  String get studyKnowledgeBodyCards =>
+      'Cards are built from one knowledge base covering every page — the same facts as Exam Focus.';
+
+  @override
+  String get studyKnowledgeBodyMcqs =>
+      'Questions are built from one knowledge base covering every page — the same facts as Exam Focus.';
+
+  @override
+  String studyKnowledgeUnits(int done, int total) {
+    return 'Parts: $done/$total';
+  }
+
+  @override
+  String get studyGeneratingCards => 'Generating cards from the whole file';
+
+  @override
+  String get studyGeneratingMcqs => 'Generating questions from the whole file';
+
+  @override
+  String studyGeneratingProgress(int done, int total) {
+    return '$done of $total ready';
+  }
+
+  @override
+  String studyGeneratingNow(String title) {
+    return 'Now: $title';
+  }
+
+  @override
+  String studyGeneratingQueue(int count) {
+    return 'Waiting in queue ($count)';
+  }
+
+  @override
+  String get studyLeaveHint =>
+      'Preparation continues on the server even if you leave the app.';
+
+  @override
+  String get studyEmptyOwner =>
+      'Prepare the study tools from the book page first.';
+
+  @override
+  String get studyRestart => 'Start again';
+
+  @override
+  String get studyBack => 'Back';
+
+  @override
+  String get flashEmpty => 'No cards for this file yet';
+
+  @override
+  String get flashEmptyShared => 'The owner hasn\'t generated cards yet.';
+
+  @override
+  String get flashTime => 'Time';
+
+  @override
+  String get flashRemaining => 'Left';
+
+  @override
+  String get flashLearning => 'Learning';
+
+  @override
+  String get flashMastered => 'Mastered';
+
+  @override
+  String flashCardOf(int n, int total) {
+    return 'Card $n/$total';
+  }
+
+  @override
+  String get flashQuestion => 'Question';
+
+  @override
+  String get flashAnswer => 'Answer';
+
+  @override
+  String get flashTapToFlip => 'Tap to flip';
+
+  @override
+  String get flashTapToQuestion => 'Tap to see the question';
+
+  @override
+  String get flashSource => 'Source';
+
+  @override
+  String flashSourceTitle(int page) {
+    return 'Source — page $page';
+  }
+
+  @override
+  String get flashExplainTitle => 'About this card';
+
+  @override
+  String get flashTranslate => 'Translate';
+
+  @override
+  String get flashExplain => 'Explain';
+
+  @override
+  String get flashPrev => 'Previous';
+
+  @override
+  String get flashNext => 'Next';
+
+  @override
+  String get flashLangToggle => 'Switch card language';
+
+  @override
+  String get flashRateFailed =>
+      'Couldn\'t save the rating. Check your connection.';
+
+  @override
+  String get rateAgain => 'Forgot';
+
+  @override
+  String get rateHard => 'Hard';
+
+  @override
+  String get rateGood => 'Good';
+
+  @override
+  String get rateEasy => 'Easy';
+
+  @override
+  String get flashDone => 'Review done 🎉';
+
+  @override
+  String flashDoneBody(int count, String time, int mastered, int learning) {
+    return 'You reviewed $count cards in $time — $mastered mastered, $learning still learning.';
+  }
+
+  @override
+  String get flashReviewHard => 'Review the hard cards';
+
+  @override
+  String get labelQuestionBi => 'QUESTION / السؤال';
+
+  @override
+  String get labelAnswerBi => 'ANSWER / الإجابة';
+
+  @override
+  String get labelTermBi => 'TERM / المصطلح';
+
+  @override
+  String get sourceImageFailed => 'Couldn\'t load this page\'s image.';
+
+  @override
+  String get quizEmpty => 'No quiz for this file yet';
+
+  @override
+  String get quizEmptyShared => 'The owner hasn\'t generated questions yet.';
+
+  @override
+  String quizQuestionOf(int n, int total) {
+    return 'Question $n of $total';
+  }
+
+  @override
+  String quizPage(int page) {
+    return 'Page $page';
+  }
+
+  @override
+  String quizScore(int score) {
+    return 'Score: $score';
+  }
+
+  @override
+  String get quizFlagged => 'This question needs review';
+
+  @override
+  String get quizCorrect => 'Correct ✓';
+
+  @override
+  String get quizWrong => 'Wrong ✗';
+
+  @override
+  String get quizSaveFailed => 'Couldn\'t save your answer. Choose it again.';
+
+  @override
+  String get quizHint => 'Hint';
+
+  @override
+  String get quizSkip => 'Skip';
+
+  @override
+  String quizResult(int score, int total) {
+    return 'Score: $score / $total';
+  }
+
+  @override
+  String quizAnsweredSome(int answered, int total) {
+    return 'You answered $answered of $total questions.';
+  }
+
+  @override
+  String get quizAllCorrect => 'Excellent! All correct 🎉';
+
+  @override
+  String get quizReviewWrong => 'Go over the wrong ones and try again.';
+
+  @override
+  String get quizRetryWrong => 'Retry the wrong ones';
+
+  @override
+  String quizDot(int n) {
+    return 'Question $n';
+  }
+
+  @override
+  String get summaryTitle => 'Summary';
+
+  @override
+  String get summaryShowAr => 'Show in Arabic';
+
+  @override
+  String get summaryShowEn => 'Show in English';
+
+  @override
+  String get summaryCopyLink => 'Copy link';
+
+  @override
+  String get summaryLinkCopied => 'Link copied';
+
+  @override
+  String get summaryCompose => 'Make a structured summary';
+
+  @override
+  String get summaryComposeBody =>
+      'Turn this part into a structured medical summary: definition, symptoms, diagnosis, treatment and red flags.';
+
+  @override
+  String get summaryEmpty => 'No summary yet';
+
+  @override
+  String get summaryEmptyShared =>
+      'The owner hasn\'t prepared the summary yet.';
 }

@@ -1201,4 +1201,269 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get uploadLeaveConfirm => 'إيقاف والخروج';
+
+  @override
+  String studyCoverageRead(int read, int total) {
+    return 'قُرئت $read/$total صفحة';
+  }
+
+  @override
+  String studyCoverageAnalyzed(int done, int total) {
+    return 'حُلّل $done/$total أجزاء';
+  }
+
+  @override
+  String studyCoverageChunks(int covered, int required) {
+    return 'التغطية $covered/$required مقاطع';
+  }
+
+  @override
+  String studyCoverageFailedPages(String pages) {
+    return 'تعذّرت قراءة الصفحات $pages';
+  }
+
+  @override
+  String studyCoverageGenFailed(String titles) {
+    return 'فشل التوليد لـ: $titles';
+  }
+
+  @override
+  String get studyKnowledgeTitle => 'نجهّز كل حقائق الملف أولاً';
+
+  @override
+  String get studyKnowledgeBodyCards =>
+      'البطاقات تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.';
+
+  @override
+  String get studyKnowledgeBodyMcqs =>
+      'الأسئلة تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.';
+
+  @override
+  String studyKnowledgeUnits(int done, int total) {
+    return 'الأجزاء: $done/$total';
+  }
+
+  @override
+  String get studyGeneratingCards => 'توليد البطاقات من الملف كاملاً';
+
+  @override
+  String get studyGeneratingMcqs => 'توليد الأسئلة من الملف كاملاً';
+
+  @override
+  String studyGeneratingProgress(int done, int total) {
+    return '$done من $total جاهز';
+  }
+
+  @override
+  String studyGeneratingNow(String title) {
+    return 'جاري الآن: $title';
+  }
+
+  @override
+  String studyGeneratingQueue(int count) {
+    return 'في قائمة الانتظار ($count)';
+  }
+
+  @override
+  String get studyLeaveHint =>
+      'التجهيز يكمل على الخادم حتى لو طلعت من التطبيق.';
+
+  @override
+  String get studyEmptyOwner => 'جهّز أدوات الدراسة من صفحة الكتاب أولاً.';
+
+  @override
+  String get studyRestart => 'ابدأ من جديد';
+
+  @override
+  String get studyBack => 'رجوع';
+
+  @override
+  String get flashEmpty => 'لا توجد بطاقات لهذا الملف بعد';
+
+  @override
+  String get flashEmptyShared => 'لم يولّد صاحب الملف بطاقات بعد.';
+
+  @override
+  String get flashTime => 'الوقت';
+
+  @override
+  String get flashRemaining => 'متبقي';
+
+  @override
+  String get flashLearning => 'قيد التعلم';
+
+  @override
+  String get flashMastered => 'متقن';
+
+  @override
+  String flashCardOf(int n, int total) {
+    return 'البطاقة: $n/$total';
+  }
+
+  @override
+  String get flashQuestion => 'السؤال';
+
+  @override
+  String get flashAnswer => 'الإجابة';
+
+  @override
+  String get flashTapToFlip => 'اضغط للقلب';
+
+  @override
+  String get flashTapToQuestion => 'اضغط لرؤية السؤال';
+
+  @override
+  String get flashSource => 'المصدر';
+
+  @override
+  String flashSourceTitle(int page) {
+    return 'مصدر السؤال — صفحة $page';
+  }
+
+  @override
+  String get flashExplainTitle => 'شرح البطاقة';
+
+  @override
+  String get flashTranslate => 'ترجمة';
+
+  @override
+  String get flashExplain => 'شرح';
+
+  @override
+  String get flashPrev => 'السابق';
+
+  @override
+  String get flashNext => 'التالي';
+
+  @override
+  String get flashLangToggle => 'تغيير لغة البطاقة';
+
+  @override
+  String get flashRateFailed => 'تعذّر حفظ التقييم. تحقق من اتصالك.';
+
+  @override
+  String get rateAgain => 'لم أتذكر';
+
+  @override
+  String get rateHard => 'صعبة';
+
+  @override
+  String get rateGood => 'جيدة';
+
+  @override
+  String get rateEasy => 'سهلة';
+
+  @override
+  String get flashDone => 'انتهت المراجعة 🎉';
+
+  @override
+  String flashDoneBody(int count, String time, int mastered, int learning) {
+    return 'راجعت $count بطاقة في $time — متقن $mastered، قيد التعلم $learning.';
+  }
+
+  @override
+  String get flashReviewHard => 'راجع البطاقات الصعبة';
+
+  @override
+  String get labelQuestionBi => 'QUESTION / السؤال';
+
+  @override
+  String get labelAnswerBi => 'ANSWER / الإجابة';
+
+  @override
+  String get labelTermBi => 'TERM / المصطلح';
+
+  @override
+  String get sourceImageFailed => 'تعذر تحميل صورة هذه الصفحة.';
+
+  @override
+  String get quizEmpty => 'لا يوجد اختبار لهذا الملف بعد';
+
+  @override
+  String get quizEmptyShared => 'لم يولّد صاحب الملف أسئلة بعد.';
+
+  @override
+  String quizQuestionOf(int n, int total) {
+    return 'السؤال $n من $total';
+  }
+
+  @override
+  String quizPage(int page) {
+    return 'صفحة $page';
+  }
+
+  @override
+  String quizScore(int score) {
+    return 'النتيجة: $score';
+  }
+
+  @override
+  String get quizFlagged => 'هذا السؤال يحتاج مراجعة';
+
+  @override
+  String get quizCorrect => 'إجابة صحيحة ✓';
+
+  @override
+  String get quizWrong => 'إجابة خاطئة ✗';
+
+  @override
+  String get quizSaveFailed => 'تعذر حفظ إجابتك. اختر الإجابة مرة أخرى.';
+
+  @override
+  String get quizHint => 'تلميح';
+
+  @override
+  String get quizSkip => 'تخطي';
+
+  @override
+  String quizResult(int score, int total) {
+    return 'النتيجة: $score / $total';
+  }
+
+  @override
+  String quizAnsweredSome(int answered, int total) {
+    return 'جاوبت $answered من $total سؤال.';
+  }
+
+  @override
+  String get quizAllCorrect => 'ممتاز! كل الإجابات صحيحة 🎉';
+
+  @override
+  String get quizReviewWrong => 'راجع الأسئلة الغلط وجرّب مرة ثانية.';
+
+  @override
+  String get quizRetryWrong => 'أعد الأسئلة الغلط';
+
+  @override
+  String quizDot(int n) {
+    return 'السؤال $n';
+  }
+
+  @override
+  String get summaryTitle => 'الملخص';
+
+  @override
+  String get summaryShowAr => 'عرض بالعربي';
+
+  @override
+  String get summaryShowEn => 'عرض بالإنجليزي';
+
+  @override
+  String get summaryCopyLink => 'نسخ الرابط';
+
+  @override
+  String get summaryLinkCopied => 'تم نسخ الرابط';
+
+  @override
+  String get summaryCompose => 'تجهيز ملخص منظم';
+
+  @override
+  String get summaryComposeBody =>
+      'حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص، علاج، ونقاط خطر.';
+
+  @override
+  String get summaryEmpty => 'لا يوجد ملخص جاهز بعد';
+
+  @override
+  String get summaryEmptyShared => 'لم يجهّز صاحب الملف الملخص بعد.';
 }

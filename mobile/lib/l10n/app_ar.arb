@@ -748,5 +748,242 @@
   "bookNotFound": "تعذر العثور على هذا الكتاب",
   "uploadLeaveTitle": "إيقاف الرفع؟",
   "uploadLeaveBody": "الملف لم يكتمل رفعه بعد. إذا خرجت الآن يتوقف الرفع وتحتاج تبدأه من جديد.",
-  "uploadLeaveConfirm": "إيقاف والخروج"
+  "uploadLeaveConfirm": "إيقاف والخروج",
+  "studyCoverageRead": "قُرئت {read}/{total} صفحة",
+  "@studyCoverageRead": {
+    "placeholders": {
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCoverageAnalyzed": "حُلّل {done}/{total} أجزاء",
+  "@studyCoverageAnalyzed": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCoverageChunks": "التغطية {covered}/{required} مقاطع",
+  "@studyCoverageChunks": {
+    "placeholders": {
+      "covered": {
+        "type": "int"
+      },
+      "required": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCoverageFailedPages": "تعذّرت قراءة الصفحات {pages}",
+  "@studyCoverageFailedPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "studyCoverageGenFailed": "فشل التوليد لـ: {titles}",
+  "@studyCoverageGenFailed": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "studyKnowledgeTitle": "نجهّز كل حقائق الملف أولاً",
+  "studyKnowledgeBodyCards": "البطاقات تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.",
+  "studyKnowledgeBodyMcqs": "الأسئلة تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.",
+  "studyKnowledgeUnits": "الأجزاء: {done}/{total}",
+  "@studyKnowledgeUnits": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyGeneratingCards": "توليد البطاقات من الملف كاملاً",
+  "studyGeneratingMcqs": "توليد الأسئلة من الملف كاملاً",
+  "studyGeneratingProgress": "{done} من {total} جاهز",
+  "@studyGeneratingProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyGeneratingNow": "جاري الآن: {title}",
+  "@studyGeneratingNow": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "studyGeneratingQueue": "في قائمة الانتظار ({count})",
+  "@studyGeneratingQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "studyLeaveHint": "التجهيز يكمل على الخادم حتى لو طلعت من التطبيق.",
+  "studyEmptyOwner": "جهّز أدوات الدراسة من صفحة الكتاب أولاً.",
+  "studyRestart": "ابدأ من جديد",
+  "studyBack": "رجوع",
+  "flashEmpty": "لا توجد بطاقات لهذا الملف بعد",
+  "flashEmptyShared": "لم يولّد صاحب الملف بطاقات بعد.",
+  "flashTime": "الوقت",
+  "flashRemaining": "متبقي",
+  "flashLearning": "قيد التعلم",
+  "flashMastered": "متقن",
+  "flashCardOf": "البطاقة: {n}/{total}",
+  "@flashCardOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "flashQuestion": "السؤال",
+  "flashAnswer": "الإجابة",
+  "flashTapToFlip": "اضغط للقلب",
+  "flashTapToQuestion": "اضغط لرؤية السؤال",
+  "flashSource": "المصدر",
+  "flashSourceTitle": "مصدر السؤال — صفحة {page}",
+  "@flashSourceTitle": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "flashExplainTitle": "شرح البطاقة",
+  "flashTranslate": "ترجمة",
+  "flashExplain": "شرح",
+  "flashPrev": "السابق",
+  "flashNext": "التالي",
+  "flashLangToggle": "تغيير لغة البطاقة",
+  "flashRateFailed": "تعذّر حفظ التقييم. تحقق من اتصالك.",
+  "rateAgain": "لم أتذكر",
+  "rateHard": "صعبة",
+  "rateGood": "جيدة",
+  "rateEasy": "سهلة",
+  "flashDone": "انتهت المراجعة 🎉",
+  "flashDoneBody": "راجعت {count} بطاقة في {time} — متقن {mastered}، قيد التعلم {learning}.",
+  "@flashDoneBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      },
+      "mastered": {
+        "type": "int"
+      },
+      "learning": {
+        "type": "int"
+      }
+    }
+  },
+  "flashReviewHard": "راجع البطاقات الصعبة",
+  "labelQuestionBi": "QUESTION / السؤال",
+  "labelAnswerBi": "ANSWER / الإجابة",
+  "labelTermBi": "TERM / المصطلح",
+  "sourceImageFailed": "تعذر تحميل صورة هذه الصفحة.",
+  "quizEmpty": "لا يوجد اختبار لهذا الملف بعد",
+  "quizEmptyShared": "لم يولّد صاحب الملف أسئلة بعد.",
+  "quizQuestionOf": "السؤال {n} من {total}",
+  "@quizQuestionOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizPage": "صفحة {page}",
+  "@quizPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "quizScore": "النتيجة: {score}",
+  "@quizScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "quizFlagged": "هذا السؤال يحتاج مراجعة",
+  "quizCorrect": "إجابة صحيحة ✓",
+  "quizWrong": "إجابة خاطئة ✗",
+  "quizSaveFailed": "تعذر حفظ إجابتك. اختر الإجابة مرة أخرى.",
+  "quizHint": "تلميح",
+  "quizSkip": "تخطي",
+  "quizResult": "النتيجة: {score} / {total}",
+  "@quizResult": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizAnsweredSome": "جاوبت {answered} من {total} سؤال.",
+  "@quizAnsweredSome": {
+    "placeholders": {
+      "answered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizAllCorrect": "ممتاز! كل الإجابات صحيحة 🎉",
+  "quizReviewWrong": "راجع الأسئلة الغلط وجرّب مرة ثانية.",
+  "quizRetryWrong": "أعد الأسئلة الغلط",
+  "quizDot": "السؤال {n}",
+  "@quizDot": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryTitle": "الملخص",
+  "summaryShowAr": "عرض بالعربي",
+  "summaryShowEn": "عرض بالإنجليزي",
+  "summaryCopyLink": "نسخ الرابط",
+  "summaryLinkCopied": "تم نسخ الرابط",
+  "summaryCompose": "تجهيز ملخص منظم",
+  "summaryComposeBody": "حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص، علاج، ونقاط خطر.",
+  "summaryEmpty": "لا يوجد ملخص جاهز بعد",
+  "summaryEmptyShared": "لم يجهّز صاحب الملف الملخص بعد."
 }

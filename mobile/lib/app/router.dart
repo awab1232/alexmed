@@ -20,6 +20,8 @@ import '../features/mirror/presentation/mirror_deck_screen.dart';
 import '../features/mirror/presentation/mirror_job_screen.dart';
 import '../features/mirror/presentation/mirror_library_screen.dart';
 import '../features/mirror/presentation/mirror_start_screen.dart';
+import '../features/study/data/study_models.dart';
+import '../features/study/presentation/study_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'dev/component_gallery.dart';
 import 'placeholder_screen.dart';
@@ -109,7 +111,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/books/:id',
         builder: (_, state) => BookScreen(bookId: state.pathParameters['id']!),
         routes: [
-          _placeholder('study', (l) => l.bookStudyTitle, 'P7'),
+          GoRoute(
+            path: 'study',
+            builder: (_, state) => StudyScreen(
+              bookId: state.pathParameters['id']!,
+              tool: StudyTool.parse(state.uri.queryParameters['tool']),
+            ),
+          ),
           _placeholder('mindmap', (l) => l.toolMindmap, 'P7'),
           _placeholder('match', (l) => l.toolMatch, 'P7'),
           _placeholder('exam-focus', (l) => l.examFocusOpen, 'P7'),

@@ -2161,6 +2161,456 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إيقاف والخروج'**
   String get uploadLeaveConfirm;
+
+  /// No description provided for @studyCoverageRead.
+  ///
+  /// In ar, this message translates to:
+  /// **'قُرئت {read}/{total} صفحة'**
+  String studyCoverageRead(int read, int total);
+
+  /// No description provided for @studyCoverageAnalyzed.
+  ///
+  /// In ar, this message translates to:
+  /// **'حُلّل {done}/{total} أجزاء'**
+  String studyCoverageAnalyzed(int done, int total);
+
+  /// No description provided for @studyCoverageChunks.
+  ///
+  /// In ar, this message translates to:
+  /// **'التغطية {covered}/{required} مقاطع'**
+  String studyCoverageChunks(int covered, int required);
+
+  /// No description provided for @studyCoverageFailedPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة الصفحات {pages}'**
+  String studyCoverageFailedPages(String pages);
+
+  /// No description provided for @studyCoverageGenFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل التوليد لـ: {titles}'**
+  String studyCoverageGenFailed(String titles);
+
+  /// No description provided for @studyKnowledgeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجهّز كل حقائق الملف أولاً'**
+  String get studyKnowledgeTitle;
+
+  /// No description provided for @studyKnowledgeBodyCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'البطاقات تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.'**
+  String get studyKnowledgeBodyCards;
+
+  /// No description provided for @studyKnowledgeBodyMcqs.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسئلة تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.'**
+  String get studyKnowledgeBodyMcqs;
+
+  /// No description provided for @studyKnowledgeUnits.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجزاء: {done}/{total}'**
+  String studyKnowledgeUnits(int done, int total);
+
+  /// No description provided for @studyGeneratingCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'توليد البطاقات من الملف كاملاً'**
+  String get studyGeneratingCards;
+
+  /// No description provided for @studyGeneratingMcqs.
+  ///
+  /// In ar, this message translates to:
+  /// **'توليد الأسئلة من الملف كاملاً'**
+  String get studyGeneratingMcqs;
+
+  /// No description provided for @studyGeneratingProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {total} جاهز'**
+  String studyGeneratingProgress(int done, int total);
+
+  /// No description provided for @studyGeneratingNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الآن: {title}'**
+  String studyGeneratingNow(String title);
+
+  /// No description provided for @studyGeneratingQueue.
+  ///
+  /// In ar, this message translates to:
+  /// **'في قائمة الانتظار ({count})'**
+  String studyGeneratingQueue(int count);
+
+  /// No description provided for @studyLeaveHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'التجهيز يكمل على الخادم حتى لو طلعت من التطبيق.'**
+  String get studyLeaveHint;
+
+  /// No description provided for @studyEmptyOwner.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّز أدوات الدراسة من صفحة الكتاب أولاً.'**
+  String get studyEmptyOwner;
+
+  /// No description provided for @studyRestart.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ من جديد'**
+  String get studyRestart;
+
+  /// No description provided for @studyBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get studyBack;
+
+  /// No description provided for @flashEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بطاقات لهذا الملف بعد'**
+  String get flashEmpty;
+
+  /// No description provided for @flashEmptyShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يولّد صاحب الملف بطاقات بعد.'**
+  String get flashEmptyShared;
+
+  /// No description provided for @flashTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت'**
+  String get flashTime;
+
+  /// No description provided for @flashRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي'**
+  String get flashRemaining;
+
+  /// No description provided for @flashLearning.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد التعلم'**
+  String get flashLearning;
+
+  /// No description provided for @flashMastered.
+  ///
+  /// In ar, this message translates to:
+  /// **'متقن'**
+  String get flashMastered;
+
+  /// No description provided for @flashCardOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'البطاقة: {n}/{total}'**
+  String flashCardOf(int n, int total);
+
+  /// No description provided for @flashQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال'**
+  String get flashQuestion;
+
+  /// No description provided for @flashAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجابة'**
+  String get flashAnswer;
+
+  /// No description provided for @flashTapToFlip.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط للقلب'**
+  String get flashTapToFlip;
+
+  /// No description provided for @flashTapToQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط لرؤية السؤال'**
+  String get flashTapToQuestion;
+
+  /// No description provided for @flashSource.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصدر'**
+  String get flashSource;
+
+  /// No description provided for @flashSourceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصدر السؤال — صفحة {page}'**
+  String flashSourceTitle(int page);
+
+  /// No description provided for @flashExplainTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شرح البطاقة'**
+  String get flashExplainTitle;
+
+  /// No description provided for @flashTranslate.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترجمة'**
+  String get flashTranslate;
+
+  /// No description provided for @flashExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'شرح'**
+  String get flashExplain;
+
+  /// No description provided for @flashPrev.
+  ///
+  /// In ar, this message translates to:
+  /// **'السابق'**
+  String get flashPrev;
+
+  /// No description provided for @flashNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get flashNext;
+
+  /// No description provided for @flashLangToggle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير لغة البطاقة'**
+  String get flashLangToggle;
+
+  /// No description provided for @flashRateFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر حفظ التقييم. تحقق من اتصالك.'**
+  String get flashRateFailed;
+
+  /// No description provided for @rateAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم أتذكر'**
+  String get rateAgain;
+
+  /// No description provided for @rateHard.
+  ///
+  /// In ar, this message translates to:
+  /// **'صعبة'**
+  String get rateHard;
+
+  /// No description provided for @rateGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'جيدة'**
+  String get rateGood;
+
+  /// No description provided for @rateEasy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سهلة'**
+  String get rateEasy;
+
+  /// No description provided for @flashDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت المراجعة 🎉'**
+  String get flashDone;
+
+  /// No description provided for @flashDoneBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجعت {count} بطاقة في {time} — متقن {mastered}، قيد التعلم {learning}.'**
+  String flashDoneBody(int count, String time, int mastered, int learning);
+
+  /// No description provided for @flashReviewHard.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع البطاقات الصعبة'**
+  String get flashReviewHard;
+
+  /// No description provided for @labelQuestionBi.
+  ///
+  /// In ar, this message translates to:
+  /// **'QUESTION / السؤال'**
+  String get labelQuestionBi;
+
+  /// No description provided for @labelAnswerBi.
+  ///
+  /// In ar, this message translates to:
+  /// **'ANSWER / الإجابة'**
+  String get labelAnswerBi;
+
+  /// No description provided for @labelTermBi.
+  ///
+  /// In ar, this message translates to:
+  /// **'TERM / المصطلح'**
+  String get labelTermBi;
+
+  /// No description provided for @sourceImageFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحميل صورة هذه الصفحة.'**
+  String get sourceImageFailed;
+
+  /// No description provided for @quizEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اختبار لهذا الملف بعد'**
+  String get quizEmpty;
+
+  /// No description provided for @quizEmptyShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يولّد صاحب الملف أسئلة بعد.'**
+  String get quizEmptyShared;
+
+  /// No description provided for @quizQuestionOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال {n} من {total}'**
+  String quizQuestionOf(int n, int total);
+
+  /// No description provided for @quizPage.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحة {page}'**
+  String quizPage(int page);
+
+  /// No description provided for @quizScore.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة: {score}'**
+  String quizScore(int score);
+
+  /// No description provided for @quizFlagged.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا السؤال يحتاج مراجعة'**
+  String get quizFlagged;
+
+  /// No description provided for @quizCorrect.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابة صحيحة ✓'**
+  String get quizCorrect;
+
+  /// No description provided for @quizWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابة خاطئة ✗'**
+  String get quizWrong;
+
+  /// No description provided for @quizSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حفظ إجابتك. اختر الإجابة مرة أخرى.'**
+  String get quizSaveFailed;
+
+  /// No description provided for @quizHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تلميح'**
+  String get quizHint;
+
+  /// No description provided for @quizSkip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطي'**
+  String get quizSkip;
+
+  /// No description provided for @quizResult.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة: {score} / {total}'**
+  String quizResult(int score, int total);
+
+  /// No description provided for @quizAnsweredSome.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاوبت {answered} من {total} سؤال.'**
+  String quizAnsweredSome(int answered, int total);
+
+  /// No description provided for @quizAllCorrect.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتاز! كل الإجابات صحيحة 🎉'**
+  String get quizAllCorrect;
+
+  /// No description provided for @quizReviewWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الأسئلة الغلط وجرّب مرة ثانية.'**
+  String get quizReviewWrong;
+
+  /// No description provided for @quizRetryWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد الأسئلة الغلط'**
+  String get quizRetryWrong;
+
+  /// No description provided for @quizDot.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال {n}'**
+  String quizDot(int n);
+
+  /// No description provided for @summaryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملخص'**
+  String get summaryTitle;
+
+  /// No description provided for @summaryShowAr.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض بالعربي'**
+  String get summaryShowAr;
+
+  /// No description provided for @summaryShowEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض بالإنجليزي'**
+  String get summaryShowEn;
+
+  /// No description provided for @summaryCopyLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ الرابط'**
+  String get summaryCopyLink;
+
+  /// No description provided for @summaryLinkCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم نسخ الرابط'**
+  String get summaryLinkCopied;
+
+  /// No description provided for @summaryCompose.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجهيز ملخص منظم'**
+  String get summaryCompose;
+
+  /// No description provided for @summaryComposeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص، علاج، ونقاط خطر.'**
+  String get summaryComposeBody;
+
+  /// No description provided for @summaryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد ملخص جاهز بعد'**
+  String get summaryEmpty;
+
+  /// No description provided for @summaryEmptyShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يجهّز صاحب الملف الملخص بعد.'**
+  String get summaryEmptyShared;
 }
 
 class _AppLocalizationsDelegate

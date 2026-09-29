@@ -261,9 +261,10 @@ Finding for the owner (backend, not changed): `books.get` returns the whole `pag
 
 - [~] 7.1 Book overview built with 6.6 (`book_screen.dart`): title + pages / parts + state, Exam Focus ink panel (`examFocus.get`: ready count / preparing / not made — shared), study tools (cards n, questions n, summary, mind map, match — open when ready, «قيد التجهيز» / lock otherwise), original file row, processing details. Tools open placeholder routes `/books/:id/{study,mindmap,match,exam-focus}` (P7) and `/read` (P8). **Left:** move folder / share from this page (share = P13), remove a shared book
 - [ ] 7.2 Chapter content (markdown with per-paragraph direction, visual insights, note pages)
-- [ ] 7.3 Summary + share
-- [ ] 7.4 Flashcards (due, rate, explain sheet, marks)
-- [ ] 7.5 MCQ quiz (one at a time, feedback, results, attempts)
+- [x] 7.3 Summary (`summary_view.dart`, `/books/:id/study?tool=explanation`) = the web's SummaryMode over every analysed chapter: lead summary, medical note pages when composed (tone blocks, source pages), else part-by-part summaries with page ranges + explanation, High-Yield points; EN ⇄ عربي; owner «تجهيز ملخص منظم» (`generateMedicalNotePages`, job followed via `generationJobs`, reload when settled). Share = the web's clipboard fallback (copy the page link) — no new dependency. Widget-tested (2) + on-device
+- [x] 7.4 Flashcards (`flashcards_view.dart`, `?tool=cards`) = the web's FlashcardsMode over the whole file (`books.getStudyContent`): one card at a time, tap to flip (3D), swipe + السابق / التالي, rate after flipping → `rateCard` (FSRS on the server; a shared book rates the viewer's own progress), time / remaining / learning / mastered, «البطاقة n/N» progress, per-card session state badge, EN ⇄ ع with the right direction, explanation sheet (bilingual Q / A / term with the Arabic term looked up as the web does), source page image (redirect read without following it → the session never reaches storage), end-of-review summary with «راجع البطاقات الصعبة». Cards that arrive while generation runs are appended — the student's place never moves. The web has no chapter filter or search in this mode, so none here. «اسأل Niro» waits for P10. Widget-tested (6) + on-device
+- [x] 7.5 Quiz (`quiz_view.dart`, `?tool=mcqs`) = the web's QuizMode: numbered dots (✓ / ✗), question n of N, source page, score, type label, flagged-question note, lettered choices; the answer is checked and recorded by the server (`submitMcqAttempt`), then green / red + explanation; تلميح removes one wrong choice (down to two, as the web); السابق / تخطي / التالي + swipe; result with «أعد الأسئلة الغلط». Questions are never generated on the device. Widget-tested (4) + on-device
+- [x] 7.4a Study preparation (`study_preparation.dart`) — the web study page's client-side steps, as server calls only: knowledge base (`examFocus.get` → `start` if missing, polled 4 s, `resume` every 45 s; can't be built → continue, the server falls back) → `generateChapterFlashcards` / `generateChapterMcqs` for each analysed chapter still missing them → `generationJobs` every 3 s → reload; failed chapters listed in the coverage line. Never for a shared book. Unit-tested (4). **Not ported yet:** the knowledge coverage matrix sheet and «أعد البناء من قاعدة المعرفة» (owner rebuild) — next in P7
 - [ ] 7.6 Exam Focus (units, cards, bookmarks, start/regenerate/retry with job progress)
 - [ ] 7.7 Mind map (pan/zoom canvas, viewport culling, generate sections)
 - [ ] 7.8 Match game
@@ -495,7 +496,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 | 2026-09-29 | `mobile/lib/features/auth/**`, `mobile/lib/core/phone.dart`, `mobile/lib/app/routes.dart`, auth tests | P4 client | `9616c5f` |
 | 2026-09-30 | `mobile/lib/features/{library,account}/**`, router, l10n, phase-5 tests | P5 | `d70fe1d` |
 | 2026-09-30 | `mobile/lib/core/upload/pdf_upload.dart`, `mobile/lib/features/mirror/**`, `mobile/tool/export_card_question_fixtures.ts`, tests | P6 uploader + P9 مِرآة | `4865df1` |
-| 2026-09-30 | `mobile/lib/features/books/**` (new), `mobile/lib/features/upload/upload_widgets.dart` (new), `mirror_start_screen.dart` (shared parts), `pdf_upload.dart` (picker provider), router / routes, folder screen, l10n, `test/features/books/**`, `integration_test/book_screens_test.dart` | P6 book upload + processing, P7.1 | commit "mobile: study-book upload and book screen (phase 6)" |
+| 2026-09-30 | `mobile/lib/features/books/**` (new), `mobile/lib/features/upload/upload_widgets.dart` (new), `mirror_start_screen.dart` (shared parts), `pdf_upload.dart` (picker provider), router / routes, folder screen, l10n, `test/features/books/**`, `integration_test/book_screens_test.dart` | P6 book upload + processing, P7.1 | `c342683` |
 
 ## Known issues (keep updated)
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
@@ -589,3 +590,8 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
   header overflow; never-ending coverage spinner after a permanent page failure.
   Proposed G13 (lighter polled responses) — needs approval. Background /
   resumable upload and G7 left for their phases per the owner. Next: Phase 7.
+- **2026-09-30** — P7 group A (study content): flashcards, quiz and summary as
+  native screens over `books.getStudyContent`, with the web study page's
+  preparation steps (knowledge base → per-chapter generation → job follow-up).
+  Found and fixed by tests / device: stats row and quiz footer overflowed on
+  narrow phones; quiz «التالي» sat mid-bar in RTL. analyze clean, 168/168; quiz footer took the full height after a fix (caught by a widget test).
