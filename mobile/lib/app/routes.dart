@@ -23,6 +23,7 @@ abstract final class Routes {
   static const plan = '/account/plan';
   static const stats = '/account/stats';
   static const doctorApply = '/account/doctor';
+  static const blocked = '/account/blocked';
 
   // Full-screen (built in later phases — placeholders until then).
   static String book(String id) => '/books/$id';

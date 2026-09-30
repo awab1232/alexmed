@@ -13,6 +13,7 @@ import '../../library/data/library_models.dart';
 import '../../library/data/library_repository.dart';
 import '../../library/presentation/folder_sheets.dart';
 import '../../library/presentation/library_widgets.dart' show shortDate;
+import '../../sharing/presentation/share_sheet.dart';
 import '../data/book_models.dart';
 import '../data/book_repository.dart';
 
@@ -301,6 +302,16 @@ class _BookScreenState extends ConsumerState<BookScreen>
     return Scaffold(
       appBar: AppBar(
         actions: [
+          if (book.isOwner)
+            IconButton(
+              tooltip: l10n.shShare,
+              icon: const Icon(LucideIcons.share2),
+              onPressed: () => showShareSheet(
+                context,
+                bookId: book.id,
+                bookTitle: book.fileName,
+              ),
+            ),
           if (book.isOwner)
             IconButton(
               tooltip: l10n.bookMoveFolder,

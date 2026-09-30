@@ -5149,6 +5149,336 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'فارغة'**
   String get gamesEmptyCell;
+
+  /// No description provided for @shIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملفات دراسية جاهزة شاركها معك زملاؤك — تقدّمك فيها خاص بك.'**
+  String get shIntro;
+
+  /// No description provided for @shTabRequests.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلبات'**
+  String get shTabRequests;
+
+  /// No description provided for @shTabNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get shTabNotifications;
+
+  /// No description provided for @shNoRequests.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد طلبات جديدة'**
+  String get shNoRequests;
+
+  /// No description provided for @shNoRequestsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندما يشارك زميل ملفًا معك سيظهر طلبه هنا.'**
+  String get shNoRequestsHint;
+
+  /// No description provided for @shNoPacks.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ملفات مشتركة بعد'**
+  String get shNoPacks;
+
+  /// No description provided for @shNoPacksHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملفات التي تقبلها تظهر هنا وتفتح بنفس أدوات الدراسة.'**
+  String get shNoPacksHint;
+
+  /// No description provided for @shNoNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد إشعارات'**
+  String get shNoNotifications;
+
+  /// No description provided for @shWantsToShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'{who} يريد مشاركة ملف معك'**
+  String shWantsToShare(String who);
+
+  /// No description provided for @shPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صفحة'**
+  String shPages(int count);
+
+  /// No description provided for @shAccept.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبول'**
+  String get shAccept;
+
+  /// No description provided for @shDecline.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض'**
+  String get shDecline;
+
+  /// No description provided for @shDeclineBlock.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض وحظر'**
+  String get shDeclineBlock;
+
+  /// No description provided for @shBlockTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض وحظر'**
+  String get shBlockTitle;
+
+  /// No description provided for @shBlockConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض الطلب وحظر {who}؟ لن يتمكن من إيجادك أو مشاركة ملفات معك.'**
+  String shBlockConfirm(String who);
+
+  /// No description provided for @shChapters.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} أجزاء ملخّصة'**
+  String shChapters(int count);
+
+  /// No description provided for @shCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} بطاقة'**
+  String shCards(int count);
+
+  /// No description provided for @shMindMap.
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة ذهنية'**
+  String get shMindMap;
+
+  /// No description provided for @shNoContentYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف جاهز للقراءة، ولم يُولَّد محتوى بعد.'**
+  String get shNoContentYet;
+
+  /// No description provided for @shFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {who}'**
+  String shFrom(String who);
+
+  /// No description provided for @shNoteRequest.
+  ///
+  /// In ar, this message translates to:
+  /// **'{who} أرسل لك طلب مشاركة «{title}»'**
+  String shNoteRequest(String who, String title);
+
+  /// No description provided for @shNoteAccepted.
+  ///
+  /// In ar, this message translates to:
+  /// **'{who} قبل ملفك «{title}»'**
+  String shNoteAccepted(String who, String title);
+
+  /// No description provided for @shNoteDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'{who} رفض طلب مشاركة «{title}»'**
+  String shNoteDeclined(String who, String title);
+
+  /// No description provided for @shUsernameTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المستخدم للمشاركة'**
+  String get shUsernameTitle;
+
+  /// No description provided for @shUsernameSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجدك زملاؤك بهذا الاسم ليشاركوا معك ملفاتهم. بريدك الإلكتروني لا يظهر لأحد.'**
+  String get shUsernameSet;
+
+  /// No description provided for @shUsernameUnset.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر اسم مستخدم ليتمكن زملاؤك من إيجادك ومشاركة ملفاتهم معك. بريدك الإلكتروني لا يظهر لأحد.'**
+  String get shUsernameUnset;
+
+  /// No description provided for @shUsernameRule.
+  ///
+  /// In ar, this message translates to:
+  /// **'من 3 إلى 24 حرفًا: أحرف إنجليزية صغيرة وأرقام و . و _'**
+  String get shUsernameRule;
+
+  /// No description provided for @shChoose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار'**
+  String get shChoose;
+
+  /// No description provided for @shShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get shShare;
+
+  /// No description provided for @shShareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الملف مع طالب'**
+  String get shShareTitle;
+
+  /// No description provided for @shSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث باسم المستخدم أو الاسم'**
+  String get shSearchHint;
+
+  /// No description provided for @shSearchRule.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب حرفين على الأقل. يظهر فقط الطلاب الذين اختاروا اسم مستخدم.'**
+  String get shSearchRule;
+
+  /// No description provided for @shNoStudent.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد طالب بهذا الاسم.'**
+  String get shNoStudent;
+
+  /// No description provided for @shMoreResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'نتائج أكثر'**
+  String get shMoreResults;
+
+  /// No description provided for @shFirstResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة لأول النتائج'**
+  String get shFirstResults;
+
+  /// No description provided for @shExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيحصل على نفس المحتوى الجاهز: الملخص، البطاقات، الأسئلة، الخريطة الذهنية و Exam Focus — بدون إعادة توليد، وبدون تقدّمك أو ملاحظاتك الشخصية.'**
+  String get shExplain;
+
+  /// No description provided for @shSendRequest.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال طلب المشاركة'**
+  String get shSendRequest;
+
+  /// No description provided for @shBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get shBack;
+
+  /// No description provided for @shSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'✓ تم إرسال الطلب'**
+  String get shSent;
+
+  /// No description provided for @shSentBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيظهر الملف عند {who} بعد قبوله الطلب.'**
+  String shSentBody(String who);
+
+  /// No description provided for @shShareAnother.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة مع طالب آخر'**
+  String get shShareAnother;
+
+  /// No description provided for @shSharedWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت المشاركة مع'**
+  String get shSharedWith;
+
+  /// No description provided for @shNotSharedYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تشارك هذا الملف مع أحد بعد.'**
+  String get shNotSharedYet;
+
+  /// No description provided for @shPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'بانتظار الرد'**
+  String get shPending;
+
+  /// No description provided for @shHasAccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'لديه وصول'**
+  String get shHasAccess;
+
+  /// No description provided for @shDeclined.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفض الطلب'**
+  String get shDeclined;
+
+  /// No description provided for @shWithdraw.
+  ///
+  /// In ar, this message translates to:
+  /// **'سحب'**
+  String get shWithdraw;
+
+  /// No description provided for @shRemoveAccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الوصول'**
+  String get shRemoveAccess;
+
+  /// No description provided for @shWithdrawConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سحب طلب المشاركة المرسل إلى {who}؟'**
+  String shWithdrawConfirm(String who);
+
+  /// No description provided for @shRemoveAccessConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء وصول {who} لهذا الملف؟ سيختفي من مكتبته فورًا.'**
+  String shRemoveAccessConfirm(String who);
+
+  /// No description provided for @shBlockedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحظورون'**
+  String get shBlockedTitle;
+
+  /// No description provided for @shBlockedEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم تحظر أحدًا'**
+  String get shBlockedEmpty;
+
+  /// No description provided for @shBlockedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحظور لا يستطيع إيجادك أو مشاركة ملفات معك.'**
+  String get shBlockedHint;
+
+  /// No description provided for @shUnblock.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الحظر'**
+  String get shUnblock;
+
+  /// No description provided for @shUnblockConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتمكن من إيجادك وإرسال طلبات مشاركة مجددًا.'**
+  String get shUnblockConfirm;
 }
 
 class _AppLocalizationsDelegate

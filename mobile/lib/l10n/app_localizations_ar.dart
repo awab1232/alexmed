@@ -2920,4 +2920,200 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get gamesEmptyCell => 'فارغة';
+
+  @override
+  String get shIntro =>
+      'ملفات دراسية جاهزة شاركها معك زملاؤك — تقدّمك فيها خاص بك.';
+
+  @override
+  String get shTabRequests => 'الطلبات';
+
+  @override
+  String get shTabNotifications => 'الإشعارات';
+
+  @override
+  String get shNoRequests => 'لا توجد طلبات جديدة';
+
+  @override
+  String get shNoRequestsHint => 'عندما يشارك زميل ملفًا معك سيظهر طلبه هنا.';
+
+  @override
+  String get shNoPacks => 'لا توجد ملفات مشتركة بعد';
+
+  @override
+  String get shNoPacksHint =>
+      'الملفات التي تقبلها تظهر هنا وتفتح بنفس أدوات الدراسة.';
+
+  @override
+  String get shNoNotifications => 'لا توجد إشعارات';
+
+  @override
+  String shWantsToShare(String who) {
+    return '$who يريد مشاركة ملف معك';
+  }
+
+  @override
+  String shPages(int count) {
+    return '$count صفحة';
+  }
+
+  @override
+  String get shAccept => 'قبول';
+
+  @override
+  String get shDecline => 'رفض';
+
+  @override
+  String get shDeclineBlock => 'رفض وحظر';
+
+  @override
+  String get shBlockTitle => 'رفض وحظر';
+
+  @override
+  String shBlockConfirm(String who) {
+    return 'رفض الطلب وحظر $who؟ لن يتمكن من إيجادك أو مشاركة ملفات معك.';
+  }
+
+  @override
+  String shChapters(int count) {
+    return '$count أجزاء ملخّصة';
+  }
+
+  @override
+  String shCards(int count) {
+    return '$count بطاقة';
+  }
+
+  @override
+  String get shMindMap => 'خريطة ذهنية';
+
+  @override
+  String get shNoContentYet => 'الملف جاهز للقراءة، ولم يُولَّد محتوى بعد.';
+
+  @override
+  String shFrom(String who) {
+    return 'من $who';
+  }
+
+  @override
+  String shNoteRequest(String who, String title) {
+    return '$who أرسل لك طلب مشاركة «$title»';
+  }
+
+  @override
+  String shNoteAccepted(String who, String title) {
+    return '$who قبل ملفك «$title»';
+  }
+
+  @override
+  String shNoteDeclined(String who, String title) {
+    return '$who رفض طلب مشاركة «$title»';
+  }
+
+  @override
+  String get shUsernameTitle => 'اسم المستخدم للمشاركة';
+
+  @override
+  String get shUsernameSet =>
+      'يجدك زملاؤك بهذا الاسم ليشاركوا معك ملفاتهم. بريدك الإلكتروني لا يظهر لأحد.';
+
+  @override
+  String get shUsernameUnset =>
+      'اختر اسم مستخدم ليتمكن زملاؤك من إيجادك ومشاركة ملفاتهم معك. بريدك الإلكتروني لا يظهر لأحد.';
+
+  @override
+  String get shUsernameRule =>
+      'من 3 إلى 24 حرفًا: أحرف إنجليزية صغيرة وأرقام و . و _';
+
+  @override
+  String get shChoose => 'اختيار';
+
+  @override
+  String get shShare => 'مشاركة';
+
+  @override
+  String get shShareTitle => 'مشاركة الملف مع طالب';
+
+  @override
+  String get shSearchHint => 'ابحث باسم المستخدم أو الاسم';
+
+  @override
+  String get shSearchRule =>
+      'اكتب حرفين على الأقل. يظهر فقط الطلاب الذين اختاروا اسم مستخدم.';
+
+  @override
+  String get shNoStudent => 'لا يوجد طالب بهذا الاسم.';
+
+  @override
+  String get shMoreResults => 'نتائج أكثر';
+
+  @override
+  String get shFirstResults => 'العودة لأول النتائج';
+
+  @override
+  String get shExplain =>
+      'سيحصل على نفس المحتوى الجاهز: الملخص، البطاقات، الأسئلة، الخريطة الذهنية و Exam Focus — بدون إعادة توليد، وبدون تقدّمك أو ملاحظاتك الشخصية.';
+
+  @override
+  String get shSendRequest => 'إرسال طلب المشاركة';
+
+  @override
+  String get shBack => 'رجوع';
+
+  @override
+  String get shSent => '✓ تم إرسال الطلب';
+
+  @override
+  String shSentBody(String who) {
+    return 'سيظهر الملف عند $who بعد قبوله الطلب.';
+  }
+
+  @override
+  String get shShareAnother => 'مشاركة مع طالب آخر';
+
+  @override
+  String get shSharedWith => 'تمت المشاركة مع';
+
+  @override
+  String get shNotSharedYet => 'لم تشارك هذا الملف مع أحد بعد.';
+
+  @override
+  String get shPending => 'بانتظار الرد';
+
+  @override
+  String get shHasAccess => 'لديه وصول';
+
+  @override
+  String get shDeclined => 'رفض الطلب';
+
+  @override
+  String get shWithdraw => 'سحب';
+
+  @override
+  String get shRemoveAccess => 'إلغاء الوصول';
+
+  @override
+  String shWithdrawConfirm(String who) {
+    return 'سحب طلب المشاركة المرسل إلى $who؟';
+  }
+
+  @override
+  String shRemoveAccessConfirm(String who) {
+    return 'إلغاء وصول $who لهذا الملف؟ سيختفي من مكتبته فورًا.';
+  }
+
+  @override
+  String get shBlockedTitle => 'المحظورون';
+
+  @override
+  String get shBlockedEmpty => 'لم تحظر أحدًا';
+
+  @override
+  String get shBlockedHint => 'المحظور لا يستطيع إيجادك أو مشاركة ملفات معك.';
+
+  @override
+  String get shUnblock => 'إلغاء الحظر';
+
+  @override
+  String get shUnblockConfirm => 'سيتمكن من إيجادك وإرسال طلبات مشاركة مجددًا.';
 }

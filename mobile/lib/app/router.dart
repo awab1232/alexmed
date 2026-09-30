@@ -35,11 +35,12 @@ import '../features/progress/presentation/review_screen.dart';
 import '../features/question_files/presentation/question_file_screen.dart';
 import '../features/question_files/presentation/question_files_screen.dart';
 import '../features/reader/presentation/reader_screen.dart';
+import '../features/sharing/presentation/blocked_screen.dart';
+import '../features/sharing/presentation/shared_screen.dart';
 import '../features/study/data/study_models.dart';
 import '../features/study/presentation/study_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'dev/component_gallery.dart';
-import 'placeholder_screen.dart';
 import 'routes.dart';
 
 export 'routes.dart';
@@ -137,6 +138,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'stats',
                     builder: (_, _) => const StatsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'blocked',
+                    builder: (_, _) => const BlockedScreen(),
                   ),
                   GoRoute(
                     path: 'doctor',
@@ -240,7 +245,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           appendToDeckId: state.uri.queryParameters['deck'],
         ),
       ),
-      _placeholder(Routes.shared, (l) => l.sharedWithMe, 'P13'),
+      GoRoute(path: Routes.shared, builder: (_, _) => const SharedScreen()),
       // Fixed paths before the :id ones.
       GoRoute(
         path: Routes.questionSets,
@@ -275,15 +280,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-GoRoute _placeholder(
-  String path,
-  String Function(AppLocalizations) title,
-  String phase,
-) => GoRoute(
-  path: path,
-  builder: (_, _) => PlaceholderScreen(title: title, phase: phase),
-);
 
 /// Native splash hands over to this while the session is restored from
 /// secure storage (no network) — usually a single frame. Same paper and
@@ -327,7 +323,7 @@ class MainShell extends StatelessWidget {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && atOtherTabRoot) shell.goBranch(0);
       },
-      child: _shellScaffold(context, l10n),
+      child: SharingPoller(child: _shellScaffold(context, l10n)),
     );
   }
 

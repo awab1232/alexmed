@@ -458,14 +458,26 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 ## Phase 13 — Sharing, notifications, reporting
 **Objective:** social features + store UGC requirements. **Depends on:** P5; backend G10.
 
-- [ ] 13.1 Username, user search, share sheet from book, shares for book, revoke
-- [ ] 13.2 Incoming requests (accept/decline), shared-with-me, remove from library
-- [ ] 13.3 In-app notifications (poll in foreground), mark read
-- [ ] 13.4 Block/unblock
-- [ ] 13.5 **G10** report content/user (backend + table — needs approval D3) + UI
+- [x] 13.1 Username card (the web's UsernameCard: opt-in handle, server validation / normalisation, «من 3 إلى 24 حرفًا…»), share sheet from the book screen (owner only, `features/sharing/**`): search by username / name (never email; 2+ characters, 300 ms debounce, more / first results), confirm with the web's "what they get" text, send, the server's refusals shown as written; «تمت المشاركة مع» with withdraw (pending) / remove access (accepted) after a confirmation
+- [x] 13.2 مشترك معي (`/shared`): requests first when there are any (accept / decline / decline and block after a confirmation), packs shared with me (open the book with the same study tools; «إزالة من مكتبتي» already on the book screen, P7), the web's contents chips
+- [x] 13.3 Notifications tab (share request / accepted / declined / billing), marked read when opened; `SharingPoller` in the shell refreshes the summary (Home badge, tab counts) every minute while the app is in the foreground and on every return to it — stopped in the background
+- [x] 13.4 Block: from a request (decline and block); **المحظورون** screen (`/account/blocked`, from حسابي › دراستي) with unblock after a confirmation — the web has no UI for this list yet (the endpoint exists)
+- [!] 13.5 **G10** report content / user — **blocked**: needs a new `content_reports` table and new backend procedures (D3, owner approval; production migrations are never run from here). Required for App Store guideline 1.2 before an iOS release
 
 **Tests:** journey 9; report flow contract test.
 **DoD:** journey 9 passes; report + block available (Apple 1.2).
+
+**Status: `[~]` 13.1–13.4 implemented, tested and verified on the emulator with in-memory data; 13.5 `[!]` (G10 / D3).** Live `[!]` staging (D1). iOS `[ ]` (D2). No backend change. All placeholder screens are gone (`placeholder_screen.dart` deleted).
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] username / search / send / revoke / accept / decline / block / unblock / notifications (in-memory)
+             [x] server refusals shown  [x] polling only in the foreground  [~] session expiry (shared 401 handling)
+UI/UX        [x] design system  [x] RTL; names, handles and titles isolated in place (found + fixed: English names drifted to the far side)
+             [x] confirmations for block / revoke / unblock  [~] accessibility (no screen-reader pass)
+SECURITY     [x] only ids sent; every rule server-side  [x] email never searched or shown  [x] no logging
+TESTING      [x] widget (6)  [x] on device (5 screens)  [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
+```
 
 ---
 

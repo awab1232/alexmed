@@ -2955,4 +2955,204 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gamesEmptyCell => 'empty';
+
+  @override
+  String get shIntro =>
+      'Ready study files your classmates shared with you — your progress in them is yours alone.';
+
+  @override
+  String get shTabRequests => 'Requests';
+
+  @override
+  String get shTabNotifications => 'Notifications';
+
+  @override
+  String get shNoRequests => 'No new requests';
+
+  @override
+  String get shNoRequestsHint =>
+      'When a classmate shares a file with you, the request shows up here.';
+
+  @override
+  String get shNoPacks => 'Nothing shared with you yet';
+
+  @override
+  String get shNoPacksHint =>
+      'Files you accept show up here and open with the same study tools.';
+
+  @override
+  String get shNoNotifications => 'No notifications';
+
+  @override
+  String shWantsToShare(String who) {
+    return '$who wants to share a file with you';
+  }
+
+  @override
+  String shPages(int count) {
+    return '$count pages';
+  }
+
+  @override
+  String get shAccept => 'Accept';
+
+  @override
+  String get shDecline => 'Decline';
+
+  @override
+  String get shDeclineBlock => 'Decline and block';
+
+  @override
+  String get shBlockTitle => 'Decline and block';
+
+  @override
+  String shBlockConfirm(String who) {
+    return 'Decline and block $who? They won\'t be able to find you or share files with you.';
+  }
+
+  @override
+  String shChapters(int count) {
+    return '$count summarised parts';
+  }
+
+  @override
+  String shCards(int count) {
+    return '$count cards';
+  }
+
+  @override
+  String get shMindMap => 'Mind map';
+
+  @override
+  String get shNoContentYet =>
+      'The file is ready to read; no content has been made yet.';
+
+  @override
+  String shFrom(String who) {
+    return 'From $who';
+  }
+
+  @override
+  String shNoteRequest(String who, String title) {
+    return '$who sent you a share request for “$title”';
+  }
+
+  @override
+  String shNoteAccepted(String who, String title) {
+    return '$who accepted your file “$title”';
+  }
+
+  @override
+  String shNoteDeclined(String who, String title) {
+    return '$who declined the share request for “$title”';
+  }
+
+  @override
+  String get shUsernameTitle => 'Username for sharing';
+
+  @override
+  String get shUsernameSet =>
+      'Classmates find you by this name to share their files. Your email is never shown to anyone.';
+
+  @override
+  String get shUsernameUnset =>
+      'Pick a username so classmates can find you and share their files. Your email is never shown to anyone.';
+
+  @override
+  String get shUsernameRule =>
+      '3–24 characters: lowercase English letters, digits, . and _';
+
+  @override
+  String get shChoose => 'Choose';
+
+  @override
+  String get shShare => 'Share';
+
+  @override
+  String get shShareTitle => 'Share the file with a student';
+
+  @override
+  String get shSearchHint => 'Search by username or name';
+
+  @override
+  String get shSearchRule =>
+      'Type at least two characters. Only students who picked a username appear.';
+
+  @override
+  String get shNoStudent => 'No student with that name.';
+
+  @override
+  String get shMoreResults => 'More results';
+
+  @override
+  String get shFirstResults => 'Back to the first results';
+
+  @override
+  String get shExplain =>
+      'They get the same ready content: summary, cards, questions, mind map and Exam Focus — nothing regenerated, and none of your own progress or notes.';
+
+  @override
+  String get shSendRequest => 'Send the share request';
+
+  @override
+  String get shBack => 'Back';
+
+  @override
+  String get shSent => '✓ Request sent';
+
+  @override
+  String shSentBody(String who) {
+    return 'The file appears for $who once they accept.';
+  }
+
+  @override
+  String get shShareAnother => 'Share with another student';
+
+  @override
+  String get shSharedWith => 'Shared with';
+
+  @override
+  String get shNotSharedYet => 'You haven\'t shared this file with anyone yet.';
+
+  @override
+  String get shPending => 'Waiting for a reply';
+
+  @override
+  String get shHasAccess => 'Has access';
+
+  @override
+  String get shDeclined => 'Declined';
+
+  @override
+  String get shWithdraw => 'Withdraw';
+
+  @override
+  String get shRemoveAccess => 'Remove access';
+
+  @override
+  String shWithdrawConfirm(String who) {
+    return 'Withdraw the share request sent to $who?';
+  }
+
+  @override
+  String shRemoveAccessConfirm(String who) {
+    return 'Remove $who\'s access to this file? It disappears from their library at once.';
+  }
+
+  @override
+  String get shBlockedTitle => 'Blocked people';
+
+  @override
+  String get shBlockedEmpty => 'You haven\'t blocked anyone';
+
+  @override
+  String get shBlockedHint =>
+      'Someone you block can\'t find you or share files with you.';
+
+  @override
+  String get shUnblock => 'Unblock';
+
+  @override
+  String get shUnblockConfirm =>
+      'They\'ll be able to find you and send share requests again.';
 }

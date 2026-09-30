@@ -136,6 +136,11 @@ class AccountScreen extends ConsumerWidget {
                     label: l10n.sharedWithMe,
                     onTap: () => context.push(Routes.shared),
                   ),
+                  NlRow(
+                    icon: LucideIcons.shieldBan,
+                    label: l10n.shBlockedTitle,
+                    onTap: () => context.push(Routes.blocked),
+                  ),
                 ],
               ),
               if (doctor?.approved ?? false) ...[

@@ -1955,5 +1955,153 @@
       }
     }
   },
-  "gamesEmptyCell": "فارغة"
+  "gamesEmptyCell": "فارغة",
+  "shIntro": "ملفات دراسية جاهزة شاركها معك زملاؤك — تقدّمك فيها خاص بك.",
+  "shTabRequests": "الطلبات",
+  "shTabNotifications": "الإشعارات",
+  "shNoRequests": "لا توجد طلبات جديدة",
+  "shNoRequestsHint": "عندما يشارك زميل ملفًا معك سيظهر طلبه هنا.",
+  "shNoPacks": "لا توجد ملفات مشتركة بعد",
+  "shNoPacksHint": "الملفات التي تقبلها تظهر هنا وتفتح بنفس أدوات الدراسة.",
+  "shNoNotifications": "لا توجد إشعارات",
+  "shWantsToShare": "{who} يريد مشاركة ملف معك",
+  "@shWantsToShare": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shPages": "{count} صفحة",
+  "@shPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shAccept": "قبول",
+  "shDecline": "رفض",
+  "shDeclineBlock": "رفض وحظر",
+  "shBlockTitle": "رفض وحظر",
+  "shBlockConfirm": "رفض الطلب وحظر {who}؟ لن يتمكن من إيجادك أو مشاركة ملفات معك.",
+  "@shBlockConfirm": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shChapters": "{count} أجزاء ملخّصة",
+  "@shChapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shCards": "{count} بطاقة",
+  "@shCards": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shMindMap": "خريطة ذهنية",
+  "shNoContentYet": "الملف جاهز للقراءة، ولم يُولَّد محتوى بعد.",
+  "shFrom": "من {who}",
+  "@shFrom": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shNoteRequest": "{who} أرسل لك طلب مشاركة «{title}»",
+  "@shNoteRequest": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shNoteAccepted": "{who} قبل ملفك «{title}»",
+  "@shNoteAccepted": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shNoteDeclined": "{who} رفض طلب مشاركة «{title}»",
+  "@shNoteDeclined": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shUsernameTitle": "اسم المستخدم للمشاركة",
+  "shUsernameSet": "يجدك زملاؤك بهذا الاسم ليشاركوا معك ملفاتهم. بريدك الإلكتروني لا يظهر لأحد.",
+  "shUsernameUnset": "اختر اسم مستخدم ليتمكن زملاؤك من إيجادك ومشاركة ملفاتهم معك. بريدك الإلكتروني لا يظهر لأحد.",
+  "shUsernameRule": "من 3 إلى 24 حرفًا: أحرف إنجليزية صغيرة وأرقام و . و _",
+  "shChoose": "اختيار",
+  "shShare": "مشاركة",
+  "shShareTitle": "مشاركة الملف مع طالب",
+  "shSearchHint": "ابحث باسم المستخدم أو الاسم",
+  "shSearchRule": "اكتب حرفين على الأقل. يظهر فقط الطلاب الذين اختاروا اسم مستخدم.",
+  "shNoStudent": "لا يوجد طالب بهذا الاسم.",
+  "shMoreResults": "نتائج أكثر",
+  "shFirstResults": "العودة لأول النتائج",
+  "shExplain": "سيحصل على نفس المحتوى الجاهز: الملخص، البطاقات، الأسئلة، الخريطة الذهنية و Exam Focus — بدون إعادة توليد، وبدون تقدّمك أو ملاحظاتك الشخصية.",
+  "shSendRequest": "إرسال طلب المشاركة",
+  "shBack": "رجوع",
+  "shSent": "✓ تم إرسال الطلب",
+  "shSentBody": "سيظهر الملف عند {who} بعد قبوله الطلب.",
+  "@shSentBody": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shShareAnother": "مشاركة مع طالب آخر",
+  "shSharedWith": "تمت المشاركة مع",
+  "shNotSharedYet": "لم تشارك هذا الملف مع أحد بعد.",
+  "shPending": "بانتظار الرد",
+  "shHasAccess": "لديه وصول",
+  "shDeclined": "رفض الطلب",
+  "shWithdraw": "سحب",
+  "shRemoveAccess": "إلغاء الوصول",
+  "shWithdrawConfirm": "سحب طلب المشاركة المرسل إلى {who}؟",
+  "@shWithdrawConfirm": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shRemoveAccessConfirm": "إلغاء وصول {who} لهذا الملف؟ سيختفي من مكتبته فورًا.",
+  "@shRemoveAccessConfirm": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shBlockedTitle": "المحظورون",
+  "shBlockedEmpty": "لم تحظر أحدًا",
+  "shBlockedHint": "المحظور لا يستطيع إيجادك أو مشاركة ملفات معك.",
+  "shUnblock": "إلغاء الحظر",
+  "shUnblockConfirm": "سيتمكن من إيجادك وإرسال طلبات مشاركة مجددًا."
 }
