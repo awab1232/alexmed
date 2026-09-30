@@ -508,12 +508,14 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 
 ## Phase 15 — Push notifications (optional for v1, D3)
 **Depends on:** P13; backend G12 + `device_push_tokens` table (approval).
-- [ ] 15.1 FCM/APNs setup, permission prompt at a meaningful moment (Android 13+ POST_NOTIFICATIONS)
-- [ ] 15.2 Token register/unregister (logout)
-- [ ] 15.3 Server sends on share request/accept, processing finished
-- [ ] 15.4 Privacy policy update (owner) before release
+- [!] 15.1 FCM / APNs setup — blocked: needs a Firebase project (its `google-services.json` / `GoogleService-Info.plist`; adding `firebase_messaging` without them breaks the build) and an Apple Developer account for the APNs key (D2)
+- [!] 15.2 Token register / unregister — blocked: needs **G12** (new procedures) + a `device_push_tokens` table (D3, owner approval; no production migration from here)
+- [!] 15.3 Server sends on share request / accept, processing finished — blocked with G12
+- [!] 15.4 Privacy policy update (owner) before release
 
 **DoD:** share request arrives as push on both platforms; policy updated.
+
+**Status: `[!]` blocked** (optional for v1, D3). Nothing built: none of it can run or be verified without the Firebase project, the Apple account and the approved backend / table. Meanwhile P13's foreground poller keeps the in-app notifications current.
 
 ---
 
@@ -597,8 +599,8 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 | D4 | Flutter code location | `mobile/` in this repo | `[x]` adopted 2026-09-29 (owner: start building) |
 | D5 | Play listing for `com.nirolearn.app` | Owner 2026-09-30: **not published, not in use** — the Flutter app owns the id from versionCode 1; no in-place upgrade needed | `[x]` decided |
 | D6 | Google login on iOS (forces Sign in with Apple) | Recommend keep Google + add Apple | `[!]` waiting |
-| D7 | Block screenshots on protected sets (Android FLAG_SECURE) | Recommend yes for protected screens only | `[!]` waiting |
-| D8 | Niro history device-local (as web) | Recommend keep local for v1 | `[!]` waiting |
+| D7 | Block screenshots on protected sets (Android FLAG_SECURE) | Recommend yes for protected screens only | `[x]` recommended default adopted 2026-09-30 (owner: continue without checking back) — reversible |
+| D8 | Niro history device-local (as web) | Recommend keep local for v1 | `[x]` recommended default adopted 2026-09-30 — reversible |
 
 ## Backend contracts added (keep updated)
 Each entry: endpoint/procedure · phase · commit · tests · web impact.
@@ -619,6 +621,12 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 | 2026-09-30 | `mobile/lib/features/{library,account}/**`, router, l10n, phase-5 tests | P5 | `d70fe1d` |
 | 2026-09-30 | `mobile/lib/core/upload/pdf_upload.dart`, `mobile/lib/features/mirror/**`, `mobile/tool/export_card_question_fixtures.ts`, tests | P6 uploader + P9 مِرآة | `4865df1` |
 | 2026-09-30 | `mobile/lib/features/books/**` (new), `mobile/lib/features/upload/upload_widgets.dart` (new), `mirror_start_screen.dart` (shared parts), `pdf_upload.dart` (picker provider), router / routes, folder screen, l10n, `test/features/books/**`, `integration_test/book_screens_test.dart` | P6 book upload + processing, P7.1 | `c342683` |
+| 2026-09-30 | `mobile/lib/features/question_files/**`, `core/api/api_image.dart`, upload kind, tests / fixtures / tool | P9 | `163a557` |
+| 2026-09-30 | `mobile/lib/features/assistant/**`, `core/{api/text_stream,storage/local_store,ui/rich_text}.dart`, Info.plist + `ar.lproj/InfoPlist.strings`, image_picker / flutter_image_compress / path_provider | P10 | `8bda82d`, `1e9c345` |
+| 2026-09-30 | `mobile/lib/features/doctor_sets/**`, `core/ui/{secure_screen,dates}.dart`, `MainActivity.kt` (FLAG_SECURE channel), share_plus | P11 | `858d0f3` |
+| 2026-09-30 | `mobile/lib/features/games/**`, tests / fixtures / tool | P12 | `2eb298c`, `9da3585` |
+| 2026-09-30 | `mobile/lib/features/sharing/**`, book / account screens, `placeholder_screen.dart` removed | P13 | `6ba3231` |
+| 2026-09-30 | `mobile/lib/core/offline/**`, `core/storage/persisted_map.dart`, `trpc_client.dart`, 35 repository queries opted in, debug `network_security_config.xml` | P14 | `8aeb108` |
 
 ## Known issues (keep updated)
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
@@ -634,17 +642,17 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 9 — question files (كتبي path), question cards (next). Phase 8 `[x]` (gate passed; live `[!]` D1; low-end device open). Phase 7 `[x]`. Phase 6 `[~]` (owner-deferred items + live `[!]`). Phases 2, 3, 4-implementation `[x]`; 5 `[~]`; 9.4 مِرآة `[x]` |
-| Current Task | 9.1 remainder: the كتبي question-file path (`extract-questions-and-plan`) |
-| Last Completed Task | Phase 8: native PDF reader over byte ranges, page marks, ask-selection, book chat; source links open the reader |
-| Next Task | P9: 9.1 remainder → 9.2 question-file list / detail → 9.3 → 9.5. Rule: no push, no production deploy, no merge to `main` without explicit approval |
-| Blocked By | Live auth / upload / file stream / contract tests: staging (D1); iOS: D2; FLAG_SECURE: D7; Sentry (2.8); G6 / G9 need approval; G13 separate proposal (not now); Google / Apple login (D6) |
-| Last Verification | 2026-09-30 — analyze clean, 237/237, real PDFium reader on the emulator (300 pages; 63 MB file: 5% fetched, no memory leak over 5 rounds) |
-| Tests | Flutter 237/237 (incl. parity tests against the web code: card questions, Exam Focus highlighting, match rules, PDF mark rules). Web untouched since `ee1c391` |
-| Build | Android debug APK builds and runs on the API 36 emulator (pdfrx / PDFium added). iOS: not built (no macOS) |
-| Security | Session only to the API origin; storage redirects never followed; protected PDFs never on disk (in-memory, dropped on close); keys never shown / logged |
-| Performance | Reader fetches only needed ranges; bounded chunk cache; debug startup slow on the loaded emulator — release measurement in P16 |
-| UI/UX | Reader, marks toolbar, ask / chat sheets reviewed on emulator screenshots |
+| Current Phase | P9–P14 done on 2026-09-30 as far as possible without staging / Apple / approvals: P9 `[x]`, P10 `[x]`, P11 `[x]`, P12 `[x]`, P13 `[~]` (13.5 report `[!]` G10), P14 `[~]` (SWR, pre-disabled actions, full airplane pass left), P15 `[!]` (Firebase, Apple, G12). Earlier: P2, P3, P4-implementation, P7, P8 `[x]`; P5, P6 `[~]` |
+| Current Task | — (waiting on the owner's decisions below before P16) |
+| Last Completed Task | P14: offline reading (35 cached queries), rating queue, persisted positions / answers; verified end to end on the emulator |
+| Next Task | P16 performance & security hardening (release-build measurements, request audit, dependency review). Rule: no push, no production deploy, no merge to `main` without explicit approval |
+| Blocked By | Staging (D1): every live check (auth, uploads, files, AI, games, sharing, doctor sets, contract tests); Apple account + macOS (D2): iOS build, APNs, Sign in with Apple; D3: G10 report (App Store 1.2), G12 push, G5 reset, G7; D6 Google / Apple login; Sentry project (2.8); G6 app links / G9 config need approval; Firebase project (push). D7 and D8 adopted as recommended defaults (FLAG_SECURE on protected screens only; Niro history on the device) — reversible |
+| Last Verification | 2026-09-30 — analyze clean, Flutter 325/325, on-device runs for P9 (9 screens), P10 (photo pipeline + 5 screens), P11 (7 screens + FLAG_SECURE capture + sandbox inspection), P12 (8 screens), P13 (5 screens), P14 (end-to-end offline over real HTTP) |
+| Tests | Flutter 325/325, incl. parity tests against the web's own code: card questions, Exam Focus, match, PDF marks, question-card rules, RichText, game scoring / Sudoku. Web and backend untouched since `ee1c391` (only `mobile/`, `docs/mobile/`, the P2 CI workflow) |
+| Build | Android debug APK builds and runs on the API 36 emulator. iOS: not built (no macOS) |
+| Security | Session only to the API origin; storage redirects never followed; protected PDFs and doctor sets never on disk (inspected); FLAG_SECURE on protected screens; photos' EXIF stripped; on-device data wiped on sign-out; cleartext debug-only |
+| Performance | Polling only on top / in the foreground with backoff; bounded caches (images 24 MB memory, queries 250 × 3 MB, PDF chunks 48 MB); release measurements in P16 |
+| UI/UX | All screens reviewed on emulator screenshots; RTL / bidi issues found and fixed in every phase (equations, names, titles) |
 | Android | Runs on API 36 emulator. Low-end device check pending |
 | iOS | Not built |
 | Last Updated | 2026-09-30 |
@@ -739,3 +747,23 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
   and book chat streaming; source-page links open the reader at the page.
   Large-file run: 63 MB → 5% fetched, no leak. Found and fixed a self-waiting
   future that would have frozen the reader. No backend change. Next: Phase 9.
+- **2026-09-30** — Owner: «ابدا من p9 الى p15 دون الرجوع الي» (P9 → P15 without
+  checking back; list the blockers at the end). Local commits per phase, no push /
+  deploy / merge, no production DB.
+- **2026-09-30** — P9 (`163a557`): كتبي question files (upload kind, list, detail,
+  retry), shared question cards (parity-tested), bidi checks. Found: مِرآة card
+  images could never load on the device (relative URL) → API-origin image loader.
+- **2026-09-30** — P10 (`8bda82d`, fix `1e9c345`): Niro chat with photos, the web's
+  RichText ported (parity-tested), on-device JSON store (instead of drift). Found on
+  the device: photos were bounded on the short side (2133×1600). A test failure was
+  committed with P10 and fixed in the next commit (sign-out wipe hanging in widget
+  tests); from then on commits only follow a green suite.
+- **2026-09-30** — P11 (`858d0f3`): doctor sets, student and doctor. D7 adopted
+  (FLAG_SECURE on protected screens; black capture verified), sandbox inspected.
+- **2026-09-30** — P12 (`2eb298c`, test fix `9da3585`): brain games. Found on the
+  device: «7 × 8 = ?» rendered reversed.
+- **2026-09-30** — P13 (`6ba3231`): sharing, notifications, blocked people; report
+  (G10) blocked on approval. All placeholder screens gone.
+- **2026-09-30** — P14 (`8aeb108`): offline reading / queue / persisted state, end to
+  end on the device. Found: debug builds refused the dev server's plain HTTP.
+- **2026-09-30** — P15 blocked (Firebase, Apple, G12 approval) — nothing built.
