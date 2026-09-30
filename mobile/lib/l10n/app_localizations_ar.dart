@@ -2251,4 +2251,407 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get niroOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get dsIntro =>
+      'أسئلة يشاركها دكتورك مع طلابه. الدخول بكود يعطيك إياه الدكتور.';
+
+  @override
+  String get dsCodeLabel => 'كود الوصول';
+
+  @override
+  String get dsAddSet => 'أضف المجموعة';
+
+  @override
+  String get dsChecking => 'جاري التحقق…';
+
+  @override
+  String get dsAlreadyAdded => 'هذه المجموعة مضافة لحسابك بالفعل.';
+
+  @override
+  String get dsMine => 'مجموعاتي';
+
+  @override
+  String get dsMineEmpty => 'لا توجد مجموعات بعد.';
+
+  @override
+  String get dsMineEmptyHint => 'عندك كود من دكتورك؟ أدخله في الأعلى.';
+
+  @override
+  String get dsListedTitle => 'مجموعات منشورة';
+
+  @override
+  String get dsListedNote =>
+      'تظهر هنا للاطلاع فقط. فتح أي مجموعة يحتاج كودًا من دكتورها.';
+
+  @override
+  String get dsByCode => '🔒 بكود';
+
+  @override
+  String get dsAvailable => 'متاحة';
+
+  @override
+  String dsOpensAt(String date) {
+    return 'تفتح $date';
+  }
+
+  @override
+  String get dsUnavailable => 'غير متاحة حاليًا';
+
+  @override
+  String dsUntil(String date) {
+    return 'حتى $date';
+  }
+
+  @override
+  String get dsSetUnavailable => 'هذه المجموعة غير متاحة حاليًا';
+
+  @override
+  String get dsFeatureOff => 'هذه الميزة غير متاحة حاليًا.';
+
+  @override
+  String get dsApplyTitle => 'حساب دكتور';
+
+  @override
+  String get dsApplyIntro =>
+      'ارفع ملفات أسئلتك، وأعطِ طلابك أكواد دخول. يبقى حسابك كما هو، ونفس تسجيل الدخول.';
+
+  @override
+  String get dsPending => 'قيد المراجعة';
+
+  @override
+  String get dsPendingBody => 'طلبك وصل وسيراجعه فريق NiroLearn.';
+
+  @override
+  String get dsApproved => 'دكتور معتمد';
+
+  @override
+  String get dsApprovedBody => 'حسابك معتمد كدكتور.';
+
+  @override
+  String get dsOpenDashboard => 'افتح لوحة الدكتور';
+
+  @override
+  String get dsSuspended => 'موقوف';
+
+  @override
+  String get dsSuspendedBody => 'صلاحيات الدكتور موقوفة حاليًا.';
+
+  @override
+  String get dsSuspendedHint =>
+      'مجموعاتك غير متاحة لطلابك أثناء الإيقاف. تواصل معنا لمعرفة السبب.';
+
+  @override
+  String get dsRejected => 'لم يُقبل الطلب';
+
+  @override
+  String get dsRejectedBody => 'لم نتمكن من اعتماد طلبك السابق.';
+
+  @override
+  String dsRejectedReason(String reason) {
+    return 'السبب: $reason';
+  }
+
+  @override
+  String get dsRejectedHint => 'يمكنك تعديل البيانات وإرسال طلب جديد.';
+
+  @override
+  String get dsFullName => 'الاسم الكامل';
+
+  @override
+  String get dsUniversity => 'الجامعة';
+
+  @override
+  String get dsFaculty => 'الكلية';
+
+  @override
+  String get dsDepartment => 'القسم';
+
+  @override
+  String get dsUniEmail => 'البريد الجامعي (اختياري، يساعد في التحقق)';
+
+  @override
+  String get dsNote => 'ملاحظة للمراجعة (اختياري)';
+
+  @override
+  String get dsSendApplication => 'أرسل الطلب';
+
+  @override
+  String get dsDashboardIntro =>
+      'مجموعات أسئلة محمية: ترفع الملف مرة واحدة، وطلابك يدخلون بكود.';
+
+  @override
+  String get dsStatSets => 'المجموعات';
+
+  @override
+  String get dsStatPublished => 'منشورة';
+
+  @override
+  String get dsStatDisabled => 'معطّلة';
+
+  @override
+  String get dsStatCodes => 'أكواد مولّدة';
+
+  @override
+  String get dsStatStudents => 'طلاب مفعّلون';
+
+  @override
+  String get dsNewSet => 'مجموعة جديدة';
+
+  @override
+  String get dsDoctorEmptyHint =>
+      'ارفع ملف أسئلة PDF، راجع الأسئلة المستخرجة، ثم انشرها وولّد أكوادًا لطلابك.';
+
+  @override
+  String get dsRecent => 'آخر النشاط';
+
+  @override
+  String dsStudentsCount(int count) {
+    return '$count طالب';
+  }
+
+  @override
+  String dsCodesUsed(int claimed, int total) {
+    return '$claimed/$total كود مستخدم';
+  }
+
+  @override
+  String get dsNewSetTitle => 'مجموعة أسئلة جديدة';
+
+  @override
+  String get dsNewSetIntro =>
+      'الملف يُعالج مرة واحدة بنفس نظام ملفات الأسئلة. تراجع الأسئلة، ثم تنشر وتولّد الأكواد.';
+
+  @override
+  String get dsFileLabel => 'ملف الأسئلة (PDF)';
+
+  @override
+  String get dsFileHint =>
+      'ملف نصي أو ممسوح ضوئيًا — الصفحات المصوّرة تُقرأ بالقراءة الضوئية وتأخذ وقتًا أطول قليلًا. يُحتسب الملف من حصة ملفات الأسئلة في باقتك.';
+
+  @override
+  String get dsCreateSet => 'ارفع وأنشئ المجموعة';
+
+  @override
+  String get dsStarting => 'جاري بدء المعالجة…';
+
+  @override
+  String get dsTitle => 'عنوان المجموعة';
+
+  @override
+  String get dsDescription => 'الوصف (اختياري)';
+
+  @override
+  String get dsSubject => 'المادة';
+
+  @override
+  String get dsYear => 'السنة الدراسية';
+
+  @override
+  String get dsExamType => 'نوع الامتحان';
+
+  @override
+  String get dsVisibility => 'الظهور';
+
+  @override
+  String get dsUnlisted => 'غير مدرجة — تعطي الأكواد لطلابك مباشرة';
+
+  @override
+  String get dsListed => 'مدرجة — يظهر عنوانها للطلاب، والدخول بكود فقط';
+
+  @override
+  String get dsListedShort => 'مدرجة';
+
+  @override
+  String get dsUnlistedShort => 'غير مدرجة';
+
+  @override
+  String get dsStarts => 'تبدأ';
+
+  @override
+  String get dsEnds => 'تنتهي';
+
+  @override
+  String get dsPickDate => 'اختر';
+
+  @override
+  String get dsClearDate => 'بدون تاريخ';
+
+  @override
+  String get dsTabQuestions => 'الأسئلة';
+
+  @override
+  String get dsTabSettings => 'الإعدادات';
+
+  @override
+  String get dsTabCodes => 'الأكواد';
+
+  @override
+  String get dsTabStudents => 'الطلاب';
+
+  @override
+  String get dsTabAudit => 'السجل';
+
+  @override
+  String get dsProcessing =>
+      'جاري المعالجة بنفس نظام ملفات الأسئلة. تقدر تسكّر الصفحة وترجع.';
+
+  @override
+  String get dsReviewFirst => 'راجع الأسئلة أدناه كما سيراها طلابك.';
+
+  @override
+  String get dsNoEditAfterPublish =>
+      'بعد النشر لا يمكن تغيير الأسئلة. إن احتجت تعديلها، أنشئ مجموعة جديدة بملف مصحح.';
+
+  @override
+  String get dsPublish => 'انشر المجموعة';
+
+  @override
+  String get dsPublished => 'تم النشر';
+
+  @override
+  String get dsShowAllAnswers => 'أظهر كل الإجابات';
+
+  @override
+  String get dsHideAnswers => 'إخفاء الإجابات';
+
+  @override
+  String get dsMachineNote =>
+      'بعض الترجمات آلية (عليها وسم «ترجمة آلية») — راجعها.';
+
+  @override
+  String get dsNoQuestionsYet => 'لا توجد أسئلة مستخرجة بعد.';
+
+  @override
+  String get dsImageChecks => 'صور تحتاج مراجعة';
+
+  @override
+  String get dsImageChecksNote =>
+      'في هذه الصفحات صورة لم يكن واضحًا لأي سؤال تعود، فلم تُربط بأي سؤال (الأسئلة نفسها ظاهرة للطلاب بدون صورة).';
+
+  @override
+  String dsQuestionOnPage(int index, int page) {
+    return 'سؤال $index · صفحة $page';
+  }
+
+  @override
+  String dsNeedsReview(int count) {
+    return 'تحتاج مراجعة (Needs Review) · $count';
+  }
+
+  @override
+  String get dsNeedsReviewNote =>
+      'هذه الأجزاء لم تُعتبر أسئلة مكتملة، فلا يراها طلابك. لم يُكمل النظام أي نص ناقص من عنده.';
+
+  @override
+  String get dsNoStem => '(بدون نص سؤال)';
+
+  @override
+  String get dsAccess => 'الوصول';
+
+  @override
+  String get dsAccessNote =>
+      'التعطيل يوقف وصول كل الطلاب فورًا دون حذف أي شيء، وتقدر تعيد التفعيل متى شئت. الأرشفة نهائية.';
+
+  @override
+  String get dsDisableNow => 'عطّل الوصول الآن';
+
+  @override
+  String get dsEnable => 'أعد التفعيل';
+
+  @override
+  String get dsArchive => 'أرشف المجموعة';
+
+  @override
+  String get dsArchiveConfirm =>
+      'الأرشفة نهائية: يتوقف وصول الطلاب ولا يمكن التراجع.';
+
+  @override
+  String get dsArchiveFinal => 'تأكيد الأرشفة النهائية';
+
+  @override
+  String get dsCodesAfterPublish => 'توليد الأكواد متاح بعد نشر المجموعة.';
+
+  @override
+  String get dsCodeCount => 'عدد الأكواد (كل كود لطالب واحد، حتى 500 في المرة)';
+
+  @override
+  String dsGenerate(int count) {
+    return 'ولّد $count كود';
+  }
+
+  @override
+  String dsFreshCodes(int count) {
+    return '$count كود جديد — احفظها الآن، لن تظهر كاملة مرة أخرى.';
+  }
+
+  @override
+  String get dsFreshCodesNote =>
+      'ملف الأكواد حساس: من يملك الكود يستطيع الدخول. شاركه مع طلابك فقط.';
+
+  @override
+  String get dsShareCsv => 'مشاركة ملف CSV';
+
+  @override
+  String get dsCopyAll => 'نسخ الكل';
+
+  @override
+  String get dsHideCodes => 'حفظتها، أخفِها';
+
+  @override
+  String get dsAll => 'الكل';
+
+  @override
+  String get dsUnused => 'غير مستخدم';
+
+  @override
+  String get dsClaimed => 'مستخدم';
+
+  @override
+  String get dsRevokedLabel => 'ملغى';
+
+  @override
+  String get dsCodeSearch => 'آخر 4 أحرف أو @اسم';
+
+  @override
+  String get dsNoCodes => 'لا توجد أكواد بهذا الفلتر.';
+
+  @override
+  String dsCodeClaimed(String who, String date) {
+    return 'مستخدم · $who · $date';
+  }
+
+  @override
+  String dsCodeRevoked(String date) {
+    return 'ملغى · $date';
+  }
+
+  @override
+  String dsCodeUnused(String date) {
+    return 'غير مستخدم · $date';
+  }
+
+  @override
+  String get dsStudent => 'طالب';
+
+  @override
+  String get dsRevoke => 'إلغاء';
+
+  @override
+  String get dsNoStudents => 'لم يفعّل أي طالب كودًا بعد.';
+
+  @override
+  String get dsActive => 'مفعّل';
+
+  @override
+  String get dsWithdrawn => 'مسحوب';
+
+  @override
+  String get dsWithdraw => 'اسحب الوصول';
+
+  @override
+  String get dsWithdrawConfirm => 'سيفقد هذا الطالب الوصول للمجموعة فورًا.';
+
+  @override
+  String get dsWithdrawYes => 'تأكيد السحب';
 }

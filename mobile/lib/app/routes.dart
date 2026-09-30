@@ -51,6 +51,8 @@ abstract final class Routes {
   static String questionSet(String id) => '/question-sets/$id';
   static const redeemCode = '/question-sets/redeem';
   static const doctor = '/doctor';
+  static const doctorNewSet = '/doctor/sets/new';
+  static String doctorSet(String id) => '/doctor/sets/$id';
 
   /// Debug builds only — the design-system gallery.
   static const gallery = '/dev/gallery';

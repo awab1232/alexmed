@@ -14,6 +14,10 @@ import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/welcome_screen.dart';
 import '../features/books/presentation/book_screen.dart';
 import '../features/books/presentation/book_upload_screen.dart';
+import '../features/doctor_sets/presentation/doctor_screens.dart';
+import '../features/doctor_sets/presentation/doctor_set_screen.dart';
+import '../features/doctor_sets/presentation/protected_set_screen.dart';
+import '../features/doctor_sets/presentation/question_sets_screen.dart';
 import '../features/exam_focus/presentation/exam_focus_screen.dart';
 import '../features/library/presentation/add_sheet.dart';
 import '../features/library/presentation/folder_screen.dart';
@@ -118,7 +122,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'stats',
                     builder: (_, _) => const StatsScreen(),
                   ),
-                  _placeholder('doctor', (l) => l.doctorApply, 'P11'),
+                  GoRoute(
+                    path: 'doctor',
+                    builder: (_, _) => const DoctorApplyScreen(),
+                  ),
                 ],
               ),
             ],
@@ -211,8 +218,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       _placeholder(Routes.shared, (l) => l.sharedWithMe, 'P13'),
-      _placeholder(Routes.redeemCode, (l) => l.addDoctorCode, 'P11'),
-      _placeholder(Routes.doctor, (l) => l.doctorDashboard, 'P11'),
+      // Fixed paths before the :id ones.
+      GoRoute(
+        path: Routes.questionSets,
+        builder: (_, _) => const QuestionSetsScreen(),
+        routes: [
+          GoRoute(
+            path: 'redeem',
+            builder: (_, _) => const QuestionSetsScreen(focusCode: true),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                ProtectedSetScreen(setId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.doctor,
+        builder: (_, _) => const DoctorDashboardScreen(),
+        routes: [
+          GoRoute(
+            path: 'sets/new',
+            builder: (_, _) => const DoctorNewSetScreen(),
+          ),
+          GoRoute(
+            path: 'sets/:id',
+            builder: (_, state) =>
+                DoctorSetScreen(setId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
     ],
   );
 });

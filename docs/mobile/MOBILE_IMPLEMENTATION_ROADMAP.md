@@ -395,22 +395,37 @@ REGRESSION   [x] no web / backend change  [x] reader sheets use the shared strea
 **Objective:** protected sets end to end. **Depends on:** P5, P6, P9 (cards).
 
 Student:
-- [ ] 11.1 Redeem code (rate-limit + invalid messages)
-- [ ] 11.2 My sets / catalog
-- [ ] 11.3 Protected set view: cards reuse (P9) with watermark; **memory-only** cache; images via protected route; expired/revoked/disabled states
-- [ ] 11.4 FLAG_SECURE on protected screens (D7)
-
+- [x] 11.1 Redeem (`features/doctor_sets/**`, `/question-sets`, ＋ «كود من دكتورك» → `/question-sets/redeem` focuses the code field): LTR monospace code field, enabled from 12 characters like the web; `questionSets.redeem` → opens the set; «مضافة لحسابك بالفعل» for `already`; the server's own messages for invalid / rate-limited («محاولات كثيرة. حاول بعد ١٥ دقيقة.»)
+- [x] 11.2 مجموعاتي (available opens; «تفتح <date>» / «غير متاحة حاليًا» don't) + listed catalog (titles only, excluding sets already mine, «🔒 بكود»); link from بنوك الأسئلة when the flag is on
+- [x] 11.3 Protected set (`/question-sets/:id`): the P9 cards with the viewer's watermark (the web's tile: diagonal, ink at 9%, over the card and image); **memory only** — questions and answers live in the screen's state (no provider cache, no disk), images through `/api/question-sets/<set>/images/<id>` with `cache: false`; access re-checked on open and on every return to the foreground (the web refetches on focus) — revoked / disabled / expired → the content is dropped and «هذه المجموعة غير متاحة حاليًا». **Sandbox inspected on the device** during a run: no data files, no cache, no preferences (only the debug build's own code)
+- [x] 11.4 FLAG_SECURE — **D7 adopted as the recommended default** (protected screens only; reversible): `core/ui/secure_screen.dart` + a method channel in `MainActivity.kt`, reference-counted; on for the protected set and the doctor's set screen. **Verified on the device:** the screencap of a protected set is solid black. iOS has no public equivalent (watermark only). A debug-only switch lets visual tests capture those screens
 Doctor:
-- [ ] 11.5 Application / status
-- [ ] 11.6 Dashboard + stats
-- [ ] 11.7 New set upload → processing → retry
-- [ ] 11.8 Set detail: preview incl. Needs Review (exact reasons, image checks), settings, publish/disable/enable/archive, audit
-- [ ] 11.9 Codes: generate (CSV built on device + share sheet), list, revoke
-- [ ] 11.10 Students: entitlements list/revoke
+- [x] 11.5 «حساب دكتور» (`/account/doctor`): application form (the web's fields and limits) → pending; approved → open the dashboard; suspended / rejected (with the reason, reapply)
+- [x] 11.6 لوحة الدكتور (`/doctor`): five numbers, sets with the web's status labels (`setStatusLabel` ported, unit-tested), polled every 4 s while a set is processing (only while on top), recent activity
+- [x] 11.7 New set (`/doctor/sets/new`): the web's settings (title, description, subject, year, exam type, listed / unlisted, optional start / end with native date + time pickers) + PDF → `/api/books/upload-url` → PUT → `doctor.sets.create` → the set screen; plan limits shown, no purchase UI; leaving mid-upload asks first
+- [x] 11.8 Set screen (`/doctor/sets/:id`), sections as wrapping chips (a sideways-scrolling row hid «الطلاب» on phones — found by a test): الأسئلة (processing with retry on failure, «انشر المجموعة» for a ready draft, cards one at a time or «أظهر كل الإجابات» as a list with every answer, machine-translation note, «صور تحتاج مراجعة», Needs Review blocks with the web's reason labels + codes); الإعدادات (save, disable now, enable, archive after a confirmation); السجل
+- [x] 11.9 Codes: count stepper + 10 / 50 / 100 / 200 / 500, generate (published only), the fresh codes shown once with «مشاركة ملف CSV» (the web's CSV written to a temp file, shared through the system sheet, deleted when the sheet closes — `share_plus`, approved list), copy all, hide; list filtered by status + search (debounced), revoke unused
+- [x] 11.10 Students: active / withdrawn, withdraw after a confirmation
 
 **Tests:** journeys 6–7; verify no protected response on disk (inspect app sandbox after session); `no-store` respected; doctor UI hidden for non-doctors; server rejects student calls to `doctor.*`.
 **Security:** dedicated security review of protected-content handling.
 **DoD:** journeys 6–7 pass; sandbox inspection clean.
+
+**Status: `[x]` implemented, tested and verified on the emulator with in-memory data.** Live `[!]` staging (D1): journeys 6–7 against the real server (flag, approval, HMAC key, redeem limiter) not run. Doctor UI appears only when `questionSets.enabled` and `doctor.status.approved` (P5 account screen); every `doctor.*` call is gated server-side (`doctorProcedure`). iOS `[ ]` (D2). No backend change.
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] redeem / mine / catalog / open / revoked-while-open  [x] apply / dashboard / new / publish / settings / codes / students / log
+             [x] error paths show the server's message  [x] polling while processing  [~] session expiry (shared 401 handling)
+UI/UX        [x] design system  [x] RTL; codes, usernames, English text LTR (found + fixed: English meta line read RTL)
+             [x] sections wrap on phones (found + fixed)  [x] touch targets  [~] accessibility (no screen-reader pass)
+SECURITY     [x] protected questions memory-only (sandbox inspected)  [x] protected images uncached, session only to the API origin
+             [x] FLAG_SECURE on protected screens (device-verified)  [x] watermark  [x] plaintext codes only in memory; CSV temp file deleted
+             [x] no logging  [x] access re-checked on resume
+PERFORMANCE  [x] polling only while processing and on top  [x] code search debounced 300 ms
+TESTING      [x] unit (status labels, payload, CSV, preview parsing)  [x] widget (8)  [x] on device (7 screens incl. secure capture)
+             [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend change  [x] all 300 Flutter tests pass
+```
 
 ---
 

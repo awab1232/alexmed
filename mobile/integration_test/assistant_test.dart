@@ -70,7 +70,9 @@ void main() {
       final prepared = await preparePhotoBytes(big);
       expect(isJpeg(prepared.jpeg), isTrue);
       final size = await sizeOf(prepared.jpeg);
-      debugPrint('PHOTO big ${big.length} B → ${prepared.jpeg.length} B, $size');
+      debugPrint(
+        'PHOTO big ${big.length} B → ${prepared.jpeg.length} B, $size',
+      );
       expect(size.longestSide, lessThanOrEqualTo(1600));
       expect(size.width / size.height, closeTo(4 / 3, 0.01));
       final thumb = await sizeOf(prepared.thumb);

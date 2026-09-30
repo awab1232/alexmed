@@ -1505,5 +1505,219 @@
   "niroCameraDenied": "الكاميرا غير مسموحة",
   "niroPhotosDenied": "الوصول للصور غير مسموح",
   "niroDeniedHint": "يمكنك السماح بها من إعدادات الجهاز، أو اختيار صورة من المعرض بدلًا من ذلك.",
-  "niroOpenSettings": "فتح الإعدادات"
+  "niroOpenSettings": "فتح الإعدادات",
+  "dsIntro": "أسئلة يشاركها دكتورك مع طلابه. الدخول بكود يعطيك إياه الدكتور.",
+  "dsCodeLabel": "كود الوصول",
+  "dsAddSet": "أضف المجموعة",
+  "dsChecking": "جاري التحقق…",
+  "dsAlreadyAdded": "هذه المجموعة مضافة لحسابك بالفعل.",
+  "dsMine": "مجموعاتي",
+  "dsMineEmpty": "لا توجد مجموعات بعد.",
+  "dsMineEmptyHint": "عندك كود من دكتورك؟ أدخله في الأعلى.",
+  "dsListedTitle": "مجموعات منشورة",
+  "dsListedNote": "تظهر هنا للاطلاع فقط. فتح أي مجموعة يحتاج كودًا من دكتورها.",
+  "dsByCode": "🔒 بكود",
+  "dsAvailable": "متاحة",
+  "dsOpensAt": "تفتح {date}",
+  "@dsOpensAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsUnavailable": "غير متاحة حاليًا",
+  "dsUntil": "حتى {date}",
+  "@dsUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsSetUnavailable": "هذه المجموعة غير متاحة حاليًا",
+  "dsFeatureOff": "هذه الميزة غير متاحة حاليًا.",
+  "dsApplyTitle": "حساب دكتور",
+  "dsApplyIntro": "ارفع ملفات أسئلتك، وأعطِ طلابك أكواد دخول. يبقى حسابك كما هو، ونفس تسجيل الدخول.",
+  "dsPending": "قيد المراجعة",
+  "dsPendingBody": "طلبك وصل وسيراجعه فريق NiroLearn.",
+  "dsApproved": "دكتور معتمد",
+  "dsApprovedBody": "حسابك معتمد كدكتور.",
+  "dsOpenDashboard": "افتح لوحة الدكتور",
+  "dsSuspended": "موقوف",
+  "dsSuspendedBody": "صلاحيات الدكتور موقوفة حاليًا.",
+  "dsSuspendedHint": "مجموعاتك غير متاحة لطلابك أثناء الإيقاف. تواصل معنا لمعرفة السبب.",
+  "dsRejected": "لم يُقبل الطلب",
+  "dsRejectedBody": "لم نتمكن من اعتماد طلبك السابق.",
+  "dsRejectedReason": "السبب: {reason}",
+  "@dsRejectedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "dsRejectedHint": "يمكنك تعديل البيانات وإرسال طلب جديد.",
+  "dsFullName": "الاسم الكامل",
+  "dsUniversity": "الجامعة",
+  "dsFaculty": "الكلية",
+  "dsDepartment": "القسم",
+  "dsUniEmail": "البريد الجامعي (اختياري، يساعد في التحقق)",
+  "dsNote": "ملاحظة للمراجعة (اختياري)",
+  "dsSendApplication": "أرسل الطلب",
+  "dsDashboardIntro": "مجموعات أسئلة محمية: ترفع الملف مرة واحدة، وطلابك يدخلون بكود.",
+  "dsStatSets": "المجموعات",
+  "dsStatPublished": "منشورة",
+  "dsStatDisabled": "معطّلة",
+  "dsStatCodes": "أكواد مولّدة",
+  "dsStatStudents": "طلاب مفعّلون",
+  "dsNewSet": "مجموعة جديدة",
+  "dsDoctorEmptyHint": "ارفع ملف أسئلة PDF، راجع الأسئلة المستخرجة، ثم انشرها وولّد أكوادًا لطلابك.",
+  "dsRecent": "آخر النشاط",
+  "dsStudentsCount": "{count} طالب",
+  "@dsStudentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsCodesUsed": "{claimed}/{total} كود مستخدم",
+  "@dsCodesUsed": {
+    "placeholders": {
+      "claimed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dsNewSetTitle": "مجموعة أسئلة جديدة",
+  "dsNewSetIntro": "الملف يُعالج مرة واحدة بنفس نظام ملفات الأسئلة. تراجع الأسئلة، ثم تنشر وتولّد الأكواد.",
+  "dsFileLabel": "ملف الأسئلة (PDF)",
+  "dsFileHint": "ملف نصي أو ممسوح ضوئيًا — الصفحات المصوّرة تُقرأ بالقراءة الضوئية وتأخذ وقتًا أطول قليلًا. يُحتسب الملف من حصة ملفات الأسئلة في باقتك.",
+  "dsCreateSet": "ارفع وأنشئ المجموعة",
+  "dsStarting": "جاري بدء المعالجة…",
+  "dsTitle": "عنوان المجموعة",
+  "dsDescription": "الوصف (اختياري)",
+  "dsSubject": "المادة",
+  "dsYear": "السنة الدراسية",
+  "dsExamType": "نوع الامتحان",
+  "dsVisibility": "الظهور",
+  "dsUnlisted": "غير مدرجة — تعطي الأكواد لطلابك مباشرة",
+  "dsListed": "مدرجة — يظهر عنوانها للطلاب، والدخول بكود فقط",
+  "dsListedShort": "مدرجة",
+  "dsUnlistedShort": "غير مدرجة",
+  "dsStarts": "تبدأ",
+  "dsEnds": "تنتهي",
+  "dsPickDate": "اختر",
+  "dsClearDate": "بدون تاريخ",
+  "dsTabQuestions": "الأسئلة",
+  "dsTabSettings": "الإعدادات",
+  "dsTabCodes": "الأكواد",
+  "dsTabStudents": "الطلاب",
+  "dsTabAudit": "السجل",
+  "dsProcessing": "جاري المعالجة بنفس نظام ملفات الأسئلة. تقدر تسكّر الصفحة وترجع.",
+  "dsReviewFirst": "راجع الأسئلة أدناه كما سيراها طلابك.",
+  "dsNoEditAfterPublish": "بعد النشر لا يمكن تغيير الأسئلة. إن احتجت تعديلها، أنشئ مجموعة جديدة بملف مصحح.",
+  "dsPublish": "انشر المجموعة",
+  "dsPublished": "تم النشر",
+  "dsShowAllAnswers": "أظهر كل الإجابات",
+  "dsHideAnswers": "إخفاء الإجابات",
+  "dsMachineNote": "بعض الترجمات آلية (عليها وسم «ترجمة آلية») — راجعها.",
+  "dsNoQuestionsYet": "لا توجد أسئلة مستخرجة بعد.",
+  "dsImageChecks": "صور تحتاج مراجعة",
+  "dsImageChecksNote": "في هذه الصفحات صورة لم يكن واضحًا لأي سؤال تعود، فلم تُربط بأي سؤال (الأسئلة نفسها ظاهرة للطلاب بدون صورة).",
+  "dsQuestionOnPage": "سؤال {index} · صفحة {page}",
+  "@dsQuestionOnPage": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "dsNeedsReview": "تحتاج مراجعة (Needs Review) · {count}",
+  "@dsNeedsReview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsNeedsReviewNote": "هذه الأجزاء لم تُعتبر أسئلة مكتملة، فلا يراها طلابك. لم يُكمل النظام أي نص ناقص من عنده.",
+  "dsNoStem": "(بدون نص سؤال)",
+  "dsAccess": "الوصول",
+  "dsAccessNote": "التعطيل يوقف وصول كل الطلاب فورًا دون حذف أي شيء، وتقدر تعيد التفعيل متى شئت. الأرشفة نهائية.",
+  "dsDisableNow": "عطّل الوصول الآن",
+  "dsEnable": "أعد التفعيل",
+  "dsArchive": "أرشف المجموعة",
+  "dsArchiveConfirm": "الأرشفة نهائية: يتوقف وصول الطلاب ولا يمكن التراجع.",
+  "dsArchiveFinal": "تأكيد الأرشفة النهائية",
+  "dsCodesAfterPublish": "توليد الأكواد متاح بعد نشر المجموعة.",
+  "dsCodeCount": "عدد الأكواد (كل كود لطالب واحد، حتى 500 في المرة)",
+  "dsGenerate": "ولّد {count} كود",
+  "@dsGenerate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsFreshCodes": "{count} كود جديد — احفظها الآن، لن تظهر كاملة مرة أخرى.",
+  "@dsFreshCodes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsFreshCodesNote": "ملف الأكواد حساس: من يملك الكود يستطيع الدخول. شاركه مع طلابك فقط.",
+  "dsShareCsv": "مشاركة ملف CSV",
+  "dsCopyAll": "نسخ الكل",
+  "dsHideCodes": "حفظتها، أخفِها",
+  "dsAll": "الكل",
+  "dsUnused": "غير مستخدم",
+  "dsClaimed": "مستخدم",
+  "dsRevokedLabel": "ملغى",
+  "dsCodeSearch": "آخر 4 أحرف أو @اسم",
+  "dsNoCodes": "لا توجد أكواد بهذا الفلتر.",
+  "dsCodeClaimed": "مستخدم · {who} · {date}",
+  "@dsCodeClaimed": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsCodeRevoked": "ملغى · {date}",
+  "@dsCodeRevoked": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsCodeUnused": "غير مستخدم · {date}",
+  "@dsCodeUnused": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsStudent": "طالب",
+  "dsRevoke": "إلغاء",
+  "dsNoStudents": "لم يفعّل أي طالب كودًا بعد.",
+  "dsActive": "مفعّل",
+  "dsWithdrawn": "مسحوب",
+  "dsWithdraw": "اسحب الوصول",
+  "dsWithdrawConfirm": "سيفقد هذا الطالب الوصول للمجموعة فورًا.",
+  "dsWithdrawYes": "تأكيد السحب"
 }

@@ -2278,4 +2278,415 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get niroOpenSettings => 'Open Settings';
+
+  @override
+  String get dsIntro =>
+      'Questions your doctor shares with their students. You get in with a code from your doctor.';
+
+  @override
+  String get dsCodeLabel => 'Access code';
+
+  @override
+  String get dsAddSet => 'Add the set';
+
+  @override
+  String get dsChecking => 'Checking…';
+
+  @override
+  String get dsAlreadyAdded => 'This set is already in your account.';
+
+  @override
+  String get dsMine => 'My sets';
+
+  @override
+  String get dsMineEmpty => 'No sets yet.';
+
+  @override
+  String get dsMineEmptyHint => 'Got a code from your doctor? Enter it above.';
+
+  @override
+  String get dsListedTitle => 'Published sets';
+
+  @override
+  String get dsListedNote =>
+      'Shown for information only. Opening any set needs a code from its doctor.';
+
+  @override
+  String get dsByCode => '🔒 code';
+
+  @override
+  String get dsAvailable => 'Available';
+
+  @override
+  String dsOpensAt(String date) {
+    return 'Opens $date';
+  }
+
+  @override
+  String get dsUnavailable => 'Not available now';
+
+  @override
+  String dsUntil(String date) {
+    return 'until $date';
+  }
+
+  @override
+  String get dsSetUnavailable => 'This set isn\'t available right now';
+
+  @override
+  String get dsFeatureOff => 'This feature isn\'t available right now.';
+
+  @override
+  String get dsApplyTitle => 'Doctor account';
+
+  @override
+  String get dsApplyIntro =>
+      'Upload your question files and give your students access codes. Your account and login stay the same.';
+
+  @override
+  String get dsPending => 'Under review';
+
+  @override
+  String get dsPendingBody =>
+      'Your application arrived and the NiroLearn team will review it.';
+
+  @override
+  String get dsApproved => 'Approved doctor';
+
+  @override
+  String get dsApprovedBody => 'Your account is approved as a doctor.';
+
+  @override
+  String get dsOpenDashboard => 'Open the doctor dashboard';
+
+  @override
+  String get dsSuspended => 'Suspended';
+
+  @override
+  String get dsSuspendedBody => 'Doctor access is suspended for now.';
+
+  @override
+  String get dsSuspendedHint =>
+      'Your sets aren\'t available to your students meanwhile. Contact us to find out why.';
+
+  @override
+  String get dsRejected => 'Not approved';
+
+  @override
+  String get dsRejectedBody =>
+      'We couldn\'t approve your previous application.';
+
+  @override
+  String dsRejectedReason(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String get dsRejectedHint => 'You can edit the details and apply again.';
+
+  @override
+  String get dsFullName => 'Full name';
+
+  @override
+  String get dsUniversity => 'University';
+
+  @override
+  String get dsFaculty => 'Faculty';
+
+  @override
+  String get dsDepartment => 'Department';
+
+  @override
+  String get dsUniEmail => 'University email (optional, helps verification)';
+
+  @override
+  String get dsNote => 'Note for the reviewer (optional)';
+
+  @override
+  String get dsSendApplication => 'Send the application';
+
+  @override
+  String get dsDashboardIntro =>
+      'Protected question sets: upload the file once, your students get in with a code.';
+
+  @override
+  String get dsStatSets => 'Sets';
+
+  @override
+  String get dsStatPublished => 'Published';
+
+  @override
+  String get dsStatDisabled => 'Disabled';
+
+  @override
+  String get dsStatCodes => 'Codes made';
+
+  @override
+  String get dsStatStudents => 'Active students';
+
+  @override
+  String get dsNewSet => 'New set';
+
+  @override
+  String get dsDoctorEmptyHint =>
+      'Upload a PDF of questions, review what was extracted, then publish it and make codes for your students.';
+
+  @override
+  String get dsRecent => 'Recent activity';
+
+  @override
+  String dsStudentsCount(int count) {
+    return '$count students';
+  }
+
+  @override
+  String dsCodesUsed(int claimed, int total) {
+    return '$claimed/$total codes used';
+  }
+
+  @override
+  String get dsNewSetTitle => 'New question set';
+
+  @override
+  String get dsNewSetIntro =>
+      'The file is processed once, by the same question-file pipeline. You review the questions, then publish and make codes.';
+
+  @override
+  String get dsFileLabel => 'Question file (PDF)';
+
+  @override
+  String get dsFileHint =>
+      'Text or scanned — scanned pages are read by OCR and take a little longer. Counts against your plan\'s question files.';
+
+  @override
+  String get dsCreateSet => 'Upload and create the set';
+
+  @override
+  String get dsStarting => 'Starting the processing…';
+
+  @override
+  String get dsTitle => 'Set title';
+
+  @override
+  String get dsDescription => 'Description (optional)';
+
+  @override
+  String get dsSubject => 'Subject';
+
+  @override
+  String get dsYear => 'Academic year';
+
+  @override
+  String get dsExamType => 'Exam type';
+
+  @override
+  String get dsVisibility => 'Visibility';
+
+  @override
+  String get dsUnlisted =>
+      'Unlisted — you give the codes to your students directly';
+
+  @override
+  String get dsListed =>
+      'Listed — students see its title; getting in still needs a code';
+
+  @override
+  String get dsListedShort => 'listed';
+
+  @override
+  String get dsUnlistedShort => 'unlisted';
+
+  @override
+  String get dsStarts => 'Starts';
+
+  @override
+  String get dsEnds => 'Ends';
+
+  @override
+  String get dsPickDate => 'Pick';
+
+  @override
+  String get dsClearDate => 'No date';
+
+  @override
+  String get dsTabQuestions => 'Questions';
+
+  @override
+  String get dsTabSettings => 'Settings';
+
+  @override
+  String get dsTabCodes => 'Codes';
+
+  @override
+  String get dsTabStudents => 'Students';
+
+  @override
+  String get dsTabAudit => 'Log';
+
+  @override
+  String get dsProcessing =>
+      'Processing with the question-file pipeline. You can close this and come back.';
+
+  @override
+  String get dsReviewFirst =>
+      'Review the questions below as your students will see them.';
+
+  @override
+  String get dsNoEditAfterPublish =>
+      'Questions can\'t change after publishing. To fix them, create a new set from a corrected file.';
+
+  @override
+  String get dsPublish => 'Publish the set';
+
+  @override
+  String get dsPublished => 'Published';
+
+  @override
+  String get dsShowAllAnswers => 'Show every answer';
+
+  @override
+  String get dsHideAnswers => 'Hide the answers';
+
+  @override
+  String get dsMachineNote =>
+      'Some translations are machine-made (tagged «ترجمة آلية») — check them.';
+
+  @override
+  String get dsNoQuestionsYet => 'No questions extracted yet.';
+
+  @override
+  String get dsImageChecks => 'Images to check';
+
+  @override
+  String get dsImageChecksNote =>
+      'These pages had an image it wasn\'t clear which question it belongs to, so it wasn\'t attached (the questions show to students without it).';
+
+  @override
+  String dsQuestionOnPage(int index, int page) {
+    return 'Question $index · page $page';
+  }
+
+  @override
+  String dsNeedsReview(int count) {
+    return 'Needs review · $count';
+  }
+
+  @override
+  String get dsNeedsReviewNote =>
+      'These parts weren\'t complete questions, so your students don\'t see them. Nothing missing was filled in by the system.';
+
+  @override
+  String get dsNoStem => '(no question text)';
+
+  @override
+  String get dsAccess => 'Access';
+
+  @override
+  String get dsAccessNote =>
+      'Disabling stops every student\'s access at once without deleting anything; you can enable it again any time. Archiving is final.';
+
+  @override
+  String get dsDisableNow => 'Disable access now';
+
+  @override
+  String get dsEnable => 'Enable again';
+
+  @override
+  String get dsArchive => 'Archive the set';
+
+  @override
+  String get dsArchiveConfirm =>
+      'Archiving is final: students lose access and it can\'t be undone.';
+
+  @override
+  String get dsArchiveFinal => 'Archive permanently';
+
+  @override
+  String get dsCodesAfterPublish =>
+      'Codes can be made once the set is published.';
+
+  @override
+  String get dsCodeCount =>
+      'How many codes (one per student, up to 500 at a time)';
+
+  @override
+  String dsGenerate(int count) {
+    return 'Make $count codes';
+  }
+
+  @override
+  String dsFreshCodes(int count) {
+    return '$count new codes — save them now, they won\'t show in full again.';
+  }
+
+  @override
+  String get dsFreshCodesNote =>
+      'The codes file is sensitive: whoever has a code can get in. Share it with your students only.';
+
+  @override
+  String get dsShareCsv => 'Share the CSV';
+
+  @override
+  String get dsCopyAll => 'Copy all';
+
+  @override
+  String get dsHideCodes => 'Saved them, hide';
+
+  @override
+  String get dsAll => 'All';
+
+  @override
+  String get dsUnused => 'Unused';
+
+  @override
+  String get dsClaimed => 'Used';
+
+  @override
+  String get dsRevokedLabel => 'Revoked';
+
+  @override
+  String get dsCodeSearch => 'Last 4 characters or @name';
+
+  @override
+  String get dsNoCodes => 'No codes match this filter.';
+
+  @override
+  String dsCodeClaimed(String who, String date) {
+    return 'Used · $who · $date';
+  }
+
+  @override
+  String dsCodeRevoked(String date) {
+    return 'Revoked · $date';
+  }
+
+  @override
+  String dsCodeUnused(String date) {
+    return 'Unused · $date';
+  }
+
+  @override
+  String get dsStudent => 'Student';
+
+  @override
+  String get dsRevoke => 'Revoke';
+
+  @override
+  String get dsNoStudents => 'No student has used a code yet.';
+
+  @override
+  String get dsActive => 'Active';
+
+  @override
+  String get dsWithdrawn => 'Withdrawn';
+
+  @override
+  String get dsWithdraw => 'Withdraw access';
+
+  @override
+  String get dsWithdrawConfirm =>
+      'This student loses access to the set right away.';
+
+  @override
+  String get dsWithdrawYes => 'Withdraw';
 }

@@ -3985,6 +3985,732 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'فتح الإعدادات'**
   String get niroOpenSettings;
+
+  /// No description provided for @dsIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة يشاركها دكتورك مع طلابه. الدخول بكود يعطيك إياه الدكتور.'**
+  String get dsIntro;
+
+  /// No description provided for @dsCodeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الوصول'**
+  String get dsCodeLabel;
+
+  /// No description provided for @dsAddSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف المجموعة'**
+  String get dsAddSet;
+
+  /// No description provided for @dsChecking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري التحقق…'**
+  String get dsChecking;
+
+  /// No description provided for @dsAlreadyAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه المجموعة مضافة لحسابك بالفعل.'**
+  String get dsAlreadyAdded;
+
+  /// No description provided for @dsMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعاتي'**
+  String get dsMine;
+
+  /// No description provided for @dsMineEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مجموعات بعد.'**
+  String get dsMineEmpty;
+
+  /// No description provided for @dsMineEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك كود من دكتورك؟ أدخله في الأعلى.'**
+  String get dsMineEmptyHint;
+
+  /// No description provided for @dsListedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعات منشورة'**
+  String get dsListedTitle;
+
+  /// No description provided for @dsListedNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر هنا للاطلاع فقط. فتح أي مجموعة يحتاج كودًا من دكتورها.'**
+  String get dsListedNote;
+
+  /// No description provided for @dsByCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔒 بكود'**
+  String get dsByCode;
+
+  /// No description provided for @dsAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاحة'**
+  String get dsAvailable;
+
+  /// No description provided for @dsOpensAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفتح {date}'**
+  String dsOpensAt(String date);
+
+  /// No description provided for @dsUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متاحة حاليًا'**
+  String get dsUnavailable;
+
+  /// No description provided for @dsUntil.
+  ///
+  /// In ar, this message translates to:
+  /// **'حتى {date}'**
+  String dsUntil(String date);
+
+  /// No description provided for @dsSetUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه المجموعة غير متاحة حاليًا'**
+  String get dsSetUnavailable;
+
+  /// No description provided for @dsFeatureOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الميزة غير متاحة حاليًا.'**
+  String get dsFeatureOff;
+
+  /// No description provided for @dsApplyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب دكتور'**
+  String get dsApplyTitle;
+
+  /// No description provided for @dsApplyIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع ملفات أسئلتك، وأعطِ طلابك أكواد دخول. يبقى حسابك كما هو، ونفس تسجيل الدخول.'**
+  String get dsApplyIntro;
+
+  /// No description provided for @dsPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد المراجعة'**
+  String get dsPending;
+
+  /// No description provided for @dsPendingBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبك وصل وسيراجعه فريق NiroLearn.'**
+  String get dsPendingBody;
+
+  /// No description provided for @dsApproved.
+  ///
+  /// In ar, this message translates to:
+  /// **'دكتور معتمد'**
+  String get dsApproved;
+
+  /// No description provided for @dsApprovedBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك معتمد كدكتور.'**
+  String get dsApprovedBody;
+
+  /// No description provided for @dsOpenDashboard.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح لوحة الدكتور'**
+  String get dsOpenDashboard;
+
+  /// No description provided for @dsSuspended.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقوف'**
+  String get dsSuspended;
+
+  /// No description provided for @dsSuspendedBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلاحيات الدكتور موقوفة حاليًا.'**
+  String get dsSuspendedBody;
+
+  /// No description provided for @dsSuspendedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعاتك غير متاحة لطلابك أثناء الإيقاف. تواصل معنا لمعرفة السبب.'**
+  String get dsSuspendedHint;
+
+  /// No description provided for @dsRejected.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يُقبل الطلب'**
+  String get dsRejected;
+
+  /// No description provided for @dsRejectedBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم نتمكن من اعتماد طلبك السابق.'**
+  String get dsRejectedBody;
+
+  /// No description provided for @dsRejectedReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب: {reason}'**
+  String dsRejectedReason(String reason);
+
+  /// No description provided for @dsRejectedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك تعديل البيانات وإرسال طلب جديد.'**
+  String get dsRejectedHint;
+
+  /// No description provided for @dsFullName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم الكامل'**
+  String get dsFullName;
+
+  /// No description provided for @dsUniversity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجامعة'**
+  String get dsUniversity;
+
+  /// No description provided for @dsFaculty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكلية'**
+  String get dsFaculty;
+
+  /// No description provided for @dsDepartment.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسم'**
+  String get dsDepartment;
+
+  /// No description provided for @dsUniEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد الجامعي (اختياري، يساعد في التحقق)'**
+  String get dsUniEmail;
+
+  /// No description provided for @dsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة للمراجعة (اختياري)'**
+  String get dsNote;
+
+  /// No description provided for @dsSendApplication.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرسل الطلب'**
+  String get dsSendApplication;
+
+  /// No description provided for @dsDashboardIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعات أسئلة محمية: ترفع الملف مرة واحدة، وطلابك يدخلون بكود.'**
+  String get dsDashboardIntro;
+
+  /// No description provided for @dsStatSets.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجموعات'**
+  String get dsStatSets;
+
+  /// No description provided for @dsStatPublished.
+  ///
+  /// In ar, this message translates to:
+  /// **'منشورة'**
+  String get dsStatPublished;
+
+  /// No description provided for @dsStatDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'معطّلة'**
+  String get dsStatDisabled;
+
+  /// No description provided for @dsStatCodes.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكواد مولّدة'**
+  String get dsStatCodes;
+
+  /// No description provided for @dsStatStudents.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلاب مفعّلون'**
+  String get dsStatStudents;
+
+  /// No description provided for @dsNewSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعة جديدة'**
+  String get dsNewSet;
+
+  /// No description provided for @dsDoctorEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع ملف أسئلة PDF، راجع الأسئلة المستخرجة، ثم انشرها وولّد أكوادًا لطلابك.'**
+  String get dsDoctorEmptyHint;
+
+  /// No description provided for @dsRecent.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر النشاط'**
+  String get dsRecent;
+
+  /// No description provided for @dsStudentsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} طالب'**
+  String dsStudentsCount(int count);
+
+  /// No description provided for @dsCodesUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'{claimed}/{total} كود مستخدم'**
+  String dsCodesUsed(int claimed, int total);
+
+  /// No description provided for @dsNewSetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعة أسئلة جديدة'**
+  String get dsNewSetTitle;
+
+  /// No description provided for @dsNewSetIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف يُعالج مرة واحدة بنفس نظام ملفات الأسئلة. تراجع الأسئلة، ثم تنشر وتولّد الأكواد.'**
+  String get dsNewSetIntro;
+
+  /// No description provided for @dsFileLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف الأسئلة (PDF)'**
+  String get dsFileLabel;
+
+  /// No description provided for @dsFileHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف نصي أو ممسوح ضوئيًا — الصفحات المصوّرة تُقرأ بالقراءة الضوئية وتأخذ وقتًا أطول قليلًا. يُحتسب الملف من حصة ملفات الأسئلة في باقتك.'**
+  String get dsFileHint;
+
+  /// No description provided for @dsCreateSet.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع وأنشئ المجموعة'**
+  String get dsCreateSet;
+
+  /// No description provided for @dsStarting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري بدء المعالجة…'**
+  String get dsStarting;
+
+  /// No description provided for @dsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنوان المجموعة'**
+  String get dsTitle;
+
+  /// No description provided for @dsDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف (اختياري)'**
+  String get dsDescription;
+
+  /// No description provided for @dsSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة'**
+  String get dsSubject;
+
+  /// No description provided for @dsYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة الدراسية'**
+  String get dsYear;
+
+  /// No description provided for @dsExamType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الامتحان'**
+  String get dsExamType;
+
+  /// No description provided for @dsVisibility.
+  ///
+  /// In ar, this message translates to:
+  /// **'الظهور'**
+  String get dsVisibility;
+
+  /// No description provided for @dsUnlisted.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مدرجة — تعطي الأكواد لطلابك مباشرة'**
+  String get dsUnlisted;
+
+  /// No description provided for @dsListed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرجة — يظهر عنوانها للطلاب، والدخول بكود فقط'**
+  String get dsListed;
+
+  /// No description provided for @dsListedShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرجة'**
+  String get dsListedShort;
+
+  /// No description provided for @dsUnlistedShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مدرجة'**
+  String get dsUnlistedShort;
+
+  /// No description provided for @dsStarts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبدأ'**
+  String get dsStarts;
+
+  /// No description provided for @dsEnds.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنتهي'**
+  String get dsEnds;
+
+  /// No description provided for @dsPickDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر'**
+  String get dsPickDate;
+
+  /// No description provided for @dsClearDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون تاريخ'**
+  String get dsClearDate;
+
+  /// No description provided for @dsTabQuestions.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسئلة'**
+  String get dsTabQuestions;
+
+  /// No description provided for @dsTabSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get dsTabSettings;
+
+  /// No description provided for @dsTabCodes.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأكواد'**
+  String get dsTabCodes;
+
+  /// No description provided for @dsTabStudents.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلاب'**
+  String get dsTabStudents;
+
+  /// No description provided for @dsTabAudit.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل'**
+  String get dsTabAudit;
+
+  /// No description provided for @dsProcessing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري المعالجة بنفس نظام ملفات الأسئلة. تقدر تسكّر الصفحة وترجع.'**
+  String get dsProcessing;
+
+  /// No description provided for @dsReviewFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الأسئلة أدناه كما سيراها طلابك.'**
+  String get dsReviewFirst;
+
+  /// No description provided for @dsNoEditAfterPublish.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد النشر لا يمكن تغيير الأسئلة. إن احتجت تعديلها، أنشئ مجموعة جديدة بملف مصحح.'**
+  String get dsNoEditAfterPublish;
+
+  /// No description provided for @dsPublish.
+  ///
+  /// In ar, this message translates to:
+  /// **'انشر المجموعة'**
+  String get dsPublish;
+
+  /// No description provided for @dsPublished.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم النشر'**
+  String get dsPublished;
+
+  /// No description provided for @dsShowAllAnswers.
+  ///
+  /// In ar, this message translates to:
+  /// **'أظهر كل الإجابات'**
+  String get dsShowAllAnswers;
+
+  /// No description provided for @dsHideAnswers.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخفاء الإجابات'**
+  String get dsHideAnswers;
+
+  /// No description provided for @dsMachineNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعض الترجمات آلية (عليها وسم «ترجمة آلية») — راجعها.'**
+  String get dsMachineNote;
+
+  /// No description provided for @dsNoQuestionsYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أسئلة مستخرجة بعد.'**
+  String get dsNoQuestionsYet;
+
+  /// No description provided for @dsImageChecks.
+  ///
+  /// In ar, this message translates to:
+  /// **'صور تحتاج مراجعة'**
+  String get dsImageChecks;
+
+  /// No description provided for @dsImageChecksNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'في هذه الصفحات صورة لم يكن واضحًا لأي سؤال تعود، فلم تُربط بأي سؤال (الأسئلة نفسها ظاهرة للطلاب بدون صورة).'**
+  String get dsImageChecksNote;
+
+  /// No description provided for @dsQuestionOnPage.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال {index} · صفحة {page}'**
+  String dsQuestionOnPage(int index, int page);
+
+  /// No description provided for @dsNeedsReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحتاج مراجعة (Needs Review) · {count}'**
+  String dsNeedsReview(int count);
+
+  /// No description provided for @dsNeedsReviewNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه الأجزاء لم تُعتبر أسئلة مكتملة، فلا يراها طلابك. لم يُكمل النظام أي نص ناقص من عنده.'**
+  String get dsNeedsReviewNote;
+
+  /// No description provided for @dsNoStem.
+  ///
+  /// In ar, this message translates to:
+  /// **'(بدون نص سؤال)'**
+  String get dsNoStem;
+
+  /// No description provided for @dsAccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصول'**
+  String get dsAccess;
+
+  /// No description provided for @dsAccessNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعطيل يوقف وصول كل الطلاب فورًا دون حذف أي شيء، وتقدر تعيد التفعيل متى شئت. الأرشفة نهائية.'**
+  String get dsAccessNote;
+
+  /// No description provided for @dsDisableNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'عطّل الوصول الآن'**
+  String get dsDisableNow;
+
+  /// No description provided for @dsEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد التفعيل'**
+  String get dsEnable;
+
+  /// No description provided for @dsArchive.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرشف المجموعة'**
+  String get dsArchive;
+
+  /// No description provided for @dsArchiveConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرشفة نهائية: يتوقف وصول الطلاب ولا يمكن التراجع.'**
+  String get dsArchiveConfirm;
+
+  /// No description provided for @dsArchiveFinal.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الأرشفة النهائية'**
+  String get dsArchiveFinal;
+
+  /// No description provided for @dsCodesAfterPublish.
+  ///
+  /// In ar, this message translates to:
+  /// **'توليد الأكواد متاح بعد نشر المجموعة.'**
+  String get dsCodesAfterPublish;
+
+  /// No description provided for @dsCodeCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأكواد (كل كود لطالب واحد، حتى 500 في المرة)'**
+  String get dsCodeCount;
+
+  /// No description provided for @dsGenerate.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولّد {count} كود'**
+  String dsGenerate(int count);
+
+  /// No description provided for @dsFreshCodes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} كود جديد — احفظها الآن، لن تظهر كاملة مرة أخرى.'**
+  String dsFreshCodes(int count);
+
+  /// No description provided for @dsFreshCodesNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف الأكواد حساس: من يملك الكود يستطيع الدخول. شاركه مع طلابك فقط.'**
+  String get dsFreshCodesNote;
+
+  /// No description provided for @dsShareCsv.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة ملف CSV'**
+  String get dsShareCsv;
+
+  /// No description provided for @dsCopyAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ الكل'**
+  String get dsCopyAll;
+
+  /// No description provided for @dsHideCodes.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظتها، أخفِها'**
+  String get dsHideCodes;
+
+  /// No description provided for @dsAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get dsAll;
+
+  /// No description provided for @dsUnused.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مستخدم'**
+  String get dsUnused;
+
+  /// No description provided for @dsClaimed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستخدم'**
+  String get dsClaimed;
+
+  /// No description provided for @dsRevokedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغى'**
+  String get dsRevokedLabel;
+
+  /// No description provided for @dsCodeSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر 4 أحرف أو @اسم'**
+  String get dsCodeSearch;
+
+  /// No description provided for @dsNoCodes.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أكواد بهذا الفلتر.'**
+  String get dsNoCodes;
+
+  /// No description provided for @dsCodeClaimed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستخدم · {who} · {date}'**
+  String dsCodeClaimed(String who, String date);
+
+  /// No description provided for @dsCodeRevoked.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغى · {date}'**
+  String dsCodeRevoked(String date);
+
+  /// No description provided for @dsCodeUnused.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مستخدم · {date}'**
+  String dsCodeUnused(String date);
+
+  /// No description provided for @dsStudent.
+  ///
+  /// In ar, this message translates to:
+  /// **'طالب'**
+  String get dsStudent;
+
+  /// No description provided for @dsRevoke.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get dsRevoke;
+
+  /// No description provided for @dsNoStudents.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يفعّل أي طالب كودًا بعد.'**
+  String get dsNoStudents;
+
+  /// No description provided for @dsActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفعّل'**
+  String get dsActive;
+
+  /// No description provided for @dsWithdrawn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسحوب'**
+  String get dsWithdrawn;
+
+  /// No description provided for @dsWithdraw.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب الوصول'**
+  String get dsWithdraw;
+
+  /// No description provided for @dsWithdrawConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيفقد هذا الطالب الوصول للمجموعة فورًا.'**
+  String get dsWithdrawConfirm;
+
+  /// No description provided for @dsWithdrawYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد السحب'**
+  String get dsWithdrawYes;
 }
 
 class _AppLocalizationsDelegate
