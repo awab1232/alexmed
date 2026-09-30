@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/api/json.dart';
 import '../../../core/api/trpc_client.dart';
+import '../../../core/storage/persisted_map.dart';
 import 'exam_focus_models.dart';
 
 /// Exam Focus on the existing server — the same calls as the web's
@@ -18,6 +19,7 @@ class ExamFocusRepository {
   /// PRECONDITION_FAILED), shown as is.
   Future<ExamFocusDeck?> get(String bookId) => trpc.query(
     'examFocus.get',
+    offline: true,
     input: {'bookId': bookId},
     parse: (data) => data == null ? null : ExamFocusDeck.fromJson(asMap(data)),
   );
@@ -58,6 +60,7 @@ class ExamFocusRepository {
     int limit = 40,
   }) => trpc.query(
     'examFocus.cards',
+    offline: true,
     input: {
       'bookId': bookId,
       'category': ?category,
@@ -90,17 +93,11 @@ final examFocusRepositoryProvider = Provider<ExamFocusRepository>(
 /// Where the student was in the unfiltered deck, per book, for this app
 /// session (the web keeps it in localStorage). Survives leaving and
 /// reopening the screen; kept across restarts once offline storage lands
-/// (P14).
+/// (P14 — kept on the device).
 final examFocusPositionProvider =
     NotifierProvider<_Positions, Map<String, int>>(_Positions.new);
 
-class _Positions extends Notifier<Map<String, int>> {
+class _Positions extends PersistedIntMap {
   @override
-  Map<String, int> build() {
-    // A new account starts fresh.
-    ref.watch(sessionControllerProvider.select((s) => s.status));
-    return {};
-  }
-
-  void set(String bookId, int index) => state = {...state, bookId: index};
+  String get storeKey => 'pos-exam-focus';
 }

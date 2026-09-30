@@ -146,10 +146,12 @@ class ProgressRepository {
     final results = await Future.wait([
       trpc.query(
         'books.dueCards',
+        offline: true,
         parse: (data) => asMapList(data).map(DueCard.fromBook).toList(),
       ),
       trpc.query(
         'decks.dueCards',
+        offline: true,
         parse: (data) => asMapList(data).map(DueCard.fromDeck).toList(),
       ),
     ]);
@@ -164,6 +166,8 @@ class ProgressRepository {
       card.source == DueSource.book ? 'books.rateCard' : 'decks.rateCard',
       input: {'cardId': card.id, 'rating': rating.name},
       parse: (_) {},
+      // Kept and sent later when offline (blueprint §14).
+      queueOffline: true,
     );
   }
 
@@ -176,11 +180,13 @@ class ProgressRepository {
 
   Future<StudyStats> stats() => trpc.query(
     'books.stats',
+    offline: true,
     parse: (data) => StudyStats.fromJson(asMap(data)),
   );
 
   Future<WeakPoints> weakPoints() => trpc.query(
     'books.listWeakPoints',
+    offline: true,
     parse: (data) {
       final json = asMap(data);
       String meta(JsonMap r) => [
@@ -215,6 +221,7 @@ class ProgressRepository {
 
   Future<List<ForecastDay>> forecast() => trpc.query(
     'books.upcomingForecast',
+    offline: true,
     parse: (data) => [
       for (final r in asMapList(data))
         if (r.date('day') case final day?)

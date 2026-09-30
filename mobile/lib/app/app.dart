@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/offline/offline_shell.dart';
 import '../core/storage/local_store.dart';
 import '../core/ui/theme.dart';
 import '../features/auth/application/session_refresh.dart';
@@ -26,6 +27,9 @@ class NiroLearnApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: buildNiroTheme(),
+      // Offline banner + sending queued ratings (blueprint §14).
+      builder: (context, child) =>
+          OfflineShell(child: child ?? const SizedBox.shrink()),
     );
   }
 }

@@ -96,6 +96,7 @@ class MirrorRepository {
 
   Future<MirrorDeck> deck(String id) => trpc.query(
     'decks.get',
+    offline: true,
     input: {'id': id},
     parse: (data) => MirrorDeck.fromJson(asMap(data)),
   );

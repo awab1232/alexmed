@@ -484,13 +484,25 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 ## Phase 14 — Offline cache & sync
 **Objective:** honest offline support per BP §14. **Depends on:** P7–P12.
 
-- [ ] 14.1 drift schema for cached lists, study content, question files (not protected sets), Niro history
-- [ ] 14.2 Cache policies (stale-while-revalidate, size limits, wipe on logout)
-- [ ] 14.3 Offline review queue for flashcards/MCQ/question answers; sync on reconnect (G8 optional)
-- [ ] 14.4 Offline banner + disabled actions with reasons
+- [x] 14.1 Cached for offline reading (`core/offline/offline.dart`, inside `TrpcClient`: a query marked `offline: true` keeps its last answer as the raw `{json, meta}` envelope and falls back to it when the network is unreachable): 35 queries — profile / plan, folders, books, question files and their content, مِرآة decks, study content (cards, questions, summary), mind map, Exam Focus cards, book chat history, page marks, due cards, stats / weak points / forecast, sharing summary / shared packs. **Never** protected sets or doctor data (not opted in; the P11 sandbox inspection still holds). Niro history since P10. **Changed from the plan:** no drift — the P10 JSON store (reasoning recorded there)
+- [~] 14.2 Policies: the last 250 answers kept (least recently written dropped), none larger than 3 MB; everything wiped on sign-out / expired session. **Not stale-while-revalidate**: cached data is shown when the network fails, not instantly before the network answers (the providers would have to become streams — left for P16 if startup measurements call for it)
+- [~] 14.3 Offline queue (`SyncQueue`): flashcard ratings (study + daily review, كتبي and مِرآة) made offline are kept in order and sent when the server is reachable again — on the next successful request, on every return to the app, and by a light probe every 20 s while offline; a call the server rejects is dropped so it can't block the rest. Question-file answers, positions (Exam Focus, reader page, question files) and the match best time are now kept on the device (`PersistedMapNotifier`; found and fixed by a test: a value set before the stored map finished loading overwrote it). **Not queued:** MCQ attempts (the server checks the answer, so there is nothing to show offline) and question-set answers (protected, memory only). **G8** (a client "reviewed at") not available: a queued rating is scheduled from when it arrives
+- [~] 14.4 Offline banner above every screen (status bar included) while the server can't be reached; it goes as soon as a request succeeds. Actions needing the server still fail with «تعذّر الاتصال…» rather than being disabled in advance
 
 **Tests:** offline suite (every screen in airplane mode); sync conflict tests.
 **DoD:** offline suite passes; protected sets confirmed absent from disk.
+
+**Status: `[~]` core offline support implemented and verified end to end on the emulator** — `integration_test/offline_test.dart` runs the real app, real Dio and the real on-device store against a tRPC stand-in on localhost, stops it (banner shown, cached folders still there, a rating queued) and starts it again (probe reconnects, banner gone, the queued rating sent: «QUEUED 1 → SENT 1»). Left `[~]`: stale-while-revalidate, disabling actions in advance, a full every-screen airplane-mode pass (P19). Also found: Android 9+ refuses plain HTTP, so the dev environment (`http://10.0.2.2:3000`) could not have worked — a **debug-only** network security config now allows cleartext to 10.0.2.2 / localhost (release unchanged, HTTPS only).
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] cached lists / content readable offline  [x] ratings queued + sent in order  [x] persisted positions / answers / best time
+             [~] SWR  [~] actions disabled in advance
+UI/UX        [x] banner above every screen incl. status bar (found + fixed: black strip)  [x] RTL
+SECURITY     [x] protected content never cached  [x] all on-device data wiped on sign-out / expired session  [x] cleartext debug-only
+PERFORMANCE  [x] cache bounded (250 entries, 3 MB each)  [x] probe only while offline and in the foreground
+TESTING      [x] unit (fallback, queue order / keep / drop, LRU, hash, persisted map + race)  [x] widget (banner)  [x] on device end to end
+REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
+```
 
 ---
 

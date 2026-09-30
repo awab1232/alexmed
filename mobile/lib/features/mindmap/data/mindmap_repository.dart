@@ -151,6 +151,7 @@ class MindMapRepository {
 
   Future<MindMap> get(String bookId) => trpc.query(
     'books.getMindMap',
+    offline: true,
     input: {'id': bookId},
     parse: (data) => MindMap.fromJson(asMap(data)),
   );

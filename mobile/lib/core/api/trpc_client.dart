@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
 
+import '../offline/offline.dart';
 import 'api_error.dart';
 import 'superjson.dart';
 
@@ -17,28 +19,52 @@ import 'superjson.dart';
 /// ```
 ///
 /// Calls are never batched, so each failure stays attached to its call.
+///
+/// Offline (blueprint §14): a query marked [query]'s `offline` keeps its
+/// last answer in [cache] and falls back to it when the network is
+/// unreachable; a mutation marked `queueOffline` is kept in [queue] and
+/// sent later. [onReachability] learns from every request whether the
+/// server could be reached. Protected content never opts in.
 class TrpcClient {
-  TrpcClient(this._dio);
+  TrpcClient(this._dio, {this.cache, this.queue, this.onReachability});
 
   final Dio _dio;
+  final QueryCache? cache;
+  final SyncQueue? queue;
+  final void Function(bool reachable)? onReachability;
 
   Future<T> query<T>(
     String path, {
     Object? input,
     required T Function(Object? data) parse,
     CancelToken? cancelToken,
+    bool offline = false,
   }) async {
-    final query = input == null
-        ? null
-        : {'input': jsonEncode(superjsonEncode(input))};
-    return _send(
-      () => _dio.get<Object?>(
-        '/api/trpc/$path',
-        queryParameters: query,
-        cancelToken: cancelToken,
-      ),
-      parse,
-    );
+    final encoded = input == null ? null : jsonEncode(superjsonEncode(input));
+    final query = encoded == null ? null : {'input': encoded};
+    final key = offline && cache != null
+        ? QueryCache.keyFor(path, encoded)
+        : null;
+    try {
+      return await _send(
+        () => _dio.get<Object?>(
+          '/api/trpc/$path',
+          queryParameters: query,
+          cancelToken: cancelToken,
+        ),
+        parse,
+        cacheKey: key,
+      );
+    } on NetworkException {
+      if (key == null) rethrow;
+      final cached = await cache!.read(key);
+      if (cached == null) rethrow;
+      try {
+        return parse(superjsonDecode(cached['json'], cached['meta']));
+      } catch (_) {
+        throw const NetworkException();
+      }
+    }
   }
 
   Future<T> mutation<T>(
@@ -46,29 +72,52 @@ class TrpcClient {
     Object? input,
     required T Function(Object? data) parse,
     CancelToken? cancelToken,
-  }) {
-    return _send(
-      () => _dio.post<Object?>(
-        '/api/trpc/$path',
-        data: jsonEncode(superjsonEncode(input)),
-        options: Options(contentType: 'application/json'),
-        cancelToken: cancelToken,
-      ),
-      parse,
+    bool queueOffline = false,
+  }) async {
+    try {
+      return await _send(
+        () => _dio.post<Object?>(
+          '/api/trpc/$path',
+          data: jsonEncode(superjsonEncode(input)),
+          options: Options(contentType: 'application/json'),
+          cancelToken: cancelToken,
+        ),
+        parse,
+      );
+    } on NetworkException {
+      if (!queueOffline || queue == null) rethrow;
+      await queue!.add(
+        QueuedCall(path: path, input: input, at: DateTime.now().toUtc()),
+      );
+      return parse(null);
+    }
+  }
+
+  /// Sends what [queue] holds (see [SyncQueue.flush]).
+  Future<int> flushQueue() async {
+    final q = queue;
+    if (q == null) return 0;
+    return q.flush(
+      (call) => mutation<void>(call.path, input: call.input, parse: (_) {}),
+      (error) => error is NetworkException,
     );
   }
 
   Future<T> _send<T>(
     Future<Response<Object?>> Function() request,
-    T Function(Object? data) parse,
-  ) async {
+    T Function(Object? data) parse, {
+    String? cacheKey,
+  }) async {
     final Response<Object?> response;
     try {
       response = await request();
     } on DioException catch (error) {
       if (error.type == DioExceptionType.cancel) rethrow;
-      throw apiExceptionFromDio(error);
+      final mapped = apiExceptionFromDio(error);
+      if (mapped is NetworkException) onReachability?.call(false);
+      throw mapped;
     }
+    onReachability?.call(true);
     final body = _asMap(response.data);
     if (body == null) throw const ServerException();
 
@@ -82,6 +131,7 @@ class TrpcClient {
     }
     final data = _asMap(_asMap(body['result'])?['data']);
     if (data == null) throw const ServerException();
+    if (cacheKey != null) unawaited(cache!.write(cacheKey, data));
     try {
       return parse(superjsonDecode(data['json'], data['meta']));
     } on ApiException {

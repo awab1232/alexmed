@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api/http_client.dart';
 import '../core/api/trpc_client.dart';
 import '../core/auth/session_controller.dart';
+import '../core/offline/offline.dart';
 import 'env.dart';
 
 export '../core/auth/session_controller.dart'
@@ -31,5 +32,11 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 final trpcProvider = Provider<TrpcClient>(
-  (ref) => TrpcClient(ref.watch(dioProvider)),
+  (ref) => TrpcClient(
+    ref.watch(dioProvider),
+    cache: ref.watch(queryCacheProvider),
+    queue: ref.watch(syncQueueProvider),
+    onReachability: (reachable) =>
+        ref.read(onlineProvider.notifier).set(reachable),
+  ),
 );

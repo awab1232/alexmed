@@ -49,6 +49,7 @@ class BookRepository {
 
   Future<BookDetail> get(String id) => trpc.query(
     'books.get',
+    offline: true,
     input: {'id': id},
     parse: (data) => BookDetail.fromJson(asMap(data)),
   );
@@ -61,12 +62,14 @@ class BookRepository {
 
   Future<CoverageReport?> coverage(String bookId) => trpc.query(
     'books.getCoverageReport',
+    offline: true,
     input: {'bookId': bookId},
     parse: (data) => data == null ? null : CoverageReport.fromJson(asMap(data)),
   );
 
   Future<CoverageDetail?> coverageDetail(String bookId) => trpc.query(
     'books.getCoverageDetail',
+    offline: true,
     input: {'bookId': bookId},
     parse: (data) => data == null ? null : CoverageDetail.fromJson(asMap(data)),
   );
@@ -76,6 +79,7 @@ class BookRepository {
     try {
       return await trpc.query(
         'examFocus.get',
+        offline: true,
         input: {'bookId': bookId},
         parse: (data) =>
             data == null ? null : ExamFocusTile.fromJson(asMap(data)),

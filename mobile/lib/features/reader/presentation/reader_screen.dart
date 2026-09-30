@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/storage/persisted_map.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../library/data/library_models.dart' show bookDisplayTitle;
@@ -16,16 +17,15 @@ import 'marks_controller.dart';
 import 'marks_overlay.dart';
 import 'reader_view.dart';
 
-/// Last page read per book for this app session — reopening a book without
+/// Last page read per book, kept on the device — reopening a book without
 /// a target page continues there.
 final readerPositionProvider = NotifierProvider<_Positions, Map<String, int>>(
   _Positions.new,
 );
 
-class _Positions extends Notifier<Map<String, int>> {
+class _Positions extends PersistedIntMap {
   @override
-  Map<String, int> build() => {};
-  void set(String bookId, int page) => state = {...state, bookId: page};
+  String get storeKey => 'pos-reader';
 }
 
 /// Overridable in tests (the real one renders with PDFium).

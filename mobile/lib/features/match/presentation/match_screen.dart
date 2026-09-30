@@ -7,8 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../app/providers.dart';
 import '../../../app/routes.dart';
+import '../../../core/storage/persisted_map.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../study/data/study_models.dart';
@@ -19,20 +19,22 @@ import '../domain/match_game.dart';
 
 const _pairsPerRound = 6;
 
-/// Best time per book for this app session (the web keeps it in
-/// localStorage); kept across restarts once offline storage lands (P14).
+/// Best time per book, kept on the device (the web keeps it in
+/// localStorage).
 final matchBestProvider = NotifierProvider<_Best, Map<String, Duration>>(
   _Best.new,
 );
 
-class _Best extends Notifier<Map<String, Duration>> {
+class _Best extends PersistedMapNotifier<Duration> {
   @override
-  Map<String, Duration> build() {
-    ref.watch(sessionControllerProvider.select((s) => s.status));
-    return {};
-  }
+  String get storeKey => 'best-match';
+  @override
+  Object? encode(Duration value) => value.inMilliseconds;
+  @override
+  Duration? decode(Object? json) =>
+      json is num ? Duration(milliseconds: json.toInt()) : null;
 
-  void set(String bookId, Duration time) => state = {...state, bookId: time};
+  void set(String bookId, Duration time) => put(bookId, time);
 }
 
 /// Quizlet-style match game over the file's own cards and terms (the web's

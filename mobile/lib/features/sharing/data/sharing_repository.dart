@@ -195,6 +195,7 @@ class SharingRepository {
 
   Future<String?> username() => trpc.query(
     'sharing.profile',
+    offline: true,
     parse: (data) => data == null ? null : asMap(data).strOrNull('username'),
   );
 
@@ -263,6 +264,7 @@ class SharingRepository {
 
   Future<List<SharedWithMe>> sharedWithMe() => trpc.query(
     'sharing.sharedWithMe',
+    offline: true,
     parse: (data) => [
       for (final r in asMapList(data)) SharedWithMe.fromJson(r),
     ],

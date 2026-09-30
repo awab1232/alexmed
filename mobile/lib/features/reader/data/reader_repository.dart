@@ -59,6 +59,7 @@ class ReaderRepository {
   /// books.get (owner or accepted share); null when the book has no file.
   Future<ReaderBook?> book(String bookId) => trpc.query(
     'books.get',
+    offline: true,
     input: {'id': bookId},
     parse: (data) {
       final book = asMap(asMap(data)['book']);
@@ -79,6 +80,7 @@ class ReaderRepository {
   /// Every page's marks for this user in one call (superjson Map).
   Future<Map<int, PageMarks>> marks(String bookId) => trpc.query(
     'bookPageMarks.list',
+    offline: true,
     input: {'bookId': bookId},
     parse: (data) => {
       if (data is Map)
@@ -146,6 +148,7 @@ class ReaderRepository {
 
   Future<List<ChatTurn>> chatMessages(String sessionId) => trpc.query(
     'chat.listMessages',
+    offline: true,
     input: {'sessionId': sessionId},
     parse: (data) => [
       for (final m in asMapList(data))

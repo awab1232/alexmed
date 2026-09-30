@@ -128,6 +128,7 @@ class AccountRepository {
 
   Future<AccountProfile> profile() => _trpc.query(
     'auth.profile',
+    offline: true,
     parse: (data) => AccountProfile.fromJson(asMap(data)),
   );
 
@@ -140,16 +141,21 @@ class AccountRepository {
 
   Future<PlanSummary> plan() => _trpc.query(
     'billing.mine',
+    offline: true,
     parse: (data) => PlanSummary.fromJson(asMap(data)),
   );
 
   Future<String?> username() => _trpc.query(
     'sharing.profile',
+    offline: true,
     parse: (data) => data == null ? null : asMap(data).strOrNull('username'),
   );
 
-  Future<bool> doctorSetsEnabled() =>
-      _trpc.query('questionSets.enabled', parse: (data) => data == true);
+  Future<bool> doctorSetsEnabled() => _trpc.query(
+    'questionSets.enabled',
+    offline: true,
+    parse: (data) => data == true,
+  );
 
   Future<DoctorStatus> doctorStatus() => _trpc.query(
     'doctor.status',

@@ -14,11 +14,13 @@ class LibraryRepository {
 
   Future<List<Subject>> subjects() => _trpc.query(
     'subjects.list',
+    offline: true,
     parse: (data) => [for (final row in asMapList(data)) Subject.fromJson(row)],
   );
 
   Future<Subject> subject(String id) => _trpc.query(
     'subjects.get',
+    offline: true,
     input: {'id': id},
     parse: (data) => Subject.fromJson(asMap(data)),
   );
@@ -42,6 +44,7 @@ class LibraryRepository {
 
   Future<List<BookSummary>> books() => _trpc.query(
     'books.list',
+    offline: true,
     parse: (data) => [
       for (final row in asMapList(data)) BookSummary.fromJson(row),
     ],
@@ -49,6 +52,7 @@ class LibraryRepository {
 
   Future<List<DeckSummary>> decks() => _trpc.query(
     'decks.list',
+    offline: true,
     parse: (data) => [
       for (final row in asMapList(data)) DeckSummary.fromJson(row),
     ],
@@ -59,8 +63,16 @@ class LibraryRepository {
   /// used here.
   Future<int> dueCount() async {
     final results = await Future.wait([
-      _trpc.query('books.dueCards', parse: (data) => (data! as List).length),
-      _trpc.query('decks.dueCards', parse: (data) => (data! as List).length),
+      _trpc.query(
+        'books.dueCards',
+        offline: true,
+        parse: (data) => (data! as List).length,
+      ),
+      _trpc.query(
+        'decks.dueCards',
+        offline: true,
+        parse: (data) => (data! as List).length,
+      ),
     ]);
     return results[0] + results[1];
   }
@@ -81,12 +93,14 @@ class LibraryRepository {
 
   Future<SharedSummary> sharedSummary() => _trpc.query(
     'sharing.homeSummary',
+    offline: true,
     parse: (data) => SharedSummary.fromJson(asMap(data)),
   );
 
   /// The signed-in user's display name (auth.me), for the greeting.
   Future<String?> myName() => _trpc.query(
     'auth.me',
+    offline: true,
     parse: (data) => data == null ? null : asMap(data).strOrNull('name'),
   );
 }

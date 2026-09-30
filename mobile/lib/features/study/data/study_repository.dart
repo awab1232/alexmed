@@ -20,6 +20,7 @@ class StudyRepository {
 
   Future<StudyContent> content(String bookId) => trpc.query(
     'books.getStudyContent',
+    offline: true,
     input: {'bookId': bookId},
     parse: (data) => StudyContent.fromJson(asMap(data)),
   );
@@ -30,6 +31,8 @@ class StudyRepository {
     'books.rateCard',
     input: {'cardId': cardId, 'rating': rating.name},
     parse: (_) {},
+    // Kept and sent later when offline (blueprint §14).
+    queueOffline: true,
   );
 
   /// The server checks the answer and records the attempt.
@@ -56,6 +59,7 @@ class StudyRepository {
   Future<KnowledgeCoverage> knowledge(String bookId, StudyTool tool) =>
       trpc.query(
         'books.getKnowledgeCoverage',
+        offline: true,
         input: {'bookId': bookId},
         parse: (data) => KnowledgeCoverage.fromJson(asMap(data), tool),
       );
@@ -79,6 +83,7 @@ class StudyRepository {
     try {
       return await trpc.query(
         'examFocus.get',
+        offline: true,
         input: {'bookId': bookId},
         parse: (data) =>
             data == null ? null : ExamFocusDeck.fromJson(asMap(data)),

@@ -1,36 +1,46 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/providers.dart';
+import '../../../core/storage/persisted_map.dart';
 import '../domain/question_rules.dart';
 
 /// The student's answers per question file (file id → question id →
-/// answer) and where they were, for this app session — leaving and
-/// reopening a file keeps both. Protected doctor sets never use this: their
+/// answer) and where they were, kept on the device — leaving the file or
+/// restarting the app keeps both. Protected doctor sets never use this: their
 /// answers stay inside the screen and are gone when it closes.
 final questionAnswersProvider =
     NotifierProvider<QuestionAnswers, Map<String, Map<String, CardAnswer>>>(
       QuestionAnswers.new,
     );
 
-class QuestionAnswers extends Notifier<Map<String, Map<String, CardAnswer>>> {
+class QuestionAnswers extends PersistedMapNotifier<Map<String, CardAnswer>> {
   @override
-  Map<String, Map<String, CardAnswer>> build() {
-    // A new account starts fresh.
-    ref.watch(sessionControllerProvider.select((s) => s.status));
-    return {};
-  }
+  String get storeKey => 'answers-question-files';
 
-  void set(String fileId, String questionId, CardAnswer answer) {
-    state = {
-      ...state,
-      fileId: {...?state[fileId], questionId: answer},
+  // Answers of the 40 most recently used files.
+  @override
+  int get maxEntries => 40;
+
+  @override
+  Object? encode(Map<String, CardAnswer> value) => {
+    for (final MapEntry(:key, :value) in value.entries)
+      key: {'s': value.selected, 'r': value.revealed},
+  };
+
+  @override
+  Map<String, CardAnswer>? decode(Object? json) {
+    if (json is! Map) return null;
+    return {
+      for (final MapEntry(:key, :value) in json.entries)
+        if (value is Map)
+          '$key': CardAnswer(
+            selected: (value['s'] as num?)?.toInt(),
+            revealed: value['r'] == true,
+          ),
     };
   }
 
-  /// Every answer in [fileId] (restored from disk, P14).
-  void restore(String fileId, Map<String, CardAnswer> answers) {
-    state = {...state, fileId: answers};
-  }
+  void set(String fileId, String questionId, CardAnswer answer) =>
+      put(fileId, {...?state[fileId], questionId: answer});
 }
 
 final questionPositionProvider =
@@ -38,12 +48,7 @@ final questionPositionProvider =
       QuestionPositions.new,
     );
 
-class QuestionPositions extends Notifier<Map<String, int>> {
+class QuestionPositions extends PersistedIntMap {
   @override
-  Map<String, int> build() {
-    ref.watch(sessionControllerProvider.select((s) => s.status));
-    return {};
-  }
-
-  void set(String fileId, int index) => state = {...state, fileId: index};
+  String get storeKey => 'pos-question-files';
 }

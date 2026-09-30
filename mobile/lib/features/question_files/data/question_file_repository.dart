@@ -46,6 +46,7 @@ class QuestionFileRepository {
 
   Future<List<QuestionFileSummary>> list() => trpc.query(
     'questionFiles.list',
+    offline: true,
     parse: (data) => [
       for (final row in asMapList(data)) QuestionFileSummary.fromJson(row),
     ],
@@ -53,6 +54,7 @@ class QuestionFileRepository {
 
   Future<QuestionFileDetail> get(String id) => trpc.query(
     'questionFiles.get',
+    offline: true,
     input: {'bookId': id},
     parse: (data) => QuestionFileDetail.fromJson(asMap(data)),
   );
