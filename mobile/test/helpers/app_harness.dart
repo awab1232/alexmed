@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nirolearn/app/app.dart';
 import 'package:nirolearn/app/providers.dart';
 import 'package:nirolearn/core/auth/session_store.dart';
+import 'package:nirolearn/core/storage/local_store.dart';
 import 'package:nirolearn/features/account/data/account_repository.dart';
 import 'package:nirolearn/features/auth/data/auth_repository.dart';
 import 'package:nirolearn/features/library/data/library_models.dart';
@@ -193,6 +194,7 @@ pumpNiroLearn(
       overrides: [
         envProvider.overrideWithValue(testEnv),
         sessionStoreProvider.overrideWithValue(store),
+        localStoreProvider.overrideWithValue(MemoryLocalStore()),
         authRepositoryProvider.overrideWithValue(NoopAuthRepository()),
         libraryRepositoryProvider.overrideWithValue(lib),
         accountRepositoryProvider.overrideWithValue(acc),

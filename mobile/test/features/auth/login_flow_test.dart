@@ -5,6 +5,7 @@ import 'package:nirolearn/app/app.dart';
 import 'package:nirolearn/app/providers.dart';
 import 'package:nirolearn/core/api/api_error.dart';
 import 'package:nirolearn/core/auth/session_store.dart';
+import 'package:nirolearn/core/storage/local_store.dart';
 import 'package:nirolearn/core/ui/ui.dart';
 import 'package:nirolearn/features/account/data/account_repository.dart';
 import 'package:nirolearn/features/auth/data/auth_repository.dart';
@@ -63,6 +64,7 @@ Future<(FakeAuthRepository, MemorySessionStore)> pumpApp(
       overrides: [
         authRepositoryProvider.overrideWithValue(repo),
         sessionStoreProvider.overrideWithValue(store),
+        localStoreProvider.overrideWithValue(MemoryLocalStore()),
         envProvider.overrideWithValue(testEnv),
         libraryRepositoryProvider.overrideWithValue(FakeLibraryRepository()),
         accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),

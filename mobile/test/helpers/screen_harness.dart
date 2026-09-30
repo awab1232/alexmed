@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nirolearn/app/providers.dart';
+import 'package:nirolearn/core/storage/local_store.dart';
 import 'package:nirolearn/core/ui/ui.dart';
 import 'package:nirolearn/features/account/data/account_repository.dart';
 import 'package:nirolearn/features/library/data/library_repository.dart';
@@ -40,6 +41,7 @@ Future<ProviderContainer> pumpOne(
     overrides: [
       envProvider.overrideWithValue(testEnv),
       sessionStoreProvider.overrideWithValue(MemorySessionStore(signedIn)),
+      localStoreProvider.overrideWithValue(MemoryLocalStore()),
       libraryRepositoryProvider.overrideWithValue(
         library ?? FakeLibraryRepository(),
       ),

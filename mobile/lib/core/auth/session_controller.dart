@@ -64,7 +64,9 @@ class SessionController extends Notifier<SessionState> {
     await _store.clear();
     for (final hook in _signOutHooks) {
       try {
-        await hook();
+        // Bounded: a wipe that hangs (a platform call that never answers)
+        // must not keep the student signed in either.
+        await hook().timeout(const Duration(seconds: 5));
       } catch (_) {
         // A failing cache wipe must not keep the student signed in.
       }
