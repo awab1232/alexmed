@@ -432,13 +432,26 @@ REGRESSION   [x] no web / backend change  [x] all 300 Flutter tests pass
 ## Phase 12 — Games
 **Objective:** the four brain games. **Depends on:** P5.
 
-- [ ] 12.1 Games list + game detail (stages, progress)
-- [ ] 12.2 Quiz engine UI (Math Challenge, Multiplication, General Knowledge) with timer, haptics, results
-- [ ] 12.3 Sudoku grid (number pad, autosave debounced, hints)
-- [ ] 12.4 Resume via `activeSession`; online-only messaging
+- [x] 12.1 ألعاب tab (`features/games/**`, `/games`): the four games with the web's progress (level n/N, best score, completed bar, «تابع / ابدأ المستوى»), new-player welcome; game screen `/games/:id` (level stepper through unlocked levels to replay one, done + stage best, resume / replay / play label, best score, accuracy, fastest answer / solve)
+- [x] 12.2 Quiz stages (`/play/:id?stage=n`, Math Challenge / Multiplication / General Knowledge): ready screen with the rules, a countdown from an **absolute deadline** (reopening never grants extra time; expired → timeout), A–D options with light / heavy haptics, instant feedback, live ⭐ score, auto-advance after 850 ms for the math games and «التالي» + explanation for General Knowledge, the server's result (`StageResultView`: score, right, accuracy, fastest, best, new record, unlocked level, next / retry / back). `scoreQuizStage`, `speedBonus`, `stageState` ported and **proven identical** on 30 generated stages + 39 bonus cases + 21 stage states (`tool/export_game_rules_fixtures.ts`); the server still scores every stage. **Found on the device and fixed:** «7 × 8 = ?» rendered reversed as «? = 8 × 7» (no letters → inherited RTL) — math prompts now read LTR and number options sit next to their letter
+- [x] 12.3 Sudoku: 9×9 board always LTR with box borders, selected / related / same-value / conflict colours, notes mode, undo (200 steps), erase, server hints (the solution never reaches the device), mistakes, a play clock that runs only in the foreground, number pad with how many of each digit are left, hardware keys (1–9, Backspace, N, arrows). Autosave to the device at once and every 3 s, to the server 1.5 s after the last move and when the app goes to the background / the screen closes; a complete conflict-free board is sent for the server to verify. `PEERS` / `conflictingCells` proven identical (all 81 cells, 12 boards)
+- [x] 12.4 Resume: the server's `activeSession` for the stage is reopened instead of starting over; the stage in play is also kept on the device (`game-quiz-<session>`, `game-sudoku-<session>`, local store) so answers already given are never asked again and a finished stage is re-sent (the server is idempotent). Online only: a failed submit keeps the answers («انقطع الاتصال — إجاباتك محفوظة…»), retries every 5 s and on returning to the app, expired / closed session → «ابدأ المستوى من جديد», locked stage → the server's refusal + back
 
 **Tests:** journey 8; scoring parity with web for fixed seeds (contract).
 **DoD:** journey 8 passes; results identical to web.
+
+**Status: `[x]` implemented, tested and verified on the emulator with in-memory data.** Live `[!]` staging (D1): journey 8 against the real generator / scorer not run. iOS `[ ]` (D2). No backend change.
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] list / level stepper / quiz / GK flow / result / sudoku / hints / undo / notes  [x] resume (server + device copy)
+             [x] offline submit kept + retried  [x] expired / locked  [~] session expiry (shared 401 handling)
+UI/UX        [x] design system  [x] RTL UI; board, pad, equations and numbers LTR (found + fixed on the device)  [x] touch targets ≥48dp
+             [x] hardware keys  [x] haptics  [~] accessibility (cells / digits / tools labelled; no screen-reader pass)
+SECURITY     [x] nothing trusted from the client (server scores; Sudoku solution server-only)  [x] no logging
+PERFORMANCE  [x] one timer per question, cancelled on dispose  [x] server autosave debounced 1.5 s
+TESTING      [x] parity (4 groups)  [x] widget (7)  [x] on device (8 screens)  [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
+```
 
 ---
 

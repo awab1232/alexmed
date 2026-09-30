@@ -4711,6 +4711,444 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تأكيد السحب'**
   String get dsWithdrawYes;
+
+  /// No description provided for @gamesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧠 ألعاب الذاكرة'**
+  String get gamesTitle;
+
+  /// No description provided for @gamesIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'درّب عقلك واكسر رقمك القياسي.'**
+  String get gamesIntro;
+
+  /// No description provided for @gamesWelcome.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلًا بك في ألعاب الذاكرة 🧠'**
+  String get gamesWelcome;
+
+  /// No description provided for @gamesWelcomeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدَّ ذاكرتك وسرعتك وتفكيرك المنطقي.'**
+  String get gamesWelcomeBody;
+
+  /// No description provided for @gamesStartFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ أول لعبة'**
+  String get gamesStartFirst;
+
+  /// No description provided for @gamesStageOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى {stage}'**
+  String gamesStageOf(String stage);
+
+  /// No description provided for @gamesBestScore.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفضل نتيجة {score}'**
+  String gamesBestScore(String score);
+
+  /// No description provided for @gamesCompletedStages.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستويات المكتملة'**
+  String get gamesCompletedStages;
+
+  /// No description provided for @gamesContinueStage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع المستوى {stage}'**
+  String gamesContinueStage(int stage);
+
+  /// No description provided for @gamesStartStage1.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ المستوى 1'**
+  String get gamesStartStage1;
+
+  /// No description provided for @gamesResumeStage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكمل المستوى {stage}'**
+  String gamesResumeStage(int stage);
+
+  /// No description provided for @gamesReplayStage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد لعب المستوى {stage}'**
+  String gamesReplayStage(int stage);
+
+  /// No description provided for @gamesPlayStage.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب المستوى {stage}'**
+  String gamesPlayStage(int stage);
+
+  /// No description provided for @gamesPrevLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى السابق'**
+  String get gamesPrevLevel;
+
+  /// No description provided for @gamesNextLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى التالي'**
+  String get gamesNextLevel;
+
+  /// No description provided for @gamesLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى'**
+  String get gamesLevel;
+
+  /// No description provided for @gamesLevelN.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى {stage}'**
+  String gamesLevelN(int stage);
+
+  /// No description provided for @gamesDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتمل'**
+  String get gamesDone;
+
+  /// No description provided for @gamesCurrentLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستواك الحالي'**
+  String get gamesCurrentLevel;
+
+  /// No description provided for @gamesOpenLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوح'**
+  String get gamesOpenLevel;
+
+  /// No description provided for @gamesStatBest.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفضل نتيجة'**
+  String get gamesStatBest;
+
+  /// No description provided for @gamesStatAccuracy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدقة'**
+  String get gamesStatAccuracy;
+
+  /// No description provided for @gamesStatFastestSolve.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسرع حل'**
+  String get gamesStatFastestSolve;
+
+  /// No description provided for @gamesStatFastestAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسرع إجابة'**
+  String get gamesStatFastestAnswer;
+
+  /// No description provided for @gamesOnlineOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'الألعاب تحتاج اتصالًا بالإنترنت — النتائج تُحسب على الخادم.'**
+  String get gamesOnlineOnly;
+
+  /// No description provided for @gamesLocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا المستوى مقفل'**
+  String get gamesLocked;
+
+  /// No description provided for @gamesStartFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر بدء المستوى'**
+  String get gamesStartFailed;
+
+  /// No description provided for @gamesBackToLevels.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة للمستويات'**
+  String get gamesBackToLevels;
+
+  /// No description provided for @gamesPreparing.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجهّز المستوى {stage}…'**
+  String gamesPreparing(int stage);
+
+  /// No description provided for @gamesReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهز؟'**
+  String get gamesReady;
+
+  /// No description provided for @gamesReadyContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهز تكمل؟'**
+  String get gamesReadyContinue;
+
+  /// No description provided for @gamesRuleQuestions.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} أسئلة'**
+  String gamesRuleQuestions(int count);
+
+  /// No description provided for @gamesRuleSeconds.
+  ///
+  /// In ar, this message translates to:
+  /// **'{seconds} ثوانٍ لكل سؤال'**
+  String gamesRuleSeconds(int seconds);
+
+  /// No description provided for @gamesRulePass.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحتاج {count} إجابات صحيحة لفتح المستوى التالي'**
+  String gamesRulePass(int count);
+
+  /// No description provided for @gamesContinueFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'▶ أكمل من السؤال {index}'**
+  String gamesContinueFrom(int index);
+
+  /// No description provided for @gamesStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'▶ ابدأ'**
+  String get gamesStart;
+
+  /// No description provided for @gamesScoring.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحسب نتيجتك…'**
+  String get gamesScoring;
+
+  /// No description provided for @gamesOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'انقطع الاتصال'**
+  String get gamesOffline;
+
+  /// No description provided for @gamesOfflineBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجاباتك محفوظة على جهازك، وسنرسلها تلقائيًا عند عودة الاتصال.'**
+  String get gamesOfflineBody;
+
+  /// No description provided for @gamesExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتهت هذه الجلسة'**
+  String get gamesExpired;
+
+  /// No description provided for @gamesSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر حفظ النتيجة'**
+  String get gamesSaveFailed;
+
+  /// No description provided for @gamesRestartStage.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ المستوى من جديد'**
+  String get gamesRestartStage;
+
+  /// No description provided for @gamesQuestionOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال {position}'**
+  String gamesQuestionOf(String position);
+
+  /// No description provided for @gamesPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقاط {points}'**
+  String gamesPoints(int points);
+
+  /// No description provided for @gamesTimeLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت المتبقي {seconds} ثانية'**
+  String gamesTimeLeft(int seconds);
+
+  /// No description provided for @gamesRight.
+  ///
+  /// In ar, this message translates to:
+  /// **'✓ صحيح'**
+  String get gamesRight;
+
+  /// No description provided for @gamesWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'✗ خطأ'**
+  String get gamesWrong;
+
+  /// No description provided for @gamesTimeUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'⏱ انتهى الوقت'**
+  String get gamesTimeUp;
+
+  /// No description provided for @gamesResult.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة'**
+  String get gamesResult;
+
+  /// No description provided for @gamesAllDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المستويات مكتملة!'**
+  String get gamesAllDone;
+
+  /// No description provided for @gamesStageDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنهيت المستوى {stage}'**
+  String gamesStageDone(int stage);
+
+  /// No description provided for @gamesAlmost.
+  ///
+  /// In ar, this message translates to:
+  /// **'قربت! 💪'**
+  String get gamesAlmost;
+
+  /// No description provided for @gamesNeedMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'{score} — تحتاج أكثر قليلًا لفتح المستوى التالي'**
+  String gamesNeedMore(String score);
+
+  /// No description provided for @gamesScore.
+  ///
+  /// In ar, this message translates to:
+  /// **'النتيجة'**
+  String get gamesScore;
+
+  /// No description provided for @gamesCorrect.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصحيح'**
+  String get gamesCorrect;
+
+  /// No description provided for @gamesTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت'**
+  String get gamesTime;
+
+  /// No description provided for @gamesHints.
+  ///
+  /// In ar, this message translates to:
+  /// **'التلميحات'**
+  String get gamesHints;
+
+  /// No description provided for @gamesNewBest.
+  ///
+  /// In ar, this message translates to:
+  /// **'⭐ رقم قياسي جديد لهذا المستوى!'**
+  String get gamesNewBest;
+
+  /// No description provided for @gamesUnlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'🔓 انفتح المستوى {stage}'**
+  String gamesUnlocked(int stage);
+
+  /// No description provided for @gamesNextStage.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى التالي'**
+  String get gamesNextStage;
+
+  /// No description provided for @gamesRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعد المحاولة'**
+  String get gamesRetry;
+
+  /// No description provided for @gamesTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول مرة ثانية'**
+  String get gamesTryAgain;
+
+  /// No description provided for @gamesBackToGames.
+  ///
+  /// In ar, this message translates to:
+  /// **'العودة للألعاب'**
+  String get gamesBackToGames;
+
+  /// No description provided for @gamesMistakes.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأخطاء {count}'**
+  String gamesMistakes(int count);
+
+  /// No description provided for @gamesSudokuOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'انقطع الاتصال — حلك محفوظ وسنرسله عند عودة الاتصال.'**
+  String get gamesSudokuOffline;
+
+  /// No description provided for @gamesChecking.
+  ///
+  /// In ar, this message translates to:
+  /// **'نتحقق من الحل…'**
+  String get gamesChecking;
+
+  /// No description provided for @gamesUndo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get gamesUndo;
+
+  /// No description provided for @gamesErase.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح'**
+  String get gamesErase;
+
+  /// No description provided for @gamesNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get gamesNotes;
+
+  /// No description provided for @gamesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تلميح ({left})'**
+  String gamesHint(int left);
+
+  /// No description provided for @gamesDigit.
+  ///
+  /// In ar, this message translates to:
+  /// **'{digit} — متبقٍ {left}'**
+  String gamesDigit(int digit, int left);
+
+  /// No description provided for @gamesCell.
+  ///
+  /// In ar, this message translates to:
+  /// **'صف {row} عمود {col}: {value}'**
+  String gamesCell(int row, int col, String value);
+
+  /// No description provided for @gamesEmptyCell.
+  ///
+  /// In ar, this message translates to:
+  /// **'فارغة'**
+  String get gamesEmptyCell;
 }
 
 class _AppLocalizationsDelegate

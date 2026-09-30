@@ -19,6 +19,8 @@ import '../features/doctor_sets/presentation/doctor_set_screen.dart';
 import '../features/doctor_sets/presentation/protected_set_screen.dart';
 import '../features/doctor_sets/presentation/question_sets_screen.dart';
 import '../features/exam_focus/presentation/exam_focus_screen.dart';
+import '../features/games/presentation/games_screen.dart';
+import '../features/games/presentation/play_screen.dart';
 import '../features/library/presentation/add_sheet.dart';
 import '../features/library/presentation/folder_screen.dart';
 import '../features/library/presentation/home_screen.dart';
@@ -102,7 +104,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          _placeholderTab(Routes.games, (l) => l.tabGames, 'P12'),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.games,
+                builder: (_, _) => const GamesScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (_, state) =>
+                        GameScreen(gameId: state.pathParameters['id']!),
+                  ),
+                ],
+              ),
+            ],
+          ),
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -194,6 +210,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           detailsOnly: state.uri.queryParameters['details'] == '1',
         ),
       ),
+      GoRoute(
+        path: '/play/:id',
+        builder: (_, state) => PlayScreen(
+          gameId: state.pathParameters['id']!,
+          stage: int.tryParse(state.uri.queryParameters['stage'] ?? '') ?? 1,
+        ),
+      ),
       GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
       GoRoute(
         path: Routes.weakPoints,
@@ -261,12 +284,6 @@ GoRoute _placeholder(
   path: path,
   builder: (_, _) => PlaceholderScreen(title: title, phase: phase),
 );
-
-StatefulShellBranch _placeholderTab(
-  String path,
-  String Function(AppLocalizations) title,
-  String phase,
-) => StatefulShellBranch(routes: [_placeholder(path, title, phase)]);
 
 /// Native splash hands over to this while the session is restored from
 /// secure storage (no network) — usually a single frame. Same paper and

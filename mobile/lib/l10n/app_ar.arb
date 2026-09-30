@@ -1719,5 +1719,241 @@
   "dsWithdrawn": "مسحوب",
   "dsWithdraw": "اسحب الوصول",
   "dsWithdrawConfirm": "سيفقد هذا الطالب الوصول للمجموعة فورًا.",
-  "dsWithdrawYes": "تأكيد السحب"
+  "dsWithdrawYes": "تأكيد السحب",
+  "gamesTitle": "🧠 ألعاب الذاكرة",
+  "gamesIntro": "درّب عقلك واكسر رقمك القياسي.",
+  "gamesWelcome": "أهلًا بك في ألعاب الذاكرة 🧠",
+  "gamesWelcomeBody": "تحدَّ ذاكرتك وسرعتك وتفكيرك المنطقي.",
+  "gamesStartFirst": "ابدأ أول لعبة",
+  "gamesStageOf": "المستوى {stage}",
+  "@gamesStageOf": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesBestScore": "أفضل نتيجة {score}",
+  "@gamesBestScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesCompletedStages": "المستويات المكتملة",
+  "gamesContinueStage": "تابع المستوى {stage}",
+  "@gamesContinueStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesStartStage1": "ابدأ المستوى 1",
+  "gamesResumeStage": "أكمل المستوى {stage}",
+  "@gamesResumeStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesReplayStage": "أعد لعب المستوى {stage}",
+  "@gamesReplayStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesPlayStage": "العب المستوى {stage}",
+  "@gamesPlayStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesPrevLevel": "المستوى السابق",
+  "gamesNextLevel": "المستوى التالي",
+  "gamesLevel": "المستوى",
+  "gamesLevelN": "المستوى {stage}",
+  "@gamesLevelN": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesDone": "مكتمل",
+  "gamesCurrentLevel": "مستواك الحالي",
+  "gamesOpenLevel": "مفتوح",
+  "gamesStatBest": "أفضل نتيجة",
+  "gamesStatAccuracy": "الدقة",
+  "gamesStatFastestSolve": "أسرع حل",
+  "gamesStatFastestAnswer": "أسرع إجابة",
+  "gamesOnlineOnly": "الألعاب تحتاج اتصالًا بالإنترنت — النتائج تُحسب على الخادم.",
+  "gamesLocked": "هذا المستوى مقفل",
+  "gamesStartFailed": "تعذر بدء المستوى",
+  "gamesBackToLevels": "العودة للمستويات",
+  "gamesPreparing": "نجهّز المستوى {stage}…",
+  "@gamesPreparing": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesReady": "جاهز؟",
+  "gamesReadyContinue": "جاهز تكمل؟",
+  "gamesRuleQuestions": "{count} أسئلة",
+  "@gamesRuleQuestions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesRuleSeconds": "{seconds} ثوانٍ لكل سؤال",
+  "@gamesRuleSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesRulePass": "تحتاج {count} إجابات صحيحة لفتح المستوى التالي",
+  "@gamesRulePass": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesContinueFrom": "▶ أكمل من السؤال {index}",
+  "@gamesContinueFrom": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesStart": "▶ ابدأ",
+  "gamesScoring": "نحسب نتيجتك…",
+  "gamesOffline": "انقطع الاتصال",
+  "gamesOfflineBody": "إجاباتك محفوظة على جهازك، وسنرسلها تلقائيًا عند عودة الاتصال.",
+  "gamesExpired": "انتهت هذه الجلسة",
+  "gamesSaveFailed": "تعذر حفظ النتيجة",
+  "gamesRestartStage": "ابدأ المستوى من جديد",
+  "gamesQuestionOf": "سؤال {position}",
+  "@gamesQuestionOf": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesPoints": "النقاط {points}",
+  "@gamesPoints": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesTimeLeft": "الوقت المتبقي {seconds} ثانية",
+  "@gamesTimeLeft": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesRight": "✓ صحيح",
+  "gamesWrong": "✗ خطأ",
+  "gamesTimeUp": "⏱ انتهى الوقت",
+  "gamesResult": "النتيجة",
+  "gamesAllDone": "كل المستويات مكتملة!",
+  "gamesStageDone": "أنهيت المستوى {stage}",
+  "@gamesStageDone": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesAlmost": "قربت! 💪",
+  "gamesNeedMore": "{score} — تحتاج أكثر قليلًا لفتح المستوى التالي",
+  "@gamesNeedMore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesScore": "النتيجة",
+  "gamesCorrect": "الصحيح",
+  "gamesTime": "الوقت",
+  "gamesHints": "التلميحات",
+  "gamesNewBest": "⭐ رقم قياسي جديد لهذا المستوى!",
+  "gamesUnlocked": "🔓 انفتح المستوى {stage}",
+  "@gamesUnlocked": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesNextStage": "المستوى التالي",
+  "gamesRetry": "أعد المحاولة",
+  "gamesTryAgain": "حاول مرة ثانية",
+  "gamesBackToGames": "العودة للألعاب",
+  "gamesMistakes": "الأخطاء {count}",
+  "@gamesMistakes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesSudokuOffline": "انقطع الاتصال — حلك محفوظ وسنرسله عند عودة الاتصال.",
+  "gamesChecking": "نتحقق من الحل…",
+  "gamesUndo": "تراجع",
+  "gamesErase": "مسح",
+  "gamesNotes": "ملاحظات",
+  "gamesHint": "تلميح ({left})",
+  "@gamesHint": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesDigit": "{digit} — متبقٍ {left}",
+  "@gamesDigit": {
+    "placeholders": {
+      "digit": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesCell": "صف {row} عمود {col}: {value}",
+  "@gamesCell": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      },
+      "col": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesEmptyCell": "فارغة"
 }

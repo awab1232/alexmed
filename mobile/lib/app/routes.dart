@@ -12,6 +12,10 @@ abstract final class Routes {
   static const assistant = '/assistant';
   static const account = '/account';
 
+  // Inside the Games tab.
+  static String game(String id) => '/games/$id';
+  static String gamePlay(String id, int stage) => '/play/$id?stage=$stage';
+
   // Inside the Home tab (keeps the bottom bar).
   static String folder(String id) => '/home/folders/$id';
 

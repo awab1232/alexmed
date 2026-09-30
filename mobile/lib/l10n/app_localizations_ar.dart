@@ -2654,4 +2654,270 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dsWithdrawYes => 'تأكيد السحب';
+
+  @override
+  String get gamesTitle => '🧠 ألعاب الذاكرة';
+
+  @override
+  String get gamesIntro => 'درّب عقلك واكسر رقمك القياسي.';
+
+  @override
+  String get gamesWelcome => 'أهلًا بك في ألعاب الذاكرة 🧠';
+
+  @override
+  String get gamesWelcomeBody => 'تحدَّ ذاكرتك وسرعتك وتفكيرك المنطقي.';
+
+  @override
+  String get gamesStartFirst => 'ابدأ أول لعبة';
+
+  @override
+  String gamesStageOf(String stage) {
+    return 'المستوى $stage';
+  }
+
+  @override
+  String gamesBestScore(String score) {
+    return 'أفضل نتيجة $score';
+  }
+
+  @override
+  String get gamesCompletedStages => 'المستويات المكتملة';
+
+  @override
+  String gamesContinueStage(int stage) {
+    return 'تابع المستوى $stage';
+  }
+
+  @override
+  String get gamesStartStage1 => 'ابدأ المستوى 1';
+
+  @override
+  String gamesResumeStage(int stage) {
+    return 'أكمل المستوى $stage';
+  }
+
+  @override
+  String gamesReplayStage(int stage) {
+    return 'أعد لعب المستوى $stage';
+  }
+
+  @override
+  String gamesPlayStage(int stage) {
+    return 'العب المستوى $stage';
+  }
+
+  @override
+  String get gamesPrevLevel => 'المستوى السابق';
+
+  @override
+  String get gamesNextLevel => 'المستوى التالي';
+
+  @override
+  String get gamesLevel => 'المستوى';
+
+  @override
+  String gamesLevelN(int stage) {
+    return 'المستوى $stage';
+  }
+
+  @override
+  String get gamesDone => 'مكتمل';
+
+  @override
+  String get gamesCurrentLevel => 'مستواك الحالي';
+
+  @override
+  String get gamesOpenLevel => 'مفتوح';
+
+  @override
+  String get gamesStatBest => 'أفضل نتيجة';
+
+  @override
+  String get gamesStatAccuracy => 'الدقة';
+
+  @override
+  String get gamesStatFastestSolve => 'أسرع حل';
+
+  @override
+  String get gamesStatFastestAnswer => 'أسرع إجابة';
+
+  @override
+  String get gamesOnlineOnly =>
+      'الألعاب تحتاج اتصالًا بالإنترنت — النتائج تُحسب على الخادم.';
+
+  @override
+  String get gamesLocked => 'هذا المستوى مقفل';
+
+  @override
+  String get gamesStartFailed => 'تعذر بدء المستوى';
+
+  @override
+  String get gamesBackToLevels => 'العودة للمستويات';
+
+  @override
+  String gamesPreparing(int stage) {
+    return 'نجهّز المستوى $stage…';
+  }
+
+  @override
+  String get gamesReady => 'جاهز؟';
+
+  @override
+  String get gamesReadyContinue => 'جاهز تكمل؟';
+
+  @override
+  String gamesRuleQuestions(int count) {
+    return '$count أسئلة';
+  }
+
+  @override
+  String gamesRuleSeconds(int seconds) {
+    return '$seconds ثوانٍ لكل سؤال';
+  }
+
+  @override
+  String gamesRulePass(int count) {
+    return 'تحتاج $count إجابات صحيحة لفتح المستوى التالي';
+  }
+
+  @override
+  String gamesContinueFrom(int index) {
+    return '▶ أكمل من السؤال $index';
+  }
+
+  @override
+  String get gamesStart => '▶ ابدأ';
+
+  @override
+  String get gamesScoring => 'نحسب نتيجتك…';
+
+  @override
+  String get gamesOffline => 'انقطع الاتصال';
+
+  @override
+  String get gamesOfflineBody =>
+      'إجاباتك محفوظة على جهازك، وسنرسلها تلقائيًا عند عودة الاتصال.';
+
+  @override
+  String get gamesExpired => 'انتهت هذه الجلسة';
+
+  @override
+  String get gamesSaveFailed => 'تعذر حفظ النتيجة';
+
+  @override
+  String get gamesRestartStage => 'ابدأ المستوى من جديد';
+
+  @override
+  String gamesQuestionOf(String position) {
+    return 'سؤال $position';
+  }
+
+  @override
+  String gamesPoints(int points) {
+    return 'النقاط $points';
+  }
+
+  @override
+  String gamesTimeLeft(int seconds) {
+    return 'الوقت المتبقي $seconds ثانية';
+  }
+
+  @override
+  String get gamesRight => '✓ صحيح';
+
+  @override
+  String get gamesWrong => '✗ خطأ';
+
+  @override
+  String get gamesTimeUp => '⏱ انتهى الوقت';
+
+  @override
+  String get gamesResult => 'النتيجة';
+
+  @override
+  String get gamesAllDone => 'كل المستويات مكتملة!';
+
+  @override
+  String gamesStageDone(int stage) {
+    return 'أنهيت المستوى $stage';
+  }
+
+  @override
+  String get gamesAlmost => 'قربت! 💪';
+
+  @override
+  String gamesNeedMore(String score) {
+    return '$score — تحتاج أكثر قليلًا لفتح المستوى التالي';
+  }
+
+  @override
+  String get gamesScore => 'النتيجة';
+
+  @override
+  String get gamesCorrect => 'الصحيح';
+
+  @override
+  String get gamesTime => 'الوقت';
+
+  @override
+  String get gamesHints => 'التلميحات';
+
+  @override
+  String get gamesNewBest => '⭐ رقم قياسي جديد لهذا المستوى!';
+
+  @override
+  String gamesUnlocked(int stage) {
+    return '🔓 انفتح المستوى $stage';
+  }
+
+  @override
+  String get gamesNextStage => 'المستوى التالي';
+
+  @override
+  String get gamesRetry => 'أعد المحاولة';
+
+  @override
+  String get gamesTryAgain => 'حاول مرة ثانية';
+
+  @override
+  String get gamesBackToGames => 'العودة للألعاب';
+
+  @override
+  String gamesMistakes(int count) {
+    return 'الأخطاء $count';
+  }
+
+  @override
+  String get gamesSudokuOffline =>
+      'انقطع الاتصال — حلك محفوظ وسنرسله عند عودة الاتصال.';
+
+  @override
+  String get gamesChecking => 'نتحقق من الحل…';
+
+  @override
+  String get gamesUndo => 'تراجع';
+
+  @override
+  String get gamesErase => 'مسح';
+
+  @override
+  String get gamesNotes => 'ملاحظات';
+
+  @override
+  String gamesHint(int left) {
+    return 'تلميح ($left)';
+  }
+
+  @override
+  String gamesDigit(int digit, int left) {
+    return '$digit — متبقٍ $left';
+  }
+
+  @override
+  String gamesCell(int row, int col, String value) {
+    return 'صف $row عمود $col: $value';
+  }
+
+  @override
+  String get gamesEmptyCell => 'فارغة';
 }

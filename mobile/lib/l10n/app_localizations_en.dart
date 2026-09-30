@@ -2689,4 +2689,270 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dsWithdrawYes => 'Withdraw';
+
+  @override
+  String get gamesTitle => '🧠 Brain games';
+
+  @override
+  String get gamesIntro => 'Train your brain and beat your record.';
+
+  @override
+  String get gamesWelcome => 'Welcome to brain games 🧠';
+
+  @override
+  String get gamesWelcomeBody => 'Challenge your memory, speed and logic.';
+
+  @override
+  String get gamesStartFirst => 'Start the first game';
+
+  @override
+  String gamesStageOf(String stage) {
+    return 'Level $stage';
+  }
+
+  @override
+  String gamesBestScore(String score) {
+    return 'Best $score';
+  }
+
+  @override
+  String get gamesCompletedStages => 'Completed levels';
+
+  @override
+  String gamesContinueStage(int stage) {
+    return 'Continue level $stage';
+  }
+
+  @override
+  String get gamesStartStage1 => 'Start level 1';
+
+  @override
+  String gamesResumeStage(int stage) {
+    return 'Resume level $stage';
+  }
+
+  @override
+  String gamesReplayStage(int stage) {
+    return 'Replay level $stage';
+  }
+
+  @override
+  String gamesPlayStage(int stage) {
+    return 'Play level $stage';
+  }
+
+  @override
+  String get gamesPrevLevel => 'Previous level';
+
+  @override
+  String get gamesNextLevel => 'Next level';
+
+  @override
+  String get gamesLevel => 'Level';
+
+  @override
+  String gamesLevelN(int stage) {
+    return 'Level $stage';
+  }
+
+  @override
+  String get gamesDone => 'Done';
+
+  @override
+  String get gamesCurrentLevel => 'Your current level';
+
+  @override
+  String get gamesOpenLevel => 'Unlocked';
+
+  @override
+  String get gamesStatBest => 'Best score';
+
+  @override
+  String get gamesStatAccuracy => 'Accuracy';
+
+  @override
+  String get gamesStatFastestSolve => 'Fastest solve';
+
+  @override
+  String get gamesStatFastestAnswer => 'Fastest answer';
+
+  @override
+  String get gamesOnlineOnly =>
+      'Games need an internet connection — results are scored on the server.';
+
+  @override
+  String get gamesLocked => 'This level is locked';
+
+  @override
+  String get gamesStartFailed => 'Couldn\'t start the level';
+
+  @override
+  String get gamesBackToLevels => 'Back to the levels';
+
+  @override
+  String gamesPreparing(int stage) {
+    return 'Preparing level $stage…';
+  }
+
+  @override
+  String get gamesReady => 'Ready?';
+
+  @override
+  String get gamesReadyContinue => 'Ready to continue?';
+
+  @override
+  String gamesRuleQuestions(int count) {
+    return '$count questions';
+  }
+
+  @override
+  String gamesRuleSeconds(int seconds) {
+    return '$seconds seconds per question';
+  }
+
+  @override
+  String gamesRulePass(int count) {
+    return 'You need $count right answers to unlock the next level';
+  }
+
+  @override
+  String gamesContinueFrom(int index) {
+    return '▶ Continue from question $index';
+  }
+
+  @override
+  String get gamesStart => '▶ Start';
+
+  @override
+  String get gamesScoring => 'Scoring…';
+
+  @override
+  String get gamesOffline => 'Connection lost';
+
+  @override
+  String get gamesOfflineBody =>
+      'Your answers are saved on this device and will be sent when you\'re back online.';
+
+  @override
+  String get gamesExpired => 'This session has ended';
+
+  @override
+  String get gamesSaveFailed => 'Couldn\'t save the result';
+
+  @override
+  String get gamesRestartStage => 'Start the level again';
+
+  @override
+  String gamesQuestionOf(String position) {
+    return 'Question $position';
+  }
+
+  @override
+  String gamesPoints(int points) {
+    return 'Points $points';
+  }
+
+  @override
+  String gamesTimeLeft(int seconds) {
+    return '$seconds seconds left';
+  }
+
+  @override
+  String get gamesRight => '✓ Right';
+
+  @override
+  String get gamesWrong => '✗ Wrong';
+
+  @override
+  String get gamesTimeUp => '⏱ Time\'s up';
+
+  @override
+  String get gamesResult => 'Result';
+
+  @override
+  String get gamesAllDone => 'Every level done!';
+
+  @override
+  String gamesStageDone(int stage) {
+    return 'Level $stage done';
+  }
+
+  @override
+  String get gamesAlmost => 'Almost! 💪';
+
+  @override
+  String gamesNeedMore(String score) {
+    return '$score — a little more to unlock the next level';
+  }
+
+  @override
+  String get gamesScore => 'Score';
+
+  @override
+  String get gamesCorrect => 'Right';
+
+  @override
+  String get gamesTime => 'Time';
+
+  @override
+  String get gamesHints => 'Hints';
+
+  @override
+  String get gamesNewBest => '⭐ New record for this level!';
+
+  @override
+  String gamesUnlocked(int stage) {
+    return '🔓 Level $stage unlocked';
+  }
+
+  @override
+  String get gamesNextStage => 'Next level';
+
+  @override
+  String get gamesRetry => 'Play again';
+
+  @override
+  String get gamesTryAgain => 'Try again';
+
+  @override
+  String get gamesBackToGames => 'Back to games';
+
+  @override
+  String gamesMistakes(int count) {
+    return 'Mistakes $count';
+  }
+
+  @override
+  String get gamesSudokuOffline =>
+      'Connection lost — your solution is saved and will be sent when you\'re back online.';
+
+  @override
+  String get gamesChecking => 'Checking the solution…';
+
+  @override
+  String get gamesUndo => 'Undo';
+
+  @override
+  String get gamesErase => 'Erase';
+
+  @override
+  String get gamesNotes => 'Notes';
+
+  @override
+  String gamesHint(int left) {
+    return 'Hint ($left)';
+  }
+
+  @override
+  String gamesDigit(int digit, int left) {
+    return '$digit — $left left';
+  }
+
+  @override
+  String gamesCell(int row, int col, String value) {
+    return 'Row $row column $col: $value';
+  }
+
+  @override
+  String get gamesEmptyCell => 'empty';
 }
