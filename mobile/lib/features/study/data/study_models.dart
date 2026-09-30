@@ -326,6 +326,7 @@ final class StudyContent {
     required this.cards,
     required this.mcqs,
     required this.manifest,
+    this.terms = const [],
     this.isOwner = true,
   });
 
@@ -365,6 +366,14 @@ final class StudyContent {
           ),
       ],
       mcqs: _maps(json['mcqs']).map(StudyMcq.fromJson).toList(),
+      terms: [
+        for (final (i, term) in _maps(json['terms']).indexed)
+          (
+            id: term.strOrNull('id') ?? '$i',
+            en: term.strOrNull('en') ?? '',
+            ar: term.strOrNull('ar') ?? '',
+          ),
+      ],
       manifest: json['manifest'] is Map
           ? StudyManifest.fromJson(asMap(json['manifest']))
           : const StudyManifest(),
@@ -378,6 +387,9 @@ final class StudyContent {
   final List<StudyCard> cards;
   final List<StudyMcq> mcqs;
   final StudyManifest manifest;
+
+  /// The file's glossary (English ⇄ Arabic), used by the match game.
+  final List<({String id, String en, String ar})> terms;
   final bool isOwner;
 
   String get title => bookDisplayTitle(fileName);
@@ -401,12 +413,14 @@ final class GenerationJob {
     required this.chapterId,
     required this.kind,
     required this.status,
+    this.errorMessage,
   });
 
   factory GenerationJob.fromJson(JsonMap json) => GenerationJob(
     chapterId: json.str('chapterId'),
     kind: json.strOrNull('kind') ?? '',
     status: json.strOrNull('status') ?? '',
+    errorMessage: json.strOrNull('errorMessage'),
   );
 
   final String chapterId;
@@ -417,7 +431,10 @@ final class GenerationJob {
   /// queued | processing | completed | failed
   final String status;
 
+  final String? errorMessage;
+
   bool get settled => status == 'completed' || status == 'failed';
+  bool get active => status == 'queued' || status == 'processing';
 }
 
 List<String> _strings(Object? value) => value is List

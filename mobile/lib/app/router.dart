@@ -17,6 +17,8 @@ import '../features/exam_focus/presentation/exam_focus_screen.dart';
 import '../features/library/presentation/add_sheet.dart';
 import '../features/library/presentation/folder_screen.dart';
 import '../features/library/presentation/home_screen.dart';
+import '../features/match/presentation/match_screen.dart';
+import '../features/mindmap/presentation/mindmap_screen.dart';
 import '../features/mirror/presentation/mirror_deck_screen.dart';
 import '../features/mirror/presentation/mirror_job_screen.dart';
 import '../features/mirror/presentation/mirror_library_screen.dart';
@@ -119,8 +121,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               tool: StudyTool.parse(state.uri.queryParameters['tool']),
             ),
           ),
-          _placeholder('mindmap', (l) => l.toolMindmap, 'P7'),
-          _placeholder('match', (l) => l.toolMatch, 'P7'),
+          GoRoute(
+            path: 'mindmap',
+            builder: (_, state) =>
+                MindMapScreen(bookId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'match',
+            builder: (_, state) =>
+                MatchScreen(bookId: state.pathParameters['id']!),
+          ),
           GoRoute(
             path: 'exam-focus',
             builder: (_, state) =>

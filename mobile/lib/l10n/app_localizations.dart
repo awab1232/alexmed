@@ -2821,6 +2821,228 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ص {range}'**
   String efUnitPages(String range);
+
+  /// No description provided for @mindmapIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة دراسية مرتبطة بالملخص، المصطلحات، البطاقات، وأسئلة الاختبار.'**
+  String get mindmapIntro;
+
+  /// No description provided for @mindmapChapters.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفصول الجاهزة'**
+  String get mindmapChapters;
+
+  /// No description provided for @mindmapBranches.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقسام الرئيسية'**
+  String get mindmapBranches;
+
+  /// No description provided for @mindmapConcepts.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفاهيم المرتبطة'**
+  String get mindmapConcepts;
+
+  /// No description provided for @mindmapExamPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاط عالية العائد'**
+  String get mindmapExamPoints;
+
+  /// No description provided for @mindmapEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد فصول مكتملة بعد'**
+  String get mindmapEmpty;
+
+  /// No description provided for @mindmapEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستظهر الخريطة تلقائيًا بعد اكتمال تحليل الكتاب.'**
+  String get mindmapEmptyHint;
+
+  /// No description provided for @mindmapNotBuilt.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهز للبناء'**
+  String get mindmapNotBuilt;
+
+  /// No description provided for @mindmapChapterMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{branches} أقسام · {points} نقاط مهمة'**
+  String mindmapChapterMeta(int branches, int points);
+
+  /// No description provided for @mindmapSharedNotBuilt.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يبنِ صاحب الملف خريطة هذا الفصل بعد.'**
+  String get mindmapSharedNotBuilt;
+
+  /// No description provided for @mindmapBuildHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة في خريطة واحدة.'**
+  String get mindmapBuildHint;
+
+  /// No description provided for @mindmapBuildFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر بناء الخريطة، حاول مرة أخرى.'**
+  String get mindmapBuildFailed;
+
+  /// No description provided for @mindmapBuild.
+  ///
+  /// In ar, this message translates to:
+  /// **'بناء الخريطة'**
+  String get mindmapBuild;
+
+  /// No description provided for @mindmapQueued.
+  ///
+  /// In ar, this message translates to:
+  /// **'في قائمة الانتظار…'**
+  String get mindmapQueued;
+
+  /// No description provided for @mindmapBuilding.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري البناء…'**
+  String get mindmapBuilding;
+
+  /// No description provided for @mindmapOpenSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الملخص'**
+  String get mindmapOpenSummary;
+
+  /// No description provided for @mindmapOpenCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح البطاقات'**
+  String get mindmapOpenCards;
+
+  /// No description provided for @mindmapKeyPoints.
+  ///
+  /// In ar, this message translates to:
+  /// **'High-Yield / أهم النقاط'**
+  String get mindmapKeyPoints;
+
+  /// No description provided for @mindmapVisuals.
+  ///
+  /// In ar, this message translates to:
+  /// **'Visual anchors / الصور والمخططات'**
+  String get mindmapVisuals;
+
+  /// No description provided for @mindmapSourceLinked.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسم مرتبط بالمصدر'**
+  String get mindmapSourceLinked;
+
+  /// No description provided for @mindmapPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحات {pages}'**
+  String mindmapPages(String pages);
+
+  /// No description provided for @mindmapConceptsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'Concepts / المفاهيم'**
+  String get mindmapConceptsLabel;
+
+  /// No description provided for @mindmapExamLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'Exam focus / نقاط الامتحان'**
+  String get mindmapExamLabel;
+
+  /// No description provided for @mindmapPromptsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'Recall prompts / أسئلة الاستدعاء'**
+  String get mindmapPromptsLabel;
+
+  /// No description provided for @mindmapFooter.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخريطة لا تستبدل الملخص؛ هي تعيد تنظيمه مع البطاقات والأسئلة حتى ترى الصورة الكاملة وتعرف أين تراجع.'**
+  String get mindmapFooter;
+
+  /// No description provided for @matchSeconds.
+  ///
+  /// In ar, this message translates to:
+  /// **'{seconds} ثانية'**
+  String matchSeconds(String seconds);
+
+  /// No description provided for @matchNewRound.
+  ///
+  /// In ar, this message translates to:
+  /// **'جولة جديدة'**
+  String get matchNewRound;
+
+  /// No description provided for @matchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط السؤال ثم جوابه ليختفيا — بأسرع وقت! ⚡'**
+  String get matchHint;
+
+  /// No description provided for @matchNeedCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج بطاقات أولاً 🃏'**
+  String get matchNeedCards;
+
+  /// No description provided for @matchNeedCardsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولّد بطاقات هذا الملف، ثم ارجع للعب ✨'**
+  String get matchNeedCardsHint;
+
+  /// No description provided for @matchMakeCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'توليد البطاقات'**
+  String get matchMakeCards;
+
+  /// No description provided for @matchDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'{seconds} ثانية 🎉'**
+  String matchDone(String seconds);
+
+  /// No description provided for @matchRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم قياسي جديد! 🏆 أداء رائع 💪'**
+  String get matchRecord;
+
+  /// No description provided for @matchBest.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفضل وقت لك: {seconds} ثانية — تقدر تكسره! 🔥'**
+  String matchBest(String seconds);
+
+  /// No description provided for @matchMistakes.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخطاء: {count} (+ثانية لكل خطأ)'**
+  String matchMistakes(int count);
+
+  /// No description provided for @matchPlayAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب مرة ثانية'**
+  String get matchPlayAgain;
+
+  /// No description provided for @matchBestLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'🏆 أفضل وقت: {seconds} ثانية'**
+  String matchBestLine(String seconds);
 }
 
 class _AppLocalizationsDelegate

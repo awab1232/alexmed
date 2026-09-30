@@ -1587,4 +1587,133 @@ class AppLocalizationsAr extends AppLocalizations {
   String efUnitPages(String range) {
     return 'ص $range';
   }
+
+  @override
+  String get mindmapIntro =>
+      'خريطة دراسية مرتبطة بالملخص، المصطلحات، البطاقات، وأسئلة الاختبار.';
+
+  @override
+  String get mindmapChapters => 'الفصول الجاهزة';
+
+  @override
+  String get mindmapBranches => 'الأقسام الرئيسية';
+
+  @override
+  String get mindmapConcepts => 'المفاهيم المرتبطة';
+
+  @override
+  String get mindmapExamPoints => 'نقاط عالية العائد';
+
+  @override
+  String get mindmapEmpty => 'لا توجد فصول مكتملة بعد';
+
+  @override
+  String get mindmapEmptyHint =>
+      'ستظهر الخريطة تلقائيًا بعد اكتمال تحليل الكتاب.';
+
+  @override
+  String get mindmapNotBuilt => 'جاهز للبناء';
+
+  @override
+  String mindmapChapterMeta(int branches, int points) {
+    return '$branches أقسام · $points نقاط مهمة';
+  }
+
+  @override
+  String get mindmapSharedNotBuilt => 'لم يبنِ صاحب الملف خريطة هذا الفصل بعد.';
+
+  @override
+  String get mindmapBuildHint =>
+      'اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة في خريطة واحدة.';
+
+  @override
+  String get mindmapBuildFailed => 'تعذر بناء الخريطة، حاول مرة أخرى.';
+
+  @override
+  String get mindmapBuild => 'بناء الخريطة';
+
+  @override
+  String get mindmapQueued => 'في قائمة الانتظار…';
+
+  @override
+  String get mindmapBuilding => 'جاري البناء…';
+
+  @override
+  String get mindmapOpenSummary => 'فتح الملخص';
+
+  @override
+  String get mindmapOpenCards => 'فتح البطاقات';
+
+  @override
+  String get mindmapKeyPoints => 'High-Yield / أهم النقاط';
+
+  @override
+  String get mindmapVisuals => 'Visual anchors / الصور والمخططات';
+
+  @override
+  String get mindmapSourceLinked => 'قسم مرتبط بالمصدر';
+
+  @override
+  String mindmapPages(String pages) {
+    return 'صفحات $pages';
+  }
+
+  @override
+  String get mindmapConceptsLabel => 'Concepts / المفاهيم';
+
+  @override
+  String get mindmapExamLabel => 'Exam focus / نقاط الامتحان';
+
+  @override
+  String get mindmapPromptsLabel => 'Recall prompts / أسئلة الاستدعاء';
+
+  @override
+  String get mindmapFooter =>
+      'الخريطة لا تستبدل الملخص؛ هي تعيد تنظيمه مع البطاقات والأسئلة حتى ترى الصورة الكاملة وتعرف أين تراجع.';
+
+  @override
+  String matchSeconds(String seconds) {
+    return '$seconds ثانية';
+  }
+
+  @override
+  String get matchNewRound => 'جولة جديدة';
+
+  @override
+  String get matchHint => 'اضغط السؤال ثم جوابه ليختفيا — بأسرع وقت! ⚡';
+
+  @override
+  String get matchNeedCards => 'نحتاج بطاقات أولاً 🃏';
+
+  @override
+  String get matchNeedCardsHint => 'ولّد بطاقات هذا الملف، ثم ارجع للعب ✨';
+
+  @override
+  String get matchMakeCards => 'توليد البطاقات';
+
+  @override
+  String matchDone(String seconds) {
+    return '$seconds ثانية 🎉';
+  }
+
+  @override
+  String get matchRecord => 'رقم قياسي جديد! 🏆 أداء رائع 💪';
+
+  @override
+  String matchBest(String seconds) {
+    return 'أفضل وقت لك: $seconds ثانية — تقدر تكسره! 🔥';
+  }
+
+  @override
+  String matchMistakes(int count) {
+    return 'أخطاء: $count (+ثانية لكل خطأ)';
+  }
+
+  @override
+  String get matchPlayAgain => 'العب مرة ثانية';
+
+  @override
+  String matchBestLine(String seconds) {
+    return '🏆 أفضل وقت: $seconds ثانية';
+  }
 }

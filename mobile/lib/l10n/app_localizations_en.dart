@@ -1605,4 +1605,136 @@ class AppLocalizationsEn extends AppLocalizations {
   String efUnitPages(String range) {
     return 'pp. $range';
   }
+
+  @override
+  String get mindmapIntro =>
+      'A study map linked to the summary, terms, cards and quiz questions.';
+
+  @override
+  String get mindmapChapters => 'Chapters';
+
+  @override
+  String get mindmapBranches => 'Branches';
+
+  @override
+  String get mindmapConcepts => 'Concepts';
+
+  @override
+  String get mindmapExamPoints => 'Exam points';
+
+  @override
+  String get mindmapEmpty => 'No finished chapters yet';
+
+  @override
+  String get mindmapEmptyHint =>
+      'The map appears once the book\'s analysis is done.';
+
+  @override
+  String get mindmapNotBuilt => 'Ready to build';
+
+  @override
+  String mindmapChapterMeta(int branches, int points) {
+    return '$branches branches · $points high-yield points';
+  }
+
+  @override
+  String get mindmapSharedNotBuilt =>
+      'The owner hasn\'t built this chapter\'s map yet.';
+
+  @override
+  String get mindmapBuildHint =>
+      'Link the English and Arabic explanation to the terms, cards and questions in one map.';
+
+  @override
+  String get mindmapBuildFailed => 'The map couldn\'t be built. Try again.';
+
+  @override
+  String get mindmapBuild => 'Build the map';
+
+  @override
+  String get mindmapQueued => 'Queued…';
+
+  @override
+  String get mindmapBuilding => 'Building…';
+
+  @override
+  String get mindmapOpenSummary => 'Open the summary';
+
+  @override
+  String get mindmapOpenCards => 'Open the cards';
+
+  @override
+  String get mindmapKeyPoints => 'High-Yield / أهم النقاط';
+
+  @override
+  String get mindmapVisuals => 'Visual anchors / الصور والمخططات';
+
+  @override
+  String get mindmapSourceLinked => 'Source-linked branch';
+
+  @override
+  String mindmapPages(String pages) {
+    return 'Pages $pages';
+  }
+
+  @override
+  String get mindmapConceptsLabel => 'Concepts / المفاهيم';
+
+  @override
+  String get mindmapExamLabel => 'Exam focus / نقاط الامتحان';
+
+  @override
+  String get mindmapPromptsLabel => 'Recall prompts / أسئلة الاستدعاء';
+
+  @override
+  String get mindmapFooter =>
+      'The map doesn\'t replace the summary; it reorganises it with the cards and questions so you see the whole picture and know what to review.';
+
+  @override
+  String matchSeconds(String seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get matchNewRound => 'New round';
+
+  @override
+  String get matchHint =>
+      'Tap a question, then its answer — as fast as you can! ⚡';
+
+  @override
+  String get matchNeedCards => 'Cards first 🃏';
+
+  @override
+  String get matchNeedCardsHint =>
+      'Generate this file\'s cards, then come back to play ✨';
+
+  @override
+  String get matchMakeCards => 'Generate cards';
+
+  @override
+  String matchDone(String seconds) {
+    return '$seconds s 🎉';
+  }
+
+  @override
+  String get matchRecord => 'New record! 🏆 Great job 💪';
+
+  @override
+  String matchBest(String seconds) {
+    return 'Your best: $seconds s — you can beat it! 🔥';
+  }
+
+  @override
+  String matchMistakes(int count) {
+    return 'Mistakes: $count (+1 s each)';
+  }
+
+  @override
+  String get matchPlayAgain => 'Play again';
+
+  @override
+  String matchBestLine(String seconds) {
+    return '🏆 Best: $seconds s';
+  }
 }

@@ -1072,5 +1072,94 @@
         "type": "String"
       }
     }
+  },
+  "mindmapIntro": "خريطة دراسية مرتبطة بالملخص، المصطلحات، البطاقات، وأسئلة الاختبار.",
+  "mindmapChapters": "الفصول الجاهزة",
+  "mindmapBranches": "الأقسام الرئيسية",
+  "mindmapConcepts": "المفاهيم المرتبطة",
+  "mindmapExamPoints": "نقاط عالية العائد",
+  "mindmapEmpty": "لا توجد فصول مكتملة بعد",
+  "mindmapEmptyHint": "ستظهر الخريطة تلقائيًا بعد اكتمال تحليل الكتاب.",
+  "mindmapNotBuilt": "جاهز للبناء",
+  "mindmapChapterMeta": "{branches} أقسام · {points} نقاط مهمة",
+  "@mindmapChapterMeta": {
+    "placeholders": {
+      "branches": {
+        "type": "int"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "mindmapSharedNotBuilt": "لم يبنِ صاحب الملف خريطة هذا الفصل بعد.",
+  "mindmapBuildHint": "اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة في خريطة واحدة.",
+  "mindmapBuildFailed": "تعذر بناء الخريطة، حاول مرة أخرى.",
+  "mindmapBuild": "بناء الخريطة",
+  "mindmapQueued": "في قائمة الانتظار…",
+  "mindmapBuilding": "جاري البناء…",
+  "mindmapOpenSummary": "فتح الملخص",
+  "mindmapOpenCards": "فتح البطاقات",
+  "mindmapKeyPoints": "High-Yield / أهم النقاط",
+  "mindmapVisuals": "Visual anchors / الصور والمخططات",
+  "mindmapSourceLinked": "قسم مرتبط بالمصدر",
+  "mindmapPages": "صفحات {pages}",
+  "@mindmapPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "mindmapConceptsLabel": "Concepts / المفاهيم",
+  "mindmapExamLabel": "Exam focus / نقاط الامتحان",
+  "mindmapPromptsLabel": "Recall prompts / أسئلة الاستدعاء",
+  "mindmapFooter": "الخريطة لا تستبدل الملخص؛ هي تعيد تنظيمه مع البطاقات والأسئلة حتى ترى الصورة الكاملة وتعرف أين تراجع.",
+  "matchSeconds": "{seconds} ثانية",
+  "@matchSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "matchNewRound": "جولة جديدة",
+  "matchHint": "اضغط السؤال ثم جوابه ليختفيا — بأسرع وقت! ⚡",
+  "matchNeedCards": "نحتاج بطاقات أولاً 🃏",
+  "matchNeedCardsHint": "ولّد بطاقات هذا الملف، ثم ارجع للعب ✨",
+  "matchMakeCards": "توليد البطاقات",
+  "matchDone": "{seconds} ثانية 🎉",
+  "@matchDone": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "matchRecord": "رقم قياسي جديد! 🏆 أداء رائع 💪",
+  "matchBest": "أفضل وقت لك: {seconds} ثانية — تقدر تكسره! 🔥",
+  "@matchBest": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "matchMistakes": "أخطاء: {count} (+ثانية لكل خطأ)",
+  "@matchMistakes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "matchPlayAgain": "العب مرة ثانية",
+  "matchBestLine": "🏆 أفضل وقت: {seconds} ثانية",
+  "@matchBestLine": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
   }
 }
