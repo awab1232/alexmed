@@ -181,7 +181,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                     ),
                     if (book && card.bookId != null && card.sourcePage != null)
                       TextButton.icon(
-                        onPressed: () => showPageImageSheet(
+                        onPressed: () => openSourcePage(
                           context,
                           bookId: card.bookId!,
                           page: card.sourcePage!,

@@ -864,14 +864,6 @@
   "flashTapToFlip": "اضغط للقلب",
   "flashTapToQuestion": "اضغط لرؤية السؤال",
   "flashSource": "المصدر",
-  "flashSourceTitle": "مصدر السؤال — صفحة {page}",
-  "@flashSourceTitle": {
-    "placeholders": {
-      "page": {
-        "type": "int"
-      }
-    }
-  },
   "flashExplainTitle": "شرح البطاقة",
   "flashTranslate": "ترجمة",
   "flashExplain": "شرح",
@@ -905,7 +897,6 @@
   "labelQuestionBi": "QUESTION / السؤال",
   "labelAnswerBi": "ANSWER / الإجابة",
   "labelTermBi": "TERM / المصطلح",
-  "sourceImageFailed": "تعذر تحميل صورة هذه الصفحة.",
   "quizEmpty": "لا يوجد اختبار لهذا الملف بعد",
   "quizEmptyShared": "لم يولّد صاحب الملف أسئلة بعد.",
   "quizQuestionOf": "السؤال {n} من {total}",
@@ -1302,5 +1293,72 @@
         "type": "String"
       }
     }
-  }
+  },
+  "readerOpening": "نفتح الملف…",
+  "readerNoFile": "تعذر العثور على هذا الملف",
+  "readerNoFileHint": "ارجع لصفحة الكتاب وحاول مرة أخرى.",
+  "readerGoTo": "الانتقال إلى صفحة",
+  "readerGo": "انتقال",
+  "readerPageOf": "صفحة {page} من {count}",
+  "@readerPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPageRange": "من 1 إلى {count}",
+  "@readerPageRange": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerSearch": "بحث في الملف",
+  "readerSearchHint": "كلمة أو عبارة…",
+  "readerNoMatches": "لا توجد نتائج.",
+  "readerAskPage": "اسأل Niro عن الصفحة",
+  "readerHighlight": "ظلّل",
+  "readerAskSelection": "اسأل Niro",
+  "readerToolHighlight": "تظليل",
+  "readerToolPen": "قلم",
+  "readerToolEraser": "ممحاة",
+  "readerSaving": "جاري الحفظ…",
+  "readerSaved": "محفوظ",
+  "readerSaveFailed": "تعذر الحفظ",
+  "readerHintHighlight": "حدّد نصًا على الصفحة ثم اضغط «ظلّل».",
+  "readerHintPen": "ارسم بحرّية فوق الصفحة لتحديد النقاط المهمة.",
+  "readerHintEraser": "مرّر على التظليل أو الرسم لمسحه.",
+  "askTitle": "اسأل Niro · صفحة {page}",
+  "@askTitle": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "askWholePage": "الصفحة {page} كاملة — حدّد نصًا قبل الضغط لتسأل عنه وحده.",
+  "@askWholePage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "askExplain": "اشرح ببساطة",
+  "askExplainPage": "اشرح الصفحة",
+  "askArabic": "اشرح بالعربي",
+  "askExam": "سؤال امتحان",
+  "askSummarize": "لخّص",
+  "askSummarizePage": "لخّص الصفحة",
+  "askThinking": "Niro يكتب…",
+  "askHint": "اسأل عن هذا النص…",
+  "askSend": "إرسال",
+  "askStop": "إيقاف",
+  "bookChatTitle": "اسأل Niro عن هذا الملف",
+  "bookChatHello": "أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف."
 }

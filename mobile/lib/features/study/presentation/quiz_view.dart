@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../reader/presentation/ai_sheets.dart';
 import '../data/study_models.dart';
 import '../data/study_repository.dart';
 import 'study_screen.dart';
@@ -209,7 +210,7 @@ class _QuizViewState extends ConsumerState<QuizView> {
                   pending: i == _index ? _pending : null,
                   saveFailed: i == _index && _saveFailed,
                   onChoose: (choice) => _choose(q, choice),
-                  onSource: () => showPageImageSheet(
+                  onSource: () => openSourcePage(
                     context,
                     bookId: widget.content.bookId,
                     page: q.sourcePage,
@@ -229,6 +230,13 @@ class _QuizViewState extends ConsumerState<QuizView> {
               answered: answered != null,
               onPrevious: () => _goTo(_index - 1),
               onHint: () => _hint(mcq),
+              onExplain: () => showBookChatSheet(
+                context,
+                bookId: widget.content.bookId,
+                // The web quiz's «اشرح»: help without giving the answer away.
+                initialQuestion:
+                    'اشرح لي هذا السؤال وفكرته.\n\nالسؤال: ${mcq.questionEn}\nالخيارات: ${[for (var i = 0; i < mcq.choices.length; i++) '${_letters[i % _letters.length]}) ${mcq.choices[i]}'].join(' | ')}',
+              ),
               onNext: () => _goTo(_index + 1),
             ),
     );
@@ -503,6 +511,7 @@ class _QuizFooter extends StatelessWidget {
     required this.onPrevious,
     required this.onHint,
     required this.onNext,
+    required this.onExplain,
   });
 
   final bool canBack;
@@ -510,6 +519,7 @@ class _QuizFooter extends StatelessWidget {
   final bool answered;
   final VoidCallback onPrevious;
   final VoidCallback onHint;
+  final VoidCallback onExplain;
   final VoidCallback onNext;
 
   @override
@@ -553,6 +563,17 @@ class _QuizFooter extends StatelessWidget {
                     icon: LucideIcons.lightbulb,
                     kind: NlButtonKind.ghost,
                     onPressed: canHint ? onHint : null,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: NlButton(
+                    label: l10n.flashExplain,
+                    icon: LucideIcons.sparkles,
+                    kind: NlButtonKind.ghost,
+                    onPressed: onExplain,
                   ),
                 ),
               ),

@@ -1332,11 +1332,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flashSource => 'Source';
 
   @override
-  String flashSourceTitle(int page) {
-    return 'Source — page $page';
-  }
-
-  @override
   String get flashExplainTitle => 'About this card';
 
   @override
@@ -1389,9 +1384,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get labelTermBi => 'TERM / المصطلح';
-
-  @override
-  String get sourceImageFailed => 'Couldn\'t load this page\'s image.';
 
   @override
   String get quizEmpty => 'No quiz for this file yet';
@@ -1936,4 +1928,123 @@ class AppLocalizationsEn extends AppLocalizations {
   String studyMatrixPages(String pages) {
     return 'pp. $pages';
   }
+
+  @override
+  String get readerOpening => 'Opening the file…';
+
+  @override
+  String get readerNoFile => 'This file couldn\'t be found';
+
+  @override
+  String get readerNoFileHint => 'Go back to the book and try again.';
+
+  @override
+  String get readerGoTo => 'Go to page';
+
+  @override
+  String get readerGo => 'Go';
+
+  @override
+  String readerPageOf(int page, int count) {
+    return 'Page $page of $count';
+  }
+
+  @override
+  String readerPageRange(int count) {
+    return 'From 1 to $count';
+  }
+
+  @override
+  String get readerSearch => 'Search the file';
+
+  @override
+  String get readerSearchHint => 'A word or phrase…';
+
+  @override
+  String get readerNoMatches => 'No results.';
+
+  @override
+  String get readerAskPage => 'Ask Niro about the page';
+
+  @override
+  String get readerHighlight => 'Highlight';
+
+  @override
+  String get readerAskSelection => 'Ask Niro';
+
+  @override
+  String get readerToolHighlight => 'Highlight';
+
+  @override
+  String get readerToolPen => 'Pen';
+
+  @override
+  String get readerToolEraser => 'Eraser';
+
+  @override
+  String get readerSaving => 'Saving…';
+
+  @override
+  String get readerSaved => 'Saved';
+
+  @override
+  String get readerSaveFailed => 'Couldn\'t save';
+
+  @override
+  String get readerHintHighlight =>
+      'Select text on the page, then tap “Highlight”.';
+
+  @override
+  String get readerHintPen => 'Draw freely on the page to mark what matters.';
+
+  @override
+  String get readerHintEraser =>
+      'Swipe over a highlight or drawing to erase it.';
+
+  @override
+  String askTitle(int page) {
+    return 'Ask Niro · page $page';
+  }
+
+  @override
+  String askWholePage(int page) {
+    return 'The whole of page $page — select text first to ask about it alone.';
+  }
+
+  @override
+  String get askExplain => 'Explain simply';
+
+  @override
+  String get askExplainPage => 'Explain the page';
+
+  @override
+  String get askArabic => 'Explain in Arabic';
+
+  @override
+  String get askExam => 'Exam question';
+
+  @override
+  String get askSummarize => 'Summarise';
+
+  @override
+  String get askSummarizePage => 'Summarise the page';
+
+  @override
+  String get askThinking => 'Niro is writing…';
+
+  @override
+  String get askHint => 'Ask about this…';
+
+  @override
+  String get askSend => 'Send';
+
+  @override
+  String get askStop => 'Stop';
+
+  @override
+  String get bookChatTitle => 'Ask Niro about this file';
+
+  @override
+  String get bookChatHello =>
+      'Hi, I\'m Niro 👋 Ask me anything about this file.';
 }

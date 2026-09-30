@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../reader/presentation/ai_sheets.dart';
 import '../data/study_models.dart';
 import '../data/study_repository.dart';
 import 'study_screen.dart';
@@ -191,7 +192,7 @@ class _FlashcardsViewState extends ConsumerState<FlashcardsView> {
                     english: _english,
                     rating: _ratings[card.id],
                     onFlip: () => setState(() => _flipped = !_flipped),
-                    onSource: () => showPageImageSheet(
+                    onSource: () => openSourcePage(
                       context,
                       bookId: widget.content.bookId,
                       page: card.sourcePage,
@@ -213,9 +214,18 @@ class _FlashcardsViewState extends ConsumerState<FlashcardsView> {
               onNext: () => _goTo(_index + 1),
               onTranslate: () => setState(() => _english = !_english),
               onExplain: () => _showExplanation(context, _card!),
+              onAskNiro: () => _askNiro(_card!),
             ),
     );
   }
+
+  /// The web's openChat: the card goes with the question.
+  void _askNiro(StudyCard card) => showBookChatSheet(
+    context,
+    bookId: widget.content.bookId,
+    initialQuestion:
+        'اشرح لي هذه البطاقة بشكل أعمق:\nالسؤال: ${card.questionEn}\nالإجابة: ${card.answerEn}',
+  );
 
   void _showExplanation(BuildContext context, StudyCard card) {
     final l10n = AppLocalizations.of(context);
@@ -600,6 +610,7 @@ class _Footer extends StatelessWidget {
     required this.onNext,
     required this.onTranslate,
     required this.onExplain,
+    required this.onAskNiro,
   });
 
   final bool flipped;
@@ -609,6 +620,7 @@ class _Footer extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onTranslate;
   final VoidCallback onExplain;
+  final VoidCallback onAskNiro;
 
   @override
   Widget build(BuildContext context) {
@@ -680,6 +692,11 @@ class _Footer extends StatelessWidget {
                       icon: LucideIcons.lightbulb,
                       label: l10n.flashExplain,
                       onTap: onExplain,
+                    ),
+                    _FooterAction(
+                      icon: LucideIcons.sparkles,
+                      label: l10n.readerAskSelection,
+                      onTap: onAskNiro,
                     ),
                     _FooterAction(
                       icon: forward,

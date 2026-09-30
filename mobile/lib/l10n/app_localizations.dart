@@ -2342,12 +2342,6 @@ abstract class AppLocalizations {
   /// **'المصدر'**
   String get flashSource;
 
-  /// No description provided for @flashSourceTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'مصدر السؤال — صفحة {page}'**
-  String flashSourceTitle(int page);
-
   /// No description provided for @flashExplainTitle.
   ///
   /// In ar, this message translates to:
@@ -2449,12 +2443,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'TERM / المصطلح'**
   String get labelTermBi;
-
-  /// No description provided for @sourceImageFailed.
-  ///
-  /// In ar, this message translates to:
-  /// **'تعذر تحميل صورة هذه الصفحة.'**
-  String get sourceImageFailed;
 
   /// No description provided for @quizEmpty.
   ///
@@ -3379,6 +3367,222 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ص {pages}'**
   String studyMatrixPages(String pages);
+
+  /// No description provided for @readerOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفتح الملف…'**
+  String get readerOpening;
+
+  /// No description provided for @readerNoFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر العثور على هذا الملف'**
+  String get readerNoFile;
+
+  /// No description provided for @readerNoFileHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع لصفحة الكتاب وحاول مرة أخرى.'**
+  String get readerNoFileHint;
+
+  /// No description provided for @readerGoTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانتقال إلى صفحة'**
+  String get readerGoTo;
+
+  /// No description provided for @readerGo.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتقال'**
+  String get readerGo;
+
+  /// No description provided for @readerPageOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'صفحة {page} من {count}'**
+  String readerPageOf(int page, int count);
+
+  /// No description provided for @readerPageRange.
+  ///
+  /// In ar, this message translates to:
+  /// **'من 1 إلى {count}'**
+  String readerPageRange(int count);
+
+  /// No description provided for @readerSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث في الملف'**
+  String get readerSearch;
+
+  /// No description provided for @readerSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة أو عبارة…'**
+  String get readerSearchHint;
+
+  /// No description provided for @readerNoMatches.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج.'**
+  String get readerNoMatches;
+
+  /// No description provided for @readerAskPage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل Niro عن الصفحة'**
+  String get readerAskPage;
+
+  /// No description provided for @readerHighlight.
+  ///
+  /// In ar, this message translates to:
+  /// **'ظلّل'**
+  String get readerHighlight;
+
+  /// No description provided for @readerAskSelection.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل Niro'**
+  String get readerAskSelection;
+
+  /// No description provided for @readerToolHighlight.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظليل'**
+  String get readerToolHighlight;
+
+  /// No description provided for @readerToolPen.
+  ///
+  /// In ar, this message translates to:
+  /// **'قلم'**
+  String get readerToolPen;
+
+  /// No description provided for @readerToolEraser.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممحاة'**
+  String get readerToolEraser;
+
+  /// No description provided for @readerSaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الحفظ…'**
+  String get readerSaving;
+
+  /// No description provided for @readerSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'محفوظ'**
+  String get readerSaved;
+
+  /// No description provided for @readerSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر الحفظ'**
+  String get readerSaveFailed;
+
+  /// No description provided for @readerHintHighlight.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد نصًا على الصفحة ثم اضغط «ظلّل».'**
+  String get readerHintHighlight;
+
+  /// No description provided for @readerHintPen.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارسم بحرّية فوق الصفحة لتحديد النقاط المهمة.'**
+  String get readerHintPen;
+
+  /// No description provided for @readerHintEraser.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرّر على التظليل أو الرسم لمسحه.'**
+  String get readerHintEraser;
+
+  /// No description provided for @askTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل Niro · صفحة {page}'**
+  String askTitle(int page);
+
+  /// No description provided for @askWholePage.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصفحة {page} كاملة — حدّد نصًا قبل الضغط لتسأل عنه وحده.'**
+  String askWholePage(int page);
+
+  /// No description provided for @askExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشرح ببساطة'**
+  String get askExplain;
+
+  /// No description provided for @askExplainPage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشرح الصفحة'**
+  String get askExplainPage;
+
+  /// No description provided for @askArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشرح بالعربي'**
+  String get askArabic;
+
+  /// No description provided for @askExam.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال امتحان'**
+  String get askExam;
+
+  /// No description provided for @askSummarize.
+  ///
+  /// In ar, this message translates to:
+  /// **'لخّص'**
+  String get askSummarize;
+
+  /// No description provided for @askSummarizePage.
+  ///
+  /// In ar, this message translates to:
+  /// **'لخّص الصفحة'**
+  String get askSummarizePage;
+
+  /// No description provided for @askThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'Niro يكتب…'**
+  String get askThinking;
+
+  /// No description provided for @askHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل عن هذا النص…'**
+  String get askHint;
+
+  /// No description provided for @askSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال'**
+  String get askSend;
+
+  /// No description provided for @askStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف'**
+  String get askStop;
+
+  /// No description provided for @bookChatTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل Niro عن هذا الملف'**
+  String get bookChatTitle;
+
+  /// No description provided for @bookChatHello.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف.'**
+  String get bookChatHello;
 }
 
 class _AppLocalizationsDelegate

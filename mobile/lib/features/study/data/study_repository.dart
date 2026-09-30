@@ -100,22 +100,6 @@ class StudyRepository {
     input: {'bookId': bookId},
     parse: (_) {},
   );
-
-  /// Where a page image lives. The server answers with a redirect to a
-  /// short-lived signed storage URL; it is read here without following it,
-  /// so the session cookie never goes to storage.
-  Future<String?> pageImageUrl(String bookId, int page) async {
-    final response = await dio.get<Object?>(
-      '/api/books/$bookId/pages/$page/image',
-      options: Options(
-        followRedirects: false,
-        validateStatus: (status) => status != null && status < 500,
-      ),
-    );
-    final status = response.statusCode ?? 0;
-    if (status < 300 || status >= 400) return null;
-    return response.headers.value('location');
-  }
 }
 
 final studyRepositoryProvider = Provider<StudyRepository>(

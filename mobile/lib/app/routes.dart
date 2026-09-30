@@ -27,7 +27,8 @@ abstract final class Routes {
   static String bookMindmap(String id) => '/books/$id/mindmap';
   static String bookMatch(String id) => '/books/$id/match';
   static String bookExamFocus(String id) => '/books/$id/exam-focus';
-  static String bookRead(String id) => '/books/$id/read';
+  static String bookRead(String id, {int? page}) =>
+      '/books/$id/read${page == null ? '' : '?page=$page'}';
   static String deck(String id) => '/decks/$id';
   static const review = '/review';
   static const weakPoints = '/weak-points';

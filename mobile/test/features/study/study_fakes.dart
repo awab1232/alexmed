@@ -199,9 +199,6 @@ class FakeStudyRepository implements StudyRepository {
   Future<void> resumeExamFocus(String bookId) async => calls.add('resumeDeck');
 
   @override
-  Future<String?> pageImageUrl(String bookId, int page) async => null;
-
-  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

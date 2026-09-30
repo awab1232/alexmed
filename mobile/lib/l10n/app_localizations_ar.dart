@@ -1316,11 +1316,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get flashSource => 'المصدر';
 
   @override
-  String flashSourceTitle(int page) {
-    return 'مصدر السؤال — صفحة $page';
-  }
-
-  @override
   String get flashExplainTitle => 'شرح البطاقة';
 
   @override
@@ -1372,9 +1367,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get labelTermBi => 'TERM / المصطلح';
-
-  @override
-  String get sourceImageFailed => 'تعذر تحميل صورة هذه الصفحة.';
 
   @override
   String get quizEmpty => 'لا يوجد اختبار لهذا الملف بعد';
@@ -1912,4 +1904,120 @@ class AppLocalizationsAr extends AppLocalizations {
   String studyMatrixPages(String pages) {
     return 'ص $pages';
   }
+
+  @override
+  String get readerOpening => 'نفتح الملف…';
+
+  @override
+  String get readerNoFile => 'تعذر العثور على هذا الملف';
+
+  @override
+  String get readerNoFileHint => 'ارجع لصفحة الكتاب وحاول مرة أخرى.';
+
+  @override
+  String get readerGoTo => 'الانتقال إلى صفحة';
+
+  @override
+  String get readerGo => 'انتقال';
+
+  @override
+  String readerPageOf(int page, int count) {
+    return 'صفحة $page من $count';
+  }
+
+  @override
+  String readerPageRange(int count) {
+    return 'من 1 إلى $count';
+  }
+
+  @override
+  String get readerSearch => 'بحث في الملف';
+
+  @override
+  String get readerSearchHint => 'كلمة أو عبارة…';
+
+  @override
+  String get readerNoMatches => 'لا توجد نتائج.';
+
+  @override
+  String get readerAskPage => 'اسأل Niro عن الصفحة';
+
+  @override
+  String get readerHighlight => 'ظلّل';
+
+  @override
+  String get readerAskSelection => 'اسأل Niro';
+
+  @override
+  String get readerToolHighlight => 'تظليل';
+
+  @override
+  String get readerToolPen => 'قلم';
+
+  @override
+  String get readerToolEraser => 'ممحاة';
+
+  @override
+  String get readerSaving => 'جاري الحفظ…';
+
+  @override
+  String get readerSaved => 'محفوظ';
+
+  @override
+  String get readerSaveFailed => 'تعذر الحفظ';
+
+  @override
+  String get readerHintHighlight => 'حدّد نصًا على الصفحة ثم اضغط «ظلّل».';
+
+  @override
+  String get readerHintPen => 'ارسم بحرّية فوق الصفحة لتحديد النقاط المهمة.';
+
+  @override
+  String get readerHintEraser => 'مرّر على التظليل أو الرسم لمسحه.';
+
+  @override
+  String askTitle(int page) {
+    return 'اسأل Niro · صفحة $page';
+  }
+
+  @override
+  String askWholePage(int page) {
+    return 'الصفحة $page كاملة — حدّد نصًا قبل الضغط لتسأل عنه وحده.';
+  }
+
+  @override
+  String get askExplain => 'اشرح ببساطة';
+
+  @override
+  String get askExplainPage => 'اشرح الصفحة';
+
+  @override
+  String get askArabic => 'اشرح بالعربي';
+
+  @override
+  String get askExam => 'سؤال امتحان';
+
+  @override
+  String get askSummarize => 'لخّص';
+
+  @override
+  String get askSummarizePage => 'لخّص الصفحة';
+
+  @override
+  String get askThinking => 'Niro يكتب…';
+
+  @override
+  String get askHint => 'اسأل عن هذا النص…';
+
+  @override
+  String get askSend => 'إرسال';
+
+  @override
+  String get askStop => 'إيقاف';
+
+  @override
+  String get bookChatTitle => 'اسأل Niro عن هذا الملف';
+
+  @override
+  String get bookChatHello => 'أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف.';
 }

@@ -1,41 +1,8 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nirolearn/core/api/http_client.dart';
-import 'package:nirolearn/core/api/trpc_client.dart';
-import 'package:nirolearn/core/auth/session_store.dart';
 import 'package:nirolearn/features/study/data/study_models.dart';
 import 'package:nirolearn/features/study/data/study_preparation.dart';
-import 'package:nirolearn/features/study/data/study_repository.dart';
 
-import '../../helpers/fake_http.dart';
 import 'study_fakes.dart';
-
-/// Answers with a redirect, recording whether a redirect was followed.
-class _RedirectAdapter implements HttpClientAdapter {
-  final requests = <RequestOptions>[];
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    return ResponseBody.fromString(
-      '',
-      307,
-      headers: {
-        'location': ['https://bucket.r2.test/pages/3.png?sig=abc'],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
 
 void main() {
   group('StudyContent (books.getStudyContent)', () {
@@ -197,29 +164,4 @@ void main() {
       },
     );
   });
-
-  test(
-    'page image: the redirect is read, not followed with the session',
-    () async {
-      final adapter = _RedirectAdapter();
-      final dio = createApiDio(
-        env: testEnv,
-        sessions: MemorySessionStore(
-          StoredSession(token: 't', expiresAt: DateTime.utc(2099)),
-        ),
-        onSessionRejected: () {},
-        adapter: adapter,
-      );
-      final repo = StudyRepository(trpc: TrpcClient(dio), dio: dio);
-      final url = await repo.pageImageUrl('b1', 3);
-      expect(url, 'https://bucket.r2.test/pages/3.png?sig=abc');
-      expect(adapter.requests, hasLength(1));
-      expect(adapter.requests.single.uri.path, '/api/books/b1/pages/3/image');
-      expect(adapter.requests.single.followRedirects, isFalse);
-      expect(
-        jsonEncode(adapter.requests.single.uri.host),
-        '"api.example.test"',
-      );
-    },
-  );
 }

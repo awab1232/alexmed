@@ -25,6 +25,7 @@ import '../features/mirror/presentation/mirror_library_screen.dart';
 import '../features/mirror/presentation/mirror_start_screen.dart';
 import '../features/progress/presentation/progress_screens.dart';
 import '../features/progress/presentation/review_screen.dart';
+import '../features/reader/presentation/reader_screen.dart';
 import '../features/study/data/study_models.dart';
 import '../features/study/presentation/study_screen.dart';
 import '../l10n/app_localizations.dart';
@@ -141,7 +142,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, state) =>
                 ExamFocusScreen(bookId: state.pathParameters['id']!),
           ),
-          _placeholder('read', (l) => l.bookSource, 'P8'),
+          GoRoute(
+            path: 'read',
+            builder: (_, state) => ReaderScreen(
+              bookId: state.pathParameters['id']!,
+              initialPage: int.tryParse(
+                state.uri.queryParameters['page'] ?? '',
+              ),
+            ),
+          ),
         ],
       ),
       GoRoute(

@@ -551,7 +551,7 @@ class _ExamFocusScreenState extends ConsumerState<ExamFocusScreen> {
               onBookmark: () => _toggleBookmark(i),
               onSource: _items[i].sourcePages.isEmpty
                   ? null
-                  : () => showPageImageSheet(
+                  : () => openSourcePage(
                       context,
                       bookId: widget.bookId,
                       page: _items[i].sourcePages.first,

@@ -8,6 +8,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/providers.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../reader/presentation/ai_sheets.dart';
 import '../data/study_models.dart';
 import '../data/study_repository.dart';
 import 'study_screen.dart';
@@ -107,6 +108,12 @@ class _SummaryViewState extends ConsumerState<SummaryView> {
             tooltip: _english ? l10n.summaryShowAr : l10n.summaryShowEn,
             icon: const Icon(LucideIcons.globe),
             onPressed: () => setState(() => _english = !_english),
+          ),
+          IconButton(
+            tooltip: l10n.bookChatTitle,
+            icon: const Icon(LucideIcons.sparkles),
+            onPressed: () =>
+                showBookChatSheet(context, bookId: widget.content.bookId),
           ),
           IconButton(
             tooltip: l10n.summaryCopyLink,

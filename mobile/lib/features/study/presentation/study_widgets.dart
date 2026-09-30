@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/routes.dart';
 import '../../../core/ui/ui.dart';
-import '../../../l10n/app_localizations.dart';
-import '../data/study_repository.dart';
 
 /// End of a session (review / quiz): Niro, a title, a line, actions.
 class StudyResult extends StatelessWidget {
@@ -87,79 +88,13 @@ class BilingualBlock extends StatelessWidget {
   );
 }
 
-/// The PDF page a card / question came from. The server redirects to a
-/// short-lived signed storage URL, which is loaded without the session.
-Future<void> showPageImageSheet(
+/// The PDF page a card / question came from, opened in the reader at
+/// that page (the web: /books/[id]/read?page=N). Back returns here.
+void openSourcePage(
   BuildContext context, {
   required String bookId,
   required int page,
-}) {
-  final l10n = AppLocalizations.of(context);
-  return showNlSheet<void>(
-    context,
-    title: l10n.flashSourceTitle(page),
-    builder: (_) => _PageImage(bookId: bookId, page: page),
-  );
-}
-
-class _PageImage extends ConsumerStatefulWidget {
-  const _PageImage({required this.bookId, required this.page});
-
-  final String bookId;
-  final int page;
-
-  @override
-  ConsumerState<_PageImage> createState() => _PageImageState();
-}
-
-class _PageImageState extends ConsumerState<_PageImage> {
-  late final Future<String?> _url = ref
-      .read(studyRepositoryProvider)
-      .pageImageUrl(widget.bookId, widget.page);
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final failed = Padding(
-      padding: const EdgeInsets.all(NlSpace.xl),
-      child: Text(
-        l10n.sourceImageFailed,
-        style: NlText.secondary,
-        textAlign: TextAlign.center,
-      ),
-    );
-    return FutureBuilder<String?>(
-      future: _url,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(
-            height: 240,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        final url = snapshot.data;
-        if (snapshot.hasError || url == null) return failed;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(NlRadius.md),
-          child: InteractiveViewer(
-            maxScale: 5,
-            child: Image.network(
-              url,
-              fit: BoxFit.contain,
-              loadingBuilder: (context, child, progress) => progress == null
-                  ? child
-                  : const SizedBox(
-                      height: 240,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-              errorBuilder: (_, _, _) => failed,
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
+}) => unawaited(context.push(Routes.bookRead(bookId, page: page)));
 
 enum McqChoiceState { idle, pending, correct, wrong, dim }
 

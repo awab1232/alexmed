@@ -262,7 +262,7 @@ Finding for the owner (backend, not changed): `books.get` returns the whole `pag
 - [x] 7.1 Book overview (`book_screen.dart`): title + pages / parts + state, Exam Focus ink panel, study tools (cards n, questions n, summary, mind map, match — open when ready, «قيد التجهيز» / lock otherwise), original file row, processing details (6.6); owner: move to another folder (folders loaded if not cached); shared: «إزالة من مكتبتي» after confirming (`sharing.removeFromLibrary`). Sharing a book out = P13; «عرض» of the original PDF = P8 reader
 - [x] 7.2 Chapter content — **not applicable any more**: the web removed per-chapter pages (app/books/[bookId]/chapters/[chapterId] now redirects to the whole-file tools: `?tool=` → /study, `?page=` → the reader). The app studies the whole file (7.3–7.5) and the reader comes with P8
 - [x] 7.3 Summary (`summary_view.dart`, `/books/:id/study?tool=explanation`) = the web's SummaryMode over every analysed chapter: lead summary, medical note pages when composed (tone blocks, source pages), else part-by-part summaries with page ranges + explanation, High-Yield points; EN ⇄ عربي; owner «تجهيز ملخص منظم» (`generateMedicalNotePages`, job followed via `generationJobs`, reload when settled). Share = the web's clipboard fallback (copy the page link) — no new dependency. Widget-tested (2) + on-device
-- [x] 7.4 Flashcards (`flashcards_view.dart`, `?tool=cards`) = the web's FlashcardsMode over the whole file (`books.getStudyContent`): one card at a time, tap to flip (3D), swipe + السابق / التالي, rate after flipping → `rateCard` (FSRS on the server; a shared book rates the viewer's own progress), time / remaining / learning / mastered, «البطاقة n/N» progress, per-card session state badge, EN ⇄ ع with the right direction, explanation sheet (bilingual Q / A / term with the Arabic term looked up as the web does), source page image (redirect read without following it → the session never reaches storage), end-of-review summary with «راجع البطاقات الصعبة». Cards that arrive while generation runs are appended — the student's place never moves. The web has no chapter filter or search in this mode, so none here. «اسأل Niro» waits for P10. Widget-tested (6) + on-device
+- [x] 7.4 Flashcards (`flashcards_view.dart`, `?tool=cards`) = the web's FlashcardsMode over the whole file (`books.getStudyContent`): one card at a time, tap to flip (3D), swipe + السابق / التالي, rate after flipping → `rateCard` (FSRS on the server; a shared book rates the viewer's own progress), time / remaining / learning / mastered, «البطاقة n/N» progress, per-card session state badge, EN ⇄ ع with the right direction, explanation sheet (bilingual Q / A / term with the Arabic term looked up as the web does), source page image (redirect read without following it → the session never reaches storage), end-of-review summary with «راجع البطاقات الصعبة». Cards that arrive while generation runs are appended — the student's place never moves. The web has no chapter filter or search in this mode, so none here. «اسأل Niro» (book chat) wired in P8. Widget-tested (6) + on-device
 - [x] 7.5 Quiz (`quiz_view.dart`, `?tool=mcqs`) = the web's QuizMode: numbered dots (✓ / ✗), question n of N, source page, score, type label, flagged-question note, lettered choices; the answer is checked and recorded by the server (`submitMcqAttempt`), then green / red + explanation; تلميح removes one wrong choice (down to two, as the web); السابق / تخطي / التالي + swipe; result with «أعد الأسئلة الغلط». Questions are never generated on the device. Widget-tested (4) + on-device
 - [x] 7.4a Study preparation (`study_preparation.dart`) — the web study page's client-side steps as server calls only: knowledge base (`examFocus.get` → `start` if missing, polled 4 s, `resume` every 45 s; can't be built → continue, the server falls back) → `generateChapterFlashcards` / `generateChapterMcqs` per analysed chapter still missing them → `generationJobs` every 3 s → reload; failed chapters in the coverage line; never for a shared book. Knowledge coverage (`books.getKnowledgeCoverage`): «🧠 المعرفة: … تغطي x/y حقيقة» opens the coverage matrix (fact → 🃏 / ❓ → pages); owner «✨ أعد البناء من قاعدة المعرفة» after confirming → `rebuild: true` for the V1 chapters only, once the knowledge base is ready. Tested (unit 4 + widget 2)
 - [x] 7.6 Exam Focus (`features/exam_focus/**`, `/books/:id/exam-focus`) = the web page: the owner's first open starts it (`examFocus.start`), later visits load the saved deck (never regenerates on its own); real progress while processing (stages + each page range, polled 3 s, `resume` after a minute); cards 40 at a time from `examFocus.cards` with the next page fetched 5 cards ahead; category / saved chips and server-side search (300 ms debounce); swipe left = next and السابق / التالي (LTR, as the web); bookmarks optimistic with rollback; regenerate after confirmation (server refusals — busy / cooldown — shown as is); retry failed units; coverage / failed-range notice; shared deck read-only, shared-without-deck shows the server's message. Number highlighting + page labels ported and **proven identical** to the web code by a parity test on its own output (20 cases, `tool/export_exam_focus_fixtures.ts`). Source → page image sheet until the reader (P8). Position kept per book for the app session (restart persistence with P14). Tested (9 widget + 23 unit) + on-device
@@ -301,15 +301,34 @@ Web differences on purpose: none in behaviour; layout adapted to phones (match g
 ## Phase 8 — PDF reader, annotations, ask-selection, book chat
 **Objective:** reading and asking about the source. **Depends on:** P6, P7.
 
-- [ ] 8.1 Signed PDF fetch via `/api/files` → private LRU cache (~500 MB), wiped on logout
-- [ ] 8.2 pdfrx reader (page marks, jump, zoom, text selection)
-- [ ] 8.3 Annotations (list/create/update/delete, create card from note, search in subject)
-- [ ] 8.4 Ask-about-selection (`/api/books/ask-selection`, streaming, save as note)
-- [ ] 8.5 Book chat (`chat.*`, `/api/chat/stream`, cancel, save as note/card)
+- [x] 8.1 PDF access (`reader/data/pdf_range_source.dart`) = the web reader's own path: byte ranges from `/api/files/{key}?stream=1` (the server checks the session + the user's access to that key on every request — owner or accepted share — and fetches from storage itself). The signed storage URL never reaches the device; the session goes only to the API origin (tested); the key is URL-encoded in the path and never shown or logged. Size from a one-byte range (`Content-Range`); 512 KB chunks (the web's rangeChunkSize); concurrent reads of a chunk share one request; storage hiccups (5xx / network) retried 3×; 404 / 401 reported as such. **Changed from the plan:** no disk cache — protected PDFs are never written to storage; a bounded in-memory LRU (48 MB) lives only while the reader is open and is dropped on close (the owner: no large / permanent cache without reason; measured: an open costs ~0.6 MB). No backend change
+- [x] 8.2 Reader (`reader_screen.dart`, `reader_view.dart`, route `/books/:id/read[?page=N]`): native PDFium via pdfrx (no WebView) over the range source — lazy page rendering, vertical scrolling, pinch and double-tap zoom, «n / N» indicator, go to page (validated 1..N), search in the text (the web's: first match per page with a snippet), open at a page (source links), last page kept for the app session, loading / file-missing / failed-with-retry states, marks flushed when leaving or going to the background. Source-page links now open the reader at the page (flashcards, quiz, Exam Focus, review) — the page-image sheet was removed; back returns to the study screen
+- [x] 8.3 تظليل / قلم / ممحاة = **the web's actual annotation feature** (`bookPageMarks.list/save`, per user, owner or shared recipient): highlight selected text (5 colours, rects in page-width units like the web), pen (5 colours, same width / point thinning), eraser (strokes + highlights under the finger), saved per page 700 ms after the last change, «جاري الحفظ / محفوظ / تعذر الحفظ». Rules ported and **proven identical** by a parity test on the web code's output (`tool/export_pdf_marks_fixtures.ts`). **Not built (not in the web):** the unused `annotations` router (list / update / note → card / search in subject) — the web UI never calls it; recorded, no placeholder
+- [x] 8.4 «اسأل Niro» about a selection or the whole page (`/api/books/ask-selection`, streamed as it is written, stop / close cancels the request): quick actions (اشرح ببساطة، اشرح بالعربي، سؤال امتحان، لخّص), a free question, follow-ups with the last 10 turns. «Save as note» is not in the web → not built
+- [x] 8.5 Book chat (`chat.getOrCreateSession` book scope, `chat.listMessages`, `/api/chat/stream`): saved conversation, streamed answer, stop (the server still saves), source-page chips open the reader there. Wired where the web has it: flashcards «اسأل Niro» (card attached), quiz «اشرح» (question + choices, «without giving the answer away»), summary. «Save as note / card» is not in the web → not built
 
 **Tests:** 300-page PDF memory test; streaming cancel test; annotation CRUD contract tests.
 **Performance:** memory budget recorded and met on low-end Android.
 **DoD:** reader usable for a 300-page book on low-end Android without crash.
+
+**Status: `[x]` implemented, tested and verified on the emulator with in-memory data** — the real PDFium renderer read a generated 300-page PDF (and a 63 MB one) through the real range source served by an in-memory byte-range adapter. **Live data `[!]`** staging (D1): not run against the real `/api/files` (production not used). **Low-end device `[ ]`**: only the Pixel 6 Pro emulator was available — the P16 / P17 low-end check stays open. No backend change.
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] open / scroll / zoom / go to page / search / open at page  [x] marks create / erase / save / reload
+             [x] ask selection + book chat streaming, stop  [x] loading / missing file / error + retry  [~] session expiry (401 mapped; not live)
+UI/UX        [x] design system  [x] RTL chrome, LTR page numbers (isolated)  [x] touch targets ≥48dp  [x] stroke starts under the finger
+             [~] accessibility (semantics on tools / swatches; PDF text semantics from pdfrx; no screen-reader pass yet)
+SECURITY     [x] only /api/files?stream=1 (server-side access check each range; signed URL stays on the server)
+             [x] session never sent to storage  [x] no disk copy of the PDF  [x] key not shown / not logged  [x] no logging
+             [ ] FLAG_SECURE for protected content → D7 (doctor protected sets are P11; they don't use this reader)
+PERFORMANCE  [x] 63 MB PDF: ~0.6 MB fetched per open (3 requests), 3.1 MB after 5 open / scroll / close rounds (5% of the file)
+             [x] memory: +≤26 MB PSS while open, back to baseline after close, +3 MB drift over 5 rounds (no leak)
+             [x] chunk LRU bounded (48 MB) and dropped on close  [ ] low-end device → P16 / P17
+TESTING      [x] unit (range source 5, marks parity 5, controller 3)  [x] widget (reader 8, chat 1)  [x] on device: real PDFium, 300 pages + 63 MB
+             [ ] contract with the live server (staging)  [ ] iOS (D2)
+REGRESSION   [x] no web / backend file changed  [x] all 237 Flutter tests pass
+```
+Found & fixed during P8: a chunk fetch waited on itself forever (whenComplete returning the removed future) — the reader would have hung on the first page; HTTP errors of the file stream all read as “server error” (404 / 401 now mapped); a pen stroke started after the drag slop, not under the finger; the last marks were lost when leaving (the save ran after the screen was disposed). Disk ran low again: `flutter clean` freed 4.4 GB of build outputs.
 
 ---
 
@@ -522,6 +541,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
 - Shared: `components/PdfViewer.tsx` never frees page canvases and does not cap DPR (web + mobile Safari memory risk) — not in mobile scope; track separately.
 - Web: no password reset (G5).
+- Backend: the `annotations` tRPC router is not used by the web UI (the reader uses `bookPageMarks`); the app follows the web. Decide later whether it is kept.
 - Dev machine: drive C: nearly full (~5 GB free, 2026-09-30) — run the emulator and Gradle one at a time.
 - Backend (G13 — separate proposal, owner 2026-09-30: do not implement now; no change to books.get / books.listPages / contracts): `books.get` sends `pageTexts` while a book is read and `books.listPages` sends every page's text — heavy on mobile data; the web polls it every 3 s.
 
@@ -531,17 +551,17 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 8 — PDF reader, annotations, ask-selection, book chat (next). Phase 7 `[x]` (quality gate passed; live data `[!]` staging). Phase 6 `[~]` (deferred items by the owner + live upload `[!]`). Phases 2, 3, 4-implementation `[x]`; 5 `[~]`; 9.4 مِرآة `[x]` |
-| Current Task | 8.1 signed PDF fetch via `/api/files` + private cache |
-| Last Completed Task | P7 group E (review, stats, weak points, today, book page actions, knowledge matrix + rebuild) and the Phase 7 quality gate |
-| Next Task | P8 in order: 8.1 PDF fetch/cache → 8.2 reader (replaces the «عرض» / source-page placeholders) → 8.3 annotations → 8.4 ask-selection → 8.5 book chat. Rule: no push, no production deploy, no merge to `main` without explicit approval |
-| Blocked By | Live auth / upload / contract tests: staging (D1); iOS: D2; Sentry (2.8); G6 / G9 backend changes need approval; G13 kept as a separate proposal (owner: do not implement now); Google / Apple login (D6) |
-| Last Verification | 2026-09-30 — analyze clean, 216/216 unit + widget, 5 on-device runs of the P7 screens (in-memory data), normal launch without ANR |
-| Tests | Flutter 216/216 (incl. parity tests against the web code for card questions, Exam Focus highlighting, match rules). Web untouched since `ee1c391` (842 passed then) |
-| Build | Android debug APK builds and runs on the API 36 emulator. iOS: not built (no macOS) |
-| Security | Session only in secure storage and only to the API origin; storage redirects never followed with the session; uploads checked before sending; no secrets in `env/*.json`; no logging in feature code |
-| Performance | Polling backs off / stops when not visible; Exam Focus paged (40, prefetch 5); debug startup slow on the loaded emulator — release measurement in P16 |
-| UI/UX | All P7 screens reviewed on emulator screenshots (RTL, LTR content, highlighter numbers, bottom-bar actions) |
+| Current Phase | Phase 9 — question files (كتبي path), question cards (next). Phase 8 `[x]` (gate passed; live `[!]` D1; low-end device open). Phase 7 `[x]`. Phase 6 `[~]` (owner-deferred items + live `[!]`). Phases 2, 3, 4-implementation `[x]`; 5 `[~]`; 9.4 مِرآة `[x]` |
+| Current Task | 9.1 remainder: the كتبي question-file path (`extract-questions-and-plan`) |
+| Last Completed Task | Phase 8: native PDF reader over byte ranges, page marks, ask-selection, book chat; source links open the reader |
+| Next Task | P9: 9.1 remainder → 9.2 question-file list / detail → 9.3 → 9.5. Rule: no push, no production deploy, no merge to `main` without explicit approval |
+| Blocked By | Live auth / upload / file stream / contract tests: staging (D1); iOS: D2; FLAG_SECURE: D7; Sentry (2.8); G6 / G9 need approval; G13 separate proposal (not now); Google / Apple login (D6) |
+| Last Verification | 2026-09-30 — analyze clean, 237/237, real PDFium reader on the emulator (300 pages; 63 MB file: 5% fetched, no memory leak over 5 rounds) |
+| Tests | Flutter 237/237 (incl. parity tests against the web code: card questions, Exam Focus highlighting, match rules, PDF mark rules). Web untouched since `ee1c391` |
+| Build | Android debug APK builds and runs on the API 36 emulator (pdfrx / PDFium added). iOS: not built (no macOS) |
+| Security | Session only to the API origin; storage redirects never followed; protected PDFs never on disk (in-memory, dropped on close); keys never shown / logged |
+| Performance | Reader fetches only needed ranges; bounded chunk cache; debug startup slow on the loaded emulator — release measurement in P16 |
+| UI/UX | Reader, marks toolbar, ask / chat sheets reviewed on emulator screenshots |
 | Android | Runs on API 36 emulator. Low-end device check pending |
 | iOS | Not built |
 | Last Updated | 2026-09-30 |
@@ -630,3 +650,9 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
   points, today's plan, book page move-folder / remove-shared, knowledge matrix +
   rebuild. **Phase 7 closed** with the quality gate (see Phase 7). G13 stays a
   separate proposal (owner 2026-09-30: not now). Next: Phase 8.
+- **2026-09-30** — Phase 8: native PDF reader (pdfrx / PDFium) over the web's
+  same-origin byte-range proxy — no WebView, no signed URL on the device, no
+  disk copy; page marks with the web's semantics (parity-tested); ask-selection
+  and book chat streaming; source-page links open the reader at the page.
+  Large-file run: 63 MB → 5% fetched, no leak. Found and fixed a self-waiting
+  future that would have frozen the reader. No backend change. Next: Phase 9.
