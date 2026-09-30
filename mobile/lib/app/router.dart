@@ -25,6 +25,8 @@ import '../features/mirror/presentation/mirror_library_screen.dart';
 import '../features/mirror/presentation/mirror_start_screen.dart';
 import '../features/progress/presentation/progress_screens.dart';
 import '../features/progress/presentation/review_screen.dart';
+import '../features/question_files/presentation/question_file_screen.dart';
+import '../features/question_files/presentation/question_files_screen.dart';
 import '../features/reader/presentation/reader_screen.dart';
 import '../features/study/data/study_models.dart';
 import '../features/study/presentation/study_screen.dart';
@@ -115,7 +117,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Screens of later phases — full-screen over the tabs.
+      // Full-screen over the tabs. The fixed /books/question-files paths come
+      // before /books/:id, which would otherwise take "question-files" as an id.
+      GoRoute(
+        path: Routes.questionBanks,
+        builder: (_, _) => const QuestionFilesScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                QuestionFileScreen(fileId: state.pathParameters['id']!),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/books/:id',
         builder: (_, state) => BookScreen(bookId: state.pathParameters['id']!),
@@ -177,8 +191,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.uploadBook,
-        builder: (_, state) =>
-            BookUploadScreen(subjectId: state.uri.queryParameters['subjectId']),
+        builder: (_, state) => BookUploadScreen(
+          subjectId: state.uri.queryParameters['subjectId'],
+          questionFile: state.uri.queryParameters['kind'] == 'questions',
+        ),
       ),
       GoRoute(
         path: Routes.uploadQuestionFile,

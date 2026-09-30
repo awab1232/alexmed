@@ -3583,6 +3583,228 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف.'**
   String get bookChatHello;
+
+  /// No description provided for @qfTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنوك الأسئلة'**
+  String get qfTitle;
+
+  /// No description provided for @qfIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة مستخرجة مباشرة من ملفاتك — بدون توليد بالذكاء الاصطناعي.'**
+  String get qfIntro;
+
+  /// No description provided for @qfUpload.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفع ملف أسئلة'**
+  String get qfUpload;
+
+  /// No description provided for @qfUploadTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفع ملف أسئلة'**
+  String get qfUploadTitle;
+
+  /// No description provided for @qfEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد ملفات أسئلة بعد'**
+  String get qfEmpty;
+
+  /// No description provided for @qfEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع ملف أسئلة واختر «ملف أسئلة» عند الرفع.'**
+  String get qfEmptyHint;
+
+  /// No description provided for @qfCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} سؤال'**
+  String qfCount(int count);
+
+  /// No description provided for @qfStatusExtracting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري الاستخراج…'**
+  String get qfStatusExtracting;
+
+  /// No description provided for @qfStatusComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الاستخراج'**
+  String get qfStatusComplete;
+
+  /// No description provided for @qfStatusFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر الاستخراج'**
+  String get qfStatusFailed;
+
+  /// No description provided for @qfStatusPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد الانتظار'**
+  String get qfStatusPending;
+
+  /// No description provided for @qfExtracting.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري استخراج الأسئلة من الملف — تقدر تسكّر الصفحة وترجع بعدين.'**
+  String get qfExtracting;
+
+  /// No description provided for @qfFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر استخراج الأسئلة من هذا الملف.'**
+  String get qfFailed;
+
+  /// No description provided for @qfRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المعالجة'**
+  String get qfRetry;
+
+  /// No description provided for @qfNoQuestions.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم العثور على أسئلة'**
+  String get qfNoQuestions;
+
+  /// No description provided for @qfExtractedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} سؤال مستخرج'**
+  String qfExtractedCount(int count);
+
+  /// No description provided for @qfEnriching.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري إضافة الصور والشرح ({done}/{total})'**
+  String qfEnriching(int done, int total);
+
+  /// No description provided for @qfKind.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف أسئلة'**
+  String get qfKind;
+
+  /// No description provided for @qfKindNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم استخراج الأسئلة الموجودة فعليًا في الملف — لن يتم توليد أسئلة جديدة بالذكاء الاصطناعي.'**
+  String get qfKindNote;
+
+  /// No description provided for @qfSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخراج الأسئلة'**
+  String get qfSubmit;
+
+  /// No description provided for @qfQuotaLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي اليوم: {left} من {limit} ملفات أسئلة'**
+  String qfQuotaLeft(int left, int limit);
+
+  /// No description provided for @uploadStepKind.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الملف'**
+  String get uploadStepKind;
+
+  /// No description provided for @questionsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال'**
+  String get questionsLabel;
+
+  /// No description provided for @questionsPosition.
+  ///
+  /// In ar, this message translates to:
+  /// **'السؤال {index} من {total}'**
+  String questionsPosition(int index, int total);
+
+  /// No description provided for @questionsTally.
+  ///
+  /// In ar, this message translates to:
+  /// **'أجبت {answered} · صحيح {correct}'**
+  String questionsTally(int answered, int correct);
+
+  /// No description provided for @questionsProgressLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقدم في الأسئلة'**
+  String get questionsProgressLabel;
+
+  /// No description provided for @questionsCardLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال {index} من {total}'**
+  String questionsCardLabel(int index, int total);
+
+  /// No description provided for @questionsPickerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'انتقل إلى سؤال'**
+  String get questionsPickerTitle;
+
+  /// No description provided for @questionsReveal.
+  ///
+  /// In ar, this message translates to:
+  /// **'أظهر الإجابة'**
+  String get questionsReveal;
+
+  /// No description provided for @questionsReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة'**
+  String get questionsReset;
+
+  /// No description provided for @questionsNoAnswerInFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد إجابة مذكورة لهذا السؤال في الملف.'**
+  String get questionsNoAnswerInFile;
+
+  /// No description provided for @questionsNoAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد إجابة مذكورة لهذا السؤال.'**
+  String get questionsNoAnswer;
+
+  /// No description provided for @questionsAiAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابة مقترحة من الذكاء الاصطناعي — لم تُذكر إجابة في الملف الأصلي.'**
+  String get questionsAiAnswer;
+
+  /// No description provided for @questionsMachineTranslation.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترجمة آلية'**
+  String get questionsMachineTranslation;
+
+  /// No description provided for @doctorSetsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعات الدكاترة'**
+  String get doctorSetsTitle;
+
+  /// No description provided for @qfUploadIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع ملف أسئلة (بنك، امتحان سابق، أسئلة مصوّرة) ونستخرج أسئلته كما هي مع إجاباتها إن وُجدت.'**
+  String get qfUploadIntro;
+
+  /// No description provided for @qfStepFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف'**
+  String get qfStepFile;
 }
 
 class _AppLocalizationsDelegate

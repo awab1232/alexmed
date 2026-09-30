@@ -15,19 +15,28 @@ import '../../account/data/account_repository.dart';
 import '../../auth/presentation/auth_widgets.dart';
 import '../../library/data/library_models.dart';
 import '../../library/data/library_repository.dart';
+import '../../question_files/data/question_file_repository.dart';
 import '../../upload/upload_widgets.dart';
 import '../data/book_models.dart';
 import '../data/book_repository.dart';
 
-/// Upload a study book — the web's app/books/upload (study-book kind; a
-/// question file goes through مِرآة from the ＋ sheet). The file goes
-/// straight to storage, then the server reads, splits and analyses it; the
-/// book screen shows that progress.
+/// Upload to كتبي — the web's app/books/upload: a study book (chapters,
+/// summaries, cards, quizzes) or a question file (its questions extracted
+/// as they are, no AI generation). The file goes straight to storage, then
+/// the server reads it; the book / question-file screen shows that
+/// progress. (مِرآة, the ＋ sheet's «ملف أسئلة», is the other path.)
 class BookUploadScreen extends ConsumerStatefulWidget {
-  const BookUploadScreen({super.key, this.subjectId});
+  const BookUploadScreen({
+    super.key,
+    this.subjectId,
+    this.questionFile = false,
+  });
 
   /// Pre-selected folder (opened from a folder's "add").
   final String? subjectId;
+
+  /// Starts on the question-file kind (from بنوك الأسئلة).
+  final bool questionFile;
 
   @override
   ConsumerState<BookUploadScreen> createState() => _BookUploadScreenState();
@@ -36,6 +45,7 @@ class BookUploadScreen extends ConsumerStatefulWidget {
 class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
   PickedPdf? _pdf;
   late String? _folderId = widget.subjectId;
+  late bool _questionFile = widget.questionFile;
   String _profile = 'general';
   bool _profileTouched = false;
 
@@ -99,6 +109,25 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
       _cancel = CancelToken();
     });
     try {
+      void progress(double p) {
+        if (mounted) setState(() => _progress = p);
+      }
+
+      if (_questionFile) {
+        final fileId = await ref
+            .read(questionFileRepositoryProvider)
+            .upload(
+              pdf: _pdf!,
+              subjectId: _folderId!,
+              cancelToken: _cancel,
+              onProgress: progress,
+            );
+        ref
+          ..invalidate(questionFilesProvider)
+          ..invalidate(planProvider);
+        if (mounted) context.pushReplacement(Routes.questionBank(fileId));
+        return;
+      }
       final bookId = await ref
           .read(bookRepositoryProvider)
           .upload(
@@ -106,9 +135,7 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
             profile: _profile,
             subjectId: _folderId!,
             cancelToken: _cancel,
-            onProgress: (p) {
-              if (mounted) setState(() => _progress = p);
-            },
+            onProgress: progress,
           );
       ref
         ..invalidate(booksProvider)
@@ -152,8 +179,8 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
     final l10n = AppLocalizations.of(context);
     final plan = ref.watch(planProvider).value;
     final pdf = _pdf;
-    final duplicate = pdf == null ? null : _duplicateOf(pdf);
-    final quota = plan?.studyFiles;
+    final duplicate = pdf == null || _questionFile ? null : _duplicateOf(pdf);
+    final quota = _questionFile ? plan?.questionFiles : plan?.studyFiles;
 
     return PopScope(
       canPop: !_busy,
@@ -165,7 +192,11 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(l10n.bookUploadTitle)),
+        appBar: AppBar(
+          title: Text(
+            _questionFile ? l10n.qfUploadTitle : l10n.bookUploadTitle,
+          ),
+        ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(
             NlSpace.page,
@@ -174,11 +205,13 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
             NlSpace.xxxl,
           ),
           children: [
-            UploadIntro(text: l10n.bookUploadIntro),
+            UploadIntro(
+              text: _questionFile ? l10n.qfUploadIntro : l10n.bookUploadIntro,
+            ),
             const SizedBox(height: NlSpace.xl),
             UploadStep(
               number: 1,
-              title: l10n.bookStepFile,
+              title: _questionFile ? l10n.qfStepFile : l10n.bookStepFile,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -196,19 +229,53 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
             ),
             UploadStep(
               number: 2,
-              title: l10n.bookStepProfile,
-              child: _ProfilePicker(
-                value: _profile,
-                onChanged: _busy
-                    ? null
-                    : (p) => setState(() {
-                        _profile = p;
-                        _profileTouched = true;
-                      }),
+              title: l10n.uploadStepKind,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: NlSpace.sm,
+                    runSpacing: NlSpace.sm,
+                    children: [
+                      _Pill(
+                        label: l10n.addBook,
+                        selected: !_questionFile,
+                        onTap: _busy
+                            ? null
+                            : () => setState(() => _questionFile = false),
+                      ),
+                      _Pill(
+                        label: l10n.qfKind,
+                        selected: _questionFile,
+                        onTap: _busy
+                            ? null
+                            : () => setState(() => _questionFile = true),
+                      ),
+                    ],
+                  ),
+                  if (_questionFile) ...[
+                    const SizedBox(height: NlSpace.sm),
+                    Text(l10n.qfKindNote, style: NlText.caption),
+                  ],
+                ],
               ),
             ),
+            if (!_questionFile)
+              UploadStep(
+                number: 3,
+                title: l10n.bookStepProfile,
+                child: _ProfilePicker(
+                  value: _profile,
+                  onChanged: _busy
+                      ? null
+                      : (p) => setState(() {
+                          _profile = p;
+                          _profileTouched = true;
+                        }),
+                ),
+              ),
             UploadStep(
-              number: 3,
+              number: _questionFile ? 3 : 4,
               title: l10n.mirrorStepFolder,
               last: true,
               child: FolderPickerField(
@@ -223,7 +290,7 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
             if (quota?.limit != null && !_busy) ...[
               const SizedBox(height: NlSpace.lg),
               Text(
-                l10n.bookQuotaLeft(
+                (_questionFile ? l10n.qfQuotaLeft : l10n.bookQuotaLeft)(
                   (quota!.limit! - quota.used).clamp(0, quota.limit!),
                   quota.limit!,
                 ),
@@ -233,8 +300,10 @@ class _BookUploadScreenState extends ConsumerState<BookUploadScreen> {
           ],
         ),
         bottomNavigationBar: UploadSubmitBar(
-          label: l10n.bookSubmit,
-          icon: LucideIcons.bookOpen,
+          label: _questionFile ? l10n.qfSubmit : l10n.bookSubmit,
+          icon: _questionFile
+              ? LucideIcons.clipboardList
+              : LucideIcons.bookOpen,
           startingLabel: l10n.bookStarting,
           note: l10n.bookKeepOpen,
           progress: _progress,

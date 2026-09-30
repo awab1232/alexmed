@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/api/api_image.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/mirror_models.dart';
@@ -495,29 +496,8 @@ class _CardImage extends StatelessWidget {
   const _CardImage({required this.url});
   final String url;
 
+  // Card images are /api/files/<key> paths on the API origin — loaded with
+  // the session there, the storage redirect read without it (ApiImage).
   @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(NlRadius.md),
-      child: InteractiveViewer(
-        maxScale: 4,
-        child: Image.network(
-          url,
-          fit: BoxFit.contain,
-          loadingBuilder: (context, child, progress) => progress == null
-              ? child
-              : const SizedBox(height: 180, child: NlSkeleton(height: 180)),
-          errorBuilder: (context, _, _) => Container(
-            height: 80,
-            color: NlColors.paper,
-            alignment: Alignment.center,
-            child: Text(
-              AppLocalizations.of(context).cardImageFailed,
-              style: NlText.caption,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ApiImage(url: url);
 }

@@ -1360,5 +1360,106 @@
   "askSend": "إرسال",
   "askStop": "إيقاف",
   "bookChatTitle": "اسأل Niro عن هذا الملف",
-  "bookChatHello": "أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف."
+  "bookChatHello": "أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف.",
+  "qfTitle": "بنوك الأسئلة",
+  "qfIntro": "أسئلة مستخرجة مباشرة من ملفاتك — بدون توليد بالذكاء الاصطناعي.",
+  "qfUpload": "رفع ملف أسئلة",
+  "qfUploadTitle": "رفع ملف أسئلة",
+  "qfEmpty": "لا توجد ملفات أسئلة بعد",
+  "qfEmptyHint": "ارفع ملف أسئلة واختر «ملف أسئلة» عند الرفع.",
+  "qfCount": "{count} سؤال",
+  "@qfCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qfStatusExtracting": "جاري الاستخراج…",
+  "qfStatusComplete": "تم الاستخراج",
+  "qfStatusFailed": "تعذر الاستخراج",
+  "qfStatusPending": "قيد الانتظار",
+  "qfExtracting": "جاري استخراج الأسئلة من الملف — تقدر تسكّر الصفحة وترجع بعدين.",
+  "qfFailed": "تعذر استخراج الأسئلة من هذا الملف.",
+  "qfRetry": "إعادة المعالجة",
+  "qfNoQuestions": "لم يتم العثور على أسئلة",
+  "qfExtractedCount": "{count} سؤال مستخرج",
+  "@qfExtractedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qfEnriching": "جاري إضافة الصور والشرح ({done}/{total})",
+  "@qfEnriching": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "qfKind": "ملف أسئلة",
+  "qfKindNote": "سيتم استخراج الأسئلة الموجودة فعليًا في الملف — لن يتم توليد أسئلة جديدة بالذكاء الاصطناعي.",
+  "qfSubmit": "استخراج الأسئلة",
+  "qfQuotaLeft": "متبقي اليوم: {left} من {limit} ملفات أسئلة",
+  "@qfQuotaLeft": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadStepKind": "نوع الملف",
+  "questionsLabel": "السؤال",
+  "questionsPosition": "السؤال {index} من {total}",
+  "@questionsPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "questionsTally": "أجبت {answered} · صحيح {correct}",
+  "@questionsTally": {
+    "placeholders": {
+      "answered": {
+        "type": "int"
+      },
+      "correct": {
+        "type": "int"
+      }
+    }
+  },
+  "questionsProgressLabel": "التقدم في الأسئلة",
+  "questionsCardLabel": "سؤال {index} من {total}",
+  "@questionsCardLabel": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "questionsPickerTitle": "انتقل إلى سؤال",
+  "questionsReveal": "أظهر الإجابة",
+  "questionsReset": "إعادة",
+  "questionsNoAnswerInFile": "لا توجد إجابة مذكورة لهذا السؤال في الملف.",
+  "questionsNoAnswer": "لا توجد إجابة مذكورة لهذا السؤال.",
+  "questionsAiAnswer": "إجابة مقترحة من الذكاء الاصطناعي — لم تُذكر إجابة في الملف الأصلي.",
+  "questionsMachineTranslation": "ترجمة آلية",
+  "doctorSetsTitle": "مجموعات الدكاترة",
+  "qfUploadIntro": "ارفع ملف أسئلة (بنك، امتحان سابق، أسئلة مصوّرة) ونستخرج أسئلته كما هي مع إجاباتها إن وُجدت.",
+  "qfStepFile": "الملف"
 }

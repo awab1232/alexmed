@@ -2020,4 +2020,135 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get bookChatHello => 'أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف.';
+
+  @override
+  String get qfTitle => 'بنوك الأسئلة';
+
+  @override
+  String get qfIntro =>
+      'أسئلة مستخرجة مباشرة من ملفاتك — بدون توليد بالذكاء الاصطناعي.';
+
+  @override
+  String get qfUpload => 'رفع ملف أسئلة';
+
+  @override
+  String get qfUploadTitle => 'رفع ملف أسئلة';
+
+  @override
+  String get qfEmpty => 'لا توجد ملفات أسئلة بعد';
+
+  @override
+  String get qfEmptyHint => 'ارفع ملف أسئلة واختر «ملف أسئلة» عند الرفع.';
+
+  @override
+  String qfCount(int count) {
+    return '$count سؤال';
+  }
+
+  @override
+  String get qfStatusExtracting => 'جاري الاستخراج…';
+
+  @override
+  String get qfStatusComplete => 'تم الاستخراج';
+
+  @override
+  String get qfStatusFailed => 'تعذر الاستخراج';
+
+  @override
+  String get qfStatusPending => 'قيد الانتظار';
+
+  @override
+  String get qfExtracting =>
+      'جاري استخراج الأسئلة من الملف — تقدر تسكّر الصفحة وترجع بعدين.';
+
+  @override
+  String get qfFailed => 'تعذر استخراج الأسئلة من هذا الملف.';
+
+  @override
+  String get qfRetry => 'إعادة المعالجة';
+
+  @override
+  String get qfNoQuestions => 'لم يتم العثور على أسئلة';
+
+  @override
+  String qfExtractedCount(int count) {
+    return '$count سؤال مستخرج';
+  }
+
+  @override
+  String qfEnriching(int done, int total) {
+    return 'جاري إضافة الصور والشرح ($done/$total)';
+  }
+
+  @override
+  String get qfKind => 'ملف أسئلة';
+
+  @override
+  String get qfKindNote =>
+      'سيتم استخراج الأسئلة الموجودة فعليًا في الملف — لن يتم توليد أسئلة جديدة بالذكاء الاصطناعي.';
+
+  @override
+  String get qfSubmit => 'استخراج الأسئلة';
+
+  @override
+  String qfQuotaLeft(int left, int limit) {
+    return 'متبقي اليوم: $left من $limit ملفات أسئلة';
+  }
+
+  @override
+  String get uploadStepKind => 'نوع الملف';
+
+  @override
+  String get questionsLabel => 'السؤال';
+
+  @override
+  String questionsPosition(int index, int total) {
+    return 'السؤال $index من $total';
+  }
+
+  @override
+  String questionsTally(int answered, int correct) {
+    return 'أجبت $answered · صحيح $correct';
+  }
+
+  @override
+  String get questionsProgressLabel => 'التقدم في الأسئلة';
+
+  @override
+  String questionsCardLabel(int index, int total) {
+    return 'سؤال $index من $total';
+  }
+
+  @override
+  String get questionsPickerTitle => 'انتقل إلى سؤال';
+
+  @override
+  String get questionsReveal => 'أظهر الإجابة';
+
+  @override
+  String get questionsReset => 'إعادة';
+
+  @override
+  String get questionsNoAnswerInFile =>
+      'لا توجد إجابة مذكورة لهذا السؤال في الملف.';
+
+  @override
+  String get questionsNoAnswer => 'لا توجد إجابة مذكورة لهذا السؤال.';
+
+  @override
+  String get questionsAiAnswer =>
+      'إجابة مقترحة من الذكاء الاصطناعي — لم تُذكر إجابة في الملف الأصلي.';
+
+  @override
+  String get questionsMachineTranslation => 'ترجمة آلية';
+
+  @override
+  String get doctorSetsTitle => 'مجموعات الدكاترة';
+
+  @override
+  String get qfUploadIntro =>
+      'ارفع ملف أسئلة (بنك، امتحان سابق، أسئلة مصوّرة) ونستخرج أسئلته كما هي مع إجاباتها إن وُجدت.';
+
+  @override
+  String get qfStepFile => 'الملف';
 }

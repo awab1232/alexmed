@@ -335,15 +335,31 @@ Found & fixed during P8: a chunk fetch waited on itself forever (whenComplete re
 ## Phase 9 — Question files, question cards, مِرآة
 **Objective:** native question experience. **Depends on:** P6.
 
-- [~] 9.1 مِرآة path done: PDF (`/api/pdf/upload-url` → `/api/mirror/upload-and-plan`) and pasted text (`mirror.submitText`, new file in a folder or added to an existing file), depth quick / balanced / detailed, folder required. **Left:** the كتبي question-file path (`extract-questions-and-plan`)
-- [ ] 9.2 List + detail with processing/OCR status and failure reasons; `retryExtraction`
-- [ ] 9.3 Question cards (BP §11): progress, picker, answer feedback + haptics, explanation, keywords, notes, translation toggle (source vs machine), images with zoom + failure placeholder, swipe/buttons/arrows, persisted answers
+- [x] 9.1 Both upload paths. مِرآة: PDF (`/api/pdf/upload-url` → `/api/mirror/upload-and-plan`) and pasted text (`mirror.submitText`), depth, folder required. كتبي question file: the book upload screen gained the web's «نوع الملف» step (كتاب دراسي / ملف أسئلة, route `/upload/book?kind=questions`) → `/api/books/upload-url` → PUT → `/api/books/extract-questions-and-plan {key, fileName, subjectId}` → the question file's screen; no profile step, the web's "no AI-generated questions" note, today's question-file quota. Widget-tested + on-device
+- [x] 9.2 بنوك الأسئلة (`features/question_files/**`, `/books/question-files`, from حسابي › دراستي and the upload flow): list with the web's status labels (جاري الاستخراج / تم الاستخراج · n سؤال / تعذر الاستخراج), doctor sets button when the flag is on; detail `/books/question-files/:id` (`questionFiles.get`): extracting banner, failure with the server's reason + «إعادة المعالجة» (`retryExtraction`), «لم يتم العثور على أسئلة», «n سؤال مستخرج», images / explanations still being added. Polls like the web (3 s while extracting or enriching) but only while on top and in the foreground, slowing to 15 s while nothing changes, and stops after ~5 min unchanged when the server never reports image coverage done (the web would poll forever there). The fixed `/books/question-files` routes are declared before `/books/:id`. Widget-tested + on-device
+- [x] 9.3 Question cards (`question_deck_view.dart`, shared with P11): «السؤال X من N» + bar + tally «أجبت n · صحيح m», one card per page (PageView, swipe), السابق / التالي, hardware ← → (RTL: ← = next, as the web), picker sheet with ✓ / ✗; tap → green / red (light / heavy haptic), «أظهر الإجابة», «إعادة»; the file's stated answer vs an **AI-suggested** one (always labelled) vs «لا توجد إجابة مذكورة…»; explanation, Arabic AI explanation, keywords; translation toggle with «ترجمة آلية» when machine-translated; image with tap-to-zoom and a retry placeholder. Rules ported and **proven identical** (`correctAnswerOf`, `optionState`, `deckProgress`) by a parity test on the web code's own output (`tool/export_question_rules_fixtures.ts`). Answers and position kept per file for the app session (restart persistence with P14; never for protected sets). **Found and fixed:** مِرآة card images used `Image.network` on the server's relative `/api/files/<key>` path — they could never load on the device. New `core/api/api_image.dart`: loads API-origin images with the session, reads the storage redirect without following it, fetches the signed URL without the cookie, bounded in-memory cache (24 MB, wiped on sign-out), `cache: false` for protected sets; used by both card kinds
 - [x] 9.4 مِرآة: job screen (polls 3 s while running, opens the deck once the first part is ready — same as the web —, failed pages / parts with retry), deck screen (one card at a time, swipe + buttons, progress, all / needs-review / section filters, search, live polling that appends cards without moving the student, add questions, delete), card (tap an option → green / red, reveal, bilingual answer + explanation + key idea + keyword, translation, image with zoom), library of question files. Question splitting ported from `lib/mirror-card-question.ts` and **proven identical** by a parity test on the web code's own output (11 cases). Widget-tested (8) + on-device run of 6 screens. **Not in the app yet:** CSV export, English read-aloud, card highlights (web card marks)
-- [ ] 9.5 Bidi verification with real bilingual fixtures (from `lib/test-fixtures/question-documents.ts` shapes, synthetic data only)
+- [x] 9.5 Bidi (`question_bidi_test.dart`, synthetic questions shaped like `lib/test-fixtures/question-documents.ts`): English stem / options LTR inside the Arabic UI; Arabic stem with English drug names RTL; explanation and keywords each in their own direction; the English UI shows an Arabic question RTL; 360×640 at text ×1.3 without overflow
 
 **Tests:** widget tests for card states; E2E journey 4 on staging with synthetic scanned/mixed/bilingual/unnumbered/أبجد files; image-ownership check (image only on its question).
 **Performance:** 500-question file: open < 1 s after data, smooth paging.
 **DoD:** journey 4 passes both platforms; no needs-review question visible to students.
+
+**Status: `[x]` implemented, tested and verified on the emulator with in-memory data.** Live `[!]` staging (D1): journey 4 with real scanned / bilingual files needs the server pipeline. Image ownership and needs-review hiding are server-side (`readQuestionFileContent`); the app renders only the image the server attached to each question and never receives needs-review rows. iOS `[ ]` (D2). No backend change.
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] upload kind / list / detail / cards (in-memory)  [x] happy  [x] error (failed + retry)  [x] loading  [x] empty
+             [x] retry  [~] session expiry (shared 401 handling)  [x] permission (owner-only reads are server-side)
+UI/UX        [x] design system  [x] RTL  [x] LTR content  [x] touch targets ≥48dp  [x] keyboard arrows
+             [x] states  [~] accessibility (card / option / picker semantics; no screen-reader pass yet)  [x] no overflow at 360×640 ×1.3
+SECURITY     [x] images: session only to the API origin, redirect not followed, signed URL fetched without cookie, https only
+             [x] images memory-only, wiped on sign-out  [x] no logging
+PERFORMANCE  [x] polling backs off, pauses off-screen / in background, stops when finished  [ ] 500-question frame times → P16 release
+TESTING      [x] unit (loader 5, rules parity 4, RichText parity 11)  [x] widget (9 screens + 5 bidi)  [x] on device (9 screens)
+             [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend file changed  [x] all 271 Flutter tests pass
+```
+Found & fixed during P9: مِرآة card images could never load on the device (relative URL); the image loader's in-flight future would have waited on itself (the same `whenComplete` trap as P8's reader — caught by its unit test); upload screen kept the book wording for a question file (device screenshot).
 
 ---
 

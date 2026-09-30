@@ -122,6 +122,11 @@ class AccountScreen extends ConsumerWidget {
                     onTap: () => context.push(Routes.questionFiles),
                   ),
                   NlRow(
+                    icon: LucideIcons.clipboardList,
+                    label: l10n.qfTitle,
+                    onTap: () => context.push(Routes.questionBanks),
+                  ),
+                  NlRow(
                     icon: LucideIcons.chartColumn,
                     label: l10n.statsRow,
                     onTap: () => context.push(Routes.stats),

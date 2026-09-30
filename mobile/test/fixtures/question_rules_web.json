@@ -1,0 +1,401 @@
+{
+ "questions": [
+  {
+   "id": "q1",
+   "extractedAnswerIndex": 2,
+   "aiInferredAnswerIndex": null,
+   "options": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "correct": {
+    "index": 2,
+    "fromAi": false
+   }
+  },
+  {
+   "id": "q2",
+   "extractedAnswerIndex": null,
+   "aiInferredAnswerIndex": 1,
+   "options": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "correct": {
+    "index": 1,
+    "fromAi": true
+   }
+  },
+  {
+   "id": "q3",
+   "extractedAnswerIndex": null,
+   "aiInferredAnswerIndex": null,
+   "options": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "correct": {
+    "index": null,
+    "fromAi": false
+   }
+  },
+  {
+   "id": "q4",
+   "extractedAnswerIndex": 0,
+   "aiInferredAnswerIndex": 3,
+   "options": [
+    "a",
+    "b",
+    "c",
+    "d"
+   ],
+   "correct": {
+    "index": 0,
+    "fromAi": false
+   }
+  },
+  {
+   "id": "q5",
+   "extractedAnswerIndex": null,
+   "aiInferredAnswerIndex": null,
+   "options": null,
+   "correct": {
+    "index": null,
+    "fromAi": false
+   }
+  }
+ ],
+ "progress": [
+  {
+   "answers": {},
+   "result": {
+    "answered": 0,
+    "correct": 0
+   }
+  },
+  {
+   "answers": {
+    "q1": {
+     "selected": 2,
+     "revealed": true
+    }
+   },
+   "result": {
+    "answered": 1,
+    "correct": 1
+   }
+  },
+  {
+   "answers": {
+    "q1": {
+     "selected": 1,
+     "revealed": true
+    },
+    "q2": {
+     "selected": 1,
+     "revealed": true
+    }
+   },
+   "result": {
+    "answered": 2,
+    "correct": 1
+   }
+  },
+  {
+   "answers": {
+    "q1": {
+     "selected": 2,
+     "revealed": true
+    },
+    "q2": {
+     "selected": 0,
+     "revealed": true
+    },
+    "q3": {
+     "selected": 3,
+     "revealed": true
+    },
+    "q4": {
+     "selected": null,
+     "revealed": true
+    }
+   },
+   "result": {
+    "answered": 3,
+    "correct": 1
+   }
+  }
+ ],
+ "states": [
+  {
+   "correct": null,
+   "selected": null,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": null,
+   "revealed": true,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": 0,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": 0,
+   "revealed": true,
+   "states": [
+    "chosen",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": 1,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": 1,
+   "revealed": true,
+   "states": [
+    "idle",
+    "chosen",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": 2,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": null,
+   "selected": 2,
+   "revealed": true,
+   "states": [
+    "idle",
+    "idle",
+    "chosen",
+    "idle"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": null,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": null,
+   "revealed": true,
+   "states": [
+    "correct",
+    "dimmed",
+    "dimmed",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": 0,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": 0,
+   "revealed": true,
+   "states": [
+    "correct",
+    "dimmed",
+    "dimmed",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": 1,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": 1,
+   "revealed": true,
+   "states": [
+    "correct",
+    "wrong",
+    "dimmed",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": 2,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 0,
+   "selected": 2,
+   "revealed": true,
+   "states": [
+    "correct",
+    "dimmed",
+    "wrong",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": null,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": null,
+   "revealed": true,
+   "states": [
+    "dimmed",
+    "dimmed",
+    "correct",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": 0,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": 0,
+   "revealed": true,
+   "states": [
+    "wrong",
+    "dimmed",
+    "correct",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": 1,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": 1,
+   "revealed": true,
+   "states": [
+    "dimmed",
+    "wrong",
+    "correct",
+    "dimmed"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": 2,
+   "revealed": false,
+   "states": [
+    "idle",
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "correct": 2,
+   "selected": 2,
+   "revealed": true,
+   "states": [
+    "dimmed",
+    "dimmed",
+    "correct",
+    "dimmed"
+   ]
+  }
+ ]
+}

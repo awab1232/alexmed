@@ -42,7 +42,13 @@ abstract final class Routes {
       '$uploadQuestionFile?deck=$deckId';
   static String mirrorJob(String id, {bool detailsOnly = false}) =>
       '/mirror/jobs/$id${detailsOnly ? '?details=1' : ''}';
+  // كتبي question files (extracted as they are — PR16).
+  static const questionBanks = '/books/question-files';
+  static String questionBank(String id) => '/books/question-files/$id';
+  static const uploadQuestionBank = '$uploadBook?kind=questions';
   static const shared = '/shared';
+  static const questionSets = '/question-sets';
+  static String questionSet(String id) => '/question-sets/$id';
   static const redeemCode = '/question-sets/redeem';
   static const doctor = '/doctor';
 
