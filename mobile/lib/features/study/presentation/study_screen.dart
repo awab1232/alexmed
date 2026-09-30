@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../exam_focus/data/exam_focus_models.dart';
 import '../data/study_models.dart';
 import '../data/study_preparation.dart';
 import '../data/study_repository.dart';
@@ -29,6 +30,10 @@ class StudyScreen extends ConsumerStatefulWidget {
 class _StudyScreenState extends ConsumerState<StudyScreen> {
   StudyContent? _content;
   Object? _error;
+  KnowledgeCoverage? _knowledge;
+
+  /// The knowledge base (Exam Focus) status, for the owner's rebuild link.
+  String? _deckStatus;
   late final StudyPreparation _prep;
 
   StudyRepository get _repo => ref.read(studyRepositoryProvider);
@@ -65,7 +70,46 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
       }
     } catch (error) {
       if (mounted) setState(() => _error = error);
+      return;
     }
+    if (widget.tool == StudyTool.summary) return;
+    // The coverage matrix and (owner) the knowledge base status — extras
+    // on the coverage line; failures just hide them.
+    try {
+      final knowledgeFuture = _repo.knowledge(widget.bookId, widget.tool);
+      final deckFuture = (_content?.isOwner ?? false)
+          ? _repo.examFocus(widget.bookId)
+          : Future<ExamFocusDeck?>.value();
+      final knowledge = await knowledgeFuture;
+      final deck = await deckFuture;
+      if (!mounted) return;
+      setState(() {
+        _knowledge = knowledge;
+        _deckStatus = deck?.status;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _rebuild() async {
+    final content = _content;
+    final knowledge = _knowledge;
+    if (content == null || knowledge == null) return;
+    final l10n = AppLocalizations.of(context);
+    final ok = await showNlConfirm(
+      context,
+      title: l10n.studyRebuildTitle,
+      message: widget.tool == StudyTool.cards
+          ? l10n.studyRebuildCardsConfirm
+          : l10n.studyRebuildMcqsConfirm,
+      confirmLabel: l10n.studyRebuildTitle,
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    final started = await _prep.rebuild([
+      for (final c in content.analyzed)
+        if (knowledge.v1ChapterIds.contains(c.id)) c,
+    ]);
+    if (!started && mounted) showNlToast(context, l10n.studyRebuildNotReady);
   }
 
   String _toolTitle(AppLocalizations l10n) => switch (widget.tool) {
@@ -95,10 +139,18 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     return ValueListenableBuilder(
       valueListenable: _prep.state,
       builder: (context, prep, _) {
+        final knowledge = _knowledge;
+        final canRebuild =
+            content.isOwner &&
+            knowledge != null &&
+            _deckStatus != 'failed' &&
+            content.analyzed.any((c) => knowledge.v1ChapterIds.contains(c.id));
         final notice = _CoverageNotice(
           content: content,
           tool: widget.tool,
           errors: prep.errors,
+          knowledge: knowledge,
+          onRebuild: canRebuild && !prep.busy ? _rebuild : null,
         );
         if (prep.busy) {
           return Scaffold(
@@ -181,11 +233,15 @@ class _CoverageNotice extends StatelessWidget {
     required this.content,
     required this.tool,
     required this.errors,
+    this.knowledge,
+    this.onRebuild,
   });
 
   final StudyContent content;
   final StudyTool tool;
   final List<String> errors;
+  final KnowledgeCoverage? knowledge;
+  final VoidCallback? onRebuild;
 
   @override
   Widget build(BuildContext context) {
@@ -219,9 +275,36 @@ class _CoverageNotice extends StatelessWidget {
         vertical: NlSpace.sm,
       ),
       color: warn ? NlColors.markerSoft : null,
-      child: Text(
-        parts.join(' · '),
-        style: NlText.caption.copyWith(color: warn ? NlColors.ink : null),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            parts.join(' · '),
+            style: NlText.caption.copyWith(color: warn ? NlColors.ink : null),
+          ),
+          if ((knowledge?.rows.isNotEmpty ?? false) || onRebuild != null)
+            Wrap(
+              spacing: NlSpace.sm,
+              children: [
+                if (knowledge != null && knowledge!.rows.isNotEmpty)
+                  _NoticeLink(
+                    label: l10n.studyKnowledgeLine(
+                      tool == StudyTool.cards ? l10n.toolCards : l10n.toolMcqs,
+                      knowledge!.covered(tool),
+                      knowledge!.rows.length,
+                    ),
+                    onTap: () => showKnowledgeMatrix(context, knowledge!, tool),
+                  ),
+                if (onRebuild != null)
+                  _NoticeLink(
+                    label: tool == StudyTool.cards
+                        ? l10n.studyRebuildCards
+                        : l10n.studyRebuildMcqs,
+                    onTap: onRebuild!,
+                  ),
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -308,5 +391,93 @@ class StudyEmpty extends StatelessWidget {
     title: title,
     message: message,
     expression: NiroExpression.sleepy,
+  );
+}
+
+class _NoticeLink extends StatelessWidget {
+  const _NoticeLink({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 36),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Text(
+          label,
+          style: NlText.caption.copyWith(
+            color: NlColors.niroDeep,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// 🧭 Coverage matrix: each Exam Focus fact → the cards / questions built
+/// from it → its pages (the web study page's knowledge sheet).
+Future<void> showKnowledgeMatrix(
+  BuildContext context,
+  KnowledgeCoverage knowledge,
+  StudyTool tool,
+) {
+  final l10n = AppLocalizations.of(context);
+  bool covered(KnowledgeRow r) =>
+      tool == StudyTool.cards ? r.cardCount > 0 : r.questionCount > 0;
+  return showNlSheet<void>(
+    context,
+    title: l10n.studyMatrixTitle(
+      knowledge.covered(tool),
+      knowledge.rows.length,
+    ),
+    builder: (context) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l10n.studyMatrixHint, style: NlText.caption),
+        const SizedBox(height: NlSpace.sm),
+        Flexible(
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: knowledge.rows.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, i) {
+              final r = knowledge.rows[i];
+              return Opacity(
+                opacity: covered(r) ? 1 : 0.55,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: NlSpace.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AutoDirText(
+                        '#${r.orderIndex} ${r.title}',
+                        style: NlText.rowLabel.copyWith(fontSize: 14),
+                      ),
+                      Text(
+                        [
+                          l10n.studyMatrixPages(r.sourcePages.join('، ')),
+                          '🃏 ${r.cardCount}',
+                          '❓ ${r.questionCount}',
+                          if (r.questionTypes.isNotEmpty)
+                            r.questionTypes.join('، '),
+                        ].join(' · '),
+                        style: NlText.caption,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
   );
 }

@@ -23,6 +23,8 @@ import '../features/mirror/presentation/mirror_deck_screen.dart';
 import '../features/mirror/presentation/mirror_job_screen.dart';
 import '../features/mirror/presentation/mirror_library_screen.dart';
 import '../features/mirror/presentation/mirror_start_screen.dart';
+import '../features/progress/presentation/progress_screens.dart';
+import '../features/progress/presentation/review_screen.dart';
 import '../features/study/data/study_models.dart';
 import '../features/study/presentation/study_screen.dart';
 import '../l10n/app_localizations.dart';
@@ -101,7 +103,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, _) => const AccountScreen(),
                 routes: [
                   GoRoute(path: 'plan', builder: (_, _) => const PlanScreen()),
-                  _placeholder('stats', (l) => l.statsRow, 'P7'),
+                  GoRoute(
+                    path: 'stats',
+                    builder: (_, _) => const StatsScreen(),
+                  ),
                   _placeholder('doctor', (l) => l.doctorApply, 'P11'),
                 ],
               ),
@@ -151,7 +156,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           detailsOnly: state.uri.queryParameters['details'] == '1',
         ),
       ),
-      _placeholder(Routes.review, (l) => l.nextDueAction, 'P7'),
+      GoRoute(path: Routes.review, builder: (_, _) => const ReviewScreen()),
+      GoRoute(
+        path: Routes.weakPoints,
+        builder: (_, _) => const WeakPointsScreen(),
+      ),
+      GoRoute(path: Routes.today, builder: (_, _) => const TodayScreen()),
       GoRoute(
         path: Routes.questionFiles,
         builder: (_, _) => const MirrorLibraryScreen(),

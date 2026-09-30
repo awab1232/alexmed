@@ -435,16 +435,16 @@ class _Question extends StatelessWidget {
         ),
         const SizedBox(height: NlSpace.lg),
         for (var i = 0; i < mcq.choices.length; i++) ...[
-          _Choice(
+          McqChoice(
             letter: i < _letters.length ? _letters[i] : '${i + 1}',
             text: mcq.choices[i],
             state: answer == null
-                ? (pending == i ? _ChoiceState.pending : _ChoiceState.idle)
+                ? (pending == i ? McqChoiceState.pending : McqChoiceState.idle)
                 : i == answer.$2.correctIndex
-                ? _ChoiceState.correct
+                ? McqChoiceState.correct
                 : i == answer.$1
-                ? _ChoiceState.wrong
-                : _ChoiceState.dim,
+                ? McqChoiceState.wrong
+                : McqChoiceState.dim,
             removed: removed.contains(i),
             onTap: answer == null && pending == null && !removed.contains(i)
                 ? () => onChoose(i)
@@ -491,120 +491,6 @@ class _Question extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-enum _ChoiceState { idle, pending, correct, wrong, dim }
-
-class _Choice extends StatelessWidget {
-  const _Choice({
-    required this.letter,
-    required this.text,
-    required this.state,
-    required this.removed,
-    required this.onTap,
-  });
-
-  final String letter;
-  final String text;
-  final _ChoiceState state;
-  final bool removed;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final (Color border, Color bg, Color letterBg) = switch (state) {
-      _ChoiceState.correct => (
-        NlColors.correct,
-        NlColors.correctSoft,
-        NlColors.correct,
-      ),
-      _ChoiceState.wrong => (
-        NlColors.wrong,
-        NlColors.wrongSoft,
-        NlColors.wrong,
-      ),
-      _ChoiceState.pending => (NlColors.ink, NlColors.sheet, NlColors.ink),
-      _ => (NlColors.rule, NlColors.sheet, NlColors.paper),
-    };
-    final strong =
-        state == _ChoiceState.correct ||
-        state == _ChoiceState.wrong ||
-        state == _ChoiceState.pending;
-    return Opacity(
-      opacity: removed ? 0.35 : (state == _ChoiceState.dim ? 0.6 : 1),
-      child: Directionality(
-        textDirection: TextDirection.ltr,
-        child: Material(
-          color: bg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NlRadius.md),
-            side: BorderSide(color: border, width: strong ? 2 : 1),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(NlRadius.md),
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 56),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NlSpace.md,
-                  vertical: NlSpace.sm,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: letterBg,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        letter,
-                        style: NlText.caption.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: strong ? Colors.white : NlColors.ink2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: NlSpace.md),
-                    Expanded(
-                      child: Text(
-                        text,
-                        style: NlText.body.copyWith(
-                          decoration: removed
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
-                    ),
-                    if (state == _ChoiceState.pending)
-                      const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    if (state == _ChoiceState.correct)
-                      const Icon(
-                        LucideIcons.circleCheck,
-                        color: NlColors.correct,
-                        size: 20,
-                      ),
-                    if (state == _ChoiceState.wrong)
-                      const Icon(
-                        LucideIcons.circleX,
-                        color: NlColors.wrong,
-                        size: 20,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

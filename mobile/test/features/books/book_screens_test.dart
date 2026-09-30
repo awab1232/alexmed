@@ -98,6 +98,10 @@ class FakeBookRepository implements BookRepository {
       calls.add('retryExtraction');
 
   @override
+  Future<void> removeFromLibrary(String bookId) async =>
+      calls.add('removeShared:$bookId');
+
+  @override
   Future<void> retryPageText(String pageId) async =>
       calls.add('retryPage:$pageId');
 
@@ -307,6 +311,7 @@ void main() {
       CoverageDetail? coverageDetail,
       List<BookPage> pages = const [],
       ExamFocusTile? examFocus,
+      FakeLibraryRepository? library,
     }) async {
       final books = FakeBookRepository(detail)
         ..coverageReport = coverage
@@ -317,10 +322,49 @@ void main() {
         tester,
         const BookScreen(bookId: 'b1', pollInterval: Duration(seconds: 1)),
         books: books,
+        library: library,
       );
       await tester.pump();
       return books;
     }
+
+    testWidgets('owner moves the book to another folder', (tester) async {
+      final library = FakeLibraryRepository()
+        ..folders = [
+          const Subject(id: 's1', name: 'أدوية', type: 'medical'),
+          const Subject(id: 's2', name: 'فسيولوجيا', type: 'medical'),
+        ];
+      await open(
+        tester,
+        book('complete', const ['complete']),
+        library: library,
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.byTooltip('نقل إلى مجلد'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.textContaining('فسيولوجيا').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(library.calls, contains('moveBook:b1:s2'));
+    });
+
+    testWidgets('shared book: remove from my library after confirming', (
+      tester,
+    ) async {
+      final books = await open(
+        tester,
+        book('complete', const ['complete'], role: 'shared'),
+      );
+      expect(find.byTooltip('نقل إلى مجلد'), findsNothing);
+      await tester.tap(find.byTooltip('إزالة من مكتبتي'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.widgetWithText(NlButton, 'إزالة من مكتبتي'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(books.calls, contains('removeShared:b1'));
+    });
 
     testWidgets('reading pages: stages shown, polling continues', (
       tester,

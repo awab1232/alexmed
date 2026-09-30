@@ -1161,5 +1161,146 @@
         "type": "String"
       }
     }
+  },
+  "reviewTitle": "المراجعة اليومية",
+  "reviewEmpty": "ممتاز، ما في بطاقات مستحقة اليوم",
+  "reviewEmptyHint": "ارجع بعدين، أو ارفع كتابًا أو ملفًا جديدًا.",
+  "reviewLeft": "باقي لك {count} بطاقة",
+  "@reviewLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRemaining": "{count} متبقية",
+  "@reviewRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewMastered": "{count} أتقنتها",
+  "@reviewMastered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewViewInBook": "عرض في الكتاب",
+  "reviewShowAnswer": "اظهر الإجابة",
+  "reviewRelatedTerm": "المصطلح المرتبط",
+  "reviewExplain": "اشرحها ببساطة",
+  "reviewSimpler": "بشكل أبسط",
+  "statsIntro": "تقدمك بالأرقام — نظرة سريعة على مراجعتك ودقّتك.",
+  "statsReviewed": "بطاقات تمت مراجعتها",
+  "statsReviewedHint": "إجمالي المراجعات",
+  "statsAccuracy": "نسبة الإجابات الصحيحة",
+  "statsAccuracyHint": "من الأسئلة اللي جاوبت عليها",
+  "statsStreak": "سلسلة الأيام",
+  "statsStreakHint": "يوم متواصل",
+  "statsHours": "ساعات الدراسة",
+  "statsHoursHint": "ساعة تقريبًا",
+  "weakTitle": "نقاط الضعف",
+  "weakRowHint": "الأسئلة اللي غلطت فيها",
+  "weakIntro": "أسئلة آخر إجابة لك عليها كانت غلط — جاوب صح عشان تختفي من القائمة.",
+  "weakChapters": "أضعف الفصول",
+  "weakEmpty": "ما في نقاط ضعف حاليًا",
+  "weakEmptyHint": "لسه ما جاوبت غلط على أي سؤال، أو جاوبت صح على كل اللي غلطته.",
+  "todayTitle": "خطة اليوم",
+  "todayRowHint": "المستحق، أقرب امتحان، الأسبوع القادم",
+  "todayIntro": "ماذا ستدرس اليوم؟ نظرة سريعة على كل موادك في مكان واحد.",
+  "todayDue": "المستحق اليوم",
+  "todayDueCount": "{count} بطاقة بانتظار مراجعتك من ملفات الأسئلة وكتبي معًا.",
+  "@todayDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayStartReview": "ابدأ المراجعة",
+  "todayNothingDue": "لا توجد بطاقات مستحقة الآن.",
+  "todayExam": "موعد الاختبار القادم",
+  "todayExamLine": "{name} — {date} (بعد {days} يوم)",
+  "@todayExamLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "todayContinue": "تابع القراءة",
+  "todayNoBook": "ارفع كتابك الأول لتبدأ.",
+  "todayOpenBook": "افتح الكتاب",
+  "todayForecast": "الأسبوع القادم (كتبي)",
+  "todayNoForecast": "لا توجد مراجعات مجدولة قريبًا.",
+  "todayFolders": "موادك",
+  "todayFolderBooks": "{count} كتاب",
+  "@todayFolderBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayFolderExam": "امتحان {date}",
+  "@todayFolderExam": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bookMoveFolder": "نقل إلى مجلد",
+  "bookRemoveShared": "إزالة من مكتبتي",
+  "bookRemoveSharedBody": "إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد.",
+  "studyKnowledgeLine": "🧠 المعرفة: {tool} تغطي {covered}/{total} حقيقة",
+  "@studyKnowledgeLine": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      },
+      "covered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyRebuildCards": "✨ أعد بناء البطاقات من قاعدة المعرفة",
+  "studyRebuildMcqs": "✨ أعد بناء الأسئلة من قاعدة المعرفة",
+  "studyRebuildTitle": "إعادة البناء",
+  "studyRebuildCardsConfirm": "سيتم استبدال البطاقات الحالية ببطاقات مبنية من قاعدة المعرفة (كل حقائق الملف)، وسيضيع تقدّم مراجعة البطاقات القديمة. متابعة؟",
+  "studyRebuildMcqsConfirm": "سيتم استبدال الأسئلة الحالية بأسئلة تطبيقية مبنية من قاعدة المعرفة (كل حقائق الملف). متابعة؟",
+  "studyRebuildNotReady": "قاعدة المعرفة غير جاهزة بعد — جرّب لاحقًا.",
+  "studyMatrixTitle": "🧭 خريطة التغطية · {covered}/{total}",
+  "@studyMatrixTitle": {
+    "placeholders": {
+      "covered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyMatrixHint": "كل حقيقة من Exam Focus ← البطاقات 🃏 والأسئلة ❓ المبنية منها ← صفحاتها.",
+  "studyMatrixPages": "ص {pages}",
+  "@studyMatrixPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
   }
 }

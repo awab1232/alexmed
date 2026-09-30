@@ -30,6 +30,8 @@ abstract final class Routes {
   static String bookRead(String id) => '/books/$id/read';
   static String deck(String id) => '/decks/$id';
   static const review = '/review';
+  static const weakPoints = '/weak-points';
+  static const today = '/today';
   static const questionFiles = '/question-files';
   static const uploadBook = '/upload/book';
   static String uploadBookIn(String subjectId) =>

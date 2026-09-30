@@ -259,22 +259,42 @@ Finding for the owner (backend, not changed): `books.get` returns the whole `pag
 ## Phase 7 — Study features
 **Objective:** web parity for studying a book. **Depends on:** P5 (P6 for new books).
 
-- [~] 7.1 Book overview built with 6.6 (`book_screen.dart`): title + pages / parts + state, Exam Focus ink panel (`examFocus.get`: ready count / preparing / not made — shared), study tools (cards n, questions n, summary, mind map, match — open when ready, «قيد التجهيز» / lock otherwise), original file row, processing details. Tools open placeholder routes `/books/:id/{study,mindmap,match,exam-focus}` (P7) and `/read` (P8). **Left:** move folder / share from this page (share = P13), remove a shared book
+- [x] 7.1 Book overview (`book_screen.dart`): title + pages / parts + state, Exam Focus ink panel, study tools (cards n, questions n, summary, mind map, match — open when ready, «قيد التجهيز» / lock otherwise), original file row, processing details (6.6); owner: move to another folder (folders loaded if not cached); shared: «إزالة من مكتبتي» after confirming (`sharing.removeFromLibrary`). Sharing a book out = P13; «عرض» of the original PDF = P8 reader
 - [x] 7.2 Chapter content — **not applicable any more**: the web removed per-chapter pages (app/books/[bookId]/chapters/[chapterId] now redirects to the whole-file tools: `?tool=` → /study, `?page=` → the reader). The app studies the whole file (7.3–7.5) and the reader comes with P8
 - [x] 7.3 Summary (`summary_view.dart`, `/books/:id/study?tool=explanation`) = the web's SummaryMode over every analysed chapter: lead summary, medical note pages when composed (tone blocks, source pages), else part-by-part summaries with page ranges + explanation, High-Yield points; EN ⇄ عربي; owner «تجهيز ملخص منظم» (`generateMedicalNotePages`, job followed via `generationJobs`, reload when settled). Share = the web's clipboard fallback (copy the page link) — no new dependency. Widget-tested (2) + on-device
 - [x] 7.4 Flashcards (`flashcards_view.dart`, `?tool=cards`) = the web's FlashcardsMode over the whole file (`books.getStudyContent`): one card at a time, tap to flip (3D), swipe + السابق / التالي, rate after flipping → `rateCard` (FSRS on the server; a shared book rates the viewer's own progress), time / remaining / learning / mastered, «البطاقة n/N» progress, per-card session state badge, EN ⇄ ع with the right direction, explanation sheet (bilingual Q / A / term with the Arabic term looked up as the web does), source page image (redirect read without following it → the session never reaches storage), end-of-review summary with «راجع البطاقات الصعبة». Cards that arrive while generation runs are appended — the student's place never moves. The web has no chapter filter or search in this mode, so none here. «اسأل Niro» waits for P10. Widget-tested (6) + on-device
 - [x] 7.5 Quiz (`quiz_view.dart`, `?tool=mcqs`) = the web's QuizMode: numbered dots (✓ / ✗), question n of N, source page, score, type label, flagged-question note, lettered choices; the answer is checked and recorded by the server (`submitMcqAttempt`), then green / red + explanation; تلميح removes one wrong choice (down to two, as the web); السابق / تخطي / التالي + swipe; result with «أعد الأسئلة الغلط». Questions are never generated on the device. Widget-tested (4) + on-device
-- [x] 7.4a Study preparation (`study_preparation.dart`) — the web study page's client-side steps, as server calls only: knowledge base (`examFocus.get` → `start` if missing, polled 4 s, `resume` every 45 s; can't be built → continue, the server falls back) → `generateChapterFlashcards` / `generateChapterMcqs` for each analysed chapter still missing them → `generationJobs` every 3 s → reload; failed chapters listed in the coverage line. Never for a shared book. Unit-tested (4). **Not ported yet:** the knowledge coverage matrix sheet and «أعد البناء من قاعدة المعرفة» (owner rebuild) — next in P7
+- [x] 7.4a Study preparation (`study_preparation.dart`) — the web study page's client-side steps as server calls only: knowledge base (`examFocus.get` → `start` if missing, polled 4 s, `resume` every 45 s; can't be built → continue, the server falls back) → `generateChapterFlashcards` / `generateChapterMcqs` per analysed chapter still missing them → `generationJobs` every 3 s → reload; failed chapters in the coverage line; never for a shared book. Knowledge coverage (`books.getKnowledgeCoverage`): «🧠 المعرفة: … تغطي x/y حقيقة» opens the coverage matrix (fact → 🃏 / ❓ → pages); owner «✨ أعد البناء من قاعدة المعرفة» after confirming → `rebuild: true` for the V1 chapters only, once the knowledge base is ready. Tested (unit 4 + widget 2)
 - [x] 7.6 Exam Focus (`features/exam_focus/**`, `/books/:id/exam-focus`) = the web page: the owner's first open starts it (`examFocus.start`), later visits load the saved deck (never regenerates on its own); real progress while processing (stages + each page range, polled 3 s, `resume` after a minute); cards 40 at a time from `examFocus.cards` with the next page fetched 5 cards ahead; category / saved chips and server-side search (300 ms debounce); swipe left = next and السابق / التالي (LTR, as the web); bookmarks optimistic with rollback; regenerate after confirmation (server refusals — busy / cooldown — shown as is); retry failed units; coverage / failed-range notice; shared deck read-only, shared-without-deck shows the server's message. Number highlighting + page labels ported and **proven identical** to the web code by a parity test on its own output (20 cases, `tool/export_exam_focus_fixtures.ts`). Source → page image sheet until the reader (P8). Position kept per book for the app session (restart persistence with P14). Tested (9 widget + 23 unit) + on-device
 - [x] 7.7 Mind map (`features/mindmap/**`, `/books/:id/mindmap`) = the web page, which is **a chapter → branch outline, not a pan/zoom canvas** (the roadmap line was written before checking): totals (chapters, branches, concepts, exam points), each analysed chapter opens into branches (English summary, Arabic explanation, concepts EN/AR, exam points, recall prompts, source pages) + visual anchors; key points when no map yet; owner «بناء الخريطة» (`generateMindMapSections`) with the job followed via `generationJobs` (3 s while queued / running, map reloaded when it finishes, failure reason + retry); shared: read-only note; links to the whole-file summary / cards. Widget-tested (3) + on-device
 - [x] 7.8 Match game (`features/match/**`, `/books/:id/match`) = the web page over the file's own cards + terms (`getStudyContent`): 6 pairs / 12 tiles, tap question then answer, right pair disappears, wrong pair flashes red + 1 s, live timer, best time (app session; restart persistence with P14), new round, «نحتاج بطاقات أولاً» under 3 pairs. The rules are client-side on the web too (lib/match-game.ts, no endpoint) → ported and **proven identical** (same pairs and tile order) by a parity test on the web code's own output with a shared deterministic generator (`tool/export_match_fixtures.ts`, 4 seeds). Tiles in 2 columns on phones (the web uses 3×4). Tested (7) + on-device
-- [ ] 7.9 Decks (list, deck study)
-- [ ] 7.10 Coverage report; stats/weak points/forecast screens
+- [x] 7.9 Decks (list, deck study) — done as مِرآة 9.4 (`mirror_library_screen.dart`, `mirror_deck_screen.dart`); no separate deck screens on the web
+- [x] 7.10 Coverage report on the book screen (6.6); **daily review** `/review` (the web's /review: `books.dueCards` + `decks.dueCards` merged oldest first, reveal, 4 ratings for books / 3 for مِرآة as each scheduler takes, «اشرحها ببساطة» via `books.explainCard` on the assistant quota, a failed rating puts the card back); **إحصائياتي** `/account/stats` (`books.stats`); **نقاط الضعف** `/weak-points` (`books.listWeakPoints`, answer via `submitMcqAttempt`, removed after the right answer is seen); **خطة اليوم** `/today` (due, nearest exam, keep reading, 7-day `books.upcomingForecast`, folders) linked from Home «كتبك» as on the web. Tested (7 widget) + on-device
 
 **Tests:** widget per mode; contract tests for each procedure used; golden tests ar/en.
 **Performance:** 500-card deck, large mind map (measure frame times, memory).
 **UI/UX:** side-by-side with web for each mode (browser verification).
 **DoD:** journey 3 (study part) passes; parity checklist per mode signed off.
+
+**Status: `[x]` implemented, tested and verified on device with in-memory data** — every P7 item done; no P7 placeholder left (the remaining placeholders belong to P8 reader, P10 Niro, P11 doctor, P12 games, P13 sharing). **Live data `[!]`**: every screen talks to the real procedures but was run against in-memory fakes — live checks wait for staging (D1). Commits `eb1a402` (A: flashcards / quiz / summary), `4333425` (B: Exam Focus), `9a0f912` (C + D: mind map / match), group E + gate (this phase's last commit).
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] every mode works (in-memory)  [x] happy path  [x] error path  [x] loading  [x] empty
+             [x] retry  [~] session expiry (shared 401 handling, not re-tested live)  [x] permission (shared: no generation / rebuild / retries)
+UI/UX        [x] design system  [x] RTL  [x] LTR content (EN cards / questions / Exam Focus)  [x] touch targets ≥48dp
+             [x] keyboard (search)  [x] loading/error/empty states  [~] accessibility (semantics on cards, choices, dots, chips; no screen-reader pass yet)
+             [x] no layout issues (7 found + fixed)  [x] native interaction (swipe, flip, haptics, pull to refresh)
+SECURITY     [x] no secrets / no logging in new code  [x] authz server-side (owner-only actions refused by the server too)
+             [x] page images: redirect read, never followed with the session  [x] no protected content persisted
+PERFORMANCE  [x] no unnecessary requests (Exam Focus 40 per page + prefetch 5 ahead; polling only while jobs run)
+             [x] no leaks (timers cancelled on dispose)  [ ] 500-card deck / large map frame times → P16 release build
+             [~] startup: normal debug launch reached the first frame after ~26 s on the loaded emulator (JIT) — measure release in P16
+TESTING      [x] unit  [x] widget  [x] parity with the web code (Exam Focus highlighting 20 cases, match rules 4 seeds)
+             [x] integration on device (5 runs, in-memory)  [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend file changed since c342683 (git diff)  [x] earlier phases' tests all pass (216/216)
+```
+Found & fixed during P7: stats row and quiz footer overflowed on narrow phones; quiz «التالي» sat mid-bar; a footer fix made the bar take the whole screen (caught by a widget test); page ranges reversed in Arabic (“12–1”) — isolated app-wide; Exam Focus badge cut its Arabic label; stats tiles and today panels overflowed; the book screen's folder sheet was empty when the folder list wasn't cached yet. Checked and closed: the device-run “isn't responding” dialog is the test harness (no ANR on a normal launch — logcat).
+Web differences on purpose: none in behaviour; layout adapted to phones (match grid 2 columns, Exam Focus / quiz controls in a bottom bar); «اسأل Niro» / AI chat sheets wait for P10; source-page links open the page image until the P8 reader.
 
 ---
 
@@ -503,7 +523,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 - Shared: `components/PdfViewer.tsx` never frees page canvases and does not cap DPR (web + mobile Safari memory risk) — not in mobile scope; track separately.
 - Web: no password reset (G5).
 - Dev machine: drive C: nearly full (~5 GB free, 2026-09-30) — run the emulator and Gradle one at a time.
-- Backend (G13 proposal): `books.get` sends `pageTexts` while a book is read and `books.listPages` sends every page's text — heavy on mobile data; the web polls it every 3 s.
+- Backend (G13 — separate proposal, owner 2026-09-30: do not implement now; no change to books.get / books.listPages / contracts): `books.get` sends `pageTexts` while a book is read and `books.listPages` sends every page's text — heavy on mobile data; the web polls it every 3 s.
 
 ---
 
@@ -511,17 +531,17 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 
 | Field | Value |
 |---|---|
-| Current Phase | Phase 7 — study features (starting; 7.1 book overview `[~]`). Phase 6 `[~]`: every buildable task done + quality gate passed; background / resumable upload deferred by the owner, G7 deferred (D3), live upload `[!]` (staging). Phases 2, 3, 4-implementation `[x]`; 5 `[~]`; 9.4 مِرآة `[x]` |
-| Current Task | 7.4 flashcards / 7.5 MCQ (`books.getStudyContent`, `dueCards`, `rateCard`, `submitMcqAttempt`) |
-| Last Completed Task | 6.3 duplicate warning, 6.5 study-book upload, 6.6 processing status + retries, 7.1 overview (first cut) |
-| Next Task | Phase 7 in order: 7.4 flashcards → 7.5 MCQ → 7.3 summary → 7.6 Exam Focus → 7.7 mind map → 7.8 match → 7.9 / 7.10. Rule: no push, no production deploy, no merge to `main` without explicit approval |
-| Blocked By | Live auth + upload + contract tests: staging (D1) — G1/G4 not deployed, production not to be used; iOS: D2; Sentry (2.8); G6 / G9 / G13 backend changes need approval; Google / Apple login (D6) |
-| Last Verification | 2026-09-30 — analyze clean, 149/149 unit + widget, book screens on the emulator (8 screens, in-memory data) |
-| Tests | Flutter 149/149 unit + widget; on-device integration runs: session storage, phase-5 screens, مِرآة screens, book screens. Web untouched since `ee1c391` (842 passed then) |
+| Current Phase | Phase 8 — PDF reader, annotations, ask-selection, book chat (next). Phase 7 `[x]` (quality gate passed; live data `[!]` staging). Phase 6 `[~]` (deferred items by the owner + live upload `[!]`). Phases 2, 3, 4-implementation `[x]`; 5 `[~]`; 9.4 مِرآة `[x]` |
+| Current Task | 8.1 signed PDF fetch via `/api/files` + private cache |
+| Last Completed Task | P7 group E (review, stats, weak points, today, book page actions, knowledge matrix + rebuild) and the Phase 7 quality gate |
+| Next Task | P8 in order: 8.1 PDF fetch/cache → 8.2 reader (replaces the «عرض» / source-page placeholders) → 8.3 annotations → 8.4 ask-selection → 8.5 book chat. Rule: no push, no production deploy, no merge to `main` without explicit approval |
+| Blocked By | Live auth / upload / contract tests: staging (D1); iOS: D2; Sentry (2.8); G6 / G9 backend changes need approval; G13 kept as a separate proposal (owner: do not implement now); Google / Apple login (D6) |
+| Last Verification | 2026-09-30 — analyze clean, 216/216 unit + widget, 5 on-device runs of the P7 screens (in-memory data), normal launch without ANR |
+| Tests | Flutter 216/216 (incl. parity tests against the web code for card questions, Exam Focus highlighting, match rules). Web untouched since `ee1c391` (842 passed then) |
 | Build | Android debug APK builds and runs on the API 36 emulator. iOS: not built (no macOS) |
-| Security | Session only in secure storage and only to the API origin; uploads: PDF header + plan size checked first, presigned URL never stored / logged, no session to storage; no secrets in `env/*.json` |
-| Performance | Polling backs off (3 → 15 s) and stops in the background / under another screen; the heavy page list is fetched only on failure. Release-build measurement in P16 |
-| UI/UX | Upload and book screens reviewed on emulator screenshots (RTL, English titles isolated, progress fills from the right) |
+| Security | Session only in secure storage and only to the API origin; storage redirects never followed with the session; uploads checked before sending; no secrets in `env/*.json`; no logging in feature code |
+| Performance | Polling backs off / stops when not visible; Exam Focus paged (40, prefetch 5); debug startup slow on the loaded emulator — release measurement in P16 |
+| UI/UX | All P7 screens reviewed on emulator screenshots (RTL, LTR content, highlighter numbers, bottom-bar actions) |
 | Android | Runs on API 36 emulator. Low-end device check pending |
 | iOS | Not built |
 | Last Updated | 2026-09-30 |
@@ -606,3 +626,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
   clean, 207/207; on-device run of both. The recurring “isn’t responding” dialog
   in device runs is the test harness (focus event at launch while the debug VM
   waits for the runner — logcat); to confirm with a normal launch at the gate.
+- **2026-09-30** — P7 group E: daily review (books + مِرآة due cards), stats, weak
+  points, today's plan, book page move-folder / remove-shared, knowledge matrix +
+  rebuild. **Phase 7 closed** with the quality gate (see Phase 7). G13 stays a
+  separate proposal (owner 2026-09-30: not now). Next: Phase 8.

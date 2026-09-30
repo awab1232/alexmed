@@ -112,6 +112,14 @@ class BookRepository {
     parse: (_) {},
   );
 
+  /// A shared book leaves the viewer's library; the owner keeps the
+  /// original and can share it again.
+  Future<void> removeFromLibrary(String bookId) => trpc.mutation(
+    'sharing.removeFromLibrary',
+    input: {'bookId': bookId},
+    parse: (_) {},
+  );
+
   Future<void> retryPageText(String pageId) => trpc.mutation(
     'books.retryPageText',
     input: {'pageId': pageId},

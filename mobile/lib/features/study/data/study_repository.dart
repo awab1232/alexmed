@@ -40,13 +40,25 @@ class StudyRepository {
   );
 
   /// Queues generation for one analysed chapter (owner only).
-  Future<void> generate(StudyTool tool, String chapterId) => trpc.mutation(
+  /// [rebuild] replaces page-text (V1) output with knowledge-base output.
+  Future<void> generate(
+    StudyTool tool,
+    String chapterId, {
+    bool rebuild = false,
+  }) => trpc.mutation(
     tool == StudyTool.cards
         ? 'books.generateChapterFlashcards'
         : 'books.generateChapterMcqs',
-    input: {'chapterId': chapterId},
+    input: {'chapterId': chapterId, if (rebuild) 'rebuild': true},
     parse: (_) {},
   );
+
+  Future<KnowledgeCoverage> knowledge(String bookId, StudyTool tool) =>
+      trpc.query(
+        'books.getKnowledgeCoverage',
+        input: {'bookId': bookId},
+        parse: (data) => KnowledgeCoverage.fromJson(asMap(data), tool),
+      );
 
   /// "تجهيز ملخص منظم" for one chapter (owner only; a background job).
   Future<void> composeNotes(String chapterId) => trpc.mutation(

@@ -92,30 +92,49 @@ class StudyPreparation {
 
     await _waitForKnowledge();
     if (_disposed) return;
+    await _queue([for (final c in missing) (chapter: c, rebuild: false)]);
+  }
 
+  /// «أعد البناء من قاعدة المعرفة» (owner, after confirming): replaces the
+  /// page-text cards / questions of [chapters] with ones built from the
+  /// knowledge base — only once that base is ready, as on the web. Returns
+  /// false when it is not ready (nothing is queued).
+  Future<bool> rebuild(List<StudyChapter> chapters) async {
+    if (state.value.busy || chapters.isEmpty) return false;
+    final ready = await _waitForKnowledge();
+    if (_disposed || !ready) {
+      _set(const PrepState());
+      return false;
+    }
+    await _queue([for (final c in chapters) (chapter: c, rebuild: true)]);
+    return true;
+  }
+
+  Future<void> _queue(List<({StudyChapter chapter, bool rebuild})> jobs) async {
     final errors = <String>[];
     final queued = <StudyChapter>[];
-    _set(PrepState(phase: PrepPhase.generating, total: missing.length));
-    for (final chapter in missing) {
+    _set(PrepState(phase: PrepPhase.generating, total: jobs.length));
+    for (final job in jobs) {
       if (_disposed) return;
       try {
-        await repo.generate(tool, chapter.id);
-        queued.add(chapter);
+        await repo.generate(tool, job.chapter.id, rebuild: job.rebuild);
+        queued.add(job.chapter);
       } catch (_) {
-        errors.add(chapter.title);
+        errors.add(job.chapter.title);
       }
     }
     await _followJobs(queued, errors);
   }
 
-  Future<void> _waitForKnowledge() async {
+  /// Returns whether the knowledge base ended up ready (complete / partial).
+  Future<bool> _waitForKnowledge() async {
     try {
       var deck = await repo.examFocus(bookId);
       if (deck == null) {
         try {
           await repo.startExamFocus(bookId);
         } catch (_) {
-          return; // can't be built: generate without it (server fallback)
+          return false; // can't be built: generate without it (server fallback)
         }
         deck = await repo.examFocus(bookId);
       }
@@ -136,8 +155,10 @@ class StudyPreparation {
         }
         deck = await repo.examFocus(bookId);
       }
+      return deck?.ready ?? false;
     } catch (_) {
       // An unreadable deck counts as settled on the web too.
+      return false;
     }
   }
 

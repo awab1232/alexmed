@@ -3043,6 +3043,342 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'🏆 أفضل وقت: {seconds} ثانية'**
   String matchBestLine(String seconds);
+
+  /// No description provided for @reviewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المراجعة اليومية'**
+  String get reviewTitle;
+
+  /// No description provided for @reviewEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممتاز، ما في بطاقات مستحقة اليوم'**
+  String get reviewEmpty;
+
+  /// No description provided for @reviewEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع بعدين، أو ارفع كتابًا أو ملفًا جديدًا.'**
+  String get reviewEmptyHint;
+
+  /// No description provided for @reviewLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي لك {count} بطاقة'**
+  String reviewLeft(int count);
+
+  /// No description provided for @reviewRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} متبقية'**
+  String reviewRemaining(int count);
+
+  /// No description provided for @reviewMastered.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} أتقنتها'**
+  String reviewMastered(int count);
+
+  /// No description provided for @reviewViewInBook.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض في الكتاب'**
+  String get reviewViewInBook;
+
+  /// No description provided for @reviewShowAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'اظهر الإجابة'**
+  String get reviewShowAnswer;
+
+  /// No description provided for @reviewRelatedTerm.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصطلح المرتبط'**
+  String get reviewRelatedTerm;
+
+  /// No description provided for @reviewExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشرحها ببساطة'**
+  String get reviewExplain;
+
+  /// No description provided for @reviewSimpler.
+  ///
+  /// In ar, this message translates to:
+  /// **'بشكل أبسط'**
+  String get reviewSimpler;
+
+  /// No description provided for @statsIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدمك بالأرقام — نظرة سريعة على مراجعتك ودقّتك.'**
+  String get statsIntro;
+
+  /// No description provided for @statsReviewed.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقات تمت مراجعتها'**
+  String get statsReviewed;
+
+  /// No description provided for @statsReviewedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المراجعات'**
+  String get statsReviewedHint;
+
+  /// No description provided for @statsAccuracy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الإجابات الصحيحة'**
+  String get statsAccuracy;
+
+  /// No description provided for @statsAccuracyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'من الأسئلة اللي جاوبت عليها'**
+  String get statsAccuracyHint;
+
+  /// No description provided for @statsStreak.
+  ///
+  /// In ar, this message translates to:
+  /// **'سلسلة الأيام'**
+  String get statsStreak;
+
+  /// No description provided for @statsStreakHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم متواصل'**
+  String get statsStreakHint;
+
+  /// No description provided for @statsHours.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعات الدراسة'**
+  String get statsHours;
+
+  /// No description provided for @statsHoursHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعة تقريبًا'**
+  String get statsHoursHint;
+
+  /// No description provided for @weakTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاط الضعف'**
+  String get weakTitle;
+
+  /// No description provided for @weakRowHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسئلة اللي غلطت فيها'**
+  String get weakRowHint;
+
+  /// No description provided for @weakIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة آخر إجابة لك عليها كانت غلط — جاوب صح عشان تختفي من القائمة.'**
+  String get weakIntro;
+
+  /// No description provided for @weakChapters.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضعف الفصول'**
+  String get weakChapters;
+
+  /// No description provided for @weakEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما في نقاط ضعف حاليًا'**
+  String get weakEmpty;
+
+  /// No description provided for @weakEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما جاوبت غلط على أي سؤال، أو جاوبت صح على كل اللي غلطته.'**
+  String get weakEmptyHint;
+
+  /// No description provided for @todayTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة اليوم'**
+  String get todayTitle;
+
+  /// No description provided for @todayRowHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستحق، أقرب امتحان، الأسبوع القادم'**
+  String get todayRowHint;
+
+  /// No description provided for @todayIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماذا ستدرس اليوم؟ نظرة سريعة على كل موادك في مكان واحد.'**
+  String get todayIntro;
+
+  /// No description provided for @todayDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستحق اليوم'**
+  String get todayDue;
+
+  /// No description provided for @todayDueCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} بطاقة بانتظار مراجعتك من ملفات الأسئلة وكتبي معًا.'**
+  String todayDueCount(int count);
+
+  /// No description provided for @todayStartReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ المراجعة'**
+  String get todayStartReview;
+
+  /// No description provided for @todayNothingDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بطاقات مستحقة الآن.'**
+  String get todayNothingDue;
+
+  /// No description provided for @todayExam.
+  ///
+  /// In ar, this message translates to:
+  /// **'موعد الاختبار القادم'**
+  String get todayExam;
+
+  /// No description provided for @todayExamLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — {date} (بعد {days} يوم)'**
+  String todayExamLine(String name, String date, int days);
+
+  /// No description provided for @todayContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'تابع القراءة'**
+  String get todayContinue;
+
+  /// No description provided for @todayNoBook.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارفع كتابك الأول لتبدأ.'**
+  String get todayNoBook;
+
+  /// No description provided for @todayOpenBook.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الكتاب'**
+  String get todayOpenBook;
+
+  /// No description provided for @todayForecast.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع القادم (كتبي)'**
+  String get todayForecast;
+
+  /// No description provided for @todayNoForecast.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مراجعات مجدولة قريبًا.'**
+  String get todayNoForecast;
+
+  /// No description provided for @todayFolders.
+  ///
+  /// In ar, this message translates to:
+  /// **'موادك'**
+  String get todayFolders;
+
+  /// No description provided for @todayFolderBooks.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} كتاب'**
+  String todayFolderBooks(int count);
+
+  /// No description provided for @todayFolderExam.
+  ///
+  /// In ar, this message translates to:
+  /// **'امتحان {date}'**
+  String todayFolderExam(String date);
+
+  /// No description provided for @bookMoveFolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقل إلى مجلد'**
+  String get bookMoveFolder;
+
+  /// No description provided for @bookRemoveShared.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة من مكتبتي'**
+  String get bookRemoveShared;
+
+  /// No description provided for @bookRemoveSharedBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد.'**
+  String get bookRemoveSharedBody;
+
+  /// No description provided for @studyKnowledgeLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧠 المعرفة: {tool} تغطي {covered}/{total} حقيقة'**
+  String studyKnowledgeLine(String tool, int covered, int total);
+
+  /// No description provided for @studyRebuildCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'✨ أعد بناء البطاقات من قاعدة المعرفة'**
+  String get studyRebuildCards;
+
+  /// No description provided for @studyRebuildMcqs.
+  ///
+  /// In ar, this message translates to:
+  /// **'✨ أعد بناء الأسئلة من قاعدة المعرفة'**
+  String get studyRebuildMcqs;
+
+  /// No description provided for @studyRebuildTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة البناء'**
+  String get studyRebuildTitle;
+
+  /// No description provided for @studyRebuildCardsConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم استبدال البطاقات الحالية ببطاقات مبنية من قاعدة المعرفة (كل حقائق الملف)، وسيضيع تقدّم مراجعة البطاقات القديمة. متابعة؟'**
+  String get studyRebuildCardsConfirm;
+
+  /// No description provided for @studyRebuildMcqsConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم استبدال الأسئلة الحالية بأسئلة تطبيقية مبنية من قاعدة المعرفة (كل حقائق الملف). متابعة؟'**
+  String get studyRebuildMcqsConfirm;
+
+  /// No description provided for @studyRebuildNotReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'قاعدة المعرفة غير جاهزة بعد — جرّب لاحقًا.'**
+  String get studyRebuildNotReady;
+
+  /// No description provided for @studyMatrixTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'🧭 خريطة التغطية · {covered}/{total}'**
+  String studyMatrixTitle(int covered, int total);
+
+  /// No description provided for @studyMatrixHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل حقيقة من Exam Focus ← البطاقات 🃏 والأسئلة ❓ المبنية منها ← صفحاتها.'**
+  String get studyMatrixHint;
+
+  /// No description provided for @studyMatrixPages.
+  ///
+  /// In ar, this message translates to:
+  /// **'ص {pages}'**
+  String studyMatrixPages(String pages);
 }
 
 class _AppLocalizationsDelegate

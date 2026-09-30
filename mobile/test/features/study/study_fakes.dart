@@ -150,9 +150,22 @@ class FakeStudyRepository implements StudyRepository {
     );
   }
 
+  /// Scripted getKnowledgeCoverage answer.
+  Map<String, Object?> knowledgeJson = const {'rows': [], 'chapters': []};
+
   @override
-  Future<void> generate(StudyTool tool, String chapterId) async {
-    calls.add('generate:${tool.name}:$chapterId');
+  Future<KnowledgeCoverage> knowledge(String bookId, StudyTool tool) async {
+    calls.add('knowledge');
+    return KnowledgeCoverage.fromJson(knowledgeJson, tool);
+  }
+
+  @override
+  Future<void> generate(
+    StudyTool tool,
+    String chapterId, {
+    bool rebuild = false,
+  }) async {
+    calls.add('generate:${tool.name}:$chapterId${rebuild ? ':rebuild' : ''}');
     if (failGenerateFor.contains(chapterId)) throw Exception('refused');
   }
 

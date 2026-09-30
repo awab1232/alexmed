@@ -1716,4 +1716,200 @@ class AppLocalizationsAr extends AppLocalizations {
   String matchBestLine(String seconds) {
     return '🏆 أفضل وقت: $seconds ثانية';
   }
+
+  @override
+  String get reviewTitle => 'المراجعة اليومية';
+
+  @override
+  String get reviewEmpty => 'ممتاز، ما في بطاقات مستحقة اليوم';
+
+  @override
+  String get reviewEmptyHint => 'ارجع بعدين، أو ارفع كتابًا أو ملفًا جديدًا.';
+
+  @override
+  String reviewLeft(int count) {
+    return 'باقي لك $count بطاقة';
+  }
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count متبقية';
+  }
+
+  @override
+  String reviewMastered(int count) {
+    return '$count أتقنتها';
+  }
+
+  @override
+  String get reviewViewInBook => 'عرض في الكتاب';
+
+  @override
+  String get reviewShowAnswer => 'اظهر الإجابة';
+
+  @override
+  String get reviewRelatedTerm => 'المصطلح المرتبط';
+
+  @override
+  String get reviewExplain => 'اشرحها ببساطة';
+
+  @override
+  String get reviewSimpler => 'بشكل أبسط';
+
+  @override
+  String get statsIntro => 'تقدمك بالأرقام — نظرة سريعة على مراجعتك ودقّتك.';
+
+  @override
+  String get statsReviewed => 'بطاقات تمت مراجعتها';
+
+  @override
+  String get statsReviewedHint => 'إجمالي المراجعات';
+
+  @override
+  String get statsAccuracy => 'نسبة الإجابات الصحيحة';
+
+  @override
+  String get statsAccuracyHint => 'من الأسئلة اللي جاوبت عليها';
+
+  @override
+  String get statsStreak => 'سلسلة الأيام';
+
+  @override
+  String get statsStreakHint => 'يوم متواصل';
+
+  @override
+  String get statsHours => 'ساعات الدراسة';
+
+  @override
+  String get statsHoursHint => 'ساعة تقريبًا';
+
+  @override
+  String get weakTitle => 'نقاط الضعف';
+
+  @override
+  String get weakRowHint => 'الأسئلة اللي غلطت فيها';
+
+  @override
+  String get weakIntro =>
+      'أسئلة آخر إجابة لك عليها كانت غلط — جاوب صح عشان تختفي من القائمة.';
+
+  @override
+  String get weakChapters => 'أضعف الفصول';
+
+  @override
+  String get weakEmpty => 'ما في نقاط ضعف حاليًا';
+
+  @override
+  String get weakEmptyHint =>
+      'لسه ما جاوبت غلط على أي سؤال، أو جاوبت صح على كل اللي غلطته.';
+
+  @override
+  String get todayTitle => 'خطة اليوم';
+
+  @override
+  String get todayRowHint => 'المستحق، أقرب امتحان، الأسبوع القادم';
+
+  @override
+  String get todayIntro =>
+      'ماذا ستدرس اليوم؟ نظرة سريعة على كل موادك في مكان واحد.';
+
+  @override
+  String get todayDue => 'المستحق اليوم';
+
+  @override
+  String todayDueCount(int count) {
+    return '$count بطاقة بانتظار مراجعتك من ملفات الأسئلة وكتبي معًا.';
+  }
+
+  @override
+  String get todayStartReview => 'ابدأ المراجعة';
+
+  @override
+  String get todayNothingDue => 'لا توجد بطاقات مستحقة الآن.';
+
+  @override
+  String get todayExam => 'موعد الاختبار القادم';
+
+  @override
+  String todayExamLine(String name, String date, int days) {
+    return '$name — $date (بعد $days يوم)';
+  }
+
+  @override
+  String get todayContinue => 'تابع القراءة';
+
+  @override
+  String get todayNoBook => 'ارفع كتابك الأول لتبدأ.';
+
+  @override
+  String get todayOpenBook => 'افتح الكتاب';
+
+  @override
+  String get todayForecast => 'الأسبوع القادم (كتبي)';
+
+  @override
+  String get todayNoForecast => 'لا توجد مراجعات مجدولة قريبًا.';
+
+  @override
+  String get todayFolders => 'موادك';
+
+  @override
+  String todayFolderBooks(int count) {
+    return '$count كتاب';
+  }
+
+  @override
+  String todayFolderExam(String date) {
+    return 'امتحان $date';
+  }
+
+  @override
+  String get bookMoveFolder => 'نقل إلى مجلد';
+
+  @override
+  String get bookRemoveShared => 'إزالة من مكتبتي';
+
+  @override
+  String get bookRemoveSharedBody =>
+      'إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد.';
+
+  @override
+  String studyKnowledgeLine(String tool, int covered, int total) {
+    return '🧠 المعرفة: $tool تغطي $covered/$total حقيقة';
+  }
+
+  @override
+  String get studyRebuildCards => '✨ أعد بناء البطاقات من قاعدة المعرفة';
+
+  @override
+  String get studyRebuildMcqs => '✨ أعد بناء الأسئلة من قاعدة المعرفة';
+
+  @override
+  String get studyRebuildTitle => 'إعادة البناء';
+
+  @override
+  String get studyRebuildCardsConfirm =>
+      'سيتم استبدال البطاقات الحالية ببطاقات مبنية من قاعدة المعرفة (كل حقائق الملف)، وسيضيع تقدّم مراجعة البطاقات القديمة. متابعة؟';
+
+  @override
+  String get studyRebuildMcqsConfirm =>
+      'سيتم استبدال الأسئلة الحالية بأسئلة تطبيقية مبنية من قاعدة المعرفة (كل حقائق الملف). متابعة؟';
+
+  @override
+  String get studyRebuildNotReady =>
+      'قاعدة المعرفة غير جاهزة بعد — جرّب لاحقًا.';
+
+  @override
+  String studyMatrixTitle(int covered, int total) {
+    return '🧭 خريطة التغطية · $covered/$total';
+  }
+
+  @override
+  String get studyMatrixHint =>
+      'كل حقيقة من Exam Focus ← البطاقات 🃏 والأسئلة ❓ المبنية منها ← صفحاتها.';
+
+  @override
+  String studyMatrixPages(String pages) {
+    return 'ص $pages';
+  }
 }

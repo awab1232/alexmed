@@ -1737,4 +1737,203 @@ class AppLocalizationsEn extends AppLocalizations {
   String matchBestLine(String seconds) {
     return '🏆 Best: $seconds s';
   }
+
+  @override
+  String get reviewTitle => 'Daily review';
+
+  @override
+  String get reviewEmpty => 'Great — nothing due today';
+
+  @override
+  String get reviewEmptyHint =>
+      'Come back later, or upload a new book or file.';
+
+  @override
+  String reviewLeft(int count) {
+    return '$count cards to go';
+  }
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count left';
+  }
+
+  @override
+  String reviewMastered(int count) {
+    return '$count mastered';
+  }
+
+  @override
+  String get reviewViewInBook => 'View in book';
+
+  @override
+  String get reviewShowAnswer => 'Show answer';
+
+  @override
+  String get reviewRelatedTerm => 'Related term';
+
+  @override
+  String get reviewExplain => 'Explain simply';
+
+  @override
+  String get reviewSimpler => 'In simpler words';
+
+  @override
+  String get statsIntro =>
+      'Your progress in numbers — your reviews and accuracy at a glance.';
+
+  @override
+  String get statsReviewed => 'Cards reviewed';
+
+  @override
+  String get statsReviewedHint => 'All reviews';
+
+  @override
+  String get statsAccuracy => 'Correct answers';
+
+  @override
+  String get statsAccuracyHint => 'Of the questions you answered';
+
+  @override
+  String get statsStreak => 'Day streak';
+
+  @override
+  String get statsStreakHint => 'Days in a row';
+
+  @override
+  String get statsHours => 'Study hours';
+
+  @override
+  String get statsHoursHint => 'Approximately';
+
+  @override
+  String get weakTitle => 'Weak points';
+
+  @override
+  String get weakRowHint => 'Questions you got wrong';
+
+  @override
+  String get weakIntro =>
+      'Questions whose last answer was wrong — answer correctly to clear them.';
+
+  @override
+  String get weakChapters => 'Weakest chapters';
+
+  @override
+  String get weakEmpty => 'No weak points right now';
+
+  @override
+  String get weakEmptyHint =>
+      'You haven\'t missed a question yet, or you\'ve fixed every one you missed.';
+
+  @override
+  String get todayTitle => 'Today\'s plan';
+
+  @override
+  String get todayRowHint => 'Due cards, next exam, the week ahead';
+
+  @override
+  String get todayIntro =>
+      'What will you study today? All your folders at a glance.';
+
+  @override
+  String get todayDue => 'Due today';
+
+  @override
+  String todayDueCount(int count) {
+    return '$count cards are waiting, from question files and books together.';
+  }
+
+  @override
+  String get todayStartReview => 'Start review';
+
+  @override
+  String get todayNothingDue => 'Nothing is due right now.';
+
+  @override
+  String get todayExam => 'Next exam';
+
+  @override
+  String todayExamLine(String name, String date, int days) {
+    return '$name — $date (in $days days)';
+  }
+
+  @override
+  String get todayContinue => 'Keep reading';
+
+  @override
+  String get todayNoBook => 'Upload your first book to start.';
+
+  @override
+  String get todayOpenBook => 'Open the book';
+
+  @override
+  String get todayForecast => 'The week ahead (books)';
+
+  @override
+  String get todayNoForecast => 'No reviews scheduled soon.';
+
+  @override
+  String get todayFolders => 'Your folders';
+
+  @override
+  String todayFolderBooks(int count) {
+    return '$count books';
+  }
+
+  @override
+  String todayFolderExam(String date) {
+    return 'exam $date';
+  }
+
+  @override
+  String get bookMoveFolder => 'Move to folder';
+
+  @override
+  String get bookRemoveShared => 'Remove from my library';
+
+  @override
+  String get bookRemoveSharedBody =>
+      'Remove this file from your library? The owner keeps the original and can share it with you again.';
+
+  @override
+  String studyKnowledgeLine(String tool, int covered, int total) {
+    return '🧠 Knowledge: $tool cover $covered/$total facts';
+  }
+
+  @override
+  String get studyRebuildCards => '✨ Rebuild the cards from the knowledge base';
+
+  @override
+  String get studyRebuildMcqs =>
+      '✨ Rebuild the questions from the knowledge base';
+
+  @override
+  String get studyRebuildTitle => 'Rebuild';
+
+  @override
+  String get studyRebuildCardsConfirm =>
+      'The current cards will be replaced by cards built from the knowledge base (every fact in the file), and review progress on the old cards will be lost. Continue?';
+
+  @override
+  String get studyRebuildMcqsConfirm =>
+      'The current questions will be replaced by applied questions built from the knowledge base (every fact in the file). Continue?';
+
+  @override
+  String get studyRebuildNotReady =>
+      'The knowledge base isn\'t ready yet — try later.';
+
+  @override
+  String studyMatrixTitle(int covered, int total) {
+    return '🧭 Coverage map · $covered/$total';
+  }
+
+  @override
+  String get studyMatrixHint =>
+      'Each Exam Focus fact → the cards 🃏 and questions ❓ built from it → its pages.';
+
+  @override
+  String studyMatrixPages(String pages) {
+    return 'pp. $pages';
+  }
 }

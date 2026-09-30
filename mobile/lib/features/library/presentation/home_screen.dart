@@ -268,7 +268,15 @@ class _BooksSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHead(title: l10n.yourBooks),
+        SectionHead(
+          title: l10n.yourBooks,
+          action: NlButton(
+            label: l10n.todayTitle,
+            kind: NlButtonKind.ghost,
+            icon: LucideIcons.calendarDays,
+            onPressed: () => context.push(Routes.today),
+          ),
+        ),
         RuledList(
           children: [
             for (final book in books.take(4))

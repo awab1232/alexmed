@@ -9,7 +9,9 @@ import '../../../app/routes.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../library/data/library_models.dart';
 import '../../library/data/library_repository.dart';
+import '../../library/presentation/folder_sheets.dart';
 import '../../library/presentation/library_widgets.dart' show shortDate;
 import '../data/book_models.dart';
 import '../data/book_repository.dart';
@@ -226,6 +228,53 @@ class _BookScreenState extends ConsumerState<BookScreen>
     }
   }
 
+  Future<void> _moveFolder(BookDetail book) async {
+    // Loaded if not yet cached (the book may be opened straight from a link).
+    final folders = await ref
+        .read(subjectsProvider.future)
+        .catchError((Object _) => const <Subject>[]);
+    if (!mounted) return;
+    final choice = await showMoveToFolderSheet(
+      context,
+      folders: folders,
+      currentId: book.subjectId,
+    );
+    if (!choice.picked || choice.subjectId == book.subjectId || !mounted) {
+      return;
+    }
+    try {
+      await ref
+          .read(libraryRepositoryProvider)
+          .moveBook(bookId: book.id, subjectId: choice.subjectId);
+      ref
+        ..invalidate(booksProvider)
+        ..invalidate(subjectsProvider);
+      await _refresh();
+      if (mounted) showNlToast(context, AppLocalizations.of(context).moved);
+    } catch (error) {
+      if (mounted) showNlToast(context, apiErrorText(context, error));
+    }
+  }
+
+  Future<void> _removeShared(BookDetail book) async {
+    final l10n = AppLocalizations.of(context);
+    final ok = await showNlConfirm(
+      context,
+      title: l10n.bookRemoveShared,
+      message: l10n.bookRemoveSharedBody,
+      confirmLabel: l10n.bookRemoveShared,
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    try {
+      await _repo.removeFromLibrary(book.id);
+      refreshLibrary(ref);
+      if (mounted) Navigator.of(context).maybePop();
+    } catch (error) {
+      if (mounted) showNlToast(context, apiErrorText(context, error));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -250,7 +299,22 @@ class _BookScreenState extends ConsumerState<BookScreen>
         (_detail?.complete ?? false);
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          if (book.isOwner)
+            IconButton(
+              tooltip: l10n.bookMoveFolder,
+              icon: const Icon(LucideIcons.folderInput),
+              onPressed: () => _moveFolder(book),
+            )
+          else
+            IconButton(
+              tooltip: l10n.bookRemoveShared,
+              icon: const Icon(LucideIcons.trash2),
+              onPressed: () => _removeShared(book),
+            ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () {
           _quietTicks = 0;

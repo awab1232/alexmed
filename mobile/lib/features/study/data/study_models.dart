@@ -407,6 +407,72 @@ final class StudyContent {
   }
 }
 
+/// One Exam Focus fact and what was built from it (the coverage matrix).
+final class KnowledgeRow {
+  const KnowledgeRow({
+    required this.orderIndex,
+    required this.title,
+    required this.sourcePages,
+    required this.cardCount,
+    required this.questionCount,
+    required this.questionTypes,
+  });
+
+  final int orderIndex;
+  final String title;
+  final List<int> sourcePages;
+  final int cardCount;
+  final int questionCount;
+
+  /// Arabic labels, distinct.
+  final List<String> questionTypes;
+}
+
+/// books.getKnowledgeCoverage — the matrix (fact → cards / questions →
+/// pages) and, per chapter, how many cards / questions still come from the
+/// older page-text generation ("V1") instead of the knowledge base.
+final class KnowledgeCoverage {
+  const KnowledgeCoverage({required this.rows, required this.v1ChapterIds});
+
+  factory KnowledgeCoverage.fromJson(JsonMap json, StudyTool tool) {
+    final key = tool == StudyTool.cards ? 'cards' : 'mcqs';
+    return KnowledgeCoverage(
+      rows: [
+        for (final r in _maps(json['rows']))
+          KnowledgeRow(
+            orderIndex: r.integer('orderIndex'),
+            title: r.strOrNull('title') ?? '',
+            sourcePages: _ints(r['sourcePages']),
+            cardCount: ((r['cardIds'] as List?) ?? const []).length,
+            questionCount: ((r['questionIds'] as List?) ?? const []).length,
+            questionTypes: {
+              for (final t in _strings(r['questionTypes']))
+                questionTypeLabels[t] ?? t,
+            }.where((t) => t.isNotEmpty).toList(),
+          ),
+      ],
+      v1ChapterIds: {
+        for (final c in _maps(json['chapters']))
+          if (c[key] is Map &&
+              asMap(c[key]).integer('v1') > 0 &&
+              asMap(c[key]).integer('knowledge') == 0)
+            c.str('chapterId'),
+      },
+    );
+  }
+
+  final List<KnowledgeRow> rows;
+
+  /// Analysed chapters whose cards / questions are all V1.
+  final Set<String> v1ChapterIds;
+
+  int covered(StudyTool tool) => rows
+      .where(
+        (r) => tool == StudyTool.cards ? r.cardCount > 0 : r.questionCount > 0,
+      )
+      .length;
+}
+
 /// generationJobs row.
 final class GenerationJob {
   const GenerationJob({
