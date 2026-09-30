@@ -6,16 +6,22 @@ import { issueMobileSession } from "@/lib/mobile-session";
 
 // Native app Google sign-in (docs/mobile/MOBILE_ARCHITECTURE_BLUEPRINT.md §9,
 // gap G2): the app sends the Google ID token it got from Google Sign-In; the
-// server verifies it (Google's keys, issuer, audience = the web client,
+// server verifies it (Google's keys, issuer, audience = a web client,
 // authorised party = the app's Android client) and signs in with the same
 // account rules as the web's Google button (lib/mobile-google.ts). Returns
 // the same session as /api/mobile/auth/login. The web's Google OAuth
 // configuration is not touched.
 
-// The app's Android OAuth client (package com.nirolearn.app). A client ID is
-// public; GOOGLE_MOBILE_CLIENT_IDS (comma-separated) can add more (iOS).
+// The app's OAuth clients live in their own Google Cloud project, apart from
+// the site's: the Android client (package com.nirolearn.app) and the web
+// client the app names as serverClientId, which becomes the token's audience.
+// Google's `sub` is the same for an account in every project, so accounts
+// match the ones the web's Google button links. Client IDs are public;
+// GOOGLE_MOBILE_CLIENT_IDS (comma-separated) can add more (iOS).
 const ANDROID_CLIENT_ID =
   "342475897969-e9m19r0t8u47r07nnpslqn0tp5artnmb.apps.googleusercontent.com";
+const APP_WEB_CLIENT_ID =
+  "342475897969-tcogc9hjlfe5nlgqdkhm1opsk126j2ed.apps.googleusercontent.com";
 
 function mobileClientIds(): string[] {
   const extra = (process.env.GOOGLE_MOBILE_CLIENT_IDS ?? "")
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
   let claims;
   try {
     claims = await verifyGoogleIdToken(parsed.data.idToken, {
-      audience: webClientId,
+      audiences: [APP_WEB_CLIENT_ID, webClientId],
       authorizedParties: mobileClientIds(),
     });
   } catch (error) {

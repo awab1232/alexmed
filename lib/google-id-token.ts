@@ -4,9 +4,10 @@ import { createPublicKey, verify, type JsonWebKey } from "node:crypto";
 // (docs/mobile/MOBILE_ARCHITECTURE_BLUEPRINT.md §9, gap G2) — with Node's
 // own crypto against Google's published keys, so no new dependency.
 //
-// On Android the app asks Google for a token meant for our *web* OAuth client
-// (serverClientId), so `aud` is the web client ID the site already uses and
-// `azp` is the Android client that asked for it. Both are checked.
+// On Android the app asks Google for a token meant for a *web* OAuth client
+// (serverClientId) in the same Google Cloud project as its Android client, so
+// `aud` is that web client and `azp` is the Android client that asked for it.
+// Both are checked.
 
 export const GOOGLE_ISSUERS = [
   "accounts.google.com",
@@ -86,8 +87,8 @@ function decodeSegment(segment: string): Record<string, unknown> {
 export async function verifyGoogleIdToken(
   idToken: string,
   options: {
-    /** The web OAuth client ID (the token's audience). */
-    audience: string;
+    /** Web OAuth client IDs the token may be meant for (its audience). */
+    audiences: string[];
     /** OAuth clients allowed to have requested it (the Android client). */
     authorizedParties: string[];
     now?: Date;
@@ -123,12 +124,12 @@ export async function verifyGoogleIdToken(
     throw new GoogleTokenError("wrong issuer");
   }
   const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  if (!aud.includes(options.audience))
+  if (!aud.some(a => options.audiences.includes(String(a))))
     throw new GoogleTokenError("wrong audience");
   const azp = typeof claims.azp === "string" ? claims.azp : null;
   if (
     azp !== null &&
-    azp !== options.audience &&
+    !options.audiences.includes(azp) &&
     !options.authorizedParties.includes(azp)
   ) {
     throw new GoogleTokenError("unknown client");

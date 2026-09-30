@@ -60,7 +60,10 @@ describe("POST /api/mobile/auth/google", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     const [, options] = m(verifyGoogleIdToken).mock.calls[0];
-    expect(options.audience).toBe("web-client");
+    expect(options.audiences).toEqual([
+      "342475897969-tcogc9hjlfe5nlgqdkhm1opsk126j2ed.apps.googleusercontent.com",
+      "web-client",
+    ]);
     expect(options.authorizedParties).toContain(
       "342475897969-e9m19r0t8u47r07nnpslqn0tp5artnmb.apps.googleusercontent.com"
     );

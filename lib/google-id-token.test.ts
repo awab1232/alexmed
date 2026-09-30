@@ -47,7 +47,7 @@ const good = {
 const fetchJwks = vi.fn(async () => ({ keys: [jwk], maxAgeSeconds: 3600 }));
 const verifyWith = (t: string) =>
   verifyGoogleIdToken(t, {
-    audience: WEB,
+    audiences: [WEB],
     authorizedParties: [ANDROID],
     now: NOW,
     fetchJwks,
@@ -69,6 +69,19 @@ describe("verifyGoogleIdToken", () => {
       picture: "https://lh3.googleusercontent.com/a/x",
       azp: ANDROID,
     });
+  });
+
+  it("accepts any of the allowed audiences", async () => {
+    const claims = await verifyGoogleIdToken(
+      token({ ...good, aud: "app-web-client" }),
+      {
+        audiences: [WEB, "app-web-client"],
+        authorizedParties: [ANDROID],
+        now: NOW,
+        fetchJwks,
+      }
+    );
+    expect(claims.sub).toBe("1234567890");
   });
 
   it("caches Google's keys", async () => {
