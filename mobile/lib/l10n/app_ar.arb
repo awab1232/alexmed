@@ -1461,5 +1461,49 @@
   "questionsMachineTranslation": "ترجمة آلية",
   "doctorSetsTitle": "مجموعات الدكاترة",
   "qfUploadIntro": "ارفع ملف أسئلة (بنك، امتحان سابق، أسئلة مصوّرة) ونستخرج أسئلته كما هي مع إجاباتها إن وُجدت.",
-  "qfStepFile": "الملف"
+  "qfStepFile": "الملف",
+  "niroTitle": "اسأل Niro",
+  "niroSubtitle": "صاحبك بالدراسة، وقت ما تحتاجه 😌",
+  "niroNewChat": "جديدة",
+  "niroHello": "أهلاً! أنا Niro 👋",
+  "niroHelloName": "أهلاً {name}! أنا Niro 👋",
+  "@niroHelloName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "niroAskAnything": "اسألني أي شيء — شرح، حل، ترجمة، أو صوّرلي السؤال 📸",
+  "niroStarterPhoto": "صوّر سؤالاً أو صفحة وأنا أحلّها لك",
+  "niroReadingPhoto": "Niro يقرأ الصورة… 🔍",
+  "niroUnreachable": "تعذر الوصول للمساعد، حاول مرة أخرى 🙏",
+  "niroPhotoFailed": "تعذر قراءة الصورة، جرّب صورة أخرى 🙏",
+  "niroRemaining": "باقي لك {count} رسائل اليوم",
+  "@niroRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "niroCopy": "نسخ",
+  "niroCopied": "تم النسخ",
+  "niroCamera": "تصوير بالكاميرا",
+  "niroGallery": "اختيار صورة من المعرض",
+  "niroHint": "اكتب سؤالك هنا…",
+  "niroHintPhoto": "اسأل عن الصورة (اختياري)…",
+  "niroAttachedPhoto": "الصورة المرفقة",
+  "niroSentPhoto": "الصورة المرسلة",
+  "niroRemovePhoto": "إزالة الصورة",
+  "niroCameraTitle": "نحتاج الكاميرا لتصوير سؤالك 📷",
+  "niroCameraWhy1": "صوّر سؤالًا أو صفحة أو ملاحظاتك، والمساعد يقرؤها ويحلّها.",
+  "niroCameraWhy2": "تُفتح الكاميرا فقط عندما تضغط الزر — لا شيء في الخلفية.",
+  "niroCameraWhy3": "الصورة تُرسل للتحليل فقط ولا نخزّنها على خوادمنا.",
+  "niroCameraWhy4": "إذا رفضت الإذن يمكنك دائمًا اختيار صورة من المعرض.",
+  "niroNotNow": "ليس الآن",
+  "niroCameraDenied": "الكاميرا غير مسموحة",
+  "niroPhotosDenied": "الوصول للصور غير مسموح",
+  "niroDeniedHint": "يمكنك السماح بها من إعدادات الجهاز، أو اختيار صورة من المعرض بدلًا من ذلك.",
+  "niroOpenSettings": "فتح الإعدادات"
 }

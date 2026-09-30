@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/storage/local_store.dart';
 import '../core/ui/theme.dart';
 import '../features/auth/application/session_refresh.dart';
 import '../l10n/app_localizations.dart';
@@ -13,6 +14,9 @@ class NiroLearnApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Keeps the session fresh for as long as the app runs.
     ref.watch(sessionRefreshProvider);
+    // Registers the on-device store's sign-out wipe from the first frame, so
+    // it runs even when no screen has used the store in this launch.
+    ref.watch(localStoreProvider);
     return MaterialApp.router(
       title: 'NiroLearn',
       debugShowCheckedModeBanner: false,

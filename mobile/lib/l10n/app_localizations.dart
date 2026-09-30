@@ -3805,6 +3805,186 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الملف'**
   String get qfStepFile;
+
+  /// No description provided for @niroTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل Niro'**
+  String get niroTitle;
+
+  /// No description provided for @niroSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صاحبك بالدراسة، وقت ما تحتاجه 😌'**
+  String get niroSubtitle;
+
+  /// No description provided for @niroNewChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'جديدة'**
+  String get niroNewChat;
+
+  /// No description provided for @niroHello.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً! أنا Niro 👋'**
+  String get niroHello;
+
+  /// No description provided for @niroHelloName.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً {name}! أنا Niro 👋'**
+  String niroHelloName(String name);
+
+  /// No description provided for @niroAskAnything.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسألني أي شيء — شرح، حل، ترجمة، أو صوّرلي السؤال 📸'**
+  String get niroAskAnything;
+
+  /// No description provided for @niroStarterPhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر سؤالاً أو صفحة وأنا أحلّها لك'**
+  String get niroStarterPhoto;
+
+  /// No description provided for @niroReadingPhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'Niro يقرأ الصورة… 🔍'**
+  String get niroReadingPhoto;
+
+  /// No description provided for @niroUnreachable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر الوصول للمساعد، حاول مرة أخرى 🙏'**
+  String get niroUnreachable;
+
+  /// No description provided for @niroPhotoFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر قراءة الصورة، جرّب صورة أخرى 🙏'**
+  String get niroPhotoFailed;
+
+  /// No description provided for @niroRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي لك {count} رسائل اليوم'**
+  String niroRemaining(int count);
+
+  /// No description provided for @niroCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ'**
+  String get niroCopy;
+
+  /// No description provided for @niroCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم النسخ'**
+  String get niroCopied;
+
+  /// No description provided for @niroCamera.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصوير بالكاميرا'**
+  String get niroCamera;
+
+  /// No description provided for @niroGallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار صورة من المعرض'**
+  String get niroGallery;
+
+  /// No description provided for @niroHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب سؤالك هنا…'**
+  String get niroHint;
+
+  /// No description provided for @niroHintPhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل عن الصورة (اختياري)…'**
+  String get niroHintPhoto;
+
+  /// No description provided for @niroAttachedPhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة المرفقة'**
+  String get niroAttachedPhoto;
+
+  /// No description provided for @niroSentPhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة المرسلة'**
+  String get niroSentPhoto;
+
+  /// No description provided for @niroRemovePhoto.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة الصورة'**
+  String get niroRemovePhoto;
+
+  /// No description provided for @niroCameraTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نحتاج الكاميرا لتصوير سؤالك 📷'**
+  String get niroCameraTitle;
+
+  /// No description provided for @niroCameraWhy1.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر سؤالًا أو صفحة أو ملاحظاتك، والمساعد يقرؤها ويحلّها.'**
+  String get niroCameraWhy1;
+
+  /// No description provided for @niroCameraWhy2.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُفتح الكاميرا فقط عندما تضغط الزر — لا شيء في الخلفية.'**
+  String get niroCameraWhy2;
+
+  /// No description provided for @niroCameraWhy3.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة تُرسل للتحليل فقط ولا نخزّنها على خوادمنا.'**
+  String get niroCameraWhy3;
+
+  /// No description provided for @niroCameraWhy4.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذا رفضت الإذن يمكنك دائمًا اختيار صورة من المعرض.'**
+  String get niroCameraWhy4;
+
+  /// No description provided for @niroNotNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس الآن'**
+  String get niroNotNow;
+
+  /// No description provided for @niroCameraDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاميرا غير مسموحة'**
+  String get niroCameraDenied;
+
+  /// No description provided for @niroPhotosDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصول للصور غير مسموح'**
+  String get niroPhotosDenied;
+
+  /// No description provided for @niroDeniedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك السماح بها من إعدادات الجهاز، أو اختيار صورة من المعرض بدلًا من ذلك.'**
+  String get niroDeniedHint;
+
+  /// No description provided for @niroOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الإعدادات'**
+  String get niroOpenSettings;
 }
 
 class _AppLocalizationsDelegate

@@ -2178,4 +2178,104 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qfStepFile => 'The file';
+
+  @override
+  String get niroTitle => 'Ask Niro';
+
+  @override
+  String get niroSubtitle => 'Your study buddy, whenever you need it 😌';
+
+  @override
+  String get niroNewChat => 'New';
+
+  @override
+  String get niroHello => 'Hi! I\'m Niro 👋';
+
+  @override
+  String niroHelloName(String name) {
+    return 'Hi $name! I\'m Niro 👋';
+  }
+
+  @override
+  String get niroAskAnything =>
+      'Ask me anything — explain, solve, translate, or snap the question 📸';
+
+  @override
+  String get niroStarterPhoto => 'Snap a question or a page and I\'ll solve it';
+
+  @override
+  String get niroReadingPhoto => 'Niro is reading the photo… 🔍';
+
+  @override
+  String get niroUnreachable => 'Couldn\'t reach the assistant, try again 🙏';
+
+  @override
+  String get niroPhotoFailed => 'Couldn\'t read the photo, try another one 🙏';
+
+  @override
+  String niroRemaining(int count) {
+    return '$count messages left today';
+  }
+
+  @override
+  String get niroCopy => 'Copy';
+
+  @override
+  String get niroCopied => 'Copied';
+
+  @override
+  String get niroCamera => 'Take a photo';
+
+  @override
+  String get niroGallery => 'Choose from photos';
+
+  @override
+  String get niroHint => 'Type your question…';
+
+  @override
+  String get niroHintPhoto => 'Ask about the photo (optional)…';
+
+  @override
+  String get niroAttachedPhoto => 'Attached photo';
+
+  @override
+  String get niroSentPhoto => 'Sent photo';
+
+  @override
+  String get niroRemovePhoto => 'Remove the photo';
+
+  @override
+  String get niroCameraTitle => 'The camera is for snapping your question 📷';
+
+  @override
+  String get niroCameraWhy1 =>
+      'Snap a question, a page or your notes, and Niro reads and solves it.';
+
+  @override
+  String get niroCameraWhy2 =>
+      'The camera opens only when you tap the button — nothing in the background.';
+
+  @override
+  String get niroCameraWhy3 =>
+      'The photo is sent only to be analysed and isn\'t stored on our servers.';
+
+  @override
+  String get niroCameraWhy4 =>
+      'If you decline, you can always choose a photo instead.';
+
+  @override
+  String get niroNotNow => 'Not now';
+
+  @override
+  String get niroCameraDenied => 'Camera access is off';
+
+  @override
+  String get niroPhotosDenied => 'Photo access is off';
+
+  @override
+  String get niroDeniedHint =>
+      'You can allow it in the device settings, or choose a photo from your gallery instead.';
+
+  @override
+  String get niroOpenSettings => 'Open Settings';
 }

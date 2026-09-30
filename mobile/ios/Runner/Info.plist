@@ -68,5 +68,10 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Niro: a photo of a question, only when the student taps the camera button (P10). Arabic copies in ar.lproj/InfoPlist.strings. -->
+		<key>NSCameraUsageDescription</key>
+		<string>NiroLearn uses the camera only when you tap it, to photograph a question or page for Niro to read.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>NiroLearn opens your photos only when you choose one to send to Niro.</string>
 	</dict>
 </plist>

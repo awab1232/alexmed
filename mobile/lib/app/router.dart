@@ -8,6 +8,7 @@ import '../core/auth/session_controller.dart';
 import '../core/ui/ui.dart';
 import '../features/account/presentation/account_screen.dart';
 import '../features/account/presentation/plan_screen.dart';
+import '../features/assistant/presentation/assistant_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/welcome_screen.dart';
@@ -98,7 +99,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           _placeholderTab(Routes.games, (l) => l.tabGames, 'P12'),
-          _placeholderTab(Routes.assistant, (l) => l.tabNiro, 'P10'),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.assistant,
+                builder: (_, _) => const AssistantScreen(),
+              ),
+            ],
+          ),
           StatefulShellBranch(
             routes: [
               GoRoute(

@@ -2151,4 +2151,104 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get qfStepFile => 'الملف';
+
+  @override
+  String get niroTitle => 'اسأل Niro';
+
+  @override
+  String get niroSubtitle => 'صاحبك بالدراسة، وقت ما تحتاجه 😌';
+
+  @override
+  String get niroNewChat => 'جديدة';
+
+  @override
+  String get niroHello => 'أهلاً! أنا Niro 👋';
+
+  @override
+  String niroHelloName(String name) {
+    return 'أهلاً $name! أنا Niro 👋';
+  }
+
+  @override
+  String get niroAskAnything =>
+      'اسألني أي شيء — شرح، حل، ترجمة، أو صوّرلي السؤال 📸';
+
+  @override
+  String get niroStarterPhoto => 'صوّر سؤالاً أو صفحة وأنا أحلّها لك';
+
+  @override
+  String get niroReadingPhoto => 'Niro يقرأ الصورة… 🔍';
+
+  @override
+  String get niroUnreachable => 'تعذر الوصول للمساعد، حاول مرة أخرى 🙏';
+
+  @override
+  String get niroPhotoFailed => 'تعذر قراءة الصورة، جرّب صورة أخرى 🙏';
+
+  @override
+  String niroRemaining(int count) {
+    return 'باقي لك $count رسائل اليوم';
+  }
+
+  @override
+  String get niroCopy => 'نسخ';
+
+  @override
+  String get niroCopied => 'تم النسخ';
+
+  @override
+  String get niroCamera => 'تصوير بالكاميرا';
+
+  @override
+  String get niroGallery => 'اختيار صورة من المعرض';
+
+  @override
+  String get niroHint => 'اكتب سؤالك هنا…';
+
+  @override
+  String get niroHintPhoto => 'اسأل عن الصورة (اختياري)…';
+
+  @override
+  String get niroAttachedPhoto => 'الصورة المرفقة';
+
+  @override
+  String get niroSentPhoto => 'الصورة المرسلة';
+
+  @override
+  String get niroRemovePhoto => 'إزالة الصورة';
+
+  @override
+  String get niroCameraTitle => 'نحتاج الكاميرا لتصوير سؤالك 📷';
+
+  @override
+  String get niroCameraWhy1 =>
+      'صوّر سؤالًا أو صفحة أو ملاحظاتك، والمساعد يقرؤها ويحلّها.';
+
+  @override
+  String get niroCameraWhy2 =>
+      'تُفتح الكاميرا فقط عندما تضغط الزر — لا شيء في الخلفية.';
+
+  @override
+  String get niroCameraWhy3 =>
+      'الصورة تُرسل للتحليل فقط ولا نخزّنها على خوادمنا.';
+
+  @override
+  String get niroCameraWhy4 =>
+      'إذا رفضت الإذن يمكنك دائمًا اختيار صورة من المعرض.';
+
+  @override
+  String get niroNotNow => 'ليس الآن';
+
+  @override
+  String get niroCameraDenied => 'الكاميرا غير مسموحة';
+
+  @override
+  String get niroPhotosDenied => 'الوصول للصور غير مسموح';
+
+  @override
+  String get niroDeniedHint =>
+      'يمكنك السماح بها من إعدادات الجهاز، أو اختيار صورة من المعرض بدلًا من ذلك.';
+
+  @override
+  String get niroOpenSettings => 'فتح الإعدادات';
 }

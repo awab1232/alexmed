@@ -366,13 +366,28 @@ Found & fixed during P9: مِرآة card images could never load on the device (
 ## Phase 10 — Niro assistant
 **Objective:** chat with photo input. **Depends on:** P6 (pickers), P8 (streaming reader).
 
-- [ ] 10.1 Chat UI (streaming, copy, retry, cancel)
-- [ ] 10.2 Photo from camera/gallery → compress, HEIC→JPEG, EXIF → send
-- [ ] 10.3 Local history (drift, like web localStorage; last 60 turns)
-- [ ] 10.4 Plan-limit sheet (informational)
+- [x] 10.1 Niro tab (`features/assistant/**`, `/assistant`) = the web's app/assistant: header + «جديدة», welcome with the student's first name and the web's starters (the 📸 one opens the camera), `POST /api/assistant/chat {message, image?, history}` streamed as written (shared `core/api/text_stream.dart`, now also used by the P8 reader sheets), stop keeps what was written, copy, «Niro يقرأ الصورة… 🔍» while a photo is read. On failure the question and photo go back into the input (retry = one tap), as the web. Replies rendered by `core/ui/rich_text.dart` — a port of the web's RichText (headings, bold / italic / code, lists, tables, quotes, rules, LaTeX tidy, per-line direction, arrows mirrored in RTL) **proven identical** by a parity test on the web code's output (`tool/export_rich_text_fixtures.tsx`, 10 replies)
+- [x] 10.2 Photos (`image_picker` + `flutter_image_compress`, both on the approved list): camera, or the system photo picker (no media permission); the web's once-only camera explanation sheet before the first camera use; denied → explanation, Settings link on iOS, gallery still offered. Prepared on the device: JPEG, long side ≤ 1600 px at 0.85 (the web's), 320 px thumbnail at 0.7, EXIF orientation applied and EXIF dropped (no location leaves the phone), HEIC → JPEG. Only the latest in-memory photo is re-sent for follow-ups (the web's rule, unit-tested). iOS usage strings added to Info.plist (+ `ar.lproj/InfoPlist.strings`, still to be added to the Xcode project in P18). **Verified on the device:** 4000×3000 → 1600×1200 JPEG; a HEIC made on the device → JPEG. **Found on the device and fixed:** the compressor's `minWidth/minHeight` fit the *short* side (2133×1600) — now measured first and bounded on the long side
+- [x] 10.3 History on the device (as the web's localStorage; D8 recommended default): last 60 turns with thumbnails, never the full photo (`niro-history`). **Changed from the plan:** not drift — a small atomic JSON file store (`core/storage/local_store.dart`, app-private support directory, keys validated, corrupt file = absent) since every use is "read / replace one document by key"; no code generator or native SQLite needed. Wiped on sign-out and when an expired session is found at launch (the wipe is registered from the first frame)
+- [x] 10.4 Plan limit: `PlanLimitException` → the web's title («وصلت للحد اليومي») + the server's message, informational only (no «احصل على المزيد» / pricing link — no purchase UI); «باقي لك n رسائل اليوم» only when ≤ 20% is left, as the web's RemainingHint
 
 **Tests:** journey 5 (permission denied → granted); HEIC fixture; streaming cancel.
 **DoD:** journey 5 passes both platforms.
+
+**Status: `[x]` implemented, tested and verified on the emulator** (photo pipeline for real; chat with a scripted reply). Live `[!]` staging (D1): not sent to the real `/api/assistant/chat` (production not used). Journey 5 with the real system camera / permission prompts and iOS `[ ]` (D2).
+Quality gate (2026-09-30):
+```
+FUNCTIONAL   [x] send / stream / stop / copy / new chat / starters  [x] error → input restored  [x] plan limit  [x] history restore
+             [x] camera explanation once  [x] denied path  [~] real camera + permission prompt (manual, needs a device camera)
+UI/UX        [x] design system  [x] RTL + per-line direction in replies  [x] touch targets  [x] keyboard (multi-line input)
+             [x] no overflow at 360×640 ×1.3  [~] accessibility (labels on photo, buttons; no screen-reader pass)
+SECURITY     [x] no secrets  [x] photo EXIF (location) stripped before upload  [x] full photo never stored  [x] history wiped on sign-out
+             [x] model output never interpreted as markup (spans only)
+PERFORMANCE  [x] photo downsized before base64 (~30 KB for a 1600 px test image)  [x] one request per message, cancelled on stop / leave
+TESTING      [x] unit (history rules 4, stream 2, store 4, RichText parity 11)  [x] widget (7)  [x] on device (pipeline + 5 screens)
+             [ ] contract (staging)  [x] Android  [ ] iOS (D2)
+REGRESSION   [x] no web / backend change  [x] reader sheets use the shared stream reader; all tests pass
+```
 
 ---
 

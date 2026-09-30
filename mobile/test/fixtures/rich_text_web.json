@@ -1,0 +1,292 @@
+[
+ {
+  "reply": "## الفكرة الأساسية\nالـ **ACE inhibitor** يقلل تكوين *angiotensin II*.\n\n- يخفض الضغط\n- يحمي الكلى\n  خاصة عند السكري\n- قد يسبب `dry cough`",
+  "tidy": "## الفكرة الأساسية\nالـ **ACE inhibitor** يقلل تكوين *angiotensin II*.\n\n- يخفض الضغط\n- يحمي الكلى\n  خاصة عند السكري\n- قد يسبب `dry cough`",
+  "blocks": [
+   {
+    "kind": "heading",
+    "level": 2,
+    "text": "الفكرة الأساسية"
+   },
+   {
+    "kind": "paragraph",
+    "text": "الـ **ACE inhibitor** يقلل تكوين *angiotensin II*."
+   },
+   {
+    "kind": "list",
+    "ordered": false,
+    "items": [
+     "يخفض الضغط",
+     "يحمي الكلى\nخاصة عند السكري",
+     "قد يسبب `dry cough`"
+    ]
+   }
+  ],
+  "inline": [
+   {
+    "text": "الفكرة الأساسية",
+    "html": "الفكرة الأساسية",
+    "dir": "rtl",
+    "reading": "الفكرة الأساسية"
+   },
+   {
+    "text": "الـ **ACE inhibitor** يقلل تكوين *angiotensin II*.",
+    "html": "الـ <strong>ACE inhibitor</strong> يقلل تكوين <em>angiotensin II</em>.",
+    "dir": "rtl",
+    "reading": "الـ **ACE inhibitor** يقلل تكوين *angiotensin II*."
+   },
+   {
+    "text": "يخفض الضغط",
+    "html": "يخفض الضغط",
+    "dir": "rtl",
+    "reading": "يخفض الضغط"
+   },
+   {
+    "text": "يحمي الكلى\nخاصة عند السكري",
+    "html": "يحمي الكلى\nخاصة عند السكري",
+    "dir": "rtl",
+    "reading": "يحمي الكلى\nخاصة عند السكري"
+   },
+   {
+    "text": "قد يسبب `dry cough`",
+    "html": "قد يسبب <code>dry cough</code>",
+    "dir": "rtl",
+    "reading": "قد يسبب `dry cough`"
+   }
+  ]
+ },
+ {
+  "reply": "1. Read the stem\n2. Eliminate wrong options\n3) Pick the best answer",
+  "tidy": "1. Read the stem\n2. Eliminate wrong options\n3) Pick the best answer",
+  "blocks": [
+   {
+    "kind": "list",
+    "ordered": true,
+    "items": [
+     "Read the stem",
+     "Eliminate wrong options",
+     "Pick the best answer"
+    ]
+   }
+  ],
+  "inline": [
+   {
+    "text": "Read the stem",
+    "html": "Read the stem",
+    "dir": "ltr",
+    "reading": "Read the stem"
+   },
+   {
+    "text": "Eliminate wrong options",
+    "html": "Eliminate wrong options",
+    "dir": "ltr",
+    "reading": "Eliminate wrong options"
+   },
+   {
+    "text": "Pick the best answer",
+    "html": "Pick the best answer",
+    "dir": "ltr",
+    "reading": "Pick the best answer"
+   }
+  ]
+ },
+ {
+  "reply": "| Drug | Class |\n|---|:---:|\n| Furosemide | Loop |\n| Spironolactone | K-sparing |",
+  "tidy": "| Drug | Class |\n|---|:---:|\n| Furosemide | Loop |\n| Spironolactone | K-sparing |",
+  "blocks": [
+   {
+    "kind": "table",
+    "header": [
+     "Drug",
+     "Class"
+    ],
+    "rows": [
+     [
+      "Furosemide",
+      "Loop"
+     ],
+     [
+      "Spironolactone",
+      "K-sparing"
+     ]
+    ]
+   }
+  ],
+  "inline": [
+   {
+    "text": "Drug",
+    "html": "Drug",
+    "dir": "ltr",
+    "reading": "Drug"
+   },
+   {
+    "text": "Class",
+    "html": "Class",
+    "dir": "ltr",
+    "reading": "Class"
+   },
+   {
+    "text": "Furosemide",
+    "html": "Furosemide",
+    "dir": "ltr",
+    "reading": "Furosemide"
+   },
+   {
+    "text": "Loop",
+    "html": "Loop",
+    "dir": "ltr",
+    "reading": "Loop"
+   },
+   {
+    "text": "Spironolactone",
+    "html": "Spironolactone",
+    "dir": "ltr",
+    "reading": "Spironolactone"
+   },
+   {
+    "text": "K-sparing",
+    "html": "K-sparing",
+    "dir": "ltr",
+    "reading": "K-sparing"
+   }
+  ]
+ },
+ {
+  "reply": "The dose is \\(\\frac{5}{2}\\) mg \\times 3 = 7.5 mg, and x^2 + y^{3} \\approx 10 \\text{ units}.\n\\[ a \\leq b \\Rightarrow c \\] and \\sqrt{x} \\pm 1",
+  "tidy": "The dose is (5)/(2) mg × 3 = 7.5 mg, and x² + y³ ≈ 10 units.\n a ≤ b ⇒ c and √(x) ± 1",
+  "blocks": [
+   {
+    "kind": "paragraph",
+    "text": "The dose is (5)/(2) mg × 3 = 7.5 mg, and x² + y³ ≈ 10 units.\n a ≤ b ⇒ c and √(x) ± 1"
+   }
+  ],
+  "inline": [
+   {
+    "text": "The dose is (5)/(2) mg × 3 = 7.5 mg, and x² + y³ ≈ 10 units.\n a ≤ b ⇒ c and √(x) ± 1",
+    "html": "The dose is (5)/(2) mg × 3 = 7.5 mg, and x² + y³ ≈ 10 units.\n a ≤ b ⇒ c and √(x) ± 1",
+    "dir": "ltr",
+    "reading": "The dose is (5)/(2) mg × 3 = 7.5 mg, and x² + y³ ≈ 10 units.\n a ≤ b ⇒ c and √(x) ± 1"
+   }
+  ]
+ },
+ {
+  "reply": "```\nconst x = 2 * 3; // \\times stays\n```\nبعد الكود → نتيجة",
+  "tidy": "```\nconst x = 2 * 3; // \\times stays\n```\nبعد الكود → نتيجة",
+  "blocks": [
+   {
+    "kind": "code",
+    "text": "const x = 2 * 3; // \\times stays"
+   },
+   {
+    "kind": "paragraph",
+    "text": "بعد الكود → نتيجة"
+   }
+  ],
+  "inline": [
+   {
+    "text": "const x = 2 * 3; // \\times stays",
+    "html": "const x = 2 * 3; // \\times stays",
+    "dir": "ltr",
+    "reading": "const x = 2 * 3; // \\times stays"
+   },
+   {
+    "text": "بعد الكود → نتيجة",
+    "html": "بعد الكود → نتيجة",
+    "dir": "rtl",
+    "reading": "بعد الكود ← نتيجة"
+   }
+  ]
+ },
+ {
+  "reply": "> ملاحظة: WHZ < -3 SD → سوء تغذية شديد\n> راجع الجدول\n\n---\n# Title #",
+  "tidy": "> ملاحظة: WHZ < -3 SD → سوء تغذية شديد\n> راجع الجدول\n\n---\n# Title #",
+  "blocks": [
+   {
+    "kind": "quote",
+    "text": "ملاحظة: WHZ < -3 SD → سوء تغذية شديد\nراجع الجدول"
+   },
+   {
+    "kind": "rule"
+   },
+   {
+    "kind": "heading",
+    "level": 1,
+    "text": "Title"
+   }
+  ],
+  "inline": [
+   {
+    "text": "ملاحظة: WHZ < -3 SD → سوء تغذية شديد\nراجع الجدول",
+    "html": "ملاحظة: WHZ &lt; -3 SD → سوء تغذية شديد\nراجع الجدول",
+    "dir": "rtl",
+    "reading": "ملاحظة: WHZ < -3 SD ← سوء تغذية شديد\nراجع الجدول"
+   },
+   {
+    "text": "Title",
+    "html": "Title",
+    "dir": "ltr",
+    "reading": "Title"
+   }
+  ]
+ },
+ {
+  "reply": "snake_case and 2*3*4 stay plain, but _this_ and *that* are italic; __bold__ too.",
+  "tidy": "snake_case and 2*3*4 stay plain, but _this_ and *that* are italic; __bold__ too.",
+  "blocks": [
+   {
+    "kind": "paragraph",
+    "text": "snake_case and 2*3*4 stay plain, but _this_ and *that* are italic; __bold__ too."
+   }
+  ],
+  "inline": [
+   {
+    "text": "snake_case and 2*3*4 stay plain, but _this_ and *that* are italic; __bold__ too.",
+    "html": "snake_case and 2*3*4 stay plain, but <em>this</em> and <em>that</em> are italic; <strong>bold</strong> too.",
+    "dir": "ltr",
+    "reading": "snake_case and 2*3*4 stay plain, but _this_ and *that* are italic; __bold__ too."
+   }
+  ]
+ },
+ {
+  "reply": "**nested `code` inside bold** then plain & <tag> \"quoted\" 'single'",
+  "tidy": "**nested `code` inside bold** then plain & <tag> \"quoted\" 'single'",
+  "blocks": [
+   {
+    "kind": "paragraph",
+    "text": "**nested `code` inside bold** then plain & <tag> \"quoted\" 'single'"
+   }
+  ],
+  "inline": [
+   {
+    "text": "**nested `code` inside bold** then plain & <tag> \"quoted\" 'single'",
+    "html": "<strong>nested <code>code</code> inside bold</strong> then plain &amp; &lt;tag&gt; &quot;quoted&quot; &#x27;single&#x27;",
+    "dir": "ltr",
+    "reading": "**nested `code` inside bold** then plain & <tag> \"quoted\" 'single'"
+   }
+  ]
+ },
+ {
+  "reply": "",
+  "tidy": "",
+  "blocks": [],
+  "inline": []
+ },
+ {
+  "reply": "Line one\nline two\r\nline three",
+  "tidy": "Line one\nline two\r\nline three",
+  "blocks": [
+   {
+    "kind": "paragraph",
+    "text": "Line one\nline two\nline three"
+   }
+  ],
+  "inline": [
+   {
+    "text": "Line one\nline two\nline three",
+    "html": "Line one\nline two\nline three",
+    "dir": "ltr",
+    "reading": "Line one\nline two\nline three"
+   }
+  ]
+ }
+]

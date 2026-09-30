@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
-import '../../../core/api/api_error.dart';
 import '../../../core/api/json.dart';
+import '../../../core/api/text_stream.dart';
 import '../../../core/api/trpc_client.dart';
 import '../domain/pdf_marks.dart';
 import 'pdf_range_source.dart';
@@ -115,7 +114,7 @@ class ReaderRepository {
     String? fileName,
     List<ChatTurn> history = const [],
     CancelToken? cancelToken,
-  }) => _streamText('/api/books/ask-selection', {
+  }) => streamTextAnswer(dio, '/api/books/ask-selection', {
     'bookId': bookId,
     'pageNumber': pageNumber,
     'selectedText': selectedText.length > 4000
@@ -136,7 +135,7 @@ class ReaderRepository {
               : t.content,
         },
     ],
-  }, cancelToken);
+  }, cancelToken: cancelToken);
 
   /// The book's study-chat session (created once per user and book).
   Future<String> chatSession(String bookId) => trpc.mutation(
@@ -167,51 +166,10 @@ class ReaderRepository {
     required String sessionId,
     required String question,
     CancelToken? cancelToken,
-  }) => _streamText('/api/chat/stream', {
+  }) => streamTextAnswer(dio, '/api/chat/stream', {
     'sessionId': sessionId,
     'question': question,
-  }, cancelToken);
-
-  /// POSTs JSON and yields the answer text accumulated so far, chunk by
-  /// chunk. Error bodies (`{error}`) become an [ApiException] with the
-  /// server's Arabic message.
-  Stream<String> _streamText(
-    String path,
-    Map<String, Object?> body,
-    CancelToken? cancelToken,
-  ) async* {
-    final Response<ResponseBody> response;
-    try {
-      response = await dio.post<ResponseBody>(
-        path,
-        data: body,
-        cancelToken: cancelToken,
-        options: Options(
-          responseType: ResponseType.stream,
-          validateStatus: (_) => true,
-        ),
-      );
-    } on DioException catch (error) {
-      throw apiExceptionFromDio(error);
-    }
-    final status = response.statusCode ?? 0;
-    final stream = response.data?.stream;
-    if (stream == null) throw const ServerException();
-    if (status < 200 || status >= 300) {
-      final text = await utf8.decodeStream(stream).catchError((_) => '');
-      Object? json;
-      try {
-        json = jsonDecode(text);
-      } catch (_) {}
-      throw apiExceptionFromRest(status, json);
-    }
-    final decoder = const Utf8Decoder(allowMalformed: true);
-    var answer = '';
-    await for (final chunk in stream.cast<List<int>>().transform(decoder)) {
-      answer += chunk;
-      yield answer;
-    }
-  }
+  }, cancelToken: cancelToken);
 }
 
 final readerRepositoryProvider = Provider<ReaderRepository>(

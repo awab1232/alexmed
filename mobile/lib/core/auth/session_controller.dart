@@ -44,7 +44,8 @@ class SessionController extends Notifier<SessionState> {
   Future<void> _restore() async {
     final session = await _store.read();
     if (session == null || session.isExpiredAt(DateTime.now().toUtc())) {
-      if (session != null) await _store.clear();
+      // An expired session's on-device data goes with it.
+      if (session != null) await signOut();
       state = const SessionState.signedOut();
       return;
     }
