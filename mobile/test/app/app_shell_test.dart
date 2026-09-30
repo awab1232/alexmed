@@ -24,7 +24,7 @@ void main() {
 
       await tester.tap(find.text('ألعاب'));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(AppBar, 'ألعاب'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, '🧠 ألعاب الذاكرة'), findsOneWidget);
 
       await tester.tap(find.byTooltip('إضافة'));
       await tester.pumpAndSettle();
@@ -32,7 +32,7 @@ void main() {
       expect(find.text('ماذا تريد أن تضيف؟'), findsOneWidget);
       await tester.tapAt(const Offset(20, 20));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(AppBar, 'ألعاب'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, '🧠 ألعاب الذاكرة'), findsOneWidget);
 
       await tester.tap(find.text('حسابي'));
       await tester.pumpAndSettle();
