@@ -1,4 +1,5 @@
 {
   "APP_ENV": "staging",
-  "API_BASE_URL": "https://REPLACE-WITH-STAGING-HOST"
+  "API_BASE_URL": "https://REPLACE-WITH-STAGING-HOST",
+  "GOOGLE_SERVER_CLIENT_ID": ""
 }
