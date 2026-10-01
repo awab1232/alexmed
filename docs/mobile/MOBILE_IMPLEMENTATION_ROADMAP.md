@@ -541,6 +541,8 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 
 **DoD:** internal track build installs as an update over the Capacitor app (if published) and passes smoke.
 
+**Runbook:** [`PLAY_RELEASE_CHECKLIST.md`](./PLAY_RELEASE_CHECKLIST.md) — مسار إطلاق Android-أولًا مع تأجيل Apple (keystore ← Google OAuth ← Play Console ← AAB ← internal track ← طرح تدريجي).
+
 ---
 
 ## Phase 18 — iOS polish & App Store readiness
