@@ -523,8 +523,8 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 **Depends on:** P6–P14.
 - [ ] 16.1 Profile startup, frame times, memory (DevTools) on low-end Android + iPhone SE class; fix regressions
 - [ ] 16.2 Request audit (no duplicate/unnecessary calls; polling stops off-screen)
-- [ ] 16.3 Image cache limits; PDF cache limits
-- [ ] 16.4 Security review: token handling, storage, logs, deep links, uploads, protected content, dependencies (`flutter pub outdated` + advisories), obfuscation + symbols
+- [x] 16.3 Cache limits: PDF bytes already bounded (`PdfRangeSource` — in-memory LRU, `maxCachedBytes` 48 MB, dropped on `dispose`, nothing on disk); decoded-image cache now bounded in `main.dart` (`imageCache.maximumSize` 200, `maximumSizeBytes` 64 MB — below Flutter's 1000/100 MB defaults)
+- [~] 16.4 Security review (first pass clean): token in `flutter_secure_storage`; no token/secret logged (only error codes); session cookie never forwarded on redirects (`followRedirects: false`); protected content FLAG_SECURE + memory-only (PDF LRU, codes CSV deleted after share); `flutter pub outdated` — no critical (only minor/transitive updates). **Left:** full advisories check, deep links (G6), obfuscation + symbols (P17.3)
 - [ ] 16.5 Fix findings; record results
 
 **DoD:** budgets in BP §20 met; no open High/Critical security findings.
@@ -646,7 +646,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 | Field | Value |
 |---|---|
 | Current Phase | P9–P14 done on 2026-09-30 as far as possible without staging / Apple / approvals: P9 `[x]`, P10 `[x]`, P11 `[x]`, P12 `[x]`, P13 `[~]` (13.5 report `[!]` G10), P14 `[~]` (SWR, pre-disabled actions, full airplane pass left), P15 `[!]` (Firebase, Apple, G12). Earlier: P2, P3, P4-implementation, P7, P8 `[x]`; P5, P6 `[~]` |
-| Current Task | — (waiting on the owner's decisions below before P16) |
+| Current Task | P16 performance & security hardening (in progress): 16.3 cache limits done, 16.4 security first pass clean; 16.1–16.2, 16.5 open |
 | Last Completed Task | Google sign-in (G2) backend **deployed to production** (PR #4 → `d7b9daf`, 2026-10-01): offline JWKS verification + web-parity account rules; Flutter button unit/widget-tested. Live end-to-end sign-in still unverified (task 1.4 / D6) |
 | Next Task | P16 performance & security hardening (release-build measurements, request audit, dependency review). Rule: no push, no production deploy, no merge to `main` without explicit approval |
 | Blocked By | Staging (D1): every live check (auth, uploads, files, AI, games, sharing, doctor sets, contract tests); Apple account + macOS (D2): iOS build, APNs, Sign in with Apple; D3: G10 report (App Store 1.2), G12 push, G5 reset, G7; D6 Google / Apple login; Sentry project (2.8); G6 app links / G9 config need approval; Firebase project (push). D7 and D8 adopted as recommended defaults (FLAG_SECURE on protected screens only; Niro history on the device) — reversible |
