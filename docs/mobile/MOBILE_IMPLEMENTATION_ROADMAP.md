@@ -533,11 +533,11 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 
 ## Phase 17 — Android polish & Play readiness
 **Depends on:** P16.
-- [ ] 17.1 Adaptive icon, splash (Android 12+ API), themed status/nav bars
-- [ ] 17.2 Predictive back verified on API 34–36; edge-to-edge on API 35–36
-- [ ] 17.3 Release signing with existing keystore; Play App Signing; versionCode > current (D5)
-- [ ] 17.4 Data safety form draft matching `/privacy`; account deletion URL
-- [ ] 17.5 Internal testing track build
+- [~] 17.1 Adaptive icon + Android 12 splash already present & correctly themed (icon bg `#1B2340` ink, splash `#F2F4F9` paper + `android12splash`). Themed status/nav bars now set in `main.dart` (dark icons on the light paper surface, transparent bars). **Left:** on-device visual QA of the bars.
+- [~] 17.2 Edge-to-edge enabled in `main.dart` (`SystemUiMode.edgeToEdge`); predictive back is default-on for targetSdk 36 so no manifest opt-in is needed. **Left:** on-device verify of the back-gesture animation (API 34–36).
+- [!] 17.3 Release signing with existing keystore; Play App Signing; versionCode > current (D5) — **blocked:** `nirolearn-release.keystore` is not in the repo (owner holds it); `versionCode` (now `1.0.0+1`) must exceed the Capacitor app's current Play `versionCode` (D5, owner). Release build still uses debug keys so nothing ships by accident.
+- [~] 17.4 Data safety form draft written (`docs/mobile/PLAY_DATA_SAFETY.md`, maps `/privacy` → Play's data-type categories; account deletion URL = in-app `حسابي ← الملف الدراسي ← حذف الحساب`). **Left:** owner transcribes it into Play Console.
+- [!] 17.5 Internal testing track build — **blocked** on 17.3 (signed build) + Play Console access (owner).
 
 **DoD:** internal track build installs as an update over the Capacitor app (if published) and passes smoke.
 
