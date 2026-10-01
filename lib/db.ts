@@ -146,6 +146,18 @@ export async function updateUserProfile(
     .where(eq(users.id, userId));
 }
 
+export async function createUser(data: {
+  id: string;
+  email: string | null;
+  name: string | null;
+  role: "user" | "admin";
+}) {
+  const db = getDb();
+  if (!db) throw new Error("Database not available");
+  const [user] = await db.insert(users).values(data).returning();
+  return user;
+}
+
 export async function createDeckWithCards(
   userId: string,
   input: {

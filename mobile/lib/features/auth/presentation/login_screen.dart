@@ -7,10 +7,12 @@ import '../../../core/auth/session_controller.dart';
 import '../../../core/ui/ui.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/auth_repository.dart';
+import '../data/google_auth.dart';
 import 'auth_widgets.dart';
 
 /// Phone-or-email + password sign-in (the web's LoginForm). On success the
-/// session is stored and the router moves to Home by itself.
+/// session is stored and the router moves to Home by itself. On Android
+/// "Sign in with Google" signs in (or up) through /api/mobile/auth/google.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -22,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _identifier = TextEditingController();
   final _password = TextEditingController();
   bool _busy = false;
+  bool _googleBusy = false;
   String? _error;
 
   @override
@@ -32,7 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    if (_busy) return;
+    if (_busy || _googleBusy) return;
     final l10n = AppLocalizations.of(context);
     if (_identifier.text.trim().isEmpty || _password.text.isEmpty) {
       setState(() => _error = l10n.loginFillBoth);
@@ -56,10 +59,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _google() async {
+    if (_busy || _googleBusy) return;
+    final l10n = AppLocalizations.of(context);
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _googleBusy = true;
+      _error = null;
+    });
+    try {
+      final idToken = await ref.read(googleAuthProvider).idToken();
+      final result = await ref
+          .read(authRepositoryProvider)
+          .loginWithGoogle(idToken);
+      await ref.read(sessionControllerProvider.notifier).signIn(result.session);
+    } on GoogleAuthException catch (error) {
+      if (!mounted || error.failure == GoogleAuthFailure.canceled) return;
+      setState(() => _error = l10n.googleSignInFailed);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = apiErrorText(context, error));
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final expired = ref.watch(sessionControllerProvider).expired;
+    final google = ref.watch(googleAuthProvider).available;
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -120,6 +149,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 expand: true,
                 onPressed: _submit,
               ),
+              if (google) ...[
+                const SizedBox(height: NlSpace.xl),
+                const AuthOrDivider(),
+                const SizedBox(height: NlSpace.xl),
+                GoogleButton(
+                  label: _googleBusy
+                      ? l10n.loginSubmitting
+                      : l10n.loginWithGoogle,
+                  loading: _googleBusy,
+                  onPressed: _google,
+                ),
+              ],
               const SizedBox(height: NlSpace.lg),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
