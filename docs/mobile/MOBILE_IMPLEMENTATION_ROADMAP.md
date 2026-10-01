@@ -522,7 +522,7 @@ REGRESSION   [x] no web / backend change  [x] full Flutter suite passes
 ## Phase 16 — Performance & security hardening
 **Depends on:** P6–P14.
 - [ ] 16.1 Profile startup, frame times, memory (DevTools) on low-end Android + iPhone SE class; fix regressions
-- [ ] 16.2 Request audit (no duplicate/unnecessary calls; polling stops off-screen)
+- [~] 16.2 Request audit (first pass clean): every `Timer`/`Timer.periodic` cancels in `dispose()` (polling stops off-screen — summary, doctor-set/doctor-screens, books, mirror job/deck, mindmap, question-file, blocked, exam-focus, offline probe; UI tickers too); one-shot delayed timers guard with `mounted`; image loader dedups in-flight (`_inFlight`) + bounded LRU; `CancelToken`s cancelled (assistant, doctor screens); tRPC never batches (each failure stays attached to its call). **Left:** runtime confirmation of zero duplicate network calls in DevTools' network panel (16.1)
 - [x] 16.3 Cache limits: PDF bytes already bounded (`PdfRangeSource` — in-memory LRU, `maxCachedBytes` 48 MB, dropped on `dispose`, nothing on disk); decoded-image cache now bounded in `main.dart` (`imageCache.maximumSize` 200, `maximumSizeBytes` 64 MB — below Flutter's 1000/100 MB defaults)
 - [~] 16.4 Security review (first pass clean): token in `flutter_secure_storage`; no token/secret logged (only error codes); session cookie never forwarded on redirects (`followRedirects: false`); protected content FLAG_SECURE + memory-only (PDF LRU, codes CSV deleted after share); `flutter pub outdated` — no critical (only minor/transitive updates). **Left:** full advisories check, deep links (G6), obfuscation + symbols (P17.3)
 - [ ] 16.5 Fix findings; record results
