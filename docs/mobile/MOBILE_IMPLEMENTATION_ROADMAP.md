@@ -171,16 +171,16 @@ Backend (additive; web unaffected):
 - [x] 4.1 `lib/credentials-login.ts` `verifyCredentials()` — the Credentials check moved out of `lib/auth.ts` unchanged (same rate-limit key, same lookups, same "invalid" for unknown / Google-only / wrong password, suspended only revealed after the password matches); `authorize()` now maps its result to the same `null` / `TooManyAttemptsError` / `AccountSuspendedError`. Web suite 842 passed (1 known slow-test timeout), tsc clean, `next build` ok
 - [~] 4.2 **G1** `POST /api/mobile/auth/login` (`app/api/mobile/auth/login/route.ts`) → `{token, expiresAt, cookieName, user}`; 400 / 401 `invalid_credentials` / 403 `account_suspended` / 429 `too_many_attempts`, Arabic messages as the web form, `no-store`. Token = `next-auth/jwt` `encode` with `AUTH_SECRET`, salt = the session cookie name (`lib/mobile-session.ts`); tests prove Auth.js' own `getToken` reads it from the cookie. **Left:** not deployed (needs owner approval) → never exercised against a live server
 - [~] 4.3 **G4** `POST /api/mobile/auth/refresh` — requires a valid session via `auth()`, re-reads the user (suspended / deleted → 401), issues a new 30-day token. Tested; not deployed
-- [!] 4.4 **G2** Google — blocked: Android/iOS OAuth client IDs (task 1.4) and D6
+- [~] 4.4 **G2** Google — backend `POST /api/mobile/auth/google` implemented (Google ID-token → `tokeninfo` verify, `aud === GOOGLE_CLIENT_ID`, link-by-email, suspended → 403) and unit-tested; **not deployed**. Live sign-in still blocked on Android/iOS OAuth client IDs (task 1.4) and D6
 - [!] 4.5 **G3** Apple — blocked: Apple Developer account (D2)
-- [x] 4.6 vitest: `lib/credentials-login.test.ts` (7), `lib/mobile-session.test.ts` (6), `app/api/mobile/auth/login/route.test.ts` (5), `…/refresh/route.test.ts` (3) — 21/21. Audience / linking tests arrive with 4.4–4.5
+- [x] 4.6 vitest: `lib/credentials-login.test.ts` (7), `lib/mobile-session.test.ts` (6), `app/api/mobile/auth/login/route.test.ts` (5), `…/refresh/route.test.ts` (3), `…/google/route.test.ts` (5) — 26/26. Audience / linking tests arrive with 4.5
 - [ ] 4.7 (optional, D3) **G5** SMS password reset (web + mobile); DB change needs approval
 
 Flutter:
 - [x] 4.8 Splash + session restore without network (P2) + **refresh when < 7 days left** (`features/auth/application/session_refresh.dart`): 401 → signed out with notice; offline → keeps the session
 - [~] 4.9 Welcome + Login (`features/auth/presentation/`) — widget-tested (success → Home + stored session, empty form, wrong password keeps signed out) and seen on the emulator (RTL, Niro, LTR identifier, back from login returns to welcome). **Left:** a real sign-in against a server running G1 (staging D1, or owner-approved deploy)
 - [~] 4.10 Register: phone (country list + parser ported from `lib/phone.ts`, 7 tests) → SMS code (6 digits, resend countdown, change number, one-time-code autofill hint) → name + password → register → auto sign-in. Repository tested against the web endpoints' real response shapes; invalid-number check seen on the emulator. **Left:** a real SMS round trip (needs staging with SMS; production would send real SMS)
-- [!] 4.11 Google / Apple buttons — blocked with 4.4 / 4.5
+- [~] 4.11 Google button implemented and widget-tested (`google_sign_in` → ID token → G2; hidden without a server client ID); live sign-in blocked with 4.4 (OAuth client IDs). Apple button blocked with 4.5
 - [x] 4.12 401 handling (P2) + refresh scheduling (4.8), widget-tested
 - [~] 4.13 Sign-out wipes token + registered caches (hooks, tested). **Left:** the sign-out button lives on the Account screen (P5)
 - [x] 4.14 Suspended: server message shown on login; a suspended session's next request / refresh → signed out with «انتهت الجلسة»
@@ -609,6 +609,7 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 |---|---|---|---|---|---|
 | `POST /api/mobile/auth/login` | P4 (G1) | `{identifier, password}` → 200 `{token, expiresAt, cookieName, user:{id,name,email,role}}`; 400 `bad_request`, 401 `invalid_credentials`, 403 `account_suspended`, 429 `too_many_attempts` (`{error, code}`) | 5 route + 7 shared-check + 6 token | none — web sign-in uses the same extracted check | **no** |
 | `POST /api/mobile/auth/refresh` | P4 (G4) | session cookie → 200 `{token, expiresAt, cookieName}`; 401 when the session / account is no longer valid | 3 | none | **no** |
+| `POST /api/mobile/auth/google` | P4 (G2) | `{idToken}` → 200 `{token, expiresAt, cookieName, user:{id,name,email,role}}`; 400 `invalid_token` (missing token / no email), 401 `invalid_token` (bad token / audience), 403 `account_suspended` | 5 route | none — web Google sign-in keeps linking by email | **no** |
 
 ## Files changed (keep updated)
 | Date | Files | Phase | Commit |
@@ -627,6 +628,8 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 | 2026-09-30 | `mobile/lib/features/games/**`, tests / fixtures / tool | P12 | `2eb298c`, `9da3585` |
 | 2026-09-30 | `mobile/lib/features/sharing/**`, book / account screens, `placeholder_screen.dart` removed | P13 | `6ba3231` |
 | 2026-09-30 | `mobile/lib/core/offline/**`, `core/storage/persisted_map.dart`, `trpc_client.dart`, 35 repository queries opted in, debug `network_security_config.xml` | P14 | `8aeb108` |
+| 2026-10-01 | `lib/db.ts` (`createUser` `id` made optional — DB-generated uuid; backward-compatible), `app/api/mobile/auth/google/route.ts` + `route.test.ts` (new) | P4 (G2 backend) | `7136fa4` |
+| 2026-10-01 | `mobile/lib/features/auth/**` (Google button, `google_auth.dart`), `mobile/lib/app/env.dart` (`googleServerClientId`), `mobile/lib/l10n/*`, `mobile/pubspec.yaml` (+`google_sign_in`), auth tests | P4 (G2 client) | `f826669` |
 
 ## Known issues (keep updated)
 - Capacitor wrapper defects (BP §A) — superseded by the Flutter app; not fixed.
@@ -644,18 +647,18 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 |---|---|
 | Current Phase | P9–P14 done on 2026-09-30 as far as possible without staging / Apple / approvals: P9 `[x]`, P10 `[x]`, P11 `[x]`, P12 `[x]`, P13 `[~]` (13.5 report `[!]` G10), P14 `[~]` (SWR, pre-disabled actions, full airplane pass left), P15 `[!]` (Firebase, Apple, G12). Earlier: P2, P3, P4-implementation, P7, P8 `[x]`; P5, P6 `[~]` |
 | Current Task | — (waiting on the owner's decisions below before P16) |
-| Last Completed Task | P14: offline reading (35 cached queries), rating queue, persisted positions / answers; verified end to end on the emulator |
+| Last Completed Task | Google sign-in (G2) completed in code — backend route + Flutter button, unit/widget-tested, not deployed (commits `7136fa4`, `f826669`) |
 | Next Task | P16 performance & security hardening (release-build measurements, request audit, dependency review). Rule: no push, no production deploy, no merge to `main` without explicit approval |
 | Blocked By | Staging (D1): every live check (auth, uploads, files, AI, games, sharing, doctor sets, contract tests); Apple account + macOS (D2): iOS build, APNs, Sign in with Apple; D3: G10 report (App Store 1.2), G12 push, G5 reset, G7; D6 Google / Apple login; Sentry project (2.8); G6 app links / G9 config need approval; Firebase project (push). D7 and D8 adopted as recommended defaults (FLAG_SECURE on protected screens only; Niro history on the device) — reversible |
-| Last Verification | 2026-09-30 — analyze clean, Flutter 325/325, on-device runs for P9 (9 screens), P10 (photo pipeline + 5 screens), P11 (7 screens + FLAG_SECURE capture + sandbox inspection), P12 (8 screens), P13 (5 screens), P14 (end-to-end offline over real HTTP) |
-| Tests | Flutter 325/325, incl. parity tests against the web's own code: card questions, Exam Focus, match, PDF marks, question-card rules, RichText, game scoring / Sudoku. Web and backend untouched since `ee1c391` (only `mobile/`, `docs/mobile/`, the P2 CI workflow) |
+| Last Verification | 2026-09-30 — analyze clean, Flutter 325/325, on-device runs for P9 (9 screens), P10 (photo pipeline + 5 screens), P11 (7 screens + FLAG_SECURE capture + sandbox inspection), P12 (8 screens), P13 (5 screens), P14 (end-to-end offline over real HTTP). 2026-10-01 — Google sign-in: tsc clean, vitest 847 passed (1 known slow-test timeout) + 34 skipped, flutter analyze clean, flutter test 332/332 |
+| Tests | Flutter 332/332, incl. parity tests against the web's own code: card questions, Exam Focus, match, PDF marks, question-card rules, RichText, game scoring / Sudoku. Web vitest 847 passed + 1 known slow-test timeout (math.test.ts) + 34 skipped. Backend changed only additively since `ee1c391`: `lib/db.ts` `createUser` `id` now optional + the new `POST /api/mobile/auth/google` route |
 | Build | Android debug APK builds and runs on the API 36 emulator. iOS: not built (no macOS) |
 | Security | Session only to the API origin; storage redirects never followed; protected PDFs and doctor sets never on disk (inspected); FLAG_SECURE on protected screens; photos' EXIF stripped; on-device data wiped on sign-out; cleartext debug-only |
 | Performance | Polling only on top / in the foreground with backoff; bounded caches (images 24 MB memory, queries 250 × 3 MB, PDF chunks 48 MB); release measurements in P16 |
 | UI/UX | All screens reviewed on emulator screenshots; RTL / bidi issues found and fixed in every phase (equations, names, titles) |
 | Android | Runs on API 36 emulator. Low-end device check pending |
 | iOS | Not built |
-| Last Updated | 2026-09-30 |
+| Last Updated | 2026-10-01 |
 
 ## CHANGELOG / IMPLEMENTATION HISTORY
 
@@ -767,3 +770,4 @@ Each entry: endpoint/procedure · phase · commit · tests · web impact.
 - **2026-09-30** — P14 (`8aeb108`): offline reading / queue / persisted state, end to
   end on the device. Found: debug builds refused the dev server's plain HTTP.
 - **2026-09-30** — P15 blocked (Firebase, Apple, G12 approval) — nothing built.
+- **2026-10-01** — Completed Google sign-in (G2): backend `POST /api/mobile/auth/google` (ID-token exchange, `aud === GOOGLE_CLIENT_ID`, link-by-email, suspended → 403) plus the Flutter Google button (`google_sign_in` → ID token → the route). `lib/db.ts` `createUser` no longer sends an app-generated `id` into the uuid column (backward-compatible). Route unit-tested (5), app button widget-tested; not deployed — live sign-in waits on the Android/iOS OAuth client IDs (task 1.4) and D6. Commits `7136fa4`, `f826669`.
