@@ -10,6 +10,7 @@ final class AppEnv {
     required this.flavor,
     required this.apiBaseUrl,
     required this.sessionCookieName,
+    this.googleServerClientId,
   });
 
   factory AppEnv.fromDefines() {
@@ -19,6 +20,9 @@ final class AppEnv {
       'SESSION_COOKIE_NAME',
       // Auth.js' name on HTTPS deployments (production and staging).
       defaultValue: '__Secure-authjs.session-token',
+    );
+    const googleServerClientId = String.fromEnvironment(
+      'GOOGLE_SERVER_CLIENT_ID',
     );
     final flavor = AppFlavor.values.firstWhere(
       (f) => f.name == flavorName,
@@ -40,6 +44,9 @@ final class AppEnv {
       flavor: flavor,
       apiBaseUrl: apiBaseUrl.replaceAll(RegExp(r'/+$'), ''),
       sessionCookieName: cookieName,
+      googleServerClientId: googleServerClientId.isEmpty
+          ? null
+          : googleServerClientId,
     );
   }
 
@@ -50,4 +57,10 @@ final class AppEnv {
 
   /// The Auth.js session cookie the server reads (lib/auth.ts).
   final String sessionCookieName;
+
+  /// The web OAuth client Google Sign-In asks tokens for (its
+  /// serverClientId). It sits in the same Google Cloud project as the app's
+  /// Android client; the server accepts it as the token audience. Null hides
+  /// the Google button.
+  final String? googleServerClientId;
 }

@@ -119,6 +119,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginSubmitting => 'جاري الدخول...';
 
   @override
+  String get authOr => 'أو';
+
+  @override
+  String get loginWithGoogle => 'تسجيل الدخول عبر Google';
+
+  @override
+  String get googleSignInFailed =>
+      'تعذّر الدخول بحساب Google. تأكد أن على الجهاز حساب Google ثم حاول مجددًا.';
+
+  @override
   String get loginNoAccount => 'ليس لديك حساب؟';
 
   @override

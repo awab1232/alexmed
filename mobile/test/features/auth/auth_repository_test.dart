@@ -259,4 +259,68 @@ void main() {
       },
     );
   });
+
+  group('loginWithGoogle', () {
+    test('posts the ID token → session + user', () async {
+      adapter = FakeAdapter(
+        (_, _) => (
+          status: 200,
+          body: jsonEncode({
+            'token': 'jwe',
+            'expiresAt': '2026-10-29T12:00:00.000Z',
+            'cookieName': '__Secure-authjs.session-token',
+            'created': true,
+            'user': {
+              'id': 'u2',
+              'name': 'S',
+              'email': 's@gmail.com',
+              'role': 'user',
+            },
+          }),
+        ),
+      );
+      final result = await repo().loginWithGoogle('google-id-token');
+      expect(result.session.token, 'jwe');
+      expect(result.user.email, 's@gmail.com');
+      expect(adapter.requests.single.path, '/api/mobile/auth/google');
+      expect(jsonDecode(adapter.bodies.single), {'idToken': 'google-id-token'});
+    });
+
+    test('401 is "Google token refused", not "session ended"', () async {
+      adapter = FakeAdapter((_, _) => (status: 401, body: '{}'));
+      await expectLater(
+        repo().loginWithGoogle('t'),
+        throwsA(
+          isA<RejectedException>().having(
+            (e) => e.code,
+            'code',
+            'invalid_google_token',
+          ),
+        ),
+      );
+      expect(rejected, 0);
+    });
+
+    test('a suspended account (403) keeps the server text', () async {
+      adapter = FakeAdapter(
+        (_, _) => (
+          status: 403,
+          body: jsonEncode({
+            'error': 'حسابك معلّق.',
+            'code': 'account_suspended',
+          }),
+        ),
+      );
+      await expectLater(
+        repo().loginWithGoogle('t'),
+        throwsA(
+          isA<ForbiddenException>().having(
+            (e) => e.message,
+            'message',
+            'حسابك معلّق.',
+          ),
+        ),
+      );
+    });
+  });
 }

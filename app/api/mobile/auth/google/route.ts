@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { getUserById, getUserByEmail, createUser } from "@/lib/db";
+import { getUserByEmail, createUser } from "@/lib/db";
 import { issueMobileSession } from "@/lib/mobile-session";
-import { nanoid } from "nanoid";
 
 // Mobile Google sign-in (blueprint §9, gap G2): the app calls this with
-// its Google idToken.
+// its Google idToken. Same account rules as the web's Google provider
+// (lib/auth.ts): an existing email is linked (never refused) and a suspended
+// account is blocked. The response matches /api/mobile/auth/login so the app
+// parses both the same way.
 const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function POST(request: Request) {
   const { idToken } = await request.json();
   if (!idToken) {
     return NextResponse.json(
-      { error: "Token missing", code: "invalid_token" },
+      { error: "الرمز مفقود.", code: "invalid_token" },
       { status: 400, headers: NO_STORE }
     );
   }
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
   );
   if (!response.ok) {
     return NextResponse.json(
-      { error: "Invalid token", code: "invalid_token" },
+      { error: "رمز Google غير صالح.", code: "invalid_token" },
       { status: 401, headers: NO_STORE }
     );
   }
@@ -32,30 +34,40 @@ export async function POST(request: Request) {
   // Verify audience
   if (tokenData.aud !== process.env.GOOGLE_CLIENT_ID) {
     return NextResponse.json(
-      { error: "Invalid audience", code: "invalid_token" },
+      { error: "رمز Google غير صالح.", code: "invalid_token" },
       { status: 401, headers: NO_STORE }
     );
   }
 
-  const { email, name, sub: googleId } = tokenData;
+  const email = tokenData.email as string | undefined;
+  // An ID token without a verified email can neither map to nor create an
+  // account. Refusing here also stops getUserByEmail(undefined) from matching
+  // a phone-only account whose email column is NULL.
+  if (!email) {
+    return NextResponse.json(
+      { error: "لم يصل البريد في الرمز.", code: "invalid_token" },
+      { status: 400, headers: NO_STORE }
+    );
+  }
 
-  // Find or create user
+  const name = tokenData.name as string | undefined;
+
+  // Find or create the user, linking by email as the web's Google provider
+  // does. `id` is left to the database (gen_random_uuid()) — users.id is a
+  // uuid column and rejects app-generated id strings.
   let user = await getUserByEmail(email);
   if (!user) {
-    // Create new user if not exists
     user = await createUser({
-        id: nanoid(),
-        email,
-        name,
-        role: "user",
-        // No password for Google users
+      email,
+      name: name ?? null,
+      role: "user",
     });
   }
 
   if (user.suspendedAt) {
     return NextResponse.json(
       { error: "حسابك معلّق.", code: "account_suspended" },
-      { status: 401, headers: NO_STORE }
+      { status: 403, headers: NO_STORE }
     );
   }
 
@@ -68,5 +80,16 @@ export async function POST(request: Request) {
     },
     request.url
   );
-  return NextResponse.json(fresh, { headers: NO_STORE });
+  return NextResponse.json(
+    {
+      ...fresh,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    },
+    { headers: NO_STORE }
+  );
 }

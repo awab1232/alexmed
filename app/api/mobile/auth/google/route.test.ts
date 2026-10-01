@@ -62,6 +62,9 @@ describe("POST /api/mobile/auth/google", () => {
         expect.objectContaining({ id: "u1" }),
         expect.any(String)
     );
+    const body = await response.json();
+    expect(body.token).toBe("new-token");
+    expect(body.user).toEqual({ id: "u1", email, name: "Student", role: "user" });
   });
 
   it("valid Google token → new user → creates user → issues session", async () => {
@@ -97,10 +100,15 @@ describe("POST /api/mobile/auth/google", () => {
       expect(createUser).toHaveBeenCalledWith(
           expect.objectContaining({ email, name: "New Student", role: "user" })
       );
+      // users.id is a uuid column with a DB default — the route must never
+      // hand the insert an app-generated id string.
+      expect(m(createUser).mock.calls[0][0]).not.toHaveProperty("id");
       expect(issueMobileSession).toHaveBeenCalledWith(
           expect.objectContaining({ id: "u2" }),
           expect.any(String)
       );
+      const body = await response.json();
+      expect(body.user).toEqual({ id: "u2", email, name: "New Student", role: "user" });
     });
 
   it("invalid audience → 401", async () => {
@@ -117,7 +125,7 @@ describe("POST /api/mobile/auth/google", () => {
     expect(response.status).toBe(401);
   });
 
-  it("suspended user → 401", async () => {
+  it("suspended user → 403", async () => {
     m(global.fetch).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, email: "s@e.com", sub: "g1" }),
@@ -130,6 +138,23 @@ describe("POST /api/mobile/auth/google", () => {
           body: JSON.stringify({ idToken: "fake-id-token" }),
         })
       );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(403);
+  });
+
+  it("token without an email → 400, no user lookup", async () => {
+    m(global.fetch).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, sub: "g1" }),
+      });
+
+    const response = await POST(
+        new Request("https://nirolearn.com/api/mobile/auth/google", {
+          method: "POST",
+          body: JSON.stringify({ idToken: "fake-id-token" }),
+        })
+      );
+    expect(response.status).toBe(400);
+    expect(getUserByEmail).not.toHaveBeenCalled();
+    expect(createUser).not.toHaveBeenCalled();
   });
 });

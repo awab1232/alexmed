@@ -9,13 +9,34 @@ import 'package:nirolearn/core/storage/local_store.dart';
 import 'package:nirolearn/core/ui/ui.dart';
 import 'package:nirolearn/features/account/data/account_repository.dart';
 import 'package:nirolearn/features/auth/data/auth_repository.dart';
+import 'package:nirolearn/features/auth/data/google_auth.dart';
+import 'package:nirolearn/features/auth/presentation/auth_widgets.dart';
 import 'package:nirolearn/features/library/data/library_repository.dart';
 
 import '../../helpers/app_harness.dart';
 import '../../helpers/fake_http.dart';
 
+class FakeGoogleAuth implements GoogleAuth {
+  FakeGoogleAuth({this.error});
+
+  final Object? error;
+  int calls = 0;
+
+  @override
+  bool get available => true;
+
+  @override
+  Future<String> idToken() async {
+    calls++;
+    if (error != null) throw error!;
+    return 'google-id-token';
+  }
+}
+
 class FakeAuthRepository implements AuthRepository {
   final loginCalls = <String>[];
+  final googleCalls = <String>[];
+  Object? googleError;
   int refreshCalls = 0;
   Object? loginError;
   Object? refreshError;
@@ -38,6 +59,21 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<({StoredSession session, AuthUser user})> loginWithGoogle(
+    String idToken,
+  ) async {
+    googleCalls.add(idToken);
+    if (googleError != null) throw googleError!;
+    return (
+      session: StoredSession(
+        token: 'google-jwe',
+        expiresAt: DateTime.now().toUtc().add(const Duration(days: 30)),
+      ),
+      user: const AuthUser(id: 'u2', role: 'user'),
+    );
+  }
+
+  @override
   Future<StoredSession> refresh() async {
     refreshCalls++;
     if (refreshError != null) throw refreshError!;
@@ -55,6 +91,7 @@ Future<(FakeAuthRepository, MemorySessionStore)> pumpApp(
   WidgetTester tester, {
   StoredSession? stored,
   FakeAuthRepository? auth,
+  GoogleAuth? google,
 }) async {
   final repo = auth ?? FakeAuthRepository();
   final store = MemorySessionStore(stored);
@@ -66,6 +103,7 @@ Future<(FakeAuthRepository, MemorySessionStore)> pumpApp(
         sessionStoreProvider.overrideWithValue(store),
         localStoreProvider.overrideWithValue(MemoryLocalStore()),
         envProvider.overrideWithValue(testEnv),
+        if (google != null) googleAuthProvider.overrideWithValue(google),
         libraryRepositoryProvider.overrideWithValue(FakeLibraryRepository()),
         accountRepositoryProvider.overrideWithValue(FakeAccountRepository()),
       ],
@@ -189,5 +227,57 @@ void main() {
     );
     expect(store.current?.token, 'old');
     expect(find.byType(NlBottomNav), findsOneWidget);
+  });
+
+  testWidgets('no Google button without a server client ID', (tester) async {
+    await pumpApp(tester);
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pumpAndSettle();
+    expect(find.byType(GoogleButton), findsNothing);
+  });
+
+  testWidgets('Google → server → Home', (tester) async {
+    final google = FakeGoogleAuth();
+    final (auth, store) = await pumpApp(tester, google: google);
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(GoogleButton));
+    await tester.pumpAndSettle();
+    expect(auth.googleCalls, ['google-id-token']);
+    expect(store.current?.token, 'google-jwe');
+    expect(find.byType(NlBottomNav), findsOneWidget);
+  });
+
+  testWidgets('closing the Google picker shows nothing', (tester) async {
+    final google = FakeGoogleAuth(
+      error: const GoogleAuthException(GoogleAuthFailure.canceled),
+    );
+    final (auth, store) = await pumpApp(tester, google: google);
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(GoogleButton));
+    await tester.pumpAndSettle();
+    expect(auth.googleCalls, isEmpty);
+    expect(store.current, isNull);
+    expect(find.byType(AuthError), findsNothing);
+  });
+
+  testWidgets('a refused Google token is explained', (tester) async {
+    final auth = FakeAuthRepository()
+      ..googleError = const RejectedException(
+        'رمز Google غير صالح.',
+        code: 'invalid_google_token',
+      );
+    final (_, store) = await pumpApp(
+      tester,
+      auth: auth,
+      google: FakeGoogleAuth(),
+    );
+    await tester.tap(find.text('تسجيل الدخول'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(GoogleButton));
+    await tester.pumpAndSettle();
+    expect(find.text('رمز Google غير صالح.'), findsOneWidget);
+    expect(store.current, isNull);
   });
 }

@@ -69,8 +69,8 @@ class AuthRepository {
   }
 
   /// Signs in (or signs up) with a Google ID token from [GoogleAuth], with
-  /// the web's account rules. An email that already has a password account
-  /// is refused (`account_not_linked`), as on the web.
+  /// the web's account rules: an existing email is linked (never refused) and
+  /// a suspended account is blocked — as on the web (lib/auth.ts).
   Future<({StoredSession session, AuthUser user})> loginWithGoogle(
     String idToken,
   ) async {

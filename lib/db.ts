@@ -147,14 +147,24 @@ export async function updateUserProfile(
 }
 
 export async function createUser(data: {
-  id: string;
+  // `users.id` is a uuid column with a DB default; omit it and the database
+  // generates it. Only pass an id when it is already a valid UUID.
+  id?: string;
   email: string | null;
   name: string | null;
   role: "user" | "admin";
 }) {
   const db = getDb();
   if (!db) throw new Error("Database not available");
-  const [user] = await db.insert(users).values(data).returning();
+  const [user] = await db
+    .insert(users)
+    .values({
+      ...(data.id !== undefined ? { id: data.id } : {}),
+      email: data.email,
+      name: data.name,
+      role: data.role,
+    })
+    .returning();
   return user;
 }
 

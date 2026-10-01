@@ -308,6 +308,24 @@ abstract class AppLocalizations {
   /// **'جاري الدخول...'**
   String get loginSubmitting;
 
+  /// No description provided for @authOr.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو'**
+  String get authOr;
+
+  /// No description provided for @loginWithGoogle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الدخول عبر Google'**
+  String get loginWithGoogle;
+
+  /// No description provided for @googleSignInFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر الدخول بحساب Google. تأكد أن على الجهاز حساب Google ثم حاول مجددًا.'**
+  String get googleSignInFailed;
+
   /// No description provided for @loginNoAccount.
   ///
   /// In ar, this message translates to:

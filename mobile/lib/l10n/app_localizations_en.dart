@@ -122,6 +122,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSubmitting => 'Signing in...';
 
   @override
+  String get authOr => 'or';
+
+  @override
+  String get loginWithGoogle => 'Sign in with Google';
+
+  @override
+  String get googleSignInFailed =>
+      'Couldn\'t sign in with Google. Make sure the device has a Google account, then try again.';
+
+  @override
   String get loginNoAccount => 'No account yet?';
 
   @override

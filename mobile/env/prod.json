@@ -1,4 +1,5 @@
 {
   "APP_ENV": "prod",
-  "API_BASE_URL": "https://nirolearn.com"
+  "API_BASE_URL": "https://nirolearn.com",
+  "GOOGLE_SERVER_CLIENT_ID": "342475897969-tcogc9hjlfe5nlgqdkhm1opsk126j2ed.apps.googleusercontent.com"
 }
