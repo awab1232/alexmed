@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
 import robots from "./robots";
 import sitemap from "./sitemap";
-import { PUBLIC_PATHS, SITE_URL } from "@/lib/site";
+import { INDEXABLE_LEARN_ARTICLES, learnPath } from "@/content/learn/articles";
+import { PUBLIC_BASE_PATHS, SITE_URL } from "@/lib/site";
 
 describe("public SEO route contract", () => {
   it("publishes exactly the intentional public canonical URLs", () => {
     const urls = sitemap().map(entry => entry.url);
 
-    expect(urls).toEqual(PUBLIC_PATHS.map(path => `${SITE_URL}${path}`));
+    const expectedPaths = [
+      ...PUBLIC_BASE_PATHS,
+      "/learn",
+      "/learn/glossary",
+      ...INDEXABLE_LEARN_ARTICLES.map(article => learnPath(article.slug)),
+    ];
+
+    expect(urls).toEqual(expectedPaths.map(path => `${SITE_URL}${path}`));
     for (const privatePath of [
       "/login",
       "/home",
@@ -17,6 +25,8 @@ describe("public SEO route contract", () => {
       "/doctor",
       "/question-sets",
       "/mirror/example",
+      "/games",
+      "/question-sets/example",
     ]) {
       expect(urls).not.toContain(`${SITE_URL}${privatePath}`);
     }

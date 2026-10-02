@@ -1,18 +1,30 @@
 import type { MetadataRoute } from "next";
-import { PUBLIC_PATHS, SITE_URL, TOOL_PAGES } from "@/lib/site";
+import { INDEXABLE_LEARN_ARTICLES, learnPath } from "@/content/learn/articles";
+import { PUBLIC_BASE_PATHS, SITE_URL, TOOL_PAGES } from "@/lib/site";
 
 // Only the public, indexable pages — never app pages behind sign-in.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return PUBLIC_PATHS.map(path => ({
+  const learnPaths = [
+    "/learn",
+    "/learn/glossary",
+    ...INDEXABLE_LEARN_ARTICLES.map(article => learnPath(article.slug)),
+  ];
+  const paths = [...PUBLIC_BASE_PATHS, ...learnPaths];
+
+  return paths.map(path => ({
     url: `${SITE_URL}${path}`,
-    changeFrequency: path === "/" ? "weekly" : "monthly",
+    changeFrequency: path === "/" || path.startsWith("/learn") ? "weekly" : "monthly",
     priority:
       path === "/"
         ? 1
-        : path === "/pricing" || path === "/register"
-          ? 0.8
-          : TOOL_PAGES.some(page => page.href === path)
-            ? 0.9
-            : 0.5,
+        : path === "/learn"
+          ? 0.9
+          : path.startsWith("/learn")
+            ? 0.75
+            : path === "/pricing" || path === "/register"
+              ? 0.8
+              : TOOL_PAGES.some(page => page.href === path)
+                ? 0.9
+                : 0.5,
   }));
 }

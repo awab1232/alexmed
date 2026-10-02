@@ -7,6 +7,18 @@ export const SITE_URL = (
 
 export const SITE_NAME = "NiroLearn";
 
+export const SITE_ENTITY_DESCRIPTION_EN =
+  "NiroLearn is an AI-powered learning platform that helps students turn study materials into structured learning resources such as summaries, flashcards, questions, quizzes, mind maps, exam-focused revision, and interactive educational experiences.";
+
+export const SITE_ENTITY_DESCRIPTION_AR =
+  "نيـرو ليرن (NiroLearn) منصة تعليمية مدعومة بالذكاء الاصطناعي تساعد الطلاب على تحويل موادهم الدراسية إلى ملخصات وفلاش كارد وأسئلة واختبارات وخرائط ذهنية ومراجعة مركزة للامتحانات وتجارب تعليمية تفاعلية.";
+
+export const SITE_ENTITY_IDS = {
+  organization: `${SITE_URL}/#organization`,
+  website: `${SITE_URL}/#website`,
+  software: `${SITE_URL}/#software`,
+} as const;
+
 // Title and description lead with the terms Arab students actually search
 // for (OpenSEO, Saudi market, 2026-09: "تلخيص ملف pdf" 260/mo, "فلاش كارد"
 // 320/mo, "تلخيص pdf بالذكاء الاصطناعي" 110/mo, all KD 0), in plain words.
@@ -18,7 +30,7 @@ export const SITE_DESCRIPTION =
 
 // Public pages worth indexing, in priority order (app pages sit behind
 // sign-in and are kept out of the sitemap; /login is noindex).
-export const PUBLIC_PATHS = [
+export const PUBLIC_BASE_PATHS = [
   "/",
   "/pdf-summary",
   "/flashcards",
@@ -30,6 +42,8 @@ export const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
 ] as const;
+
+export const PUBLIC_PATHS = PUBLIC_BASE_PATHS;
 
 // Public tool pages and the study guide: header nav, footer, "related"
 // links and the sitemap all read this list.

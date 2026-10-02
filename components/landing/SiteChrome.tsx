@@ -5,13 +5,14 @@
 import Link from "next/link";
 import NiroSpark from "@/components/niro/NiroSpark";
 import { SITE_NAME, TOOL_PAGES, type ToolPath } from "@/lib/site";
+import type { LearnCategory } from "@/content/learn/articles";
 import s from "./landing.module.css";
 
 export function MarketingPage({
   current,
   children,
 }: {
-  current?: ToolPath | "/";
+  current?: ToolPath | "/" | "/learn" | LearnCategory;
   children: React.ReactNode;
 }) {
   return (
@@ -39,6 +40,9 @@ function SiteHeader({ current }: { current?: string }) {
           <span>{SITE_NAME}</span>
         </Link>
         <nav aria-label="أدوات NiroLearn" className={s.nav}>
+          <Link href="/learn" aria-current={current === "/learn" ? "page" : undefined}>
+            Learn
+          </Link>
           {TOOL_PAGES.map(page => (
             <Link
               key={page.href}
@@ -88,6 +92,7 @@ function SiteFooter() {
           <nav aria-label="روابط الموقع" className={s.footerNav}>
             <h2 className={s.footerHeading}>NiroLearn</h2>
             <Link href="/">الرئيسية</Link>
+            <Link href="/learn">Learn</Link>
             <Link href="/pricing">الأسعار</Link>
             <Link href="/register">إنشاء حساب</Link>
             <Link href="/login">تسجيل الدخول</Link>
