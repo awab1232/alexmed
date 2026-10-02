@@ -1,6 +1,7 @@
 import "@/app/globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BASE_OPEN_GRAPH } from "@/lib/site";
 import LegalPage, {
   LEGAL_APP_NAME,
   LEGAL_CONTACT_EMAIL,
@@ -15,6 +16,12 @@ export const metadata: Metadata = {
   title: `سياسة الخصوصية | ${LEGAL_APP_NAME}`,
   description: `كيف يجمع ${LEGAL_APP_NAME} بياناتك ويستخدمها ويحميها، ولماذا يطلب الكاميرا والإشعارات.`,
   alternates: { canonical: "/privacy" },
+  openGraph: {
+    ...BASE_OPEN_GRAPH,
+    url: "/privacy",
+    title: `سياسة الخصوصية | ${LEGAL_APP_NAME}`,
+    description: `كيف يجمع ${LEGAL_APP_NAME} بياناتك ويستخدمها ويحميها، ولماذا يطلب الكاميرا والإشعارات.`,
+  },
 };
 
 const email = (
@@ -285,9 +292,11 @@ const sections: LegalSection[] = [
         <li>يمكنك حذف أي ملف في أي وقت، فيُحذف معه كل ما ولّدناه منه وصوره.</li>
         <li>
           <strong>حذف الحساب:</strong> من داخل التطبيق{" "}
-          <Link href="/account#delete-account">حسابي ← الملف الدراسي ← حذف الحساب</Link>. يُحذف
-          حسابك فورًا مع كل ملفاتك وصورها ومحتواك الدراسي وتقدّمك ومحادثاتك
-          ومشاركاتك، نهائيًا ولا يمكن استرجاعه.
+          <Link href="/account#delete-account">
+            حسابي ← الملف الدراسي ← حذف الحساب
+          </Link>
+          . يُحذف حسابك فورًا مع كل ملفاتك وصورها ومحتواك الدراسي وتقدّمك
+          ومحادثاتك ومشاركاتك، نهائيًا ولا يمكن استرجاعه.
         </li>
         <li>
           إن لم تستطع الدخول إلى حسابك، راسلنا من بريدك المسجّل على {email}{" "}
