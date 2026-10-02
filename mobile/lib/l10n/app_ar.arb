@@ -1,0 +1,2110 @@
+{
+  "@@locale": "ar",
+  "appName": "NiroLearn",
+  "tabHome": "الرئيسية",
+  "tabGames": "ألعاب",
+  "tabAdd": "إضافة",
+  "tabNiro": "Niro",
+  "tabAccount": "حسابي",
+  "actionRetry": "أعد المحاولة",
+  "actionCancel": "إلغاء",
+  "actionConfirm": "تأكيد",
+  "actionClose": "إغلاق",
+  "actionSave": "حفظ",
+  "actionContinue": "متابعة",
+  "loading": "جاري التحميل…",
+  "offlineBanner": "أنت غير متصل — يظهر آخر ما حُفظ على جهازك.",
+  "emptyTitle": "لا يوجد شيء هنا بعد",
+  "errorTitle": "تعذّر التحميل",
+  "errorNetwork": "تعذّر الاتصال. تحقق من الإنترنت ثم حاول مرة أخرى.",
+  "errorSessionExpired": "انتهت الجلسة. سجّل الدخول مرة أخرى.",
+  "errorForbidden": "غير مسموح لك بالوصول إلى هذا المحتوى.",
+  "errorNotFound": "غير متاح.",
+  "errorRateLimited": "محاولات كثيرة. انتظر قليلًا ثم حاول مجددًا.",
+  "errorServer": "حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.",
+  "errorRejected": "تعذّر تنفيذ الطلب.",
+  "underConstruction": "قيد البناء — {phase}",
+  "@underConstruction": {
+    "placeholders": {
+      "phase": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeTitle": "مرحبًا",
+  "welcomeHeadline": "ذاكر بذكاء مع Niro",
+  "welcomeBody": "ارفع ملفك، ونحوّله لملخص وبطاقات واختبارات بالعربي.",
+  "welcomeSignIn": "تسجيل الدخول",
+  "welcomeCreateAccount": "إنشاء حساب",
+  "loginTitle": "تسجيل الدخول",
+  "loginSubtitle": "مرحبًا بعودتك إلى NiroLearn",
+  "loginIdentifier": "رقم الهاتف أو البريد الإلكتروني",
+  "loginPassword": "كلمة المرور",
+  "loginSubmit": "دخول",
+  "loginSubmitting": "جاري الدخول...",
+  "authOr": "أو",
+  "loginWithGoogle": "تسجيل الدخول عبر Google",
+  "googleSignInFailed": "تعذّر الدخول بحساب Google. تأكد أن على الجهاز حساب Google ثم حاول مجددًا.",
+  "loginNoAccount": "ليس لديك حساب؟",
+  "loginCreateAccount": "أنشئ حسابًا",
+  "loginFillBoth": "أدخل رقم الهاتف (أو البريد) وكلمة المرور.",
+  "showPassword": "إظهار كلمة المرور",
+  "hidePassword": "إخفاء كلمة المرور",
+  "sessionEndedNotice": "انتهت الجلسة. سجّل الدخول مرة أخرى.",
+  "registerTitle": "إنشاء حساب",
+  "registerPhoneStep": "رقم هاتفك",
+  "registerPhoneHint": "نرسل لك كودًا برسالة نصية للتأكد من الرقم.",
+  "registerCountry": "الدولة",
+  "registerPhone": "رقم الموبايل",
+  "registerSendCode": "أرسل الكود",
+  "registerInvalidPhone": "رقم الهاتف غير صحيح. تأكد من الرقم ومن رمز الدولة.",
+  "registerCodeStep": "أدخل الكود",
+  "registerCodeSentTo": "أرسلنا كودًا من 6 أرقام إلى {phone}",
+  "@registerCodeSentTo": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "registerCode": "الكود",
+  "registerVerify": "تأكيد",
+  "registerResend": "أعد إرسال الكود",
+  "registerResendIn": "إعادة الإرسال بعد {seconds} ث",
+  "@registerResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "registerChangePhone": "غيّر الرقم",
+  "registerDetailsStep": "بياناتك",
+  "registerName": "الاسم",
+  "registerNameError": "اكتب اسمك (حرفين على الأقل).",
+  "registerPasswordError": "كلمة المرور لازم تكون 8 أحرف على الأقل.",
+  "registerSubmit": "إنشاء الحساب",
+  "registerHaveAccount": "لديك حساب؟",
+  "registerTerms": "بإنشاء الحساب توافق على سياسة الاستخدام وسياسة الخصوصية.",
+  "greetingNight": "سهرة دراسة",
+  "greetingMorning": "صباح الخير",
+  "greetingEvening": "مساء الخير",
+  "greetingWithName": "{greeting}، {name}",
+  "@greetingWithName": {
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nextDueTitle": "{count, plural, =1{بطاقة واحدة جاهزة للمراجعة} other{{count} بطاقة جاهزة للمراجعة}}",
+  "@nextDueTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nextDueDetail": "حوالي {minutes} دقيقة، والمراجعة في وقتها تثبّت المعلومة.",
+  "@nextDueDetail": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "nextDueAction": "ابدأ المراجعة",
+  "nextPreparingTitle": "نجهّز «{title}»",
+  "@nextPreparingTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "nextPreparingDetail": "نقرأ الصفحات ونقسّمها لفصول. تقدر تفتحه وتتابع التقدّم.",
+  "nextOpenBook": "افتح الكتاب",
+  "nextContinueTitle": "تابع «{title}»",
+  "@nextContinueTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "nextContinueDetail": "لا يوجد شيء مستحق للمراجعة الآن. أكمل من حيث توقفت.",
+  "nextContinueAction": "تابع الدراسة",
+  "nextFirstTitle": "ارفع أول كتاب لك",
+  "nextFirstDetail": "ملف PDF من مقرّرك يكفي. نحوّله لبطاقات وأسئلة وملخص وخريطة ذهنية.",
+  "nextFirstAction": "ارفع كتابًا",
+  "examIn": "امتحان {name} {when}",
+  "@examIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "daysToday": "اليوم",
+  "daysTomorrow": "غدًا",
+  "daysTwo": "بعد يومين",
+  "daysFew": "بعد {days} أيام",
+  "@daysFew": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysMany": "بعد {days} يومًا",
+  "@daysMany": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "yourBooks": "كتبك",
+  "bookReady": "جاهز للدراسة",
+  "bookPartsReady": "{done} من {total} أجزاء جاهزة",
+  "@bookPartsReady": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bookPreparing": "نجهّز أدوات الدراسة…",
+  "bookReading": "نقرأ الصفحات…",
+  "sharedPending": "{count, plural, =1{لديك طلب مشاركة جديد} other{لديك {count} طلبات مشاركة جديدة}}",
+  "@sharedPending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharedPendingDetail": "زميلك يريد مشاركة ملف دراسي جاهز معك",
+  "sharedWithMe": "مشترك معي",
+  "sharedWithMeDetail": "ملفات شاركها معك زملاؤك",
+  "sharedFrom": "مشترك من {owner}",
+  "@sharedFrom": {
+    "placeholders": {
+      "owner": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedColleague": "زميل",
+  "myFolders": "مجلداتي",
+  "newFolder": "مجلد جديد",
+  "foldersEmpty": "لا توجد مجلدات بعد. المجلد يجمع كتب مادة واحدة وملفات أسئلتها.",
+  "createFolder": "أنشئ مجلدًا",
+  "folderBooks": "{count, plural, =1{كتاب واحد} other{{count} كتب}}",
+  "@folderBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderDecks": "، {count} ملف أسئلة",
+  "@folderDecks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "folderUpdated": "، آخر تحديث {date}",
+  "@folderUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "searchFolders": "ابحث عن مجلد...",
+  "noMatches": "لا نتائج مطابقة",
+  "noMatchesDetail": "جرّب اسمًا آخر للبحث.",
+  "folderName": "اسم المجلد",
+  "folderNameHint": "مثال: تشريح، رياضيات 1",
+  "folderType": "نوع المادة",
+  "folderCreate": "إنشاء",
+  "folderCreateError": "تعذّر إنشاء المجلد. تحقق من الاسم وحاول مرة أخرى.",
+  "folderLoadError": "تعذر تحميل ملفاتك",
+  "folderEmpty": "لا توجد ملفات في هذا المجلد بعد",
+  "addFile": "إضافة ملف",
+  "folderSummary": "{type} · {count} ملف",
+  "@folderSummary": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "questionFilesSection": "ملفات الأسئلة",
+  "questionFileBadge": "ملف أسئلة",
+  "deckMeta": "{cards} بطاقة · {pages} صفحة",
+  "@deckMeta": {
+    "placeholders": {
+      "cards": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "bookMeta": "{pages} صفحة",
+  "@bookMeta": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "moveTo": "نقل إلى مجلد",
+  "noFolder": "بدون مادة",
+  "moved": "تم النقل.",
+  "renameFolder": "إعادة التسمية",
+  "deleteFolder": "حذف المجلد",
+  "deleteFolderTitle": "حذف المجلد؟",
+  "deleteFolderBody": "يُحذف المجلد فقط. الكتب وملفات الأسئلة التي فيه تبقى في حسابك بدون مادة.",
+  "folderActions": "خيارات المجلد",
+  "saved": "تم الحفظ.",
+  "addSheetTitle": "ماذا تريد أن تضيف؟",
+  "addBook": "كتاب دراسي",
+  "addBookDetail": "فصول، شرح، بطاقات، اختبارات وملخص لكل فصل.",
+  "addQuestionFile": "ملف أسئلة",
+  "addQuestionFileDetail": "حوّل ملف أسئلة إلى بطاقات مذاكرة سريعة.",
+  "addFolderDetail": "نظّم ملفاتك حسب المادة.",
+  "addDoctorCode": "كود من دكتورك",
+  "addDoctorCodeDetail": "أضف مجموعة أسئلة محمية بكود الوصول.",
+  "accountGroup": "الحساب",
+  "studyGroup": "دراستي",
+  "adminGroup": "الإدارة",
+  "helpGroup": "المساعدة",
+  "studyProfile": "الملف الدراسي",
+  "studyProfileEmpty": "أضف تخصصك وسنتك",
+  "academicYear": "السنة الدراسية",
+  "academicYearHint": "مثال: السنة الثالثة",
+  "specialty": "التخصص",
+  "specialtyHint": "مثال: طب بشري",
+  "usernameRow": "اسم المستخدم للمشاركة",
+  "usernameEmpty": "لم تختره بعد",
+  "planRow": "الباقة والاستخدام",
+  "questionFilesRow": "ملفات الأسئلة",
+  "statsRow": "إحصائياتي",
+  "doctorDashboard": "لوحة الدكتور",
+  "doctorApply": "انضم كدكتور",
+  "doctorPending": "طلب الدكتور قيد المراجعة",
+  "doctorRejected": "طلب الدكتور لم يُقبل",
+  "doctorSuspended": "صلاحيات الدكتور موقوفة",
+  "privacyPolicy": "سياسة الخصوصية",
+  "termsOfUse": "سياسة الاستخدام",
+  "contactUs": "تواصل معنا",
+  "signOut": "تسجيل الخروج",
+  "signOutConfirmTitle": "تسجيل الخروج؟",
+  "signOutConfirmBody": "ستحتاج لتسجيل الدخول مرة أخرى على هذا الجهاز.",
+  "deleteAccount": "حذف الحساب",
+  "deleteAccountTitle": "حذف الحساب نهائيًا؟",
+  "deleteAccountBody": "يُحذف حسابك مع كل ملفاتك وصورها، والملخصات والبطاقات والأسئلة، وتقدّمك ومحادثاتك ومشاركاتك. لا يمكن التراجع عن ذلك.",
+  "deleteAccountTypeWord": "للتأكيد اكتب كلمة «حذف»",
+  "deleteAccountConfirmWord": "حذف",
+  "deleteAccountSubmit": "حذف نهائي",
+  "planTitle": "باقتك في NiroLearn",
+  "planFree": "أنت تستخدم الباقة المجانية.",
+  "planActiveUntil": "فعّالة حتى {date}",
+  "@planActiveUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planActive": "فعّالة",
+  "usageAssistant": "مساعد Niro",
+  "usageQuestionFiles": "ملفات الأسئلة",
+  "usageStudyFiles": "ملفات الدراسة",
+  "usageToday": "اليوم",
+  "usageOf": "{used} من {limit}",
+  "@usageOf": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "usageUnlimited": "غير محدود",
+  "usageResets": "يتجدد غدًا",
+  "maxFileSize": "أقصى حجم للملف: {mb} ميغابايت",
+  "@maxFileSize": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "openInBrowserFailed": "تعذّر فتح الصفحة.",
+  "mirrorTitle": "ملف أسئلة ← بطاقات",
+  "mirrorIntro": "ارفع أسئلة مادتك، ونرتّبها لك بطاقات: السؤال، الجواب، الشرح، والكلمة المفتاحية — بالعربي والإنجليزي.",
+  "mirrorModePdf": "ملف PDF",
+  "mirrorModeText": "نص أسئلة",
+  "mirrorStepFile": "الملف",
+  "mirrorStepText": "الأسئلة",
+  "mirrorStepDepth": "مستوى الشرح",
+  "mirrorStepFolder": "المجلد",
+  "mirrorPickFile": "اختر ملف PDF",
+  "mirrorPickHint": "يدعم الملفات الكبيرة وPDF المصوّر (OCR).",
+  "mirrorFileReady": "{size} · جاهز للتحليل",
+  "@mirrorFileReady": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "mirrorChangeFile": "تغيير",
+  "mirrorMaxSize": "الحد الأقصى في باقتك {mb} ميغابايت",
+  "@mirrorMaxSize": {
+    "placeholders": {
+      "mb": {
+        "type": "int"
+      }
+    }
+  },
+  "depthQuick": "سريع",
+  "depthQuickCaption": "مراجعة خاطفة",
+  "depthBalanced": "متوازن",
+  "depthBalancedCaption": "الأفضل للامتحان",
+  "depthDetailed": "مفصّل",
+  "depthDetailedCaption": "شرح أعمق",
+  "depthRecommended": "موصى به",
+  "mirrorChooseFolder": "اختر مجلدًا",
+  "mirrorNoFolders": "لا توجد مجلدات بعد — أنشئ واحدًا.",
+  "mirrorTextHint": "الصق الأسئلة هنا، مع خياراتها وإجاباتها إن وُجدت…",
+  "mirrorTextCount": "{count} حرف",
+  "@mirrorTextCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorTextTooShort": "الصق نص الأسئلة أولًا (نص قصير جدًا).",
+  "mirrorTextTooLong": "النص أطول من 60,000 حرف. قسّمه على دفعتين وأضف الثانية لنفس الملف.",
+  "mirrorTextDestination": "أين تُضاف البطاقات؟",
+  "mirrorTextNewFile": "ملف جديد",
+  "mirrorTextAppend": "إضافة لملف موجود",
+  "mirrorTextTitle": "اسم الملف (اختياري)",
+  "mirrorTextTitleHint": "مثال: أسئلة الفصل الثالث",
+  "mirrorChooseDeck": "اختر الملف",
+  "mirrorSubmit": "حوّل إلى بطاقات",
+  "mirrorUploading": "نرفع الملف… {percent}%",
+  "@mirrorUploading": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorStarting": "نجهّز الملف للتوليد…",
+  "mirrorCancelUpload": "إلغاء الرفع",
+  "mirrorDisclaimer": "أداة مساعدة للمذاكرة وليست بديلًا عن مرجع المادة. راجع البطاقات المعلّمة للتدقيق.",
+  "mirrorJobReading": "نقرأ الملف ونجهّزه…",
+  "mirrorJobReadingHint": "قد يستغرق هذا وقتًا أطول للملفات الممسوحة ضوئيًا. تقدر تطلع وترجع لاحقًا دون فقدان التقدم.",
+  "mirrorJobGenerating": "نجهّز بطاقاتك",
+  "mirrorJobProgress": "تم {done} من {total} جزءًا",
+  "@mirrorJobProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorJobMeta": "{pages} صفحة · {batches} جزء",
+  "@mirrorJobMeta": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      },
+      "batches": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorStartStudying": "ابدأ المذاكرة",
+  "mirrorStartEarly": "أول البطاقات جاهزة — تقدر تبدأ الآن والباقي يوصل تلقائيًا.",
+  "mirrorJobComplete": "اكتمل التوليد.",
+  "mirrorJobFailed": "تعذّرت قراءة هذا الملف. جرّب رفع نسخة أخرى منه.",
+  "mirrorRetryPages": "إعادة محاولة الصفحات الفاشلة",
+  "mirrorPartial": "اكتمل معظم الملف، لكن {count} جزءًا تعذّر توليده.",
+  "@mirrorPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mirrorBatchPages": "صفحة {range}",
+  "@mirrorBatchPages": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "mirrorBatchFailed": "تعذّر التوليد",
+  "mirrorUploadNew": "ارفع ملفًا جديدًا",
+  "deckCardOf": "بطاقة {index} من {total}",
+  "@deckCardOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "deckAll": "الكل",
+  "deckNeedsReview": "تحتاج مراجعة",
+  "deckSearch": "ابحث في السؤال أو الكلمة المفتاحية…",
+  "deckEmpty": "لا توجد بطاقات هنا",
+  "deckEmptyHint": "جرّب إزالة البحث أو الفلتر.",
+  "deckWaiting": "نجهّز أول البطاقات…",
+  "deckLive": "جاري تجهيز المزيد — {count} بطاقة جاهزة حتى الآن.",
+  "@deckLive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deckAllReady": "اكتملت كل البطاقات.",
+  "deckFailedParts": "{count, plural, =1{تعذر توليد جزء واحد من الملف.} other{تعذر توليد {count} أجزاء من الملف.}}",
+  "@deckFailedParts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deckDetails": "التفاصيل",
+  "deckPrevious": "السابقة",
+  "deckNext": "التالية",
+  "deckAddQuestions": "إضافة أسئلة",
+  "deckDelete": "حذف الملف",
+  "deckDeleteTitle": "حذف ملف الأسئلة؟",
+  "deckDeleteBody": "تُحذف كل بطاقات هذا الملف نهائيًا.",
+  "deckMore": "خيارات الملف",
+  "cardPage": "صفحة {page}",
+  "@cardPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "cardClear": "واضحة",
+  "cardConfidence": "ثقة {level}",
+  "@cardConfidence": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "confidenceHigh": "عالية",
+  "confidenceMedium": "متوسطة",
+  "confidenceLow": "منخفضة",
+  "cardReveal": "اظهر الإجابة والشرح",
+  "cardCorrect": "إجابة صحيحة",
+  "cardWrong": "إجابة خاطئة",
+  "cardAnswer": "الإجابة",
+  "cardExplanation": "الشرح",
+  "cardKeyIdea": "الفكرة الأساسية",
+  "cardKeyword": "الكلمة المفتاحية",
+  "cardShowTranslation": "عرض الترجمة",
+  "cardHideTranslation": "إخفاء الترجمة",
+  "cardTryAgain": "إعادة",
+  "cardImageFailed": "تعذّر تحميل الصورة",
+  "questionFilesTitle": "ملفات الأسئلة",
+  "questionFilesEmpty": "لا توجد ملفات أسئلة بعد",
+  "questionFilesEmptyHint": "ارفع ملفك الأول وسيظهر هنا بعد التوليد.",
+  "questionFilesNew": "ملف جديد",
+  "bookUploadTitle": "رفع كتاب دراسي",
+  "bookUploadIntro": "ارفع كتابك مهما كان حجمه، ونقسّمه لك لفصول صغيرة ونحلّل كل فصل على حدة.",
+  "bookStepFile": "الكتاب",
+  "bookStepProfile": "نوع المادة",
+  "bookProfileHint": "يوجّه التحليل لطريقة مادتك.",
+  "bookSubmit": "حوّل إلى فصول",
+  "bookStarting": "جاري تجهيز الكتاب…",
+  "bookKeepOpen": "أبقِ التطبيق مفتوحًا حتى يكتمل الرفع — بعده يكمل التجهيز على الخادم.",
+  "bookQuotaLeft": "متبقي اليوم {remaining} من {limit} ملفات دراسة",
+  "@bookQuotaLeft": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "bookDuplicateTitle": "عندك ملف بنفس الاسم",
+  "bookDuplicateBody": "«{title}» موجود في مكتبتك. افتحه بدل رفعه مرة ثانية، أو ارفع هذا كنسخة جديدة.",
+  "@bookDuplicateBody": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "bookDuplicateOpen": "افتح الموجود",
+  "bookMetaParts": "{count, plural, =1{جزء واحد} other{{count} أجزاء}}",
+  "@bookMetaParts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookStudyTitle": "ادرس هذا الكتاب",
+  "bookToolsAfterReading": "أدوات الدراسة تظهر هنا بعد ما نخلّص قراءة صفحات الملف.",
+  "bookGenerateBody": "جهّز البطاقات والأسئلة والملخص والخريطة الذهنية لهذا الكتاب بضغطة واحدة. تقدر تطلع من التطبيق، التجهيز يكمل لحاله.",
+  "bookGenerate": "جهّز أدوات الدراسة",
+  "bookGenerateError": "تعذّر بدء التجهيز. تحقق من اتصالك وحاول مرة أخرى.",
+  "bookSharedNotStarted": "لم يبدأ صاحب الملف التجهيز بعد.",
+  "bookSharedFrom": "مشترك من {name}",
+  "@bookSharedFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "toolCards": "بطاقات",
+  "toolCardsPurpose": "احفظ بالتكرار المتباعد، بطاقة بطاقة",
+  "toolCardsCount": "{count} بطاقة",
+  "@toolCardsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toolMcqs": "اختبار",
+  "toolMcqsPurpose": "أسئلة اختيار من متعدد كأنك في الامتحان",
+  "toolMcqsCount": "{count} سؤال",
+  "@toolMcqsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "toolSummary": "ملخص",
+  "toolSummaryPurpose": "الشرح كاملًا في صفحة مرتبة للقراءة",
+  "toolMindmap": "خريطة ذهنية",
+  "toolMindmapPurpose": "كيف ترتبط المفاهيم ببعضها",
+  "toolMatch": "لعبة المطابقة",
+  "toolMatchPurpose": "طابق كل سؤال بجوابه قبل ما يخلص الوقت",
+  "toolPreparing": "قيد التجهيز",
+  "toolLocked": "غير جاهز بعد",
+  "examFocusHeadline": "أهم ما يأتي في الامتحان من هذا الكتاب",
+  "examFocusReadyCount": "{count} معلومة مركّزة، مرتبة حسب الأهمية",
+  "@examFocusReadyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "examFocusBusy": "نحلّل الكتاب ونستخرج المعلومات المهمة…",
+  "examFocusIdle": "نستخرج المعلومات التي يتكرر سؤالها ونرتبها لك",
+  "examFocusOpen": "افتح Exam Focus",
+  "examFocusPrepare": "جهّز Exam Focus",
+  "examFocusSharedMissing": "لم يُنشئه صاحب الملف بعد",
+  "bookSource": "الملف الأصلي",
+  "bookSourceMeta": "{pages} صفحة، رُفع {date}",
+  "@bookSourceMeta": {
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bookSourceView": "عرض",
+  "bookProcessing": "تفاصيل المعالجة",
+  "bookProcessingDone": "مكتملة",
+  "statVisualDone": "صفحات مُجهّزة بصريًا",
+  "statWithVisuals": "صفحات فيها صور أو مخططات",
+  "statNeedsReview": "تحتاج مراجعة",
+  "statFailed": "صفحات فشل تحليلها",
+  "coverageLine": "تغطية المعالجة {coverage}% ({done} من {total} صفحة)",
+  "@coverageLine": {
+    "placeholders": {
+      "coverage": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "coverageMissing": "صفحات تحتاج معالجة: {pages}",
+  "@coverageMissing": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "coverageFailed": "صفحات فشلت: {pages}",
+  "@coverageFailed": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "bookLeaveHint": "تقدر تطلع وترجع بعدين من أي جهاز، ما راح يضيع أي تقدّم.",
+  "stageReading": "قراءة الصفحات",
+  "stageChapters": "تحليل الفصول (الشرح، البطاقات، الأسئلة)",
+  "stageWaiting": "بانتظار اختيارك",
+  "stageVisuals": "استخراج الصور والمخططات",
+  "stageCoverage": "التحقق من اكتمال التغطية",
+  "stageFraction": "{done}/{total}",
+  "@stageFraction": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bookFailedDefault": "تعذّرت قراءة هذا الكتاب. جرّب إعادة المحاولة أو رفع نسخة أخرى منه.",
+  "bookRetryExtraction": "إعادة محاولة الاستخراج",
+  "bookUploadAnother": "ارفع كتابًا جديدًا",
+  "bookPartialChapters": "اكتمل معظم الكتاب، لكن {count} فصل تعذّر تحليله. يمكنك إعادة المحاولة أدناه.",
+  "@bookPartialChapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookPartialChaptersPages": "اكتمل معظم الكتاب، لكن {chapters} فصل تعذّر تحليله و{pages} صفحة تعذّرت قراءتها. يمكنك إعادة المحاولة أدناه.",
+  "@bookPartialChaptersPages": {
+    "placeholders": {
+      "chapters": {
+        "type": "int"
+      },
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "bookLowConfidence": "اكتشفنا تقسيم الكتاب بشكل تقريبي. يمكنك مراجعة أسماء الفصول وحدود الصفحات.",
+  "pageNumber": "صفحة {page}",
+  "@pageNumber": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "pageTextFailedDefault": "تعذّرت قراءة هذه الصفحة ضوئيًا",
+  "chapterAnalyzing": "جارٍ التحليل…",
+  "chapterFailedDefault": "تعذر التحليل",
+  "bookNotFound": "تعذر العثور على هذا الكتاب",
+  "uploadLeaveTitle": "إيقاف الرفع؟",
+  "uploadLeaveBody": "الملف لم يكتمل رفعه بعد. إذا خرجت الآن يتوقف الرفع وتحتاج تبدأه من جديد.",
+  "uploadLeaveConfirm": "إيقاف والخروج",
+  "studyCoverageRead": "قُرئت {read}/{total} صفحة",
+  "@studyCoverageRead": {
+    "placeholders": {
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCoverageAnalyzed": "حُلّل {done}/{total} أجزاء",
+  "@studyCoverageAnalyzed": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCoverageChunks": "التغطية {covered}/{required} مقاطع",
+  "@studyCoverageChunks": {
+    "placeholders": {
+      "covered": {
+        "type": "int"
+      },
+      "required": {
+        "type": "int"
+      }
+    }
+  },
+  "studyCoverageFailedPages": "تعذّرت قراءة الصفحات {pages}",
+  "@studyCoverageFailedPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "studyCoverageGenFailed": "فشل التوليد لـ: {titles}",
+  "@studyCoverageGenFailed": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "studyKnowledgeTitle": "نجهّز كل حقائق الملف أولاً",
+  "studyKnowledgeBodyCards": "البطاقات تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.",
+  "studyKnowledgeBodyMcqs": "الأسئلة تُبنى من قاعدة معرفة واحدة تغطي كل صفحة — نفس حقائق Exam Focus.",
+  "studyKnowledgeUnits": "الأجزاء: {done}/{total}",
+  "@studyKnowledgeUnits": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyGeneratingCards": "توليد البطاقات من الملف كاملاً",
+  "studyGeneratingMcqs": "توليد الأسئلة من الملف كاملاً",
+  "studyGeneratingProgress": "{done} من {total} جاهز",
+  "@studyGeneratingProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyGeneratingNow": "جاري الآن: {title}",
+  "@studyGeneratingNow": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "studyGeneratingQueue": "في قائمة الانتظار ({count})",
+  "@studyGeneratingQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "studyLeaveHint": "التجهيز يكمل على الخادم حتى لو طلعت من التطبيق.",
+  "studyEmptyOwner": "جهّز أدوات الدراسة من صفحة الكتاب أولاً.",
+  "studyRestart": "ابدأ من جديد",
+  "studyBack": "رجوع",
+  "flashEmpty": "لا توجد بطاقات لهذا الملف بعد",
+  "flashEmptyShared": "لم يولّد صاحب الملف بطاقات بعد.",
+  "flashTime": "الوقت",
+  "flashRemaining": "متبقي",
+  "flashLearning": "قيد التعلم",
+  "flashMastered": "متقن",
+  "flashCardOf": "البطاقة: {n}/{total}",
+  "@flashCardOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "flashQuestion": "السؤال",
+  "flashAnswer": "الإجابة",
+  "flashTapToFlip": "اضغط للقلب",
+  "flashTapToQuestion": "اضغط لرؤية السؤال",
+  "flashSource": "المصدر",
+  "flashExplainTitle": "شرح البطاقة",
+  "flashTranslate": "ترجمة",
+  "flashExplain": "شرح",
+  "flashPrev": "السابق",
+  "flashNext": "التالي",
+  "flashLangToggle": "تغيير لغة البطاقة",
+  "flashRateFailed": "تعذّر حفظ التقييم. تحقق من اتصالك.",
+  "rateAgain": "لم أتذكر",
+  "rateHard": "صعبة",
+  "rateGood": "جيدة",
+  "rateEasy": "سهلة",
+  "flashDone": "انتهت المراجعة 🎉",
+  "flashDoneBody": "راجعت {count} بطاقة في {time} — متقن {mastered}، قيد التعلم {learning}.",
+  "@flashDoneBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      },
+      "mastered": {
+        "type": "int"
+      },
+      "learning": {
+        "type": "int"
+      }
+    }
+  },
+  "flashReviewHard": "راجع البطاقات الصعبة",
+  "labelQuestionBi": "QUESTION / السؤال",
+  "labelAnswerBi": "ANSWER / الإجابة",
+  "labelTermBi": "TERM / المصطلح",
+  "quizEmpty": "لا يوجد اختبار لهذا الملف بعد",
+  "quizEmptyShared": "لم يولّد صاحب الملف أسئلة بعد.",
+  "quizQuestionOf": "السؤال {n} من {total}",
+  "@quizQuestionOf": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizPage": "صفحة {page}",
+  "@quizPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "quizScore": "النتيجة: {score}",
+  "@quizScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "quizFlagged": "هذا السؤال يحتاج مراجعة",
+  "quizCorrect": "إجابة صحيحة ✓",
+  "quizWrong": "إجابة خاطئة ✗",
+  "quizSaveFailed": "تعذر حفظ إجابتك. اختر الإجابة مرة أخرى.",
+  "quizHint": "تلميح",
+  "quizSkip": "تخطي",
+  "quizResult": "النتيجة: {score} / {total}",
+  "@quizResult": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizAnsweredSome": "جاوبت {answered} من {total} سؤال.",
+  "@quizAnsweredSome": {
+    "placeholders": {
+      "answered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "quizAllCorrect": "ممتاز! كل الإجابات صحيحة 🎉",
+  "quizReviewWrong": "راجع الأسئلة الغلط وجرّب مرة ثانية.",
+  "quizRetryWrong": "أعد الأسئلة الغلط",
+  "quizDot": "السؤال {n}",
+  "@quizDot": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryTitle": "الملخص",
+  "summaryShowAr": "عرض بالعربي",
+  "summaryShowEn": "عرض بالإنجليزي",
+  "summaryCopyLink": "نسخ الرابط",
+  "summaryLinkCopied": "تم نسخ الرابط",
+  "summaryCompose": "تجهيز ملخص منظم",
+  "summaryComposeBody": "حوّل هذا الجزء إلى ملخص طبي منظم: تعريف، أعراض، تشخيص، علاج، ونقاط خطر.",
+  "summaryEmpty": "لا يوجد ملخص جاهز بعد",
+  "summaryEmptyShared": "لم يجهّز صاحب الملف الملخص بعد.",
+  "efSubtitle": "أهم معلومات الامتحان",
+  "efCardCount": "{count} معلومة مركّزة",
+  "@efCardCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "efPreparing": "نجهّز Exam Focus…",
+  "efStartFailed": "ما قدرنا نبدأ Exam Focus",
+  "efTryAgain": "حاول مرة ثانية",
+  "efUnavailable": "Exam Focus غير متاح",
+  "efCannotOpen": "تعذر فتح هذا الملف.",
+  "efAnalysisFailed": "تعذر تحليل الملف",
+  "efNothingFound": "لم نجد معلومات امتحانية واضحة 🤔",
+  "efTryRegenerate": "جرّب إعادة التوليد.",
+  "efRegenerate": "إعادة التوليد",
+  "efRegenerateConfirm": "إعادة توليد Exam Focus من جديد؟ البطاقات الحالية والمحفوظة رح تنحذف.",
+  "efSearch": "بحث في البطاقات",
+  "efSearchHint": "ابحث: chemical burns، 15–30 minutes…",
+  "efClearSearch": "مسح البحث",
+  "efAll": "الكل",
+  "efSaved": "راجعها لاحقًا",
+  "efSave": "احفظ للمراجعة لاحقًا",
+  "efUnsave": "إزالة من المحفوظة",
+  "efProgress": "تقدّمك في البطاقات",
+  "efNoMatch": "ما في بطاقات تطابق 🔎",
+  "efNoMatchHint": "جرّب كلمة ثانية أو اختر «الكل».",
+  "efPartial": "⚠️ تعذر تحليل ص {ranges}.",
+  "@efPartial": {
+    "placeholders": {
+      "ranges": {
+        "type": "String"
+      }
+    }
+  },
+  "efCoverage": "📊 البطاقات غطّت {covered}/{total} صفحة محتوى",
+  "@efCoverage": {
+    "placeholders": {
+      "covered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "efNoTextPages": "{count} صفحة بدون نص مقروء",
+  "@efNoTextPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "efProgressTitle": "⏳ نحلل ملفك كاملًا…",
+  "efProgressBody": "نقرأ كل الصفحات من أولها لآخرها ونستخرج المعلومات المهمة للامتحان. تقدر تطلع وترجع، الشغل مستمر على الخادم.",
+  "efStageAnalyse": "تحليل كل صفحات الملف",
+  "efStageUnits": "{done}/{total} جزء",
+  "@efStageUnits": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "efStageExtract": "استخراج المعلومات عالية الأهمية",
+  "efStageFacts": "{count} معلومة",
+  "@efStageFacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "efStageDedupe": "إزالة التكرار",
+  "efStageBuild": "بناء بطاقات Exam Focus",
+  "efStageCoverage": "التحقق من تغطية الملف كاملًا",
+  "efUnitPages": "ص {range}",
+  "@efUnitPages": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "mindmapIntro": "خريطة دراسية مرتبطة بالملخص، المصطلحات، البطاقات، وأسئلة الاختبار.",
+  "mindmapChapters": "الفصول الجاهزة",
+  "mindmapBranches": "الأقسام الرئيسية",
+  "mindmapConcepts": "المفاهيم المرتبطة",
+  "mindmapExamPoints": "نقاط عالية العائد",
+  "mindmapEmpty": "لا توجد فصول مكتملة بعد",
+  "mindmapEmptyHint": "ستظهر الخريطة تلقائيًا بعد اكتمال تحليل الكتاب.",
+  "mindmapNotBuilt": "جاهز للبناء",
+  "mindmapChapterMeta": "{branches} أقسام · {points} نقاط مهمة",
+  "@mindmapChapterMeta": {
+    "placeholders": {
+      "branches": {
+        "type": "int"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "mindmapSharedNotBuilt": "لم يبنِ صاحب الملف خريطة هذا الفصل بعد.",
+  "mindmapBuildHint": "اربط الشرح الإنجليزي والعربي بالمصطلحات والبطاقات والأسئلة في خريطة واحدة.",
+  "mindmapBuildFailed": "تعذر بناء الخريطة، حاول مرة أخرى.",
+  "mindmapBuild": "بناء الخريطة",
+  "mindmapQueued": "في قائمة الانتظار…",
+  "mindmapBuilding": "جاري البناء…",
+  "mindmapOpenSummary": "فتح الملخص",
+  "mindmapOpenCards": "فتح البطاقات",
+  "mindmapKeyPoints": "High-Yield / أهم النقاط",
+  "mindmapVisuals": "Visual anchors / الصور والمخططات",
+  "mindmapSourceLinked": "قسم مرتبط بالمصدر",
+  "mindmapPages": "صفحات {pages}",
+  "@mindmapPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "mindmapConceptsLabel": "Concepts / المفاهيم",
+  "mindmapExamLabel": "Exam focus / نقاط الامتحان",
+  "mindmapPromptsLabel": "Recall prompts / أسئلة الاستدعاء",
+  "mindmapFooter": "الخريطة لا تستبدل الملخص؛ هي تعيد تنظيمه مع البطاقات والأسئلة حتى ترى الصورة الكاملة وتعرف أين تراجع.",
+  "matchSeconds": "{seconds} ثانية",
+  "@matchSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "matchNewRound": "جولة جديدة",
+  "matchHint": "اضغط السؤال ثم جوابه ليختفيا — بأسرع وقت! ⚡",
+  "matchNeedCards": "نحتاج بطاقات أولاً 🃏",
+  "matchNeedCardsHint": "ولّد بطاقات هذا الملف، ثم ارجع للعب ✨",
+  "matchMakeCards": "توليد البطاقات",
+  "matchDone": "{seconds} ثانية 🎉",
+  "@matchDone": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "matchRecord": "رقم قياسي جديد! 🏆 أداء رائع 💪",
+  "matchBest": "أفضل وقت لك: {seconds} ثانية — تقدر تكسره! 🔥",
+  "@matchBest": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "matchMistakes": "أخطاء: {count} (+ثانية لكل خطأ)",
+  "@matchMistakes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "matchPlayAgain": "العب مرة ثانية",
+  "matchBestLine": "🏆 أفضل وقت: {seconds} ثانية",
+  "@matchBestLine": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewTitle": "المراجعة اليومية",
+  "reviewEmpty": "ممتاز، ما في بطاقات مستحقة اليوم",
+  "reviewEmptyHint": "ارجع بعدين، أو ارفع كتابًا أو ملفًا جديدًا.",
+  "reviewLeft": "باقي لك {count} بطاقة",
+  "@reviewLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewRemaining": "{count} متبقية",
+  "@reviewRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewMastered": "{count} أتقنتها",
+  "@reviewMastered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewViewInBook": "عرض في الكتاب",
+  "reviewShowAnswer": "اظهر الإجابة",
+  "reviewRelatedTerm": "المصطلح المرتبط",
+  "reviewExplain": "اشرحها ببساطة",
+  "reviewSimpler": "بشكل أبسط",
+  "statsIntro": "تقدمك بالأرقام — نظرة سريعة على مراجعتك ودقّتك.",
+  "statsReviewed": "بطاقات تمت مراجعتها",
+  "statsReviewedHint": "إجمالي المراجعات",
+  "statsAccuracy": "نسبة الإجابات الصحيحة",
+  "statsAccuracyHint": "من الأسئلة اللي جاوبت عليها",
+  "statsStreak": "سلسلة الأيام",
+  "statsStreakHint": "يوم متواصل",
+  "statsHours": "ساعات الدراسة",
+  "statsHoursHint": "ساعة تقريبًا",
+  "weakTitle": "نقاط الضعف",
+  "weakRowHint": "الأسئلة اللي غلطت فيها",
+  "weakIntro": "أسئلة آخر إجابة لك عليها كانت غلط — جاوب صح عشان تختفي من القائمة.",
+  "weakChapters": "أضعف الفصول",
+  "weakEmpty": "ما في نقاط ضعف حاليًا",
+  "weakEmptyHint": "لسه ما جاوبت غلط على أي سؤال، أو جاوبت صح على كل اللي غلطته.",
+  "todayTitle": "خطة اليوم",
+  "todayRowHint": "المستحق، أقرب امتحان، الأسبوع القادم",
+  "todayIntro": "ماذا ستدرس اليوم؟ نظرة سريعة على كل موادك في مكان واحد.",
+  "todayDue": "المستحق اليوم",
+  "todayDueCount": "{count} بطاقة بانتظار مراجعتك من ملفات الأسئلة وكتبي معًا.",
+  "@todayDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayStartReview": "ابدأ المراجعة",
+  "todayNothingDue": "لا توجد بطاقات مستحقة الآن.",
+  "todayExam": "موعد الاختبار القادم",
+  "todayExamLine": "{name} — {date} (بعد {days} يوم)",
+  "@todayExamLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "todayContinue": "تابع القراءة",
+  "todayNoBook": "ارفع كتابك الأول لتبدأ.",
+  "todayOpenBook": "افتح الكتاب",
+  "todayForecast": "الأسبوع القادم (كتبي)",
+  "todayNoForecast": "لا توجد مراجعات مجدولة قريبًا.",
+  "todayFolders": "موادك",
+  "todayFolderBooks": "{count} كتاب",
+  "@todayFolderBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayFolderExam": "امتحان {date}",
+  "@todayFolderExam": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "bookMoveFolder": "نقل إلى مجلد",
+  "bookRemoveShared": "إزالة من مكتبتي",
+  "bookRemoveSharedBody": "إزالة هذا الملف من مكتبتك؟ يبقى الأصل عند صاحبه، ويمكنه مشاركته معك من جديد.",
+  "studyKnowledgeLine": "🧠 المعرفة: {tool} تغطي {covered}/{total} حقيقة",
+  "@studyKnowledgeLine": {
+    "placeholders": {
+      "tool": {
+        "type": "String"
+      },
+      "covered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyRebuildCards": "✨ أعد بناء البطاقات من قاعدة المعرفة",
+  "studyRebuildMcqs": "✨ أعد بناء الأسئلة من قاعدة المعرفة",
+  "studyRebuildTitle": "إعادة البناء",
+  "studyRebuildCardsConfirm": "سيتم استبدال البطاقات الحالية ببطاقات مبنية من قاعدة المعرفة (كل حقائق الملف)، وسيضيع تقدّم مراجعة البطاقات القديمة. متابعة؟",
+  "studyRebuildMcqsConfirm": "سيتم استبدال الأسئلة الحالية بأسئلة تطبيقية مبنية من قاعدة المعرفة (كل حقائق الملف). متابعة؟",
+  "studyRebuildNotReady": "قاعدة المعرفة غير جاهزة بعد — جرّب لاحقًا.",
+  "studyMatrixTitle": "🧭 خريطة التغطية · {covered}/{total}",
+  "@studyMatrixTitle": {
+    "placeholders": {
+      "covered": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "studyMatrixHint": "كل حقيقة من Exam Focus ← البطاقات 🃏 والأسئلة ❓ المبنية منها ← صفحاتها.",
+  "studyMatrixPages": "ص {pages}",
+  "@studyMatrixPages": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "readerOpening": "نفتح الملف…",
+  "readerNoFile": "تعذر العثور على هذا الملف",
+  "readerNoFileHint": "ارجع لصفحة الكتاب وحاول مرة أخرى.",
+  "readerGoTo": "الانتقال إلى صفحة",
+  "readerGo": "انتقال",
+  "readerPageOf": "صفحة {page} من {count}",
+  "@readerPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerPageRange": "من 1 إلى {count}",
+  "@readerPageRange": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerSearch": "بحث في الملف",
+  "readerSearchHint": "كلمة أو عبارة…",
+  "readerNoMatches": "لا توجد نتائج.",
+  "readerAskPage": "اسأل Niro عن الصفحة",
+  "readerHighlight": "ظلّل",
+  "readerAskSelection": "اسأل Niro",
+  "readerToolHighlight": "تظليل",
+  "readerToolPen": "قلم",
+  "readerToolEraser": "ممحاة",
+  "readerSaving": "جاري الحفظ…",
+  "readerSaved": "محفوظ",
+  "readerSaveFailed": "تعذر الحفظ",
+  "readerHintHighlight": "حدّد نصًا على الصفحة ثم اضغط «ظلّل».",
+  "readerHintPen": "ارسم بحرّية فوق الصفحة لتحديد النقاط المهمة.",
+  "readerHintEraser": "مرّر على التظليل أو الرسم لمسحه.",
+  "askTitle": "اسأل Niro · صفحة {page}",
+  "@askTitle": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "askWholePage": "الصفحة {page} كاملة — حدّد نصًا قبل الضغط لتسأل عنه وحده.",
+  "@askWholePage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "askExplain": "اشرح ببساطة",
+  "askExplainPage": "اشرح الصفحة",
+  "askArabic": "اشرح بالعربي",
+  "askExam": "سؤال امتحان",
+  "askSummarize": "لخّص",
+  "askSummarizePage": "لخّص الصفحة",
+  "askThinking": "Niro يكتب…",
+  "askHint": "اسأل عن هذا النص…",
+  "askSend": "إرسال",
+  "askStop": "إيقاف",
+  "bookChatTitle": "اسأل Niro عن هذا الملف",
+  "bookChatHello": "أهلاً، أنا Niro 👋 اسألني أي شيء عن هذا الملف.",
+  "qfTitle": "بنوك الأسئلة",
+  "qfIntro": "أسئلة مستخرجة مباشرة من ملفاتك — بدون توليد بالذكاء الاصطناعي.",
+  "qfUpload": "رفع ملف أسئلة",
+  "qfUploadTitle": "رفع ملف أسئلة",
+  "qfEmpty": "لا توجد ملفات أسئلة بعد",
+  "qfEmptyHint": "ارفع ملف أسئلة واختر «ملف أسئلة» عند الرفع.",
+  "qfCount": "{count} سؤال",
+  "@qfCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qfStatusExtracting": "جاري الاستخراج…",
+  "qfStatusComplete": "تم الاستخراج",
+  "qfStatusFailed": "تعذر الاستخراج",
+  "qfStatusPending": "قيد الانتظار",
+  "qfExtracting": "جاري استخراج الأسئلة من الملف — تقدر تسكّر الصفحة وترجع بعدين.",
+  "qfFailed": "تعذر استخراج الأسئلة من هذا الملف.",
+  "qfRetry": "إعادة المعالجة",
+  "qfNoQuestions": "لم يتم العثور على أسئلة",
+  "qfExtractedCount": "{count} سؤال مستخرج",
+  "@qfExtractedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qfEnriching": "جاري إضافة الصور والشرح ({done}/{total})",
+  "@qfEnriching": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "qfKind": "ملف أسئلة",
+  "qfKindNote": "سيتم استخراج الأسئلة الموجودة فعليًا في الملف — لن يتم توليد أسئلة جديدة بالذكاء الاصطناعي.",
+  "qfSubmit": "استخراج الأسئلة",
+  "qfQuotaLeft": "متبقي اليوم: {left} من {limit} ملفات أسئلة",
+  "@qfQuotaLeft": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "uploadStepKind": "نوع الملف",
+  "questionsLabel": "السؤال",
+  "questionsPosition": "السؤال {index} من {total}",
+  "@questionsPosition": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "questionsTally": "أجبت {answered} · صحيح {correct}",
+  "@questionsTally": {
+    "placeholders": {
+      "answered": {
+        "type": "int"
+      },
+      "correct": {
+        "type": "int"
+      }
+    }
+  },
+  "questionsProgressLabel": "التقدم في الأسئلة",
+  "questionsCardLabel": "سؤال {index} من {total}",
+  "@questionsCardLabel": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "questionsPickerTitle": "انتقل إلى سؤال",
+  "questionsReveal": "أظهر الإجابة",
+  "questionsReset": "إعادة",
+  "questionsNoAnswerInFile": "لا توجد إجابة مذكورة لهذا السؤال في الملف.",
+  "questionsNoAnswer": "لا توجد إجابة مذكورة لهذا السؤال.",
+  "questionsAiAnswer": "إجابة مقترحة من الذكاء الاصطناعي — لم تُذكر إجابة في الملف الأصلي.",
+  "questionsMachineTranslation": "ترجمة آلية",
+  "doctorSetsTitle": "مجموعات الدكاترة",
+  "qfUploadIntro": "ارفع ملف أسئلة (بنك، امتحان سابق، أسئلة مصوّرة) ونستخرج أسئلته كما هي مع إجاباتها إن وُجدت.",
+  "qfStepFile": "الملف",
+  "niroTitle": "اسأل Niro",
+  "niroSubtitle": "صاحبك بالدراسة، وقت ما تحتاجه 😌",
+  "niroNewChat": "جديدة",
+  "niroHello": "أهلاً! أنا Niro 👋",
+  "niroHelloName": "أهلاً {name}! أنا Niro 👋",
+  "@niroHelloName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "niroAskAnything": "اسألني أي شيء — شرح، حل، ترجمة، أو صوّرلي السؤال 📸",
+  "niroStarterPhoto": "صوّر سؤالاً أو صفحة وأنا أحلّها لك",
+  "niroReadingPhoto": "Niro يقرأ الصورة… 🔍",
+  "niroUnreachable": "تعذر الوصول للمساعد، حاول مرة أخرى 🙏",
+  "niroPhotoFailed": "تعذر قراءة الصورة، جرّب صورة أخرى 🙏",
+  "niroRemaining": "باقي لك {count} رسائل اليوم",
+  "@niroRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "niroCopy": "نسخ",
+  "niroCopied": "تم النسخ",
+  "niroCamera": "تصوير بالكاميرا",
+  "niroGallery": "اختيار صورة من المعرض",
+  "niroHint": "اكتب سؤالك هنا…",
+  "niroHintPhoto": "اسأل عن الصورة (اختياري)…",
+  "niroAttachedPhoto": "الصورة المرفقة",
+  "niroSentPhoto": "الصورة المرسلة",
+  "niroRemovePhoto": "إزالة الصورة",
+  "niroCameraTitle": "نحتاج الكاميرا لتصوير سؤالك 📷",
+  "niroCameraWhy1": "صوّر سؤالًا أو صفحة أو ملاحظاتك، والمساعد يقرؤها ويحلّها.",
+  "niroCameraWhy2": "تُفتح الكاميرا فقط عندما تضغط الزر — لا شيء في الخلفية.",
+  "niroCameraWhy3": "الصورة تُرسل للتحليل فقط ولا نخزّنها على خوادمنا.",
+  "niroCameraWhy4": "إذا رفضت الإذن يمكنك دائمًا اختيار صورة من المعرض.",
+  "niroNotNow": "ليس الآن",
+  "niroCameraDenied": "الكاميرا غير مسموحة",
+  "niroPhotosDenied": "الوصول للصور غير مسموح",
+  "niroDeniedHint": "يمكنك السماح بها من إعدادات الجهاز، أو اختيار صورة من المعرض بدلًا من ذلك.",
+  "niroOpenSettings": "فتح الإعدادات",
+  "dsIntro": "أسئلة يشاركها دكتورك مع طلابه. الدخول بكود يعطيك إياه الدكتور.",
+  "dsCodeLabel": "كود الوصول",
+  "dsAddSet": "أضف المجموعة",
+  "dsChecking": "جاري التحقق…",
+  "dsAlreadyAdded": "هذه المجموعة مضافة لحسابك بالفعل.",
+  "dsMine": "مجموعاتي",
+  "dsMineEmpty": "لا توجد مجموعات بعد.",
+  "dsMineEmptyHint": "عندك كود من دكتورك؟ أدخله في الأعلى.",
+  "dsListedTitle": "مجموعات منشورة",
+  "dsListedNote": "تظهر هنا للاطلاع فقط. فتح أي مجموعة يحتاج كودًا من دكتورها.",
+  "dsByCode": "🔒 بكود",
+  "dsAvailable": "متاحة",
+  "dsOpensAt": "تفتح {date}",
+  "@dsOpensAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsUnavailable": "غير متاحة حاليًا",
+  "dsUntil": "حتى {date}",
+  "@dsUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsSetUnavailable": "هذه المجموعة غير متاحة حاليًا",
+  "dsFeatureOff": "هذه الميزة غير متاحة حاليًا.",
+  "dsApplyTitle": "حساب دكتور",
+  "dsApplyIntro": "ارفع ملفات أسئلتك، وأعطِ طلابك أكواد دخول. يبقى حسابك كما هو، ونفس تسجيل الدخول.",
+  "dsPending": "قيد المراجعة",
+  "dsPendingBody": "طلبك وصل وسيراجعه فريق NiroLearn.",
+  "dsApproved": "دكتور معتمد",
+  "dsApprovedBody": "حسابك معتمد كدكتور.",
+  "dsOpenDashboard": "افتح لوحة الدكتور",
+  "dsSuspended": "موقوف",
+  "dsSuspendedBody": "صلاحيات الدكتور موقوفة حاليًا.",
+  "dsSuspendedHint": "مجموعاتك غير متاحة لطلابك أثناء الإيقاف. تواصل معنا لمعرفة السبب.",
+  "dsRejected": "لم يُقبل الطلب",
+  "dsRejectedBody": "لم نتمكن من اعتماد طلبك السابق.",
+  "dsRejectedReason": "السبب: {reason}",
+  "@dsRejectedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "dsRejectedHint": "يمكنك تعديل البيانات وإرسال طلب جديد.",
+  "dsFullName": "الاسم الكامل",
+  "dsUniversity": "الجامعة",
+  "dsFaculty": "الكلية",
+  "dsDepartment": "القسم",
+  "dsUniEmail": "البريد الجامعي (اختياري، يساعد في التحقق)",
+  "dsNote": "ملاحظة للمراجعة (اختياري)",
+  "dsSendApplication": "أرسل الطلب",
+  "dsDashboardIntro": "مجموعات أسئلة محمية: ترفع الملف مرة واحدة، وطلابك يدخلون بكود.",
+  "dsStatSets": "المجموعات",
+  "dsStatPublished": "منشورة",
+  "dsStatDisabled": "معطّلة",
+  "dsStatCodes": "أكواد مولّدة",
+  "dsStatStudents": "طلاب مفعّلون",
+  "dsNewSet": "مجموعة جديدة",
+  "dsDoctorEmptyHint": "ارفع ملف أسئلة PDF، راجع الأسئلة المستخرجة، ثم انشرها وولّد أكوادًا لطلابك.",
+  "dsRecent": "آخر النشاط",
+  "dsStudentsCount": "{count} طالب",
+  "@dsStudentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsCodesUsed": "{claimed}/{total} كود مستخدم",
+  "@dsCodesUsed": {
+    "placeholders": {
+      "claimed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dsNewSetTitle": "مجموعة أسئلة جديدة",
+  "dsNewSetIntro": "الملف يُعالج مرة واحدة بنفس نظام ملفات الأسئلة. تراجع الأسئلة، ثم تنشر وتولّد الأكواد.",
+  "dsFileLabel": "ملف الأسئلة (PDF)",
+  "dsFileHint": "ملف نصي أو ممسوح ضوئيًا — الصفحات المصوّرة تُقرأ بالقراءة الضوئية وتأخذ وقتًا أطول قليلًا. يُحتسب الملف من حصة ملفات الأسئلة في باقتك.",
+  "dsCreateSet": "ارفع وأنشئ المجموعة",
+  "dsStarting": "جاري بدء المعالجة…",
+  "dsTitle": "عنوان المجموعة",
+  "dsDescription": "الوصف (اختياري)",
+  "dsSubject": "المادة",
+  "dsYear": "السنة الدراسية",
+  "dsExamType": "نوع الامتحان",
+  "dsVisibility": "الظهور",
+  "dsUnlisted": "غير مدرجة — تعطي الأكواد لطلابك مباشرة",
+  "dsListed": "مدرجة — يظهر عنوانها للطلاب، والدخول بكود فقط",
+  "dsListedShort": "مدرجة",
+  "dsUnlistedShort": "غير مدرجة",
+  "dsStarts": "تبدأ",
+  "dsEnds": "تنتهي",
+  "dsPickDate": "اختر",
+  "dsClearDate": "بدون تاريخ",
+  "dsTabQuestions": "الأسئلة",
+  "dsTabSettings": "الإعدادات",
+  "dsTabCodes": "الأكواد",
+  "dsTabStudents": "الطلاب",
+  "dsTabAudit": "السجل",
+  "dsProcessing": "جاري المعالجة بنفس نظام ملفات الأسئلة. تقدر تسكّر الصفحة وترجع.",
+  "dsReviewFirst": "راجع الأسئلة أدناه كما سيراها طلابك.",
+  "dsNoEditAfterPublish": "بعد النشر لا يمكن تغيير الأسئلة. إن احتجت تعديلها، أنشئ مجموعة جديدة بملف مصحح.",
+  "dsPublish": "انشر المجموعة",
+  "dsPublished": "تم النشر",
+  "dsShowAllAnswers": "أظهر كل الإجابات",
+  "dsHideAnswers": "إخفاء الإجابات",
+  "dsMachineNote": "بعض الترجمات آلية (عليها وسم «ترجمة آلية») — راجعها.",
+  "dsNoQuestionsYet": "لا توجد أسئلة مستخرجة بعد.",
+  "dsImageChecks": "صور تحتاج مراجعة",
+  "dsImageChecksNote": "في هذه الصفحات صورة لم يكن واضحًا لأي سؤال تعود، فلم تُربط بأي سؤال (الأسئلة نفسها ظاهرة للطلاب بدون صورة).",
+  "dsQuestionOnPage": "سؤال {index} · صفحة {page}",
+  "@dsQuestionOnPage": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "dsNeedsReview": "تحتاج مراجعة (Needs Review) · {count}",
+  "@dsNeedsReview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsNeedsReviewNote": "هذه الأجزاء لم تُعتبر أسئلة مكتملة، فلا يراها طلابك. لم يُكمل النظام أي نص ناقص من عنده.",
+  "dsNoStem": "(بدون نص سؤال)",
+  "dsAccess": "الوصول",
+  "dsAccessNote": "التعطيل يوقف وصول كل الطلاب فورًا دون حذف أي شيء، وتقدر تعيد التفعيل متى شئت. الأرشفة نهائية.",
+  "dsDisableNow": "عطّل الوصول الآن",
+  "dsEnable": "أعد التفعيل",
+  "dsArchive": "أرشف المجموعة",
+  "dsArchiveConfirm": "الأرشفة نهائية: يتوقف وصول الطلاب ولا يمكن التراجع.",
+  "dsArchiveFinal": "تأكيد الأرشفة النهائية",
+  "dsCodesAfterPublish": "توليد الأكواد متاح بعد نشر المجموعة.",
+  "dsCodeCount": "عدد الأكواد (كل كود لطالب واحد، حتى 500 في المرة)",
+  "dsGenerate": "ولّد {count} كود",
+  "@dsGenerate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsFreshCodes": "{count} كود جديد — احفظها الآن، لن تظهر كاملة مرة أخرى.",
+  "@dsFreshCodes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dsFreshCodesNote": "ملف الأكواد حساس: من يملك الكود يستطيع الدخول. شاركه مع طلابك فقط.",
+  "dsShareCsv": "مشاركة ملف CSV",
+  "dsCopyAll": "نسخ الكل",
+  "dsHideCodes": "حفظتها، أخفِها",
+  "dsAll": "الكل",
+  "dsUnused": "غير مستخدم",
+  "dsClaimed": "مستخدم",
+  "dsRevokedLabel": "ملغى",
+  "dsCodeSearch": "آخر 4 أحرف أو @اسم",
+  "dsNoCodes": "لا توجد أكواد بهذا الفلتر.",
+  "dsCodeClaimed": "مستخدم · {who} · {date}",
+  "@dsCodeClaimed": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsCodeRevoked": "ملغى · {date}",
+  "@dsCodeRevoked": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsCodeUnused": "غير مستخدم · {date}",
+  "@dsCodeUnused": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dsStudent": "طالب",
+  "dsRevoke": "إلغاء",
+  "dsNoStudents": "لم يفعّل أي طالب كودًا بعد.",
+  "dsActive": "مفعّل",
+  "dsWithdrawn": "مسحوب",
+  "dsWithdraw": "اسحب الوصول",
+  "dsWithdrawConfirm": "سيفقد هذا الطالب الوصول للمجموعة فورًا.",
+  "dsWithdrawYes": "تأكيد السحب",
+  "gamesTitle": "🧠 ألعاب الذاكرة",
+  "gamesIntro": "درّب عقلك واكسر رقمك القياسي.",
+  "gamesWelcome": "أهلًا بك في ألعاب الذاكرة 🧠",
+  "gamesWelcomeBody": "تحدَّ ذاكرتك وسرعتك وتفكيرك المنطقي.",
+  "gamesStartFirst": "ابدأ أول لعبة",
+  "gamesStageOf": "المستوى {stage}",
+  "@gamesStageOf": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesBestScore": "أفضل نتيجة {score}",
+  "@gamesBestScore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesCompletedStages": "المستويات المكتملة",
+  "gamesContinueStage": "تابع المستوى {stage}",
+  "@gamesContinueStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesStartStage1": "ابدأ المستوى 1",
+  "gamesResumeStage": "أكمل المستوى {stage}",
+  "@gamesResumeStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesReplayStage": "أعد لعب المستوى {stage}",
+  "@gamesReplayStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesPlayStage": "العب المستوى {stage}",
+  "@gamesPlayStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesPrevLevel": "المستوى السابق",
+  "gamesNextLevel": "المستوى التالي",
+  "gamesLevel": "المستوى",
+  "gamesLevelN": "المستوى {stage}",
+  "@gamesLevelN": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesDone": "مكتمل",
+  "gamesCurrentLevel": "مستواك الحالي",
+  "gamesOpenLevel": "مفتوح",
+  "gamesStatBest": "أفضل نتيجة",
+  "gamesStatAccuracy": "الدقة",
+  "gamesStatFastestSolve": "أسرع حل",
+  "gamesStatFastestAnswer": "أسرع إجابة",
+  "gamesOnlineOnly": "الألعاب تحتاج اتصالًا بالإنترنت — النتائج تُحسب على الخادم.",
+  "gamesLocked": "هذا المستوى مقفل",
+  "gamesStartFailed": "تعذر بدء المستوى",
+  "gamesBackToLevels": "العودة للمستويات",
+  "gamesPreparing": "نجهّز المستوى {stage}…",
+  "@gamesPreparing": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesReady": "جاهز؟",
+  "gamesReadyContinue": "جاهز تكمل؟",
+  "gamesRuleQuestions": "{count} أسئلة",
+  "@gamesRuleQuestions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesRuleSeconds": "{seconds} ثوانٍ لكل سؤال",
+  "@gamesRuleSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesRulePass": "تحتاج {count} إجابات صحيحة لفتح المستوى التالي",
+  "@gamesRulePass": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesContinueFrom": "▶ أكمل من السؤال {index}",
+  "@gamesContinueFrom": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesStart": "▶ ابدأ",
+  "gamesScoring": "نحسب نتيجتك…",
+  "gamesOffline": "انقطع الاتصال",
+  "gamesOfflineBody": "إجاباتك محفوظة على جهازك، وسنرسلها تلقائيًا عند عودة الاتصال.",
+  "gamesExpired": "انتهت هذه الجلسة",
+  "gamesSaveFailed": "تعذر حفظ النتيجة",
+  "gamesRestartStage": "ابدأ المستوى من جديد",
+  "gamesQuestionOf": "سؤال {position}",
+  "@gamesQuestionOf": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesPoints": "النقاط {points}",
+  "@gamesPoints": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesTimeLeft": "الوقت المتبقي {seconds} ثانية",
+  "@gamesTimeLeft": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesRight": "✓ صحيح",
+  "gamesWrong": "✗ خطأ",
+  "gamesTimeUp": "⏱ انتهى الوقت",
+  "gamesResult": "النتيجة",
+  "gamesAllDone": "كل المستويات مكتملة!",
+  "gamesStageDone": "أنهيت المستوى {stage}",
+  "@gamesStageDone": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesAlmost": "قربت! 💪",
+  "gamesNeedMore": "{score} — تحتاج أكثر قليلًا لفتح المستوى التالي",
+  "@gamesNeedMore": {
+    "placeholders": {
+      "score": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesScore": "النتيجة",
+  "gamesCorrect": "الصحيح",
+  "gamesTime": "الوقت",
+  "gamesHints": "التلميحات",
+  "gamesNewBest": "⭐ رقم قياسي جديد لهذا المستوى!",
+  "gamesUnlocked": "🔓 انفتح المستوى {stage}",
+  "@gamesUnlocked": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesNextStage": "المستوى التالي",
+  "gamesRetry": "أعد المحاولة",
+  "gamesTryAgain": "حاول مرة ثانية",
+  "gamesBackToGames": "العودة للألعاب",
+  "gamesMistakes": "الأخطاء {count}",
+  "@gamesMistakes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesSudokuOffline": "انقطع الاتصال — حلك محفوظ وسنرسله عند عودة الاتصال.",
+  "gamesChecking": "نتحقق من الحل…",
+  "gamesUndo": "تراجع",
+  "gamesErase": "مسح",
+  "gamesNotes": "ملاحظات",
+  "gamesHint": "تلميح ({left})",
+  "@gamesHint": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesDigit": "{digit} — متبقٍ {left}",
+  "@gamesDigit": {
+    "placeholders": {
+      "digit": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesCell": "صف {row} عمود {col}: {value}",
+  "@gamesCell": {
+    "placeholders": {
+      "row": {
+        "type": "int"
+      },
+      "col": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesEmptyCell": "فارغة",
+  "shIntro": "ملفات دراسية جاهزة شاركها معك زملاؤك — تقدّمك فيها خاص بك.",
+  "shTabRequests": "الطلبات",
+  "shTabNotifications": "الإشعارات",
+  "shNoRequests": "لا توجد طلبات جديدة",
+  "shNoRequestsHint": "عندما يشارك زميل ملفًا معك سيظهر طلبه هنا.",
+  "shNoPacks": "لا توجد ملفات مشتركة بعد",
+  "shNoPacksHint": "الملفات التي تقبلها تظهر هنا وتفتح بنفس أدوات الدراسة.",
+  "shNoNotifications": "لا توجد إشعارات",
+  "shWantsToShare": "{who} يريد مشاركة ملف معك",
+  "@shWantsToShare": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shPages": "{count} صفحة",
+  "@shPages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shAccept": "قبول",
+  "shDecline": "رفض",
+  "shDeclineBlock": "رفض وحظر",
+  "shBlockTitle": "رفض وحظر",
+  "shBlockConfirm": "رفض الطلب وحظر {who}؟ لن يتمكن من إيجادك أو مشاركة ملفات معك.",
+  "@shBlockConfirm": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shChapters": "{count} أجزاء ملخّصة",
+  "@shChapters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shCards": "{count} بطاقة",
+  "@shCards": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shMindMap": "خريطة ذهنية",
+  "shNoContentYet": "الملف جاهز للقراءة، ولم يُولَّد محتوى بعد.",
+  "shFrom": "من {who}",
+  "@shFrom": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shNoteRequest": "{who} أرسل لك طلب مشاركة «{title}»",
+  "@shNoteRequest": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shNoteAccepted": "{who} قبل ملفك «{title}»",
+  "@shNoteAccepted": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shNoteDeclined": "{who} رفض طلب مشاركة «{title}»",
+  "@shNoteDeclined": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shUsernameTitle": "اسم المستخدم للمشاركة",
+  "shUsernameSet": "يجدك زملاؤك بهذا الاسم ليشاركوا معك ملفاتهم. بريدك الإلكتروني لا يظهر لأحد.",
+  "shUsernameUnset": "اختر اسم مستخدم ليتمكن زملاؤك من إيجادك ومشاركة ملفاتهم معك. بريدك الإلكتروني لا يظهر لأحد.",
+  "shUsernameRule": "من 3 إلى 24 حرفًا: أحرف إنجليزية صغيرة وأرقام و . و _",
+  "shChoose": "اختيار",
+  "shShare": "مشاركة",
+  "shShareTitle": "مشاركة الملف مع طالب",
+  "shSearchHint": "ابحث باسم المستخدم أو الاسم",
+  "shSearchRule": "اكتب حرفين على الأقل. يظهر فقط الطلاب الذين اختاروا اسم مستخدم.",
+  "shNoStudent": "لا يوجد طالب بهذا الاسم.",
+  "shMoreResults": "نتائج أكثر",
+  "shFirstResults": "العودة لأول النتائج",
+  "shExplain": "سيحصل على نفس المحتوى الجاهز: الملخص، البطاقات، الأسئلة، الخريطة الذهنية و Exam Focus — بدون إعادة توليد، وبدون تقدّمك أو ملاحظاتك الشخصية.",
+  "shSendRequest": "إرسال طلب المشاركة",
+  "shBack": "رجوع",
+  "shSent": "✓ تم إرسال الطلب",
+  "shSentBody": "سيظهر الملف عند {who} بعد قبوله الطلب.",
+  "@shSentBody": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shShareAnother": "مشاركة مع طالب آخر",
+  "shSharedWith": "تمت المشاركة مع",
+  "shNotSharedYet": "لم تشارك هذا الملف مع أحد بعد.",
+  "shPending": "بانتظار الرد",
+  "shHasAccess": "لديه وصول",
+  "shDeclined": "رفض الطلب",
+  "shWithdraw": "سحب",
+  "shRemoveAccess": "إلغاء الوصول",
+  "shWithdrawConfirm": "سحب طلب المشاركة المرسل إلى {who}؟",
+  "@shWithdrawConfirm": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shRemoveAccessConfirm": "إلغاء وصول {who} لهذا الملف؟ سيختفي من مكتبته فورًا.",
+  "@shRemoveAccessConfirm": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "shBlockedTitle": "المحظورون",
+  "shBlockedEmpty": "لم تحظر أحدًا",
+  "shBlockedHint": "المحظور لا يستطيع إيجادك أو مشاركة ملفات معك.",
+  "shUnblock": "إلغاء الحظر",
+  "shUnblockConfirm": "سيتمكن من إيجادك وإرسال طلبات مشاركة مجددًا."
+}

@@ -3,7 +3,13 @@
 // prices live in the plans table and are left out so they can't drift),
 // and the FAQ exactly as shown on the page.
 import { LEGAL_CONTACT_EMAIL } from "@/components/legal/LegalPage";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import {
+  SITE_DESCRIPTION,
+  SITE_ENTITY_DESCRIPTION_AR,
+  SITE_ENTITY_IDS,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/site";
 import { LANDING_FAQ } from "./Landing";
 
 // "<" written as its JSON escape so no string value can close the tag.
@@ -15,25 +21,25 @@ export default function StructuredData() {
     "@graph": [
       {
         "@type": "Organization",
-        "@id": `${SITE_URL}/#organization`,
+        "@id": SITE_ENTITY_IDS.organization,
         name: SITE_NAME,
+        alternateName: "نيـرو ليرن",
         url: `${SITE_URL}/`,
         logo: `${SITE_URL}/icon.svg`,
         email: LEGAL_CONTACT_EMAIL,
-        description:
-          "NiroLearn منصة مذاكرة عربية بالذكاء الاصطناعي تحوّل ملفات PDF للطلاب إلى ملخصات وفلاش كارد واختبارات وخرائط ذهنية.",
+        description: SITE_ENTITY_DESCRIPTION_AR,
       },
       {
         "@type": "WebSite",
-        "@id": `${SITE_URL}/#website`,
+        "@id": SITE_ENTITY_IDS.website,
         name: SITE_NAME,
         url: `${SITE_URL}/`,
         inLanguage: "ar",
-        publisher: { "@id": `${SITE_URL}/#organization` },
+        publisher: { "@id": SITE_ENTITY_IDS.organization },
       },
       {
-        "@type": "WebApplication",
-        "@id": `${SITE_URL}/#app`,
+        "@type": ["SoftwareApplication", "WebApplication"],
+        "@id": SITE_ENTITY_IDS.software,
         name: SITE_NAME,
         url: `${SITE_URL}/`,
         description: SITE_DESCRIPTION,
@@ -56,7 +62,7 @@ export default function StructuredData() {
           "@type": "EducationalAudience",
           educationalRole: "student",
         },
-        publisher: { "@id": `${SITE_URL}/#organization` },
+        publisher: { "@id": SITE_ENTITY_IDS.organization },
         offers: {
           "@type": "Offer",
           name: "Free",

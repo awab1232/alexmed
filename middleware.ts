@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { canonicalHostRedirect } from "@/lib/canonical-host";
 
 // "/" is two pages: the public landing page for visitors and the app home
 // for signed-in students. They live in separate routes so the landing page
@@ -12,6 +13,10 @@ const SESSION_COOKIES = [
 ];
 
 export function middleware(request: NextRequest) {
+  const canonicalUrl = canonicalHostRedirect(request.nextUrl);
+  if (canonicalUrl) return NextResponse.redirect(canonicalUrl, 308);
+  if (request.nextUrl.pathname !== "/") return NextResponse.next();
+
   const signedIn = request.cookies
     .getAll()
     .some(cookie =>
@@ -23,4 +28,6 @@ export function middleware(request: NextRequest) {
   return NextResponse.rewrite(new URL("/home", request.url));
 }
 
-export const config = { matcher: ["/"] };
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};

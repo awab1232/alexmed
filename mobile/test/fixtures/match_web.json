@@ -1,0 +1,410 @@
+{
+  "cards": [
+    {
+      "id": "c1",
+      "questionEn": "What is the antidote for heparin?",
+      "answerEn": "Protamine sulfate"
+    },
+    {
+      "id": "c2",
+      "questionEn": "  Loop   diuretic example? ",
+      "answerEn": "Furosemide"
+    },
+    {
+      "id": "c3",
+      "questionEn": "What is the antidote for heparin?",
+      "answerEn": "Protamine"
+    },
+    {
+      "id": "c4",
+      "questionEn": "Long question Long question Long question Long question Long question Long question Long question Long question Long question Long question ",
+      "answerEn": "Too long to fit"
+    },
+    {
+      "id": "c5",
+      "questionEn": "Normal blood pH?",
+      "answerEn": "7.35–7.45"
+    },
+    {
+      "id": "c6",
+      "questionEn": "First-line for anaphylaxis?",
+      "answerEn": "IM adrenaline"
+    },
+    {
+      "id": "c7",
+      "questionEn": "Vitamin for scurvy?",
+      "answerEn": "Vitamin C"
+    },
+    {
+      "id": "c8",
+      "questionEn": "Short",
+      "answerEn": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "id": "c9",
+      "questionEn": "Most common site of ectopic pregnancy?",
+      "answerEn": "Ampulla"
+    }
+  ],
+  "terms": [
+    {
+      "id": "t1",
+      "en": "Hypokalaemia",
+      "ar": "نقص البوتاسيوم"
+    },
+    {
+      "id": "t2",
+      "en": "Furosemide",
+      "ar": "فوروسيميد"
+    },
+    {
+      "id": "t3",
+      "en": "Tachycardia",
+      "ar": "تسرع القلب"
+    }
+  ],
+  "cases": [
+    {
+      "seed": 1,
+      "count": 6,
+      "cardCount": 9,
+      "pairs": [
+        {
+          "id": "card-c3",
+          "prompt": "What is the antidote for heparin?",
+          "answer": "Protamine"
+        },
+        {
+          "id": "card-c7",
+          "prompt": "Vitamin for scurvy?",
+          "answer": "Vitamin C"
+        },
+        {
+          "id": "card-c2",
+          "prompt": "Loop diuretic example?",
+          "answer": "Furosemide"
+        },
+        {
+          "id": "card-c5",
+          "prompt": "Normal blood pH?",
+          "answer": "7.35–7.45"
+        },
+        {
+          "id": "card-c9",
+          "prompt": "Most common site of ectopic pregnancy?",
+          "answer": "Ampulla"
+        },
+        {
+          "id": "card-c6",
+          "prompt": "First-line for anaphylaxis?",
+          "answer": "IM adrenaline"
+        }
+      ],
+      "tiles": [
+        {
+          "id": "card-c9:p",
+          "pairId": "card-c9",
+          "text": "Most common site of ectopic pregnancy?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c2:p",
+          "pairId": "card-c2",
+          "text": "Loop diuretic example?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c6:p",
+          "pairId": "card-c6",
+          "text": "First-line for anaphylaxis?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c5:p",
+          "pairId": "card-c5",
+          "text": "Normal blood pH?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c3:p",
+          "pairId": "card-c3",
+          "text": "What is the antidote for heparin?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c7:p",
+          "pairId": "card-c7",
+          "text": "Vitamin for scurvy?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c5:a",
+          "pairId": "card-c5",
+          "text": "7.35–7.45",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c9:a",
+          "pairId": "card-c9",
+          "text": "Ampulla",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c7:a",
+          "pairId": "card-c7",
+          "text": "Vitamin C",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c3:a",
+          "pairId": "card-c3",
+          "text": "Protamine",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c6:a",
+          "pairId": "card-c6",
+          "text": "IM adrenaline",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c2:a",
+          "pairId": "card-c2",
+          "text": "Furosemide",
+          "kind": "answer"
+        }
+      ]
+    },
+    {
+      "seed": 42,
+      "count": 6,
+      "cardCount": 9,
+      "pairs": [
+        {
+          "id": "card-c2",
+          "prompt": "Loop diuretic example?",
+          "answer": "Furosemide"
+        },
+        {
+          "id": "card-c7",
+          "prompt": "Vitamin for scurvy?",
+          "answer": "Vitamin C"
+        },
+        {
+          "id": "card-c3",
+          "prompt": "What is the antidote for heparin?",
+          "answer": "Protamine"
+        },
+        {
+          "id": "card-c5",
+          "prompt": "Normal blood pH?",
+          "answer": "7.35–7.45"
+        },
+        {
+          "id": "card-c9",
+          "prompt": "Most common site of ectopic pregnancy?",
+          "answer": "Ampulla"
+        },
+        {
+          "id": "card-c6",
+          "prompt": "First-line for anaphylaxis?",
+          "answer": "IM adrenaline"
+        }
+      ],
+      "tiles": [
+        {
+          "id": "card-c3:a",
+          "pairId": "card-c3",
+          "text": "Protamine",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c9:p",
+          "pairId": "card-c9",
+          "text": "Most common site of ectopic pregnancy?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c6:p",
+          "pairId": "card-c6",
+          "text": "First-line for anaphylaxis?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c2:p",
+          "pairId": "card-c2",
+          "text": "Loop diuretic example?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c5:p",
+          "pairId": "card-c5",
+          "text": "Normal blood pH?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c3:p",
+          "pairId": "card-c3",
+          "text": "What is the antidote for heparin?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c7:a",
+          "pairId": "card-c7",
+          "text": "Vitamin C",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c2:a",
+          "pairId": "card-c2",
+          "text": "Furosemide",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c6:a",
+          "pairId": "card-c6",
+          "text": "IM adrenaline",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c5:a",
+          "pairId": "card-c5",
+          "text": "7.35–7.45",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c9:a",
+          "pairId": "card-c9",
+          "text": "Ampulla",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c7:p",
+          "pairId": "card-c7",
+          "text": "Vitamin for scurvy?",
+          "kind": "prompt"
+        }
+      ]
+    },
+    {
+      "seed": 7,
+      "count": 3,
+      "cardCount": 3,
+      "pairs": [
+        {
+          "id": "card-c2",
+          "prompt": "Loop diuretic example?",
+          "answer": "Furosemide"
+        },
+        {
+          "id": "card-c3",
+          "prompt": "What is the antidote for heparin?",
+          "answer": "Protamine"
+        },
+        {
+          "id": "term-t1",
+          "prompt": "Hypokalaemia",
+          "answer": "نقص البوتاسيوم"
+        }
+      ],
+      "tiles": [
+        {
+          "id": "term-t1:p",
+          "pairId": "term-t1",
+          "text": "Hypokalaemia",
+          "kind": "prompt"
+        },
+        {
+          "id": "term-t1:a",
+          "pairId": "term-t1",
+          "text": "نقص البوتاسيوم",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c2:p",
+          "pairId": "card-c2",
+          "text": "Loop diuretic example?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c2:a",
+          "pairId": "card-c2",
+          "text": "Furosemide",
+          "kind": "answer"
+        },
+        {
+          "id": "card-c3:p",
+          "pairId": "card-c3",
+          "text": "What is the antidote for heparin?",
+          "kind": "prompt"
+        },
+        {
+          "id": "card-c3:a",
+          "pairId": "card-c3",
+          "text": "Protamine",
+          "kind": "answer"
+        }
+      ]
+    },
+    {
+      "seed": 99,
+      "count": 6,
+      "cardCount": 0,
+      "pairs": [
+        {
+          "id": "term-t3",
+          "prompt": "Tachycardia",
+          "answer": "تسرع القلب"
+        },
+        {
+          "id": "term-t2",
+          "prompt": "Furosemide",
+          "answer": "فوروسيميد"
+        },
+        {
+          "id": "term-t1",
+          "prompt": "Hypokalaemia",
+          "answer": "نقص البوتاسيوم"
+        }
+      ],
+      "tiles": [
+        {
+          "id": "term-t3:a",
+          "pairId": "term-t3",
+          "text": "تسرع القلب",
+          "kind": "answer"
+        },
+        {
+          "id": "term-t1:p",
+          "pairId": "term-t1",
+          "text": "Hypokalaemia",
+          "kind": "prompt"
+        },
+        {
+          "id": "term-t2:p",
+          "pairId": "term-t2",
+          "text": "Furosemide",
+          "kind": "prompt"
+        },
+        {
+          "id": "term-t3:p",
+          "pairId": "term-t3",
+          "text": "Tachycardia",
+          "kind": "prompt"
+        },
+        {
+          "id": "term-t1:a",
+          "pairId": "term-t1",
+          "text": "نقص البوتاسيوم",
+          "kind": "answer"
+        },
+        {
+          "id": "term-t2:a",
+          "pairId": "term-t2",
+          "text": "فوروسيميد",
+          "kind": "answer"
+        }
+      ]
+    }
+  ]
+}

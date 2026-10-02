@@ -4,7 +4,14 @@
 import Link from "next/link";
 import NiroCharacter from "@/components/niro/NiroCharacter";
 import { LEGAL_CONTACT_EMAIL } from "@/components/legal/LegalPage";
-import { SITE_NAME, SITE_URL, TOOL_PAGES, type ToolPath } from "@/lib/site";
+import {
+  SITE_ENTITY_DESCRIPTION_AR,
+  SITE_ENTITY_IDS,
+  SITE_NAME,
+  SITE_URL,
+  TOOL_PAGES,
+  type ToolPath,
+} from "@/lib/site";
 import s from "./landing.module.css";
 
 export type FaqItem = { q: string; a: string };
@@ -137,17 +144,19 @@ export function PageJsonLd({
   article?: { datePublished: string };
 }) {
   const url = `${SITE_URL}${path}`;
-  const org = { "@id": `${SITE_URL}/#organization` };
+  const org = { "@id": SITE_ENTITY_IDS.organization };
   const data = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        "@id": `${SITE_URL}/#organization`,
+        "@id": SITE_ENTITY_IDS.organization,
         name: SITE_NAME,
+        alternateName: "نيـرو ليرن",
         url: `${SITE_URL}/`,
         logo: `${SITE_URL}/icon.svg`,
         email: LEGAL_CONTACT_EMAIL,
+        description: SITE_ENTITY_DESCRIPTION_AR,
       },
       {
         "@type": article ? "Article" : "WebPage",
@@ -157,7 +166,7 @@ export function PageJsonLd({
         ...(article ? { headline: name } : {}),
         description,
         inLanguage: "ar",
-        isPartOf: { "@id": `${SITE_URL}/#website` },
+        isPartOf: { "@id": SITE_ENTITY_IDS.website },
         publisher: org,
         ...(article
           ? {
@@ -165,7 +174,7 @@ export function PageJsonLd({
               datePublished: article.datePublished,
               mainEntityOfPage: url,
             }
-          : { about: { "@id": `${SITE_URL}/#app` } }),
+          : { about: { "@id": SITE_ENTITY_IDS.software } }),
       },
       {
         "@type": "BreadcrumbList",

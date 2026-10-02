@@ -1,0 +1,245 @@
+[
+  {
+    "question": "12. Which drug is a loop diuretic? A. Furosemide B. Spironolactone C. Amiloride D. Mannitol",
+    "answer": "A. Furosemide",
+    "stem": {
+      "start": 4,
+      "end": 34
+    },
+    "options": [
+      {
+        "start": 38,
+        "end": 48
+      },
+      {
+        "start": 52,
+        "end": 66
+      },
+      {
+        "start": 70,
+        "end": 79
+      },
+      {
+        "start": 83,
+        "end": 91
+      }
+    ],
+    "correct": 0
+  },
+  {
+    "question": "Which nerve supplies the deltoid?\nA) Radial nerve\nB) Axillary nerve\nC) Median nerve\nD) Ulnar nerve",
+    "answer": "B",
+    "stem": {
+      "start": 0,
+      "end": 33
+    },
+    "options": [
+      {
+        "start": 37,
+        "end": 49
+      },
+      {
+        "start": 53,
+        "end": 67
+      },
+      {
+        "start": 71,
+        "end": 83
+      },
+      {
+        "start": 87,
+        "end": 98
+      }
+    ],
+    "correct": 1
+  },
+  {
+    "question": "Deficiency of vitamin A. causes which of the following? A. Night blindness B. Scurvy C. Rickets",
+    "answer": "Night blindness",
+    "stem": {
+      "start": 0,
+      "end": 21
+    },
+    "options": [
+      {
+        "start": 25,
+        "end": 74
+      },
+      {
+        "start": 78,
+        "end": 84
+      },
+      {
+        "start": 88,
+        "end": 95
+      }
+    ],
+    "correct": 0
+  },
+  {
+    "question": "The antidote for heparin is: (a) Vitamin K (b) Protamine sulfate (c) Naloxone (d) Flumazenil Answer: b",
+    "answer": "Protamine",
+    "stem": {
+      "start": 0,
+      "end": 28
+    },
+    "options": [
+      {
+        "start": 33,
+        "end": 42
+      },
+      {
+        "start": 47,
+        "end": 64
+      },
+      {
+        "start": 69,
+        "end": 77
+      },
+      {
+        "start": 82,
+        "end": 92
+      }
+    ],
+    "correct": 1
+  },
+  {
+    "question": "Define homeostasis.",
+    "answer": "Maintaining a stable internal environment.",
+    "stem": {
+      "start": 0,
+      "end": 19
+    },
+    "options": [],
+    "correct": null
+  },
+  {
+    "question": "Which is a statin? A. Atorvastatin B. Enalapril",
+    "answer": "(a)",
+    "stem": {
+      "start": 0,
+      "end": 18
+    },
+    "options": [
+      {
+        "start": 22,
+        "end": 34
+      },
+      {
+        "start": 38,
+        "end": 47
+      }
+    ],
+    "correct": 0
+  },
+  {
+    "question": "ما هو ترياق الهيبارين؟ أ) فيتامين ك ب) كبريتات البروتامين ج) نالوكسون د) فلومازينيل",
+    "answer": "",
+    "arabic": true,
+    "stem": {
+      "start": 0,
+      "end": 22
+    },
+    "options": [
+      {
+        "start": 26,
+        "end": 35
+      },
+      {
+        "start": 39,
+        "end": 57
+      },
+      {
+        "start": 61,
+        "end": 69
+      },
+      {
+        "start": 73,
+        "end": 83
+      }
+    ],
+    "correct": null
+  },
+  {
+    "question": "١. أي من التالي مدر عروي؟\n١) فوروسيميد\n٢) سبيرونولاكتون\n٣) مانيتول",
+    "answer": "",
+    "arabic": true,
+    "stem": {
+      "start": 3,
+      "end": 25
+    },
+    "options": [
+      {
+        "start": 29,
+        "end": 38
+      },
+      {
+        "start": 42,
+        "end": 55
+      },
+      {
+        "start": 59,
+        "end": 66
+      }
+    ],
+    "correct": null
+  },
+  {
+    "question": "Pick one: A. x B. y C. z D. w E. v F. u",
+    "answer": "E - v",
+    "stem": {
+      "start": 0,
+      "end": 9
+    },
+    "options": [
+      {
+        "start": 13,
+        "end": 14
+      },
+      {
+        "start": 18,
+        "end": 19
+      },
+      {
+        "start": 23,
+        "end": 24
+      },
+      {
+        "start": 28,
+        "end": 29
+      },
+      {
+        "start": 33,
+        "end": 34
+      },
+      {
+        "start": 38,
+        "end": 39
+      }
+    ],
+    "correct": 4
+  },
+  {
+    "question": "Which one? A. Apple juice B. Apple C. Pear",
+    "answer": "Apple",
+    "stem": {
+      "start": 0,
+      "end": 10
+    },
+    "options": [
+      {
+        "start": 14,
+        "end": 25
+      },
+      {
+        "start": 29,
+        "end": 34
+      },
+      {
+        "start": 38,
+        "end": 42
+      }
+    ],
+    "correct": 1
+  }
+]

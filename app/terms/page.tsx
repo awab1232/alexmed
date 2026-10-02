@@ -1,6 +1,7 @@
 import "@/app/globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BASE_OPEN_GRAPH } from "@/lib/site";
 import LegalPage, {
   LEGAL_APP_NAME,
   LEGAL_CONTACT_EMAIL,
@@ -13,6 +14,12 @@ export const metadata: Metadata = {
   title: `سياسة الاستخدام | ${LEGAL_APP_NAME}`,
   description: `شروط استخدام ${LEGAL_APP_NAME}: حسابك، المحتوى الذي ترفعه، الذكاء الاصطناعي، والمشاركة.`,
   alternates: { canonical: "/terms" },
+  openGraph: {
+    ...BASE_OPEN_GRAPH,
+    url: "/terms",
+    title: `سياسة الاستخدام | ${LEGAL_APP_NAME}`,
+    description: `شروط استخدام ${LEGAL_APP_NAME}: حسابك، المحتوى الذي ترفعه، الذكاء الاصطناعي، والمشاركة.`,
+  },
 };
 
 const email = (
@@ -153,7 +160,10 @@ const sections: LegalSection[] = [
       <ul>
         <li>
           يمكنك حذف حسابك في أي وقت من{" "}
-          <Link href="/account#delete-account">حسابي ← الملف الدراسي ← حذف الحساب</Link>.
+          <Link href="/account#delete-account">
+            حسابي ← الملف الدراسي ← حذف الحساب
+          </Link>
+          .
         </li>
         <li>
           قد نوقف أو نحذف أي حساب يخالف هذه الشروط أو يسيء للخدمة أو للمستخدمين

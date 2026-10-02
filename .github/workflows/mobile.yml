@@ -1,0 +1,75 @@
+name: Mobile (Flutter)
+
+# The native app in mobile/ — docs/mobile/MOBILE_IMPLEMENTATION_ROADMAP.md.
+# Runs only when the app (or this file) changes, so web-only work isn't
+# slowed down.
+on:
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/mobile.yml"]
+  pull_request:
+    paths: ["mobile/**", ".github/workflows/mobile.yml"]
+
+# Read-only token; no secrets are used — debug builds and tests only.
+# Signing and store uploads arrive in phases 17–18 as a separate workflow.
+permissions:
+  contents: read
+
+env:
+  # Pinned: the exact version the app is developed and tested with.
+  FLUTTER_VERSION: 3.47.5
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # Installed from the official repository at a fixed tag instead of a
+      # third-party setup action.
+      - name: Install Flutter
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git flutter
+          echo "${{ runner.temp }}/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        run: flutter test
+
+      - name: Android debug build
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: flutter build apk --debug --dart-define-from-file=env/prod.json
+
+  ios-build:
+    runs-on: macos-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install Flutter
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git flutter
+          echo "${{ runner.temp }}/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Dependencies
+        run: flutter pub get
+
+      # Compiles the iOS app without signing — proves the iOS side builds
+      # until the Apple Developer account exists (decision D2).
+      - name: iOS build (unsigned)
+        run: flutter build ios --debug --no-codesign --dart-define-from-file=env/prod.json

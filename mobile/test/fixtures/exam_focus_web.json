@@ -1,0 +1,340 @@
+{
+  "highlights": [
+    {
+      "text": "Irrigate chemical burns for 15–30 minutes",
+      "segments": [
+        {
+          "text": "Irrigate chemical burns for ",
+          "highlight": false
+        },
+        {
+          "text": "15–30 minutes",
+          "highlight": true
+        }
+      ]
+    },
+    {
+      "text": "Fever > 38.5 °C with neutrophils < 500",
+      "segments": [
+        {
+          "text": "Fever ",
+          "highlight": false
+        },
+        {
+          "text": "> 38.5 °C",
+          "highlight": true
+        },
+        {
+          "text": " with neutrophils ",
+          "highlight": false
+        },
+        {
+          "text": "< 500",
+          "highlight": true
+        }
+      ]
+    },
+    {
+      "text": "Paracetamol 15 mg/kg every 6 hours, max 60 mg/kg/day",
+      "segments": [
+        {
+          "text": "Paracetamol ",
+          "highlight": false
+        },
+        {
+          "text": "15 mg/kg",
+          "highlight": true
+        },
+        {
+          "text": " every ",
+          "highlight": false
+        },
+        {
+          "text": "6 hours",
+          "highlight": true
+        },
+        {
+          "text": ", max ",
+          "highlight": false
+        },
+        {
+          "text": "60 mg/kg",
+          "highlight": true
+        },
+        {
+          "text": "/day",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "pH 7.4 and HCO3 24 mmol/L",
+      "segments": [
+        {
+          "text": "pH ",
+          "highlight": false
+        },
+        {
+          "text": "7.4",
+          "highlight": true
+        },
+        {
+          "text": " and HCO",
+          "highlight": false
+        },
+        {
+          "text": "3",
+          "highlight": true
+        },
+        {
+          "text": " ",
+          "highlight": false
+        },
+        {
+          "text": "24 mmol/L",
+          "highlight": true
+        }
+      ]
+    },
+    {
+      "text": "Give 0.5 mg IM; repeat after 5 min",
+      "segments": [
+        {
+          "text": "Give ",
+          "highlight": false
+        },
+        {
+          "text": "0.5 mg",
+          "highlight": true
+        },
+        {
+          "text": " IM; repeat after ",
+          "highlight": false
+        },
+        {
+          "text": "5 min",
+          "highlight": true
+        }
+      ]
+    },
+    {
+      "text": "No numbers here at all",
+      "segments": [
+        {
+          "text": "No numbers here at all",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "GCS ≤ 8 → intubate",
+      "segments": [
+        {
+          "text": "GCS ",
+          "highlight": false
+        },
+        {
+          "text": "≤ 8",
+          "highlight": true
+        },
+        {
+          "text": " → intubate",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "Mortality 30% in 1 year; 2-3 days of fever",
+      "segments": [
+        {
+          "text": "Mortality ",
+          "highlight": false
+        },
+        {
+          "text": "30%",
+          "highlight": true
+        },
+        {
+          "text": " in ",
+          "highlight": false
+        },
+        {
+          "text": "1 year",
+          "highlight": true
+        },
+        {
+          "text": "; ",
+          "highlight": false
+        },
+        {
+          "text": "2-3 days",
+          "highlight": true
+        },
+        {
+          "text": " of fever",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "Dose 1,000 IU daily for 12 weeks",
+      "segments": [
+        {
+          "text": "Dose ",
+          "highlight": false
+        },
+        {
+          "text": "1,000 IU",
+          "highlight": true
+        },
+        {
+          "text": " daily for ",
+          "highlight": false
+        },
+        {
+          "text": "12 weeks",
+          "highlight": true
+        }
+      ]
+    },
+    {
+      "text": "Stage 2 hypertension (≥140/90 mmHg)",
+      "segments": [
+        {
+          "text": "Stage ",
+          "highlight": false
+        },
+        {
+          "text": "2",
+          "highlight": true
+        },
+        {
+          "text": " hypertension (",
+          "highlight": false
+        },
+        {
+          "text": "≥140",
+          "highlight": true
+        },
+        {
+          "text": "/",
+          "highlight": false
+        },
+        {
+          "text": "90 mmHg",
+          "highlight": true
+        },
+        {
+          "text": ")",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "K+ 5.5 mEq/L; 10 units insulin",
+      "segments": [
+        {
+          "text": "K+ ",
+          "highlight": false
+        },
+        {
+          "text": "5.5 mEq/L",
+          "highlight": true
+        },
+        {
+          "text": "; ",
+          "highlight": false
+        },
+        {
+          "text": "10 units",
+          "highlight": true
+        },
+        {
+          "text": " insulin",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "Section 3.2.1 and 4h fasting",
+      "segments": [
+        {
+          "text": "Section ",
+          "highlight": false
+        },
+        {
+          "text": "3.2",
+          "highlight": true
+        },
+        {
+          "text": ".",
+          "highlight": false
+        },
+        {
+          "text": "1",
+          "highlight": true
+        },
+        {
+          "text": " and ",
+          "highlight": false
+        },
+        {
+          "text": "4h",
+          "highlight": true
+        },
+        {
+          "text": " fasting",
+          "highlight": false
+        }
+      ]
+    },
+    {
+      "text": "",
+      "segments": [
+        {
+          "text": "",
+          "highlight": false
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "pages": [],
+      "label": ""
+    },
+    {
+      "pages": [
+        7
+      ],
+      "label": "p. 7"
+    },
+    {
+      "pages": [
+        3,
+        4,
+        5
+      ],
+      "label": "pp. 3–5"
+    },
+    {
+      "pages": [
+        9,
+        2,
+        3
+      ],
+      "label": "pp. 2, 3, 9"
+    },
+    {
+      "pages": [
+        1,
+        3,
+        8,
+        12,
+        20,
+        21
+      ],
+      "label": "pp. 1, 3, 8, 12…"
+    }
+  ]
+}

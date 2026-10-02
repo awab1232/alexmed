@@ -1,6 +1,7 @@
 import "@/app/globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BASE_OPEN_GRAPH } from "@/lib/site";
 import LegalPage, {
   LEGAL_APP_NAME,
   LEGAL_CONTACT_EMAIL,
@@ -13,6 +14,12 @@ export const metadata: Metadata = {
   title: `تواصل معنا | ${LEGAL_APP_NAME}`,
   description: `تواصل مع فريق ${LEGAL_APP_NAME} بخصوص حسابك أو ملفاتك أو اشتراكك، أو لأي سؤال واقتراح حول منصة المذاكرة بالذكاء الاصطناعي.`,
   alternates: { canonical: "/contact" },
+  openGraph: {
+    ...BASE_OPEN_GRAPH,
+    url: "/contact",
+    title: `تواصل معنا | ${LEGAL_APP_NAME}`,
+    description: `تواصل مع فريق ${LEGAL_APP_NAME} بخصوص حسابك أو ملفاتك أو اشتراكك، أو لأي سؤال واقتراح حول منصة المذاكرة بالذكاء الاصطناعي.`,
+  },
 };
 
 const email = (
