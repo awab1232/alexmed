@@ -31,10 +31,21 @@ export async function POST(request: Request) {
 
   const tokenData = await response.json();
 
-  // Verify audience
-  if (tokenData.aud !== process.env.GOOGLE_CLIENT_ID) {
+  // Robust Audience & Issuer Verification
+  const { aud, iss } = tokenData;
+  const isValidAudience = aud === process.env.GOOGLE_CLIENT_ID;
+  const isValidIssuer = iss === "https://accounts.google.com" || iss === "accounts.google.com";
+
+  if (!isValidAudience) {
     return NextResponse.json(
       { error: "رمز Google غير صالح.", code: "invalid_token" },
+      { status: 401, headers: NO_STORE }
+    );
+  }
+
+  if (!isValidIssuer) {
+    return NextResponse.json(
+      { error: "جهة إصدار رمز Google غير صالحة.", code: "invalid_token" },
       { status: 401, headers: NO_STORE }
     );
   }

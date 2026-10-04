@@ -34,6 +34,7 @@ describe("POST /api/mobile/auth/google", () => {
       json: () =>
         Promise.resolve({
           aud: GOOGLE_CLIENT_ID,
+          iss: "https://accounts.google.com",
           email,
           name: "Student",
           sub: "google123",
@@ -74,6 +75,7 @@ describe("POST /api/mobile/auth/google", () => {
         json: () =>
           Promise.resolve({
             aud: GOOGLE_CLIENT_ID,
+            iss: "https://accounts.google.com",
             email,
             name: "New Student",
             sub: "google456",
@@ -114,7 +116,21 @@ describe("POST /api/mobile/auth/google", () => {
   it("invalid audience → 401", async () => {
     m(global.fetch).mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ aud: "wrong-aud" }),
+      json: () => Promise.resolve({ aud: "wrong-aud", iss: "https://accounts.google.com" }),
+    });
+    const response = await POST(
+        new Request("https://nirolearn.com/api/mobile/auth/google", {
+          method: "POST",
+          body: JSON.stringify({ idToken: "fake-id-token" }),
+        })
+      );
+    expect(response.status).toBe(401);
+  });
+
+  it("invalid issuer → 401", async () => {
+    m(global.fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, iss: "https://malicious.com" }),
     });
     const response = await POST(
         new Request("https://nirolearn.com/api/mobile/auth/google", {
@@ -128,7 +144,7 @@ describe("POST /api/mobile/auth/google", () => {
   it("suspended user → 403", async () => {
     m(global.fetch).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, email: "s@e.com", sub: "g1" }),
+        json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, iss: "https://accounts.google.com", email: "s@e.com", sub: "g1" }),
       });
     m(getUserByEmail).mockResolvedValue({ id: "u1", suspendedAt: new Date() });
 
@@ -144,7 +160,7 @@ describe("POST /api/mobile/auth/google", () => {
   it("token without an email → 400, no user lookup", async () => {
     m(global.fetch).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, sub: "g1" }),
+        json: () => Promise.resolve({ aud: GOOGLE_CLIENT_ID, iss: "https://accounts.google.com", sub: "g1" }),
       });
 
     const response = await POST(
