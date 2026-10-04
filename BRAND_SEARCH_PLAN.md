@@ -1,75 +1,29 @@
-# خطة حماية ظهور علامة NiroLearn في البحث
+# Brand Search Plan — NiroLearn
 
-**تاريخ الخطة:** 2 أكتوبر 2026  
-**الاسم المعتمد دائمًا:** **NiroLearn**  
-**الاسم والنطاق الأساسيان:** `NiroLearn` و`https://nirolearn.com`
+## Official brand spelling
 
-لا تستخدم في الأصول العامة أو metadata أو النصوص: `NeroLearn` أو `Niro Learn` أو `Nero Learn` أو `Nirolearning`.
+Use **NiroLearn** everywhere: site title, metadata, JSON-LD, support pages, public profiles, app store text, and social handles where applicable.
 
-## الهدف
+## Canonical domain
 
-تجميع الإشارات الرسمية للعلامة حول نطاق واحد ومراقبة ما تراه محركات البحث بالفعل. هذه خطة هوية وقياس، وليست وعدًا بترتيب أول أو بامتلاك نتائج Google.
+Use `https://nirolearn.com` as the single canonical public origin.
 
-## 1. توحيد الأصل الرسمي
+## Search visibility plan
 
-- اعتبر `https://nirolearn.com` الأصل الوحيد في canonical، sitemap، JSON-LD، Open Graph، التطبيق، وصف المتجر، والروابط التي يملكها الفريق.
-- يجب أن يحوّل `https://www.nirolearn.com/*` دائمًا وبشكل دائم إلى non-www مع المسار وquery نفسهما. طبقة التطبيق توفر دفاعًا إضافيًا؛ يضبط المالك التحويل أيضًا في Railway/DNS/CDN عند الإمكان.
-- لا تستخدم عنوان Railway الداخلي كبديل علني للنطاق الأساسي.
-- لا تغيّر `AUTH_URL` أو OAuth أو QStash أو أي متغير إنتاجي ضمن عمل SEO. تحقق منها بعد النشر لأن redirects على مستوى المضيف قد تؤثر في callbacks إذا أسيء ضبطها.
+1. Verify the site as a **Domain Property** in Google Search Console.
+2. Submit the canonical sitemap from `https://nirolearn.com/sitemap.xml`.
+3. Inspect key public URLs after changes and after deploys.
+4. Monitor branded queries for the official spelling only.
+5. Keep the public profiles consistent with the website name and domain.
 
-## 2. مصدر رسمي واحد للحقائق
+## Profile and entity rules
 
-راجع باستمرار اتساق هذه الأصول المملوكة:
+- Add `sameAs` only after the owner provides real, verified, owned profile or store URLs.
+- Do not invent or placeholder social profiles.
+- Do not fabricate reviews, ratings, awards, or testimonials.
+- Do not create a Google Business Profile unless there is a real local business premise that can be verified.
+- Keep the public entity surface consistent: name, logo, domain, and support/contact details.
 
-1. الصفحة الرئيسية `https://nirolearn.com/`.
-2. صفحات الميزات العامة و`/pricing` و`/contact`.
-3. `app/robots.ts` و`app/sitemap.ts` و`public/llms.txt`.
-4. صفحة Google Play عند نشر التطبيق، وصف الحسابات الاجتماعية الرسمية الموجودة فعلًا.
-5. سياسة الخصوصية والشروط.
+## What this plan is for
 
-استخدم وصفًا حقائقيًا ثابتًا: منصة مذاكرة عربية بالذكاء الاصطناعي تحوّل PDF الذي يرفعه الطالب إلى ملخصات وExam Focus وفلاش كارد واختبارات وخرائط ذهنية وأدوات مراجعة مرتبطة بالمادة نفسها. لا تضف ميزة أو رقم مستخدمين أو اعتماد أو شهادة أو شراكة لا يمكن التحقق منها في المنتج أو في عقد رسمي.
-
-## 3. Google Search Console
-
-ينفّذ مالك النطاق الخطوات الآتية من حساب يملك DNS:
-
-1. أنشئ أو تحقق من **Domain Property** لـ`nirolearn.com` (لا تكتفِ بـURL-prefix واحد).
-2. أرسل `https://nirolearn.com/sitemap.xml` بعد تأكيد redirect non-www.
-3. استخدم URL Inspection للصفحة الرئيسية، و`/pdf-summary`، و`/how-to-study`، ثم راقب:
-   - حالة الفهرسة ووقت آخر crawl.
-   - canonical المعلن وcanonical الذي اختاره Google.
-   - أخطاء sitemap أو robots أو mobile usability إن ظهرت.
-4. لا تستنتج نتيجة من يوم واحد: قارن نافذة زمنية ثابتة قبل/بعد أي نشر، وحدد السوق والجهاز ونوع البحث.
-
-## 4. متابعة البحث بالعلامة
-
-استخرج من Search Console بشكل دوري queries تحتوي على:
-
-- `nirolearn`
-- صيغ أخطاء إملائية تظهر في بيانات فعلية فقط، مثل `nero learn` إن ظهرت.
-- اسم العلامة مع نية منتج، مثل `nirolearn pdf` أو `nirolearn فلاش كارد`، **بعد** تأكيد وجودها في البيانات.
-
-سجّل الانطباعات والنقرات وCTR والصفحة الظاهرة، ولا تلاحق كل احتمال نظري بكلمات صفحات أو redirects. إن ظهرت صيغة خطأ ذات طلب حقيقي، صحح الاسم في الأصول الرسمية أولًا، ثم قيّم الحاجة لمحتوى مساعدة محدود وواضح بدل حشو كلمات العلامة.
-
-## 5. الأصول الخارجية المملوكة فقط
-
-- استخدم الاسم والرابط الأساسيين نفسيهما في Play Console والصفحات الاجتماعية الرسمية الحالية.
-- في JSON-LD، أضف `sameAs` **فقط** بعد إعطاء رابط ملف رسمي مملوك ومتحقق منه (مثل صفحة Google Play المنشورة أو حساب اجتماعي فعال). لا تضف placeholder أو صفحة لم ينشئها الفريق.
-- لا تنشئ Google Business Profile لمجرد SEO، إلا إذا كان لـNiroLearn مكان تجاري محلي حقيقي يمكنه الامتثال لسياسات Google.
-- لا تنشئ تقييمات أو مراجعات أو AggregateRating أو جوائز أو شراكات أو اقتباسات صحفية مصطنعة.
-
-## 6. قواعد التشغيل والنشر
-
-- عند إضافة صفحة عامة جديدة، قرر صراحة: هل هي مفيدة للفهرسة؟ إن كانت الإجابة نعم، أضف canonical وmetadata وروابط داخلية وsitemap فقط إذا كانت صفحة مستقرة غير شخصية. إن كانت لا، أبقها خارج sitemap وطبّق noindex حين يلزم.
-- لا تضع صفحات تسجيل الدخول أو الحساب أو ملفات الطلبة أو URLs ديناميكية في sitemap.
-- لا تغيّر spelling في `SITE_NAME` أو structured data أو metadata إلا عبر مراجعة العلامة.
-- راجع هذه الخطة كل ربع سنة أو بعد تغيير اسم المنتج أو النطاق أو المتجر.
-
-## مؤشرات نجاح قابلة للقياس
-
-- كل زيارات `www` تصل بتحويل دائم واحد إلى non-www.
-- Search Console يقبل sitemap دون خطأ قابل للتكرار.
-- Google يختار canonical non-www للصفحات العامة المفحوصة.
-- استقرار ظهور الصفحة الرسمية في نتائج الاستعلامات branded التي تسجل بيانات كافية.
-
-هذه مؤشرات قياس؛ لا تمثل ضمانًا للرتبة أو للظهور في أي نتيجة محددة.
+This is an evidence-based brand and entity plan, not a guarantee of rankings or citations. It supports the public surface already in the codebase so search engines can understand the official name and canonical origin.
