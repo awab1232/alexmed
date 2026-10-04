@@ -69,7 +69,7 @@ export async function signInWithGoogle(
   // The web's signIn callback: a suspended account is refused up front.
   const byEmail = await d.getUserByEmail(claims.email);
   if (byEmail?.suspendedAt) {
-    console.error(`User account suspended: ${byEmail.id}`);
+    // User account suspended log removed.
     return { ok: false, reason: "suspended" };
 }
 
