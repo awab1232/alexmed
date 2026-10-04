@@ -1,23 +1,62 @@
 import { NextResponse } from "next/server";
-import { getUserByEmail, createUser } from "@/lib/db";
+import { z } from "zod";
+import { GoogleTokenError, verifyGoogleIdToken } from "@/lib/google-id-token";
+import { signInWithGoogle } from "@/lib/mobile-google";
 import { issueMobileSession } from "@/lib/mobile-session";
 
-// Mobile Google sign-in (blueprint §9, gap G2): the app calls this with
-// its Google idToken. Same account rules as the web's Google provider
-// (lib/auth.ts): an existing email is linked (never refused) and a suspended
-// account is blocked. The response matches /api/mobile/auth/login so the app
-// parses both the same way.
+// Native app Google sign-in (docs/mobile/MOBILE_ARCHITECTURE_BLUEPRINT.md §9,
+// gap G2): the app sends the Google ID token it got from Google Sign-In; the
+// server verifies it (Google's keys, issuer, audience = a web client,
+// authorised party = the app's Android client) and signs in with the same
+// account rules as the web's Google button (lib/mobile-google.ts). Returns
+// the same session as /api/mobile/auth/login. The web's Google OAuth
+// configuration is not touched.
+
+// The app's OAuth clients live in their own Google Cloud project, apart from
+// the site's: the Android client (package com.nirolearn.app) and the web
+// client the app names as serverClientId, which becomes the token's audience.
+// Google's `sub` is the same for an account in every project, so accounts
+// match the ones the web's Google button links. Client IDs are public;
+// GOOGLE_MOBILE_CLIENT_IDS (comma-separated) can add more (iOS).
+const ANDROID_CLIENT_ID =
+  "342475897969-e9m19r0t8u47r07nnpslqn0tp5artnmb.apps.googleusercontent.com";
+const APP_WEB_CLIENT_ID =
+  "342475897969-tcogc9hjlfe5nlgqdkhm1opsk126j2ed.apps.googleusercontent.com";
+
+function mobileClientIds(): string[] {
+  const extra = (process.env.GOOGLE_MOBILE_CLIENT_IDS ?? "")
+    .split(",")
+    .map(id => id.trim())
+    .filter(Boolean);
+  return [ANDROID_CLIENT_ID, ...extra];
+}
+
+const bodySchema = z.object({ idToken: z.string().min(20).max(8192) });
 const NO_STORE = { "Cache-Control": "no-store" };
 
+function fail(status: number, code: string, error: string) {
+  return NextResponse.json({ error, code }, { status, headers: NO_STORE });
+}
+
 export async function POST(request: Request) {
-  const { idToken } = await request.json();
-  if (!idToken) {
-    return NextResponse.json(
-      { error: "الرمز مفقود.", code: "invalid_token" },
-      { status: 400, headers: NO_STORE }
+  const webClientId = process.env.GOOGLE_CLIENT_ID;
+  if (!webClientId || !process.env.GOOGLE_CLIENT_SECRET) {
+    return fail(
+      503,
+      "google_unavailable",
+      "الدخول بحساب Google غير متاح حاليًا."
+    );
+  }
+  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return fail(
+      400,
+      "bad_request",
+      "تعذّر الدخول بحساب Google. حاول مرة أخرى."
     );
   }
 
+<<<<<<< HEAD
   // Verify idToken with Google
   const response = await fetch(
     `https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`
@@ -66,39 +105,70 @@ export async function POST(request: Request) {
   // Find or create the user, linking by email as the web's Google provider
   // does. `id` is left to the database (gen_random_uuid()) — users.id is a
   // uuid column and rejects app-generated id strings.
-  let user = await getUserByEmail(email);
-  if (!user) {
-    user = await createUser({
-      email,
-      name: name ?? null,
-      role: "user",
+  let claims;
+  try {
+    claims = await verifyGoogleIdToken(parsed.data.idToken, {
+      audiences: [APP_WEB_CLIENT_ID, webClientId],
+      authorizedParties: mobileClientIds(),
     });
-  }
-
-  if (user.suspendedAt) {
-    return NextResponse.json(
-      { error: "حسابك معلّق.", code: "account_suspended" },
-      { status: 403, headers: NO_STORE }
+=======
+  let claims;
+  try {
+    claims = await verifyGoogleIdToken(parsed.data.idToken, {
+      audiences: [APP_WEB_CLIENT_ID, webClientId],
+      authorizedParties: mobileClientIds(),
+>>>>>>> main
+    });
+  } catch (error) {
+    if (error instanceof GoogleTokenError) {
+      return fail(
+        401,
+        "invalid_google_token",
+        "تعذّر التحقق من حساب Google. حاول مرة أخرى."
+      );
+    }
+    console.error("[MobileGoogle] Token verification failed", error);
+    return fail(
+      502,
+      "google_unavailable",
+      "تعذّر الوصول إلى Google الآن. حاول بعد قليل."
     );
   }
 
-  const fresh = await issueMobileSession(
-    {
-      id: user.id,
-      name: user.name ?? null,
-      email: user.email ?? null,
-      role: user.role,
-    },
-    request.url
-  );
+  const result = await signInWithGoogle(claims);
+  if (!result.ok) {
+    switch (result.reason) {
+      case "suspended":
+        return fail(
+          403,
+          "account_suspended",
+          "حسابك معلّق حاليًا. تواصل مع الدعم إذا كنت تظن أن هذا خطأ."
+        );
+      case "not_linked":
+        return fail(
+          409,
+          "account_not_linked",
+          "يوجد حساب بهذا البريد. سجّل الدخول برقم الهاتف أو البريد وكلمة المرور."
+        );
+      default:
+        return fail(
+          403,
+          "unverified_email",
+          "بريد حساب Google هذا غير موثّق. وثّقه في Google ثم حاول مجددًا."
+        );
+    }
+  }
+
+  const session = await issueMobileSession(result.user, request.url);
   return NextResponse.json(
     {
-      ...fresh,
+      ...session,
+      created: result.created,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role: result.user.role,
       },
     },
     { headers: NO_STORE }
