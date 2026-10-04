@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
       )
     );
   if (!signedIn) return NextResponse.next();
-  return NextResponse.rewrite(new URL("/home", request.url));
+  return NextResponse.rewrite(new URL("/subjects", request.url));
 }
 
 export const config = {

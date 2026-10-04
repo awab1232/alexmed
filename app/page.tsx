@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 // imports the app home, so this route ships none of its CSS or JS.
 export default async function Page() {
   const session = await auth();
-  if (session?.user) redirect("/home");
+  if (session?.user) redirect("/subjects");
 
   return (
     <>
